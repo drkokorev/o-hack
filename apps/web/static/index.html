@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Голосовой ассистент клиники</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --text: #1b2430; --muted: #6b7684; --line: #e3e8ee;
+    --accent: #0f7b6c; --accent-soft: #e3f3f0; --user: #2f5fd0; --user-soft: #eaf0fd;
+    --warn: #b4540a; --warn-soft: #fdf0e3; --rec: #d33b3b; --shadow: 0 1px 2px rgba(16,24,40,.06), 0 4px 16px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1419; --card: #171d24; --text: #e6ebf0; --muted: #8b96a3; --line: #26303b;
+      --accent: #3cc4ae; --accent-soft: #15302c; --user: #7aa2ff; --user-soft: #1a2540;
+      --warn: #f0a15a; --warn-soft: #33241a; --rec: #ff6b6b; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line);
+           background: var(--card); position: sticky; top: 0; z-index: 2; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 650; }
+  .badge { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  header .spacer { flex: 1; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); background: var(--card);
+           color: var(--text); padding: 7px 12px; }
+  button:hover { border-color: var(--accent); }
+  main { display: grid; grid-template-columns: minmax(340px, 560px) 1fr; gap: 16px; padding: 16px 20px;
+         max-width: 1400px; margin: 0 auto; }
+  main > * { min-width: 0; }
+  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); padding: 12px 16px; } }
+  @media (max-width: 480px) { #send { display: none; } .controls { gap: 8px; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0;
+             padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  .call { display: flex; flex-direction: column; height: calc(100vh - 100px); min-height: 520px; }
+  #log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 88%; padding: 9px 13px; border-radius: 14px; white-space: pre-wrap; }
+  .msg.bot { background: var(--accent-soft); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: var(--user-soft); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg .meta { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .msg.done { outline: 2px solid var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 0; }
+  .chip { font-size: 13px; padding: 5px 10px; border-radius: 999px; background: var(--bg); }
+  .controls { display: flex; gap: 10px; align-items: center; padding: 12px 16px; }
+  #mic { width: 52px; height: 52px; border-radius: 50%; flex: none; display: grid; place-items: center;
+         background: var(--accent); border: none; color: #fff; }
+  #mic svg { width: 22px; height: 22px; }
+  #mic.listening { background: var(--rec); animation: pulse 1.2s infinite; }
+  #mic:disabled { opacity: .4; cursor: not-allowed; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(211,59,59,.5); } 100% { box-shadow: 0 0 0 14px rgba(211,59,59,0); } }
+  #text { flex: 1; min-width: 0; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line);
+          background: var(--bg); color: var(--text); font: inherit; }
+  .toggles { display: flex; gap: 16px; padding: 0 16px 12px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  .toggles label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  #notice { margin: 0 16px 10px; font-size: 13px; color: var(--warn); display: none; }
+  .side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  tr.fresh td { background: var(--accent-soft); transition: background 2s; }
+  .empty { padding: 16px; color: var(--muted); }
+  .debug { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; padding: 12px 16px; font-size: 13px; }
+  .debug dt { color: var(--muted); }
+  .debug dd { margin: 0; }
+  pre { margin: 0; padding: 0 16px 14px; font-size: 12px; overflow-x: auto; color: var(--muted); }
+  details summary { cursor: pointer; padding: 12px 16px; font-size: 13px; color: var(--muted); }
+  .doctors { padding: 0 16px 12px; font-size: 13px; }
+  .doctors p { margin: 0 0 8px; }
+  .patients { font-size: 13px; color: var(--muted); padding: 0 16px 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Клиника · голосовой помощник</h1>
+  <span class="badge" id="nluBadge">…</span>
+  <span class="spacer"></span>
+  <button id="newCall">Новый звонок</button>
+  <button id="resetDemo" title="Вернуть расписание и записи к исходным">Сбросить демо</button>
+</header>
+
+<main>
+  <section class="card call">
+    <h2>Разговор с пациентом</h2>
+    <div id="log" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <div class="controls">
+      <button id="mic" aria-label="Говорить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>
+        </svg>
+      </button>
+      <input id="text" placeholder="Скажите или напишите запрос…" autocomplete="off">
+      <button id="send">Отправить</button>
+    </div>
+    <p id="notice"></p>
+    <div class="toggles">
+      <label><input type="checkbox" id="speakToggle" checked> Озвучивать ответы</label>
+      <label><input type="checkbox" id="callMode"> Режим звонка: слушать после ответа</label>
+    </div>
+  </section>
+
+  <section class="side">
+    <div class="card">
+      <h2>Записи в регистратуре</h2>
+      <div id="bookings"></div>
+      <p class="patients" id="patients"></p>
+    </div>
+    <div class="card">
+      <h2>Последний ход ассистента</h2>
+      <dl class="debug">
+        <dt>Разбор фразы</dt><dd id="dNlu">—</dd>
+        <dt>Время ответа</dt><dd id="dLatency">—</dd>
+      </dl>
+      <pre id="dState">{}</pre>
+    </div>
+    <div class="card">
+      <details>
+        <summary>Врачи и расписание</summary>
+        <div class="doctors" id="doctors"></div>
+      </details>
+    </div>
+  </section>
+</main>
+
+<script>
+const SCENARIOS = [
+  "Запишите меня к терапевту на завтра",
+  "Болит зуб, можно в пятницу после обеда?",
+  "Когда принимает Белова?",
+  "Хочу узнать, на когда я записан",
+  "Мне нужно перенести запись",
+  "Отмените мою запись",
+];
+const $ = (id) => document.getElementById(id);
+let sessionId = null;
+let known = new Map();
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  if (!res.ok) throw Object.assign(new Error(await res.text()), { status: res.status });
+  return res.json();
+}
+
+function addMessage(role, text, meta, done) {
+  const el = document.createElement("div");
+  el.className = `msg ${role}` + (done ? " done" : "");
+  el.textContent = text;
+  if (meta) {
+    const m = document.createElement("span");
+    m.className = "meta";
+    m.textContent = meta;
+    el.appendChild(m);
+  }
+  $("log").appendChild(el);
+  $("log").scrollTop = $("log").scrollHeight;
+}
+
+async function startCall() {
+  stopListening();
+  speechSynthesis?.cancel();
+  $("log").innerHTML = "";
+  const r = await api("/api/session", {});
+  sessionId = r.session_id;
+  const llm = !r.nlu.startsWith("правила");
+  $("nluBadge").textContent = llm ? `LLM: ${r.nlu}` : "Без LLM: разбор по правилам";
+  $("nluBadge").className = "badge" + (llm ? "" : " warn");
+  $("patients").textContent = "Тестовые пациенты с записями: " + r.demo_patients.join(", ");
+  addMessage("bot", r.greeting);
+  speak(r.greeting);
+  refreshClinic();
+}
+
+async function send(text) {
+  text = text.trim();
+  if (!text) return;
+  $("text").value = "";
+  addMessage("user", text);
+  let r;
+  try {
+    r = await api("/api/message", { session_id: sessionId, text });
+  } catch (e) {
+    if (e.status === 404) { await startCall(); return send(text); }
+    addMessage("bot", "Ошибка сервера: " + e.message);
+    return;
+  }
+  const nluLabel = { llm: "LLM", rules: "правила", none: "—" }[r.nlu] || r.nlu || "—";
+  addMessage("bot", r.reply, `${nluLabel} · ${r.latency_ms} мс`, r.done);
+  $("dNlu").textContent = nluLabel;
+  $("dLatency").textContent = `${r.latency_ms} мс`;
+  $("dState").textContent = JSON.stringify(r.state, null, 2);
+  speak(r.reply);
+  refreshClinic();
+}
+
+const fmt = new Intl.DateTimeFormat("ru-RU", { weekday: "short", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+
+async function refreshClinic() {
+  const c = await api("/api/clinic");
+  const rows = c.bookings.map((b) => {
+    const fresh = known.size && known.get(b.id) !== b.start;
+    return `<tr class="${fresh ? "fresh" : ""}"><td>${b.id}</td><td>${esc(b.patient)}</td>
+      <td>${esc(b.specialty)}<br><small>${esc(b.doctor)}</small></td><td>${fmt.format(new Date(b.start))}</td></tr>`;
+  }).join("");
+  $("bookings").innerHTML = c.bookings.length
+    ? `<table><thead><tr><th>№</th><th>Пациент</th><th>Врач</th><th>Когда</th></tr></thead><tbody>${rows}</tbody></table>`
+    : `<p class="empty">Записей нет</p>`;
+  known = new Map(c.bookings.map((b) => [b.id, b.start]));
+  $("doctors").innerHTML = c.doctors.map((d) => `<p>${esc(d.schedule)}.</p>`).join("");
+}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch])); }
+
+// ---------- Голос: распознавание и синтез в браузере ----------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false;
+
+if (!SR) {
+  $("mic").disabled = true;
+  $("notice").style.display = "block";
+  $("notice").textContent = "Этот браузер не поддерживает распознавание речи. Откройте страницу в Chrome или Edge либо пишите текстом.";
+}
+
+function startListening() {
+  if (!SR || listening) return;
+  speechSynthesis?.cancel();
+  rec = new SR();
+  rec.lang = "ru-RU";
+  rec.interimResults = true;
+  rec.onresult = (e) => {
+    const res = e.results[e.results.length - 1];
+    $("text").value = res[0].transcript;
+    if (res.isFinal) { stopListening(); send(res[0].transcript); }
+  };
+  rec.onerror = (e) => {
+    stopListening();
+    if (e.error !== "no-speech" && e.error !== "aborted") {
+      $("notice").style.display = "block";
+      $("notice").textContent = "Микрофон: " + e.error + ". Проверьте разрешение на доступ к микрофону.";
+    }
+  };
+  rec.onend = () => stopListening();
+  rec.start();
+  listening = true;
+  $("mic").classList.add("listening");
+}
+
+function stopListening() {
+  if (rec && listening) { try { rec.stop(); } catch (_) {} }
+  listening = false;
+  $("mic").classList.remove("listening");
+}
+
+function speak(text) {
+  if (!$("speakToggle").checked || !window.speechSynthesis) {
+    if ($("callMode").checked) startListening();
+    return;
+  }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ru-RU";
+  const voice = speechSynthesis.getVoices().find((v) => v.lang.startsWith("ru"));
+  if (voice) u.voice = voice;
+  u.onend = () => { if ($("callMode").checked) startListening(); };
+  speechSynthesis.speak(u);
+}
+
+// ---------- События ----------
+$("mic").onclick = () => (listening ? stopListening() : startListening());
+$("send").onclick = () => send($("text").value);
+$("text").addEventListener("keydown", (e) => { if (e.key === "Enter") send($("text").value); });
+$("newCall").onclick = startCall;
+$("resetDemo").onclick = async () => { await api("/api/reset", {}); known = new Map(); startCall(); };
+$("chips").innerHTML = SCENARIOS.map((s) => `<button class="chip">${esc(s)}</button>`).join("");
+$("chips").onclick = (e) => { if (e.target.matches(".chip")) send(e.target.textContent); };
+
+startCall();
+</script>
+</body>
+</html>

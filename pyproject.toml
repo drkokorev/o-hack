@@ -1,0 +1,9 @@
+[project]
+name = "o-hack-core"
+version = "0.1.0"
+description = "Universal agentic core для «О! Хакатона» и «Точки сборки»"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
