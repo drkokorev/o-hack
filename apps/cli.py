@@ -1,4 +1,4 @@
-"""Консольный чат для ручной проверки на реальной LLM: python -m apps.cli hotels|clinic"""
+"""Консольный чат для ручной проверки: python -m apps.cli"""
 
 import argparse
 import logging
@@ -12,14 +12,14 @@ from domains import build_domain
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("domain", choices=["hotels", "clinic"])
+    parser.add_argument("domain", choices=["hotels"], nargs="?", default="hotels")
     parser.add_argument("--debug", action="store_true", help="показывать состояние после каждой реплики")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO if args.debug else logging.WARNING)
 
     settings = get_settings()
     if not settings.llm_enabled:
-        print("⚠️  LLM_API_KEY не задан в .env — работает только разбор по правилам", file=sys.stderr)
+        print("⚠️  LLM_API_KEY не задан в .env — агент не сможет разобрать запрос", file=sys.stderr)
     llm = OpenAICompatLLM(settings) if settings.llm_enabled else None
     agent = Agent(build_domain(args.domain), llm, nlg=settings.llm_nlg)
     session = agent.new_session()

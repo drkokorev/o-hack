@@ -16,7 +16,7 @@ from .llm import LLM, Message, extract, strip_think
 class Step:
     reply: str            # детерминированный ответ — всегда безопасно показать
     facts: str = ""       # факты для NLG-перефразирования; пусто — не перефразировать
-    payload: Any = None   # данные для UI (карточки отелей, слоты)
+    payload: Any = None   # данные для UI (карточки отелей)
     done: bool = False    # сценарий завершён (например, запись создана)
 
 

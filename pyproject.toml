@@ -1,7 +1,7 @@
 [project]
-name = "o-hack-core"
+name = "o-hack"
 version = "0.1.0"
-description = "Universal agentic core для «О! Хакатона» и «Точки сборки»"
+description = "AI-агент подбора отелей («О! Хакатон», трек «О!дин запрос»)"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]
