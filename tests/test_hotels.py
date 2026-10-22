@@ -2,7 +2,7 @@ from core.agent import Agent
 from domains.hotels.catalog import Hotel, generate_hotels, normalize_city
 from domains.hotels.domain import ASK_CITY, HotelsDomain
 from domains.hotels.search import search
-from domains.hotels.state import HotelState
+from domains.hotels.state import HotelParams, HotelState
 from tests.conftest import TODAY, FakeLLM
 
 
@@ -51,7 +51,7 @@ def test_multi_turn_keeps_context_and_new_search_resets():
     agent.handle(s, "а ближе к центру?")
     assert (s.state.city, s.state.budget_max, s.state.near_center) == ("Казань", 6000, True)
     agent.handle(s, "давай заново, теперь Сочи")
-    assert s.state == HotelState(city="Сочи")
+    assert s.state.params() == HotelParams(city="Сочи")
 
 
 def test_relaxation_ladder_is_reported():

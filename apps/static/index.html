@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Один запрос — подбор отеля</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #e9efee;
+    --paper: #ffffff;
+    --ink: #10242b;
+    --muted: #5b6f75;
+    --line: #cfdad8;
+    --cobalt: #2346d8;
+    --cobalt-soft: #e3e8fd;
+    --sun: #f2b705;
+    --ok: #1f7a4d;
+    --display: "Unbounded", "Golos Text", system-ui, sans-serif;
+    --body: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1b20; --paper: #152830; --ink: #e6efee; --muted: #93a7ab;
+      --line: #284049; --cobalt: #7d95ff; --cobalt-soft: #1d2d5c; --sun: #f5c739; --ok: #5fcf95;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  .app > *, .hotel > * { min-width: 0; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body);
+    min-height: 100vh;
+  }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; }
+
+  .app {
+    display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 0;
+    min-height: 100vh;
+  }
+  /* Разговор */
+  .talk {
+    background: var(--paper); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0;
+  }
+  .brand { padding: 20px 24px 12px; }
+  .brand h1 { font: 700 22px/1.15 var(--display); margin: 0; letter-spacing: -0.01em; }
+  .brand p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+  .log { flex: 1; overflow-y: auto; padding: 8px 24px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 92%; padding: 10px 14px; border-radius: 14px; white-space: pre-wrap; font-size: 15px; }
+  .msg.user { align-self: flex-end; background: var(--cobalt); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: var(--bg); border-bottom-left-radius: 4px; }
+  .msg .meta { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+  .examples { display: flex; flex-direction: column; gap: 6px; padding: 0 24px 12px; }
+  .examples button {
+    text-align: left; background: none; border: 1px dashed var(--line); border-radius: 10px;
+    padding: 8px 12px; cursor: pointer; font-size: 14px; color: var(--muted);
+  }
+  .examples button:hover { border-color: var(--cobalt); color: var(--ink); }
+  form.ask { display: flex; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid var(--line); }
+  form.ask input {
+    flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+    background: var(--paper);
+  }
+  form.ask button, .ghost {
+    border: 0; border-radius: 12px; padding: 0 16px; background: var(--cobalt); color: #fff;
+    font-weight: 600; cursor: pointer;
+  }
+  form.ask .ghost { background: none; color: var(--muted); padding: 0 8px; font-weight: 500; }
+  form.ask button:disabled { opacity: .5; cursor: wait; }
+
+  /* Выдача */
+  .results { padding: 28px clamp(16px, 4vw, 48px) 48px; max-width: 980px; }
+
+  /* Билет: что понял агент — главный акцент страницы */
+  .ticket {
+    display: grid; grid-template-columns: 1fr auto; background: var(--paper);
+    border-radius: 18px; position: relative; overflow: hidden;
+  }
+  .ticket .main { padding: 20px 24px; }
+  .ticket .city { font: 700 clamp(28px, 4vw, 44px)/1.05 var(--display); margin: 0 0 12px; letter-spacing: -0.02em; }
+  .ticket .city.empty { color: var(--muted); font-weight: 500; }
+  .ticket .stub {
+    border-left: 2px dashed var(--line); padding: 20px 24px; min-width: 150px;
+    display: flex; flex-direction: column; justify-content: center; text-align: right;
+  }
+  .ticket .stub b { font: 700 32px/1 var(--display); }
+  .ticket .stub span { color: var(--muted); font-size: 13px; }
+  .ticket::before, .ticket::after {
+    content: ""; position: absolute; right: calc(150px + 48px - 11px); width: 22px; height: 22px;
+    border-radius: 50%; background: var(--bg);
+  }
+  .ticket::before { top: -11px; }
+  .ticket::after { bottom: -11px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--cobalt-soft);
+    border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 14px; font-weight: 500;
+  }
+  .chip.fixed { padding-right: 12px; }
+  .chip button {
+    border: 0; background: none; cursor: pointer; width: 22px; height: 22px; border-radius: 50%;
+    line-height: 1; color: var(--muted);
+  }
+  .chip button:hover { background: var(--paper); color: var(--ink); }
+  .hint { color: var(--muted); font-size: 14px; margin: 0; }
+  .relaxed {
+    margin: 16px 0 0; padding: 12px 16px; border-radius: 12px; background: color-mix(in srgb, var(--sun) 22%, var(--paper));
+    font-size: 14px;
+  }
+
+  .hotels { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .hotel {
+    background: var(--paper); border-radius: 16px; padding: 20px 24px;
+    display: grid; grid-template-columns: 2.2rem 1fr auto; gap: 4px 16px;
+  }
+  .hotel .rank { font: 700 22px/1.2 var(--display); color: var(--cobalt); }
+  .hotel h3 { margin: 0; font-size: 19px; font-weight: 600; }
+  .hotel .stars { color: var(--sun); letter-spacing: 1px; margin-left: 6px; font-size: 15px; }
+  .hotel .where { color: var(--muted); font-size: 14px; }
+  .hotel .price { text-align: right; font-variant-numeric: tabular-nums; }
+  .hotel .price b { display: block; font-size: 20px; font-weight: 600; }
+  .hotel .price span { color: var(--muted); font-size: 13px; }
+  .hotel .body { grid-column: 2 / 4; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; }
+  .hotel h4 { margin: 0 0 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
+  .hotel ul { margin: 0; padding: 0; list-style: none; font-size: 14px; }
+  .hotel .why li::before { content: "✓"; color: var(--ok); font-weight: 700; margin-right: 6px; }
+  .hotel blockquote { margin: 0; font-size: 14px; color: var(--ink); }
+  .hotel blockquote p { margin: 0 0 4px; }
+  .hotel .rating { font-weight: 600; }
+  .empty-state { margin-top: 32px; color: var(--muted); max-width: 52ch; }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    .talk { height: auto; position: static; border-right: 0; order: 2; }
+    .log { max-height: 50vh; }
+    .results { order: 1; padding: 16px; }
+    .ticket { grid-template-columns: 1fr; }
+    .ticket .stub { border-left: 0; border-top: 2px dashed var(--line); text-align: left; flex-direction: row; gap: 10px; align-items: baseline; }
+    .ticket::before, .ticket::after { display: none; }
+    .hotel { grid-template-columns: 1fr; padding: 16px; }
+    .hotel .rank { display: none; }
+    .hotel .price { text-align: left; }
+    .hotel .price b { display: inline; margin-right: 8px; }
+    .hotel .body { grid-column: 1; grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hotel.fresh { animation: rise .35s ease-out both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="talk" aria-label="Разговор с агентом">
+    <div class="brand">
+      <h1>Один запрос</h1>
+      <p>Напишите, куда и как хотите поехать. Агент подберёт отели и объяснит выбор.</p>
+    </div>
+    <div class="log" id="log" aria-live="polite"></div>
+    <div class="examples" id="examples"></div>
+    <form class="ask" id="ask">
+      <input id="text" autocomplete="off" placeholder="Например: Казань на выходные до 6000, с завтраком" aria-label="Ваш запрос">
+      <button type="submit" id="send">Найти</button>
+      <button type="button" class="ghost" id="reset" title="Начать заново">Заново</button>
+    </form>
+  </section>
+
+  <main class="results">
+    <div class="ticket" id="ticket">
+      <div class="main">
+        <p class="city empty" id="city">Куда едем?</p>
+        <div class="chips" id="chips"><p class="hint">Здесь появится всё, что агент понял из запроса. Лишнее можно убрать крестиком.</p></div>
+      </div>
+      <div class="stub"><b id="found">—</b><span id="found-label">вариантов</span></div>
+    </div>
+    <div id="relaxed"></div>
+    <ol class="hotels" id="hotels"></ol>
+  </main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let sessionId = null;
+let busy = false;
+
+function plural(n, one, few, many) {
+  if (n % 10 === 1 && n % 100 !== 11) return one;
+  if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return few;
+  return many;
+}
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") node.className = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  }
+  for (const c of children.flat()) if (c !== null && c !== undefined) node.append(c);
+  return node;
+}
+function addMessage(role, text, meta) {
+  const m = el("div", { class: `msg ${role}` }, text, meta ? el("span", { class: "meta" }, meta) : null);
+  $("log").append(m);
+  $("log").scrollTop = $("log").scrollHeight;
+}
+
+function render(data) {
+  sessionId = data.session_id;
+  const cityChip = data.chips.find((c) => c.field === "city");
+  $("city").textContent = cityChip ? cityChip.label : "Куда едем?";
+  $("city").classList.toggle("empty", !cityChip);
+
+  const chips = data.chips.filter((c) => c.field !== "city");
+  $("chips").replaceChildren(...(chips.length ? chips.map((c) =>
+    el("span", { class: "chip" + (c.removable ? "" : " fixed") }, c.label,
+      c.removable ? el("button", { type: "button", "aria-label": `Убрать: ${c.label}`, onclick: () => clearField(c.field) }, "×") : null)
+  ) : [el("p", { class: "hint" }, cityChip ? "Добавьте даты, бюджет или пожелания — выдача обновится." :
+      "Здесь появится всё, что агент понял из запроса. Лишнее можно убрать крестиком.")]));
+
+  if (data.hotels.length) {
+    $("found").textContent = data.total;
+    $("found-label").textContent = `${plural(data.total, "подходит", "подходят", "подходят")}, показаны лучшие ${data.hotels.length}`;
+  } else if (!cityChip) {
+    $("found").textContent = "—"; $("found-label").textContent = "вариантов";
+  }
+
+  $("relaxed").replaceChildren(...(data.relaxed.length ?
+    [el("p", { class: "relaxed" }, "Точных совпадений нет, поэтому агент " + data.relaxed.join(", ") + ".")] : []));
+
+  if (data.hotels.length || cityChip) {
+    $("hotels").replaceChildren(...data.hotels.map((h, i) => el("li", { class: "hotel fresh" },
+      el("div", { class: "rank" }, String(i + 1)),
+      el("div", {},
+        el("h3", {}, h.name, el("span", { class: "stars", "aria-label": `${h.stars} звезды` }, "★".repeat(h.stars))),
+        el("div", { class: "where" }, `${h.district}, ${h.distance_center_km} км от центра` +
+          (h.distance_sea_km != null ? `, ${h.distance_sea_km} км до моря` : ""))),
+      el("div", { class: "price" },
+        el("b", {}, h.price_total || h.price_per_night),
+        el("span", {}, h.price_total ? `за ${h.nights} ${plural(h.nights, "ночь", "ночи", "ночей")}, ${h.price_per_night}/ночь` : "за ночь")),
+      el("div", { class: "body" },
+        el("div", {}, el("h4", {}, "Почему подходит"), el("ul", { class: "why" }, h.reasons.map((r) => el("li", {}, r)))),
+        el("div", {}, el("h4", {}, "Из отзывов"),
+          el("blockquote", {}, h.highlights.map((q) => el("p", {}, `«${q}»`)),
+            el("p", { class: "rating" }, `${h.rating.toFixed(1)} из 10 · ${h.reviews_count} ${plural(h.reviews_count, "отзыв", "отзыва", "отзывов")}`))))
+    )));
+  }
+}
+
+async function post(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(`Сервер ответил ${r.status}`);
+  return r.json();
+}
+
+async function send(text) {
+  if (busy || !text.trim()) return;
+  busy = true; $("send").disabled = true;
+  $("examples").hidden = true;
+  addMessage("user", text);
+  try {
+    const data = await post("/api/chat", { text, session_id: sessionId });
+    addMessage("bot", data.summary || data.reply, `${data.nlu || "—"}, ${data.ms} мс`);
+    render(data);
+  } catch (e) {
+    addMessage("bot", "Не удалось связаться с сервером. Проверьте, что он запущен, и повторите запрос.");
+  } finally {
+    busy = false; $("send").disabled = false; $("text").focus();
+  }
+}
+
+async function clearField(field) {
+  if (!sessionId) return;
+  try { render(await post("/api/clear", { session_id: sessionId, field })); }
+  catch (e) { addMessage("bot", "Не удалось убрать параметр. Повторите попытку."); }
+}
+
+$("ask").addEventListener("submit", (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; send(t); });
+$("reset").addEventListener("click", async () => {
+  if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
+  sessionId = null;
+  $("log").replaceChildren(); $("hotels").replaceChildren(); $("relaxed").replaceChildren();
+  render({ session_id: null, chips: [], hotels: [], relaxed: [], total: 0 });
+  $("examples").hidden = false; $("text").focus();
+});
+
+fetch("/api/health").then((r) => r.json()).then((h) => {
+  $("examples").replaceChildren(...h.examples.map((q) => el("button", { type: "button", onclick: () => send(q) }, q)));
+  addMessage("bot", `Привет! Подберу отель в одном из городов: ${h.cities.join(", ")}. Напишите запрос своими словами или выберите пример ниже.`,
+    h.llm ? `модель: ${h.llm}` : "LLM не подключена — работаю на правилах");
+}).catch(() => addMessage("bot", "Сервер недоступен. Запустите его командой python -m apps.web."));
+</script>
+</body>
+</html>

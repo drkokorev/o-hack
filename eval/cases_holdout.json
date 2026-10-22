@@ -1,0 +1,26 @@
+{
+  "today": "2026-10-22",
+  "note": "Отложенный набор: формулировки написаны после правил и не используются для их подгонки. Сегодня — четверг 22 октября 2026.",
+  "cases": [
+    {"id": "h_vacation_sea", "turns": ["Ищу жильё на побережье в Сочи на майские"], "expect": {"city": "Сочи", "near_sea": true, "check_in": "2027-05-01", "check_out": "2027-05-04"}},
+    {"id": "h_conference", "turns": ["Лечу на конференцию в Москву 12 ноября, нужна одна ночь, рядом с центром"], "expect": {"city": "Москва", "check_in": "2026-11-12", "check_out": "2026-11-13", "near_center": true, "trip_purpose": "business"}},
+    {"id": "h_price_words", "turns": ["Питер, не больше пяти тысяч в сутки"], "expect": {"city": "Санкт-Петербург", "budget_max": 5000}},
+    {"id": "h_hostel_like", "turns": ["Самый дешёвый вариант в Калининграде"], "expect": {"city": "Калининград", "trip_purpose": "budget"}},
+    {"id": "h_family_two_kids", "turns": ["Мы с мужем и двумя детьми хотим в Сочи с 28 декабря по 3 января, нужен бассейн"], "expect": {"city": "Сочи", "check_in": "2026-12-28", "check_out": "2027-01-03", "guests": 4, "amenities": ["pool"], "trip_purpose": "family"}},
+    {"id": "h_stars_words", "turns": ["Казань, гостиница не ниже трёх звёзд"], "expect": {"city": "Казань", "stars_min": 3}},
+    {"id": "h_dog_parking", "turns": ["Едем на машине с собакой в Калининград, нужна стоянка"], "expect": {"city": "Калининград", "amenities": ["parking", "pets"]}},
+    {"id": "h_spb_eng", "turns": ["SPb, 2 nights from Nov 5, breakfast"], "expect": {"city": "Санкт-Петербург", "check_in": "2026-11-05", "check_out": "2026-11-07", "amenities": ["breakfast"]}},
+    {"id": "h_tomorrow_short", "turns": ["Москва на сутки с завтрашнего дня"], "expect": {"city": "Москва", "check_in": "2026-10-23", "check_out": "2026-10-24"}},
+    {"id": "h_budget_total", "turns": ["Казань на 4 ночи с 10 ноября, всего готов потратить 20 тысяч"], "expect": {"city": "Казань", "check_in": "2026-11-10", "check_out": "2026-11-14", "budget_max": 5000}},
+    {"id": "h_multi_refine", "turns": ["Сочи", "Хочу поближе к пляжу", "и со спа", "дешевле 9 тысяч"], "expect": {"city": "Сочи", "near_sea": true, "amenities": ["spa"], "budget_max": 9000}},
+    {"id": "h_multi_drop_stars", "turns": ["Москва, пять звёзд", "ладно, звёздность не важна"], "expect": {"city": "Москва"}},
+    {"id": "h_multi_dates_later", "turns": ["Калининград", "заезд 3 декабря, выезд 6 декабря"], "expect": {"city": "Калининград", "check_in": "2026-12-03", "check_out": "2026-12-06"}},
+    {"id": "h_honeymoon", "turns": ["Медовый месяц, хотим в Петербург в хороший отель"], "expect": {"city": "Санкт-Петербург", "trip_purpose": "romantic"}},
+    {"id": "h_gym_kazan", "turns": ["в Казани где есть спортзал и завтрак"], "expect": {"city": "Казань", "amenities": ["gym", "breakfast"]}},
+    {"id": "h_no_pool", "turns": ["Сочи, бассейн не нужен, главное море рядом"], "expect": {"city": "Сочи", "near_sea": true}},
+    {"id": "h_people_five", "turns": ["Москва, компания из 5 человек, с 1 по 3 декабря"], "expect": {"city": "Москва", "guests": 5, "check_in": "2026-12-01", "check_out": "2026-12-03"}},
+    {"id": "h_question_form", "turns": ["Можете подсказать отель в Калининграде недалеко от центра?"], "expect": {"city": "Калининград", "near_center": true}},
+    {"id": "h_district_hosta", "turns": ["Сочи, Хоста, на неделю с 15 ноября"], "expect": {"city": "Сочи", "district": "Хоста", "check_in": "2026-11-15", "check_out": "2026-11-22"}},
+    {"id": "h_rubles_word", "turns": ["Питер до 6 тысяч рублей с вайфаем"], "expect": {"city": "Санкт-Петербург", "budget_max": 6000, "amenities": ["wifi"]}}
+  ]
+}

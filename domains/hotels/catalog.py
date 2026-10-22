@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import random
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 AMENITIES = {
     "breakfast": "завтрак",
@@ -25,7 +26,7 @@ TRIP_PURPOSES = {
     "budget": "бюджетный вариант",
 }
 
-_CITY_ALIASES = {
+CITY_ALIASES = {
     "питер": "Санкт-Петербург",
     "спб": "Санкт-Петербург",
     "петербург": "Санкт-Петербург",
@@ -38,21 +39,24 @@ class Hotel(BaseModel):
     id: str
     name: str
     city: str
-    district: str
-    stars: int
+    district: str = ""
+    stars: int = 0
     price_per_night: int
-    rating: float
-    reviews_count: int
-    distance_center_km: float
+    rating: float = 0.0
+    reviews_count: int = 0
+    distance_center_km: float = 0.0
     distance_sea_km: float | None = None
-    amenities: list[str]
-    tags: list[str]
-    review_highlights: list[str]
+    amenities: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    review_highlights: list[str] = Field(default_factory=list)
+    lat: float | None = None
+    lon: float | None = None
+    extra: dict[str, Any] = Field(default_factory=dict, description="Исходные поля, которые не легли в схему")
 
 
 def normalize_city(raw: str) -> str:
     key = raw.strip().lower().replace("ё", "е")
-    return _CITY_ALIASES.get(key, raw.strip().title())
+    return CITY_ALIASES.get(key, raw.strip().title())
 
 
 # город → (базовая цена за ночь, [(район, км до центра, км до моря | None)])

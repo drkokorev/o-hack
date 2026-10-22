@@ -99,17 +99,23 @@ class Agent:
         return step
 
     def _understand(self, session: Session, text: str) -> tuple[BaseModel, str]:
+        """LLM — основной путь; правила домена дополняют то, что LLM пропустила, и заменяют её при сбое."""
         today = self.today()
+        rules = getattr(self.domain, "rule_extract", None)
+        by_rules = rules(session.state, text, today) if rules is not None else None
         if self.llm is not None:
             messages = self.domain.extraction_messages(
                 session.state, session.history[-self.history_messages :], text, today
             )
             update = extract(self.llm, self.domain.update_model, messages)
             if update.model_dump(exclude_none=True):
-                return update, "llm"
-        rules = getattr(self.domain, "rule_extract", None)
-        if rules is not None:
-            return rules(session.state, text, today), "rules"
+                if by_rules is None:
+                    return update, "llm"
+                gaps = {k: v for k, v in by_rules.model_dump(exclude_none=True).items()
+                        if getattr(update, k) is None}
+                return (update.model_copy(update=gaps), "llm+rules") if gaps else (update, "llm")
+        if by_rules is not None and by_rules.model_dump(exclude_none=True):
+            return by_rules, "rules"
         return self.domain.update_model(), "none"
 
     def _rephrase(self, step: Step) -> str:

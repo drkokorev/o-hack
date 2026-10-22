@@ -45,7 +45,10 @@ def _fits(h: Hotel, q: HotelState) -> bool:
 
 def _score(h: Hotel, q: HotelState, price_ref: int) -> Match:
     score = 0.5 * h.rating / 10
-    reasons = [f"рейтинг {h.rating:.1f} ({h.reviews_count} {plural(h.reviews_count, 'отзыв', 'отзыва', 'отзывов')})"]
+    reasons = []
+    if h.rating:
+        count = f" ({h.reviews_count} {plural(h.reviews_count, 'отзыв', 'отзыва', 'отзывов')})" if h.reviews_count else ""
+        reasons.append(f"рейтинг {h.rating:.1f}{count}")
 
     score += 0.2 * max(0.0, 1 - h.price_per_night / price_ref)
     if q.budget_max and h.price_per_night <= 0.8 * q.budget_max:
@@ -59,7 +62,7 @@ def _score(h: Hotel, q: HotelState, price_ref: int) -> Match:
         score += 0.2 * max(0.0, 1 - h.distance_sea_km / 2)
         if h.distance_sea_km <= 1:
             reasons.append(f"{h.distance_sea_km:g} км до моря")
-    if q.district and q.district.lower() in h.district.lower():
+    if q.district and h.district and q.district.lower() in h.district.lower():
         score += 0.2
         reasons.append(f"район {h.district}")
 

@@ -1,0 +1,470 @@
+{
+ "commit": "b15a6a0+изменения",
+ "date": "2026-10-22 09:32",
+ "today": "2026-10-22",
+ "cases": 20,
+ "modes": {
+  "rules": {
+   "model": null,
+   "summary": {
+    "cases": 20,
+    "cases_ok": 7,
+    "field_recall": 0.689,
+    "field_precision": 0.913,
+    "first_message_results": 0.941,
+    "latency_ms_p50": 0,
+    "latency_ms_p95": 0
+   },
+   "results": [
+    {
+     "id": "h_vacation_sea",
+     "turns": [
+      "Ищу жильё на побережье в Сочи на майские"
+     ],
+     "ok": false,
+     "correct": 1,
+     "expected": 4,
+     "wrong": {
+      "near_sea": {
+       "expected": true,
+       "got": null
+      },
+      "check_in": {
+       "expected": "2027-05-01",
+       "got": null
+      },
+      "check_out": {
+       "expected": "2027-05-04",
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      3
+     ]
+    },
+    {
+     "id": "h_conference",
+     "turns": [
+      "Лечу на конференцию в Москву 12 ноября, нужна одна ночь, рядом с центром"
+     ],
+     "ok": false,
+     "correct": 5,
+     "expected": 5,
+     "wrong": {},
+     "spurious": {
+      "guests": 1
+     },
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_price_words",
+     "turns": [
+      "Питер, не больше пяти тысяч в сутки"
+     ],
+     "ok": false,
+     "correct": 1,
+     "expected": 2,
+     "wrong": {
+      "budget_max": {
+       "expected": 5000,
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_hostel_like",
+     "turns": [
+      "Самый дешёвый вариант в Калининграде"
+     ],
+     "ok": true,
+     "correct": 2,
+     "expected": 2,
+     "wrong": {},
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_family_two_kids",
+     "turns": [
+      "Мы с мужем и двумя детьми хотим в Сочи с 28 декабря по 3 января, нужен бассейн"
+     ],
+     "ok": false,
+     "correct": 4,
+     "expected": 6,
+     "wrong": {
+      "guests": {
+       "expected": 4,
+       "got": 2
+      },
+      "trip_purpose": {
+       "expected": "family",
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_stars_words",
+     "turns": [
+      "Казань, гостиница не ниже трёх звёзд"
+     ],
+     "ok": false,
+     "correct": 1,
+     "expected": 2,
+     "wrong": {
+      "stars_min": {
+       "expected": 3,
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_dog_parking",
+     "turns": [
+      "Едем на машине с собакой в Калининград, нужна стоянка"
+     ],
+     "ok": true,
+     "correct": 2,
+     "expected": 2,
+     "wrong": {},
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_spb_eng",
+     "turns": [
+      "SPb, 2 nights from Nov 5, breakfast"
+     ],
+     "ok": false,
+     "correct": 0,
+     "expected": 4,
+     "wrong": {
+      "city": {
+       "expected": "Санкт-Петербург",
+       "got": null
+      },
+      "check_in": {
+       "expected": "2026-11-05",
+       "got": null
+      },
+      "check_out": {
+       "expected": "2026-11-07",
+       "got": null
+      },
+      "amenities": {
+       "expected": [
+        "breakfast"
+       ],
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": false,
+     "single_turn": true,
+     "nlu": "none",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_tomorrow_short",
+     "turns": [
+      "Москва на сутки с завтрашнего дня"
+     ],
+     "ok": false,
+     "correct": 1,
+     "expected": 3,
+     "wrong": {
+      "check_in": {
+       "expected": "2026-10-23",
+       "got": null
+      },
+      "check_out": {
+       "expected": "2026-10-24",
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_budget_total",
+     "turns": [
+      "Казань на 4 ночи с 10 ноября, всего готов потратить 20 тысяч"
+     ],
+     "ok": false,
+     "correct": 3,
+     "expected": 4,
+     "wrong": {
+      "budget_max": {
+       "expected": 5000,
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_multi_refine",
+     "turns": [
+      "Сочи",
+      "Хочу поближе к пляжу",
+      "и со спа",
+      "дешевле 9 тысяч"
+     ],
+     "ok": false,
+     "correct": 3,
+     "expected": 4,
+     "wrong": {
+      "budget_max": {
+       "expected": 9000,
+       "got": 9700
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": false,
+     "nlu": "rules",
+     "ms": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "h_multi_drop_stars",
+     "turns": [
+      "Москва, пять звёзд",
+      "ладно, звёздность не важна"
+     ],
+     "ok": true,
+     "correct": 1,
+     "expected": 1,
+     "wrong": {},
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": false,
+     "nlu": "rules",
+     "ms": [
+      0,
+      0
+     ]
+    },
+    {
+     "id": "h_multi_dates_later",
+     "turns": [
+      "Калининград",
+      "заезд 3 декабря, выезд 6 декабря"
+     ],
+     "ok": false,
+     "correct": 2,
+     "expected": 3,
+     "wrong": {
+      "check_out": {
+       "expected": "2026-12-06",
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": false,
+     "nlu": "rules",
+     "ms": [
+      0,
+      0
+     ]
+    },
+    {
+     "id": "h_honeymoon",
+     "turns": [
+      "Медовый месяц, хотим в Петербург в хороший отель"
+     ],
+     "ok": true,
+     "correct": 2,
+     "expected": 2,
+     "wrong": {},
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_gym_kazan",
+     "turns": [
+      "в Казани где есть спортзал и завтрак"
+     ],
+     "ok": true,
+     "correct": 2,
+     "expected": 2,
+     "wrong": {},
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_no_pool",
+     "turns": [
+      "Сочи, бассейн не нужен, главное море рядом"
+     ],
+     "ok": false,
+     "correct": 1,
+     "expected": 2,
+     "wrong": {
+      "near_sea": {
+       "expected": true,
+       "got": null
+      }
+     },
+     "spurious": {
+      "amenities": [
+       "pool"
+      ]
+     },
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_people_five",
+     "turns": [
+      "Москва, компания из 5 человек, с 1 по 3 декабря"
+     ],
+     "ok": true,
+     "correct": 4,
+     "expected": 4,
+     "wrong": {},
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_question_form",
+     "turns": [
+      "Можете подсказать отель в Калининграде недалеко от центра?"
+     ],
+     "ok": true,
+     "correct": 2,
+     "expected": 2,
+     "wrong": {},
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_district_hosta",
+     "turns": [
+      "Сочи, Хоста, на неделю с 15 ноября"
+     ],
+     "ok": false,
+     "correct": 3,
+     "expected": 4,
+     "wrong": {
+      "district": {
+       "expected": "Хоста",
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    },
+    {
+     "id": "h_rubles_word",
+     "turns": [
+      "Питер до 6 тысяч рублей с вайфаем"
+     ],
+     "ok": false,
+     "correct": 2,
+     "expected": 3,
+     "wrong": {
+      "amenities": {
+       "expected": [
+        "wifi"
+       ],
+       "got": null
+      }
+     },
+     "spurious": {},
+     "first_message_results": true,
+     "single_turn": true,
+     "nlu": "rules",
+     "ms": [
+      0
+     ]
+    }
+   ]
+  }
+ }
+}
