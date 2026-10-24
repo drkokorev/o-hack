@@ -138,3 +138,34 @@ def test_provider_rejecting_response_format_falls_back(monkeypatch):
         assert seen == [True, False, False]  # после отказа больше не шлём response_format
     finally:
         get_settings.cache_clear()
+
+
+def test_gigachat_token_is_obtained_and_refreshed(monkeypatch):
+    from core.llm import GigaChatLLM
+
+    calls = {"oauth": 0, "chat": []}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/oauth"):
+            calls["oauth"] += 1
+            assert request.headers["Authorization"] == "Basic secret-key" and request.headers.get("RqUID")
+            return httpx.Response(200, json={"access_token": f"tok{calls['oauth']}", "expires_at": 0})
+        calls["chat"].append(request.headers["Authorization"])
+        return httpx.Response(200, json={"id": "x", "object": "chat.completion", "created": 0, "model": "GigaChat-2",
+                                         "choices": [{"index": 0, "finish_reason": "stop", "message": {
+                                             "role": "assistant", "content": '{"destination": "Казань"}'}}]})
+
+    monkeypatch.setenv("LLM_PROVIDER", "gigachat")
+    monkeypatch.setenv("GIGACHAT_AUTH_KEY", "secret-key")
+    get_settings.cache_clear()
+    try:
+        llm = GigaChatLLM(get_settings())
+        transport = httpx.MockTransport(handler)
+        llm._http._transport = transport
+        llm._client._client._transport = transport
+        assert extract(llm, TripUpdate, [{"role": "user", "content": "Казань"}]).destination == "Казань"
+        llm._expires = 0  # токен истёк — будет получен новый
+        extract(llm, TripUpdate, [{"role": "user", "content": "Казань"}])
+        assert calls["oauth"] == 2 and calls["chat"] == ["Bearer tok1", "Bearer tok2"]
+    finally:
+        get_settings.cache_clear()
