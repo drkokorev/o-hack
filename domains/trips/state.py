@@ -32,6 +32,7 @@ class TripParams(BaseModel):
     hotel_wishes: list[str] | None = Field(None, description="Коды удобств: pool, kids_club, spa, gym, parking, "
                                            "pets, beach_line, kitchen")
     abroad: bool | None = Field(None, description="true — за границу, false — только по России")
+    economy: bool | None = Field(None, description="true, если важна низкая цена («недорого», «бюджетно»)")
 
 
 PARAM_FIELDS = tuple(TripParams.model_fields)
@@ -68,6 +69,8 @@ class TripUpdate(TripParams):
     confirm: bool | None = Field(None, description="true — согласие оформить/подтвердить, false — отказ")
     shift_days: int | None = Field(None, description="Сдвиг дат: +2 «на два дня позже», -1 «на день раньше»")
     show_hotels: bool | None = Field(None, description="true, если просит другие отели")
+    wants_ideas: bool | None = Field(None, description="true, если хочет поехать, но не знает куда («хочу отдохнуть», "
+                                     "«куда поехать?», «посоветуй»)")
     hesitate: bool | None = Field(None, description="true, если сомневается и хочет подумать («давай подумаем», «подожди»)")
     question: str | None = Field(None, description="О чём спрашивает: visa | cancellation | baggage | weather | "
                                  "transfer | pets — если задаёт вопрос, а не меняет условия")

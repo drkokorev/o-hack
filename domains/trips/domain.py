@@ -28,7 +28,8 @@ from .textparse import norm
 
 MONTHS_PREP = ["январе", "феврале", "марте", "апреле", "мае", "июне", "июле", "августе", "сентябре",
                "октябре", "ноябре", "декабре"]
-ACTIONS = ("pick", "pick_name", "confirm", "shift_days", "show_hotels", "after_sale", "cheaper", "hesitate", "question")
+ACTIONS = ("pick", "pick_name", "confirm", "shift_days", "show_hotels", "after_sale", "cheaper", "hesitate", "question",
+           "wants_ideas")
 DEFAULT_ORIGIN = "Москва"
 
 EXTRACTION_PROMPT = """Ты — модуль понимания в агенте путешествий. Сегодня {today} ({weekday}).
@@ -193,7 +194,7 @@ class TripsDomain:
                     state.dest_id = state.suggested[chosen]
                     state.destination = BY_ID[state.dest_id].name
             if not state.dest_id:
-                if not self._knows_anything(state):
+                if not self._knows_anything(state) and not act.get("wants_ideas"):
                     state.stage = "start"
                     return Step(GREETING, payload={"kind": "greeting"})
                 return self._inspire(state, today)
@@ -332,7 +333,7 @@ class TripsDomain:
         items = suggest(ORIGIN_BY_NAME[origin_name], start, nights, adults, children,
                         trip_types=list(state.trip_types or []), budget=state.budget_total,
                         max_hours=state.max_travel_hours, abroad=state.abroad, pets=bool(state.pets),
-                        mode=state.transport, exclude=exclude or None)
+                        mode=state.transport, exclude=exclude or None, economy=bool(state.economy))
         if not items:
             items = suggest(ORIGIN_BY_NAME[origin_name], start, nights, adults, children,
                             trip_types=list(state.trip_types or []), budget=None, max_hours=None,

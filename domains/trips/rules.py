@@ -123,6 +123,22 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     m = re.search(rf"\bв\s+{MONTH_RE}|на\s+{MONTH_RE}\b(?!\s*\d)|{MONTH_RE}\s*$", t)
     if m and not d_in:
         data["month"] = month_of(next(g for g in m.groups() if g))
+    if "month" not in data and not d_in:
+        season = None
+        if re.search(r"\bзим(ой|у|ние|них)\b|на зиму", t):
+            season = next(m for m in (today.month + i for i in range(1, 13)) if (m - 1) % 12 + 1 in (12, 1, 2))
+        elif re.search(r"\bлет(ом|о)\b|летн", t):
+            season = 7
+        elif re.search(r"\bвесн(ой|а)\b", t):
+            season = 4
+        elif re.search(r"\bосен(ью|ь)\b", t):
+            season = 9
+        if season:
+            data["month"] = (season - 1) % 12 + 1
+    if re.search(r"недорог|бюджетн|подешевле|дешев|эконом|не дорого|подешёвк", t) and not state.last_plan:
+        data["economy"] = True
+    if re.search(r"отдох|поехать|съездить|отпуск|путешеств|куда|поездк|\bтур\b|развеяться|выбраться|посоветуй|идеи", t):
+        data["wants_ideas"] = True
     if re.search(r"майски", t):
         data["month"] = 5
         data.setdefault("date_from", date(today.year + (today.month > 5), 5, 1))
@@ -181,7 +197,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             data["budget_night"] = budget
         else:
             data["budget_total"] = budget
-    if re.search(r"бюджет\w* (меньше|поменьше|ниже)|дешевле|подешевле|дороговато|дорого", t):
+    if re.search(r"бюджет\w* (меньше|поменьше|ниже)|дешевле|подешевле|дороговато|дорого", t) and state.last_plan:
         data["cheaper"] = True
 
     # Дорога

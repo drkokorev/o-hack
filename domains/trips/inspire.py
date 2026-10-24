@@ -49,7 +49,7 @@ def _hours(minutes: int) -> str:
 
 def suggest(origin: Origin, start: date, nights: int, adults: int, children: int, *, trip_types: list[str],
             budget: int | None, max_hours: float | None, abroad: bool | None, pets: bool, mode: str | None,
-            exclude: set[str] | None = None, limit: int = 3) -> list[Suggestion]:
+            exclude: set[str] | None = None, limit: int = 3, economy: bool = False) -> list[Suggestion]:
     wants = set(trip_types)
     beach = bool(wants & {"sea", "beach"})
     warm = "warm" in wants or beach
@@ -67,6 +67,9 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
         weather = climate(dest.id, start.month)
         score, reasons, risks = 0.0, [], []
 
+        core = wants - {"warm", "sea", "beach", "food"}
+        if core and not core & set(dest.tags):
+            continue  # просили горы, природу, город — направление без этого не предлагаем
         matched = [TAG_NAMES[t] for t in wants & set(dest.tags) if t not in ("sea", "beach", "warm")]
         score += 0.6 * len(matched)
         if beach:
@@ -113,7 +116,11 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             else:
                 risks.append(f"чуть дороже бюджета, на ~{total - budget:,} ₽".replace(",", " "))
         else:
-            score -= total / 400_000
+            score -= total / (120_000 if economy else 400_000)
+        if economy and not budget:
+            reasons.append(f"≈ {total // max(adults + children, 1) // 1000} тыс. ₽ на человека")
+        if start.month in dest.peak_months:
+            score += 0.6  # сейчас там сезон — поэтому туда и едут
         if dest.abroad:
             if pets:
                 score -= 2
@@ -124,4 +131,21 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             risks.append("высокий сезон — цены выше")
         out.append(Suggestion(dest, round(score, 3), total, minutes, leg_mode, stops, weather, reasons, risks))
     out.sort(key=lambda s: -s.score)
+    if not wants:  # пожеланий нет — показываем разные типы отдыха, а не три похожих города
+        diverse, kinds = [], set()
+        for s in out:
+            if s.weather and s.weather.warm:
+                kind = "warm"
+            elif "ski" in s.dest.tags and s.weather and s.weather.t_day <= 2:
+                kind = "ski"
+            else:
+                kind = "nature" if "nature" in s.dest.tags else "city"
+            if kind not in kinds:
+                diverse.append(s)
+                kinds.add(kind)
+        out = diverse + [s for s in out if s not in diverse]
+    if not out and wants:  # ничего не подошло строго — ослабляем тип отдыха, а не молчим
+        return suggest(origin, start, nights, adults, children, trip_types=[t for t in trip_types if t in ("sea", "warm")],
+                       budget=budget, max_hours=max_hours, abroad=abroad, pets=pets, mode=mode, exclude=exclude,
+                       limit=limit, economy=economy) if set(trip_types) - {"sea", "warm"} else []
     return out[:limit]

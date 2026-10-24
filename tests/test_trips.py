@@ -59,7 +59,7 @@ def test_inspiration_for_warm_sea_in_november_with_a_child():
 
 @pytest.mark.parametrize("text, expected", [
     ("Хочу к тёплому морю в ноябре, недорого, с ребёнком, без долгих перелётов",
-     {"trip_types": ["sea", "warm"], "month": 11, "children": 1, "max_travel_hours": 5.0, "cheaper": True}),
+     {"trip_types": ["sea", "warm"], "month": 11, "children": 1, "max_travel_hours": 5.0, "economy": True}),
     ("Казань из Питера на выходные с собакой, поездом",
      {"destination": "kazan", "origin": "Санкт-Петербург", "pets": True, "transport": "train",
       "date_from": date(2026, 10, 30), "date_to": date(2026, 11, 1)}),
@@ -155,3 +155,33 @@ def test_web_api_and_health():
     r = client.post("/api/chat", json={"text": "беру 1 вариант", "session_id": r["session_id"]}).json()
     assert r["stage"] == "cart"
     assert "Один запрос" in client.get("/").text or "О!дин запрос" in client.get("/").text
+
+
+def test_requested_trip_type_is_required():
+    s, step = talk(agent(), "Хочу в горы в июле вдвоём до 200 тысяч, по России")
+    assert all(BY_ID[i["id"]].tags and "mountains" in BY_ID[i["id"]].tags for i in step.payload["items"])
+
+
+def test_seasons_economy_and_ideas_without_details():
+    assert rule_extract(TripState(), "хочу на Байкал зимой", SAT).month == 12
+    assert rule_extract(TripState(), "куда-нибудь летом", SAT).month == 7
+    assert rule_extract(TripState(), "что-нибудь недорогое", SAT).economy is True
+    s, step = talk(agent(), "хочу отдохнуть")
+    assert s.state.stage == "destination" and len(step.payload["items"]) == 3
+
+
+def test_no_preferences_gives_different_kinds_of_trips():
+    s, step = talk(agent(), "посоветуй, куда съездить в декабре")
+    weathers = [i["weather"] for i in step.payload["items"]]
+    assert any("море" in (w or "") for w in weathers)  # среди идей есть тёплое море, а не три похожих города
+
+
+def test_questions_are_answered_without_changing_stage():
+    a = agent()
+    s, _ = talk(a, "Анталья с 5 по 12 декабря вдвоём", "беру 1 вариант")
+    step = a.handle(s, "а виза нужна?")
+    assert "виза" in step.reply.lower() and s.state.stage == "cart"
+    step = a.handle(s, "а какая там погода?")
+    assert "°" in step.reply and s.state.stage == "cart"
+    step = a.handle(s, "давай подумаем")
+    assert s.state.stage == "cart" and "не тороплю" in step.reply
