@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>О!дин запрос — агент поездки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #e9efee; --paper: #ffffff; --ink: #10242b; --muted: #5b6f75; --line: #cfdad8;
+    --cobalt: #2346d8; --cobalt-soft: #e3e8fd; --sun: #f2b705; --ok: #1f7a4d; --warn: #a86b00; --risk: #b3261e;
+    --display: "Unbounded", "Golos Text", system-ui, sans-serif;
+    --body: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0e1b20; --paper: #152830; --ink: #e6efee; --muted: #93a7ab; --line: #284049;
+      --cobalt: #7d95ff; --cobalt-soft: #1d2d5c; --sun: #f5c739; --ok: #5fcf95; --warn: #f0b44c; --risk: #ff8a80; }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); min-height: 100vh; }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; }
+  .app { display: grid; grid-template-columns: minmax(320px, 400px) 1fr; min-height: 100vh; }
+  .app > * { min-width: 0; }
+
+  .talk { background: var(--paper); border-right: 1px solid var(--line); display: flex; flex-direction: column;
+    height: 100vh; position: sticky; top: 0; }
+  .brand { padding: 20px 24px 10px; }
+  .brand h1 { font: 700 22px/1.15 var(--display); margin: 0; }
+  .brand p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+  .log { flex: 1; overflow-y: auto; padding: 8px 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 94%; padding: 10px 14px; border-radius: 14px; white-space: pre-wrap; font-size: 15px; }
+  .msg.user { align-self: flex-end; background: var(--cobalt); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: var(--bg); border-bottom-left-radius: 4px; }
+  .msg .meta { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+  .examples { display: flex; flex-direction: column; gap: 6px; padding: 0 20px 12px; }
+  .examples button, .quick button { text-align: left; background: none; border: 1px dashed var(--line);
+    border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 14px; color: var(--muted); }
+  .examples button:hover, .quick button:hover { border-color: var(--cobalt); color: var(--ink); }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 8px; }
+  .quick button { padding: 5px 10px; font-size: 13px; }
+  form.ask { display: flex; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid var(--line); }
+  form.ask input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--paper); }
+  .btn { border: 0; border-radius: 12px; padding: 10px 16px; background: var(--cobalt); color: #fff; font-weight: 600; cursor: pointer; }
+  .btn.ghost { background: none; color: var(--muted); font-weight: 500; padding: 10px 8px; }
+  .btn.line { background: none; color: var(--cobalt); border: 1px solid var(--cobalt); }
+  .btn:disabled { opacity: .5; cursor: wait; }
+
+  .board { padding: 24px clamp(16px, 3vw, 40px) 48px; max-width: 1100px; }
+  .stages { display: flex; gap: 0; margin: 0 0 16px; padding: 0; list-style: none; flex-wrap: wrap; }
+  .stages li { flex: 1; min-width: 90px; font-size: 13px; color: var(--muted); padding: 6px 0 0; border-top: 3px solid var(--line); margin-right: 4px; }
+  .stages li.done { border-color: var(--cobalt); color: var(--ink); }
+  .stages li.now { border-color: var(--sun); color: var(--ink); font-weight: 600; }
+
+  .ticket { background: var(--paper); border-radius: 18px; padding: 18px 22px; display: grid; gap: 10px; }
+  .ticket .title { font: 700 clamp(24px, 3.4vw, 38px)/1.1 var(--display); margin: 0; letter-spacing: -0.01em; }
+  .ticket .title.empty { color: var(--muted); font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--cobalt-soft); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 500; }
+  .chip.assumed { background: none; border: 1px dashed var(--muted); color: var(--muted); }
+  .hint { color: var(--muted); font-size: 14px; margin: 0; }
+  .notice { margin: 14px 0 0; padding: 12px 16px; border-radius: 12px; font-size: 14px;
+    background: color-mix(in srgb, var(--sun) 22%, var(--paper)); }
+
+  .grid { display: grid; gap: 14px; margin-top: 18px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+  .card { background: var(--paper); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .card.best { outline: 2px solid var(--cobalt); }
+  .card h3 { margin: 0; font-size: 19px; font-weight: 600; }
+  .card .sub { color: var(--muted); font-size: 14px; margin-top: -6px; }
+  .price { font: 700 24px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+  .price small { font: 500 13px var(--body); color: var(--muted); display: block; margin-top: 2px; }
+  .card h4 { margin: 4px 0 2px; font-size: 13px; color: var(--muted); font-weight: 500; }
+  .card ul, .cart ul { margin: 0; padding: 0; list-style: none; font-size: 14px; display: grid; gap: 3px; }
+  .why li::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+  .trade li::before { content: "– "; color: var(--muted); font-weight: 700; }
+  .checks li.ok::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+  .checks li.warn::before { content: "! "; color: var(--warn); font-weight: 700; }
+  .checks li.risk::before { content: "⚠ "; color: var(--risk); font-weight: 700; }
+  .checks li.risk { color: var(--risk); }
+  .leg { font-size: 14px; display: grid; grid-template-columns: 4.5rem 1fr; gap: 2px 8px; }
+  .leg b { font-weight: 600; }
+  .card .actions { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag { display: inline-block; font-size: 12px; background: var(--bg); border-radius: 6px; padding: 1px 8px; margin: 0 4px 4px 0; }
+  .cart { background: var(--paper); border-radius: 16px; padding: 20px 22px; margin-top: 18px; display: grid; gap: 12px; }
+  .cart table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .cart td { padding: 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .cart td:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: 12px; }
+  .cart tr.total td { font-weight: 600; font-size: 18px; border-bottom: 0; }
+  .order { font: 700 28px var(--display); }
+  .source { font-size: 12px; color: var(--muted); margin-top: 18px; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .talk { height: auto; position: static; border-right: 0; order: 2; }
+    .log { max-height: 55vh; }
+    .board { order: 1; padding: 16px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .fresh { animation: rise .3s ease-out both; }
+    @keyframes rise { from { transform: translateY(6px); } }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="talk" aria-label="Разговор с агентом">
+    <div class="brand">
+      <h1>О!дин запрос</h1>
+      <p>Опишите поездку своими словами — агент подберёт направление, соберёт перелёт, отель и трансфер, проверит состыковки и оформит заказ.</p>
+    </div>
+    <div class="log" id="log" aria-live="polite"></div>
+    <div class="examples" id="examples"></div>
+    <div class="quick" id="quick" hidden>
+      <button type="button" data-say="а если на два дня позже?">На 2 дня позже</button>
+      <button type="button" data-say="подешевле">Дешевле</button>
+      <button type="button" data-say="покажи другие отели">Другие отели</button>
+      <button type="button" data-say="только без пересадок">Без пересадок</button>
+      <button type="button" data-say="другое направление">Другое направление</button>
+    </div>
+    <form class="ask" id="ask">
+      <input id="text" autocomplete="off" placeholder="Например: в горы в июле вдвоём до 150 000" aria-label="Ваш запрос">
+      <button type="submit" class="btn" id="send">Отправить</button>
+      <button type="button" class="btn ghost" id="reset">Заново</button>
+    </form>
+  </section>
+
+  <main class="board">
+    <ol class="stages" id="stages"></ol>
+    <div class="ticket">
+      <p class="title empty" id="title">Куда едем?</p>
+      <div class="chips" id="chips"><p class="hint">Здесь появится всё, что агент понял из разговора. Пунктиром — то, что он предположил сам.</p></div>
+    </div>
+    <div id="view"></div>
+    <p class="source">Погода — реальные средние Open-Meteo за 2022–2025 годы. Отели, рейсы, поезда и цены — модельные данные прототипа, перевозчики вымышленные. Оплата имитируется.</p>
+  </main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let sessionId = null, busy = false, stages = [];
+
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") node.className = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  }
+  for (const c of children.flat()) if (c !== null && c !== undefined && c !== false) node.append(c);
+  return node;
+}
+const list = (cls, items) => el("ul", { class: cls }, items.map((t) => typeof t === "string" ? el("li", {}, t) : el("li", { class: t.level }, t.text)));
+const say = (text) => el("button", { type: "button", class: "btn line", onclick: () => send(text) }, text);
+
+function addMessage(role, text, meta) {
+  $("log").append(el("div", { class: `msg ${role}` }, text, meta ? el("span", { class: "meta" }, meta) : null));
+  $("log").scrollTop = $("log").scrollHeight;
+}
+function shortReply(text, kind) {
+  if (!["destinations", "packages", "cart", "hotels"].includes(kind)) return text;
+  const blocks = text.split("\n\n");
+  return [blocks[0].split("\n")[0], blocks[blocks.length - 1]].join("\n");
+}
+
+function renderStages(stage) {
+  const idx = stages.findIndex((s) => s.key === stage);
+  $("stages").replaceChildren(...stages.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : "" }, s.title)));
+}
+function renderTicket(data) {
+  const p = data.payload || {};
+  const title = p.trip ? `${p.trip.dest} · ${p.trip.dates}` : (p.order ? p.order.dest : null);
+  $("title").textContent = title || (data.understood.length ? "Подбираю поездку" : "Куда едем?");
+  $("title").classList.toggle("empty", !title);
+  const chips = data.understood.map((c) => el("span", { class: "chip" }, c))
+    .concat((data.assumptions || []).map((a) => el("span", { class: "chip assumed", title: "Агент предположил — поправьте, если не так" }, a)));
+  $("chips").replaceChildren(...(chips.length ? chips : [el("p", { class: "hint" }, "Здесь появится всё, что агент понял из разговора.")]));
+}
+
+function legRow(label, leg) {
+  const kind = leg.mode === "train" ? "🚆" : "✈";
+  const extra = leg.stops ? `, пересадка ${leg.via} ${leg.layover}` : (leg.mode === "plane" ? ", прямой" : "");
+  return [el("b", {}, label), el("span", {}, `${kind} ${leg.depart} → ${leg.arrive} · ${leg.duration}${extra}${leg.mode === "plane" && !leg.baggage ? ", без багажа" : ""}`)];
+}
+
+const views = {
+  destinations(p) {
+    return [el("div", { class: "grid" }, p.items.map((d, i) => el("article", { class: "card fresh" + (i === 0 ? " best" : "") },
+      el("h3", {}, `${i + 1}. ${d.name}`), el("div", { class: "sub" }, `${d.country}${d.visa ? " · виза: " + d.visa : ""}`),
+      el("div", { class: "price" }, `от ${d.total}`, el("small", {}, "за всю поездку на всех")),
+      d.weather && el("div", {}, el("h4", {}, "Погода в этом месяце"), el("div", {}, d.weather)),
+      el("div", {}, el("h4", {}, "Почему"), list("why", d.reasons)),
+      d.risks.length ? el("div", {}, el("h4", {}, "Учтите"), list("checks", d.risks.map((t) => ({ level: "warn", text: t })))) : null,
+      el("div", {}, d.highlights.map((h) => el("span", { class: "tag" }, h))),
+      el("div", { class: "actions" }, say(`давай ${d.name}`)))))];
+  },
+  packages(p) {
+    const head = [];
+    if (p.diff && p.diff.length) head.push(el("p", { class: "notice" }, "Пересобрал план: " + p.diff.join("; ") + "."));
+    if (p.relaxed && p.relaxed.length) head.push(el("p", { class: "notice" }, "Чтобы что-то нашлось, я " + p.relaxed.join(", ") + "."));
+    return head.concat([el("div", { class: "grid" }, p.items.map((k, i) => el("article", { class: "card fresh" + (i === 0 ? " best" : "") },
+      el("h3", {}, `${i + 1}. ${k.title}`),
+      el("div", { class: "price" }, k.total, el("small", {}, `перелёт/поезд, отель, трансферы · ${p.trip.people}`)),
+      el("div", { class: "leg" }, legRow("Туда", k.out), legRow("Обратно", k.back)),
+      el("div", {}, el("h4", {}, `${k.hotel.name} · ${k.hotel.stars}★ · ${k.hotel.rating}`), el("div", { class: "sub" }, `${k.hotel.meal}, ${k.hotel.area}, ${k.hotel.price} за проживание`)),
+      el("div", {}, el("h4", {}, "Почему подходит"), list("why", k.why.slice(1))),
+      k.tradeoffs.length ? el("div", {}, el("h4", {}, "Чем жертвуем"), list("trade", k.tradeoffs)) : null,
+      el("div", {}, el("h4", {}, "Проверил состыковки"), list("checks", k.checks)),
+      el("div", { class: "actions" }, say(`беру ${i + 1} вариант`)))))]);
+  },
+  hotels(p) {
+    return [el("div", { class: "grid" }, p.items.map((h, i) => el("article", { class: "card fresh" },
+      el("h3", {}, `${i + 1}. ${h.name}`), el("div", { class: "sub" }, `${h.stars}★ · рейтинг ${h.rating} (${h.reviews}) · ${h.area}`),
+      el("div", { class: "price" }, h.price, el("small", {}, `${h.per_night} за ночь · ${h.meal}`)),
+      el("div", {}, h.amenities.map((a) => el("span", { class: "tag" }, a))),
+      el("div", {}, el("h4", {}, "Хвалят"), list("why", h.praise)),
+      el("div", {}, el("h4", {}, "Жалуются"), list("trade", h.complaints)),
+      el("div", { class: "actions" }, say(`${i + 1}`)))))];
+  },
+  cart(p) {
+    const k = p.package;
+    const rows = [
+      [`Туда: ${k.out.carrier} ${k.out.number}, ${k.out.depart} → ${k.out.arrive}`, k.out.price],
+      [`Отель: ${k.hotel.name} ${k.hotel.stars}★, ${k.hotel.meal}, заезд с ${k.hotel.check_in}`, k.hotel.price],
+      [`Трансферы туда и обратно: ${k.transfer.note}, ${k.transfer.minutes}`, k.transfer.price],
+      [`Обратно: ${k.back.carrier} ${k.back.number}, ${k.back.depart} → ${k.back.arrive}`, k.back.price],
+    ];
+    return [
+      p.diff && p.diff.length ? el("p", { class: "notice" }, "Пересобрал корзину: " + p.diff.join("; ") + ".") : null,
+      el("section", { class: "cart fresh" },
+        el("h3", {}, `Корзина — «${k.title}»`),
+        el("table", {}, rows.map(([a, b]) => el("tr", {}, el("td", {}, a), el("td", {}, b))),
+          el("tr", { class: "total" }, el("td", {}, `Итого · ${p.trip.people}`), el("td", {}, p.total))),
+        el("div", {}, el("h4", {}, "Проверил состыковки"), list("checks", k.checks)),
+        el("div", { class: "actions" }, el("button", { type: "button", class: "btn", onclick: () => send("да, оформляй") }, "Оформить и оплатить"),
+          say("нет, вернуться к вариантам")))];
+  },
+  order(p) {
+    const o = p.order;
+    return [el("section", { class: "cart fresh" },
+      el("div", { class: "order" }, `Заказ ${o.number}`),
+      el("div", {}, `${o.dest}: ${o.hotel}`), el("div", { class: "sub" }, `Туда: ${o.out}`), el("div", { class: "sub" }, `Обратно: ${o.back}`),
+      el("div", { class: "price" }, new Intl.NumberFormat("ru-RU").format(o.total) + " ₽", el("small", {}, "оплачено (имитация)")),
+      p.requests && p.requests.length ? el("div", {}, el("h4", {}, "Запросы в отель"), list("why", p.requests)) : null,
+      el("div", { class: "actions" }, say("запроси ранний заезд"), say("поздний выезд"), say("перенеси на 2 дня позже"), say("отмени бронь")))];
+  },
+};
+
+function render(data) {
+  sessionId = data.session_id;
+  renderStages(data.stage);
+  renderTicket(data);
+  const p = data.payload || {};
+  const view = views[p.kind];
+  if (view) $("view").replaceChildren(...view(p).filter(Boolean));
+  else if (p.kind === "greeting") $("view").replaceChildren();
+  $("quick").hidden = !["plan", "cart"].includes(data.stage);
+}
+
+async function post(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(`Сервер ответил ${r.status}`);
+  return r.json();
+}
+async function send(text) {
+  if (busy || !text.trim()) return;
+  busy = true; $("send").disabled = true; $("examples").hidden = true;
+  addMessage("user", text);
+  try {
+    const data = await post("/api/chat", { text, session_id: sessionId });
+    addMessage("bot", shortReply(data.reply, (data.payload || {}).kind), `${data.nlu || "—"}, ${data.ms} мс`);
+    render(data);
+  } catch (e) {
+    addMessage("bot", "Не удалось связаться с сервером. Проверьте, что он запущен, и повторите запрос.");
+  } finally { busy = false; $("send").disabled = false; $("text").focus(); }
+}
+
+$("ask").addEventListener("submit", (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; send(t); });
+$("quick").addEventListener("click", (e) => { const b = e.target.closest("button[data-say]"); if (b) send(b.dataset.say); });
+$("reset").addEventListener("click", async () => {
+  if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
+  sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); $("quick").hidden = true;
+  renderStages("start"); renderTicket({ understood: [], assumptions: [] }); $("examples").hidden = false; greet();
+});
+let info = null;
+function greet() {
+  if (!info) return;
+  addMessage("bot", "Привет! Опишите поездку одной фразой — куда или какой отдых хотите, когда, кто едет и бюджет. Если не знаете, куда, — подскажу.",
+    info.llm ? `модель: ${info.llm}` : "LLM не подключена — понимаю запросы по правилам");
+}
+fetch("/api/info").then((r) => r.json()).then((i) => {
+  info = i; stages = i.stages; renderStages("start");
+  $("examples").replaceChildren(...i.examples.map((q) => el("button", { type: "button", onclick: () => send(q) }, q)));
+  greet();
+}).catch(() => addMessage("bot", "Сервер недоступен."));
+</script>
+</body>
+</html>

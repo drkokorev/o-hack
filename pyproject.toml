@@ -1,0 +1,9 @@
+[project]
+name = "o-hack"
+version = "0.1.0"
+description = "AI-агент подбора отелей («О! Хакатон», трек «О!дин запрос»)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
