@@ -20,7 +20,7 @@ from .climate import climate
 from .geo import BY_ID, ORIGIN_BY_NAME, TAG_NAMES, Destination
 from .inspire import Suggestion, suggest
 from .offers import AMENITIES, MEALS, hotel_price, hotels_for, transport_options
-from .planner import PACKAGE_TITLES, Package, Trip, hm, leg_text, make_packages
+from .planner import Package, Trip, hm, leg_text, make_packages, timeline
 from .rules import find_destination, rule_extract
 from .state import PARAM_FIELDS, TripState, TripUpdate
 from .textparse import norm
@@ -326,7 +326,9 @@ class TripsDomain:
         if state.assumptions:
             lines += ["", "Я предположил: " + ", ".join(state.assumptions) + ". Поправьте, если не так."]
         lines += ["", "Какое направление смотрим? Назовите номер или город."]
+        origin = ORIGIN_BY_NAME[origin_name]
         payload = {"kind": "destinations", "month": start.month, "nights": nights,
+                   "origin": {"name": origin.name, "lat": origin.lat, "lon": origin.lon},
                    "items": [self._suggestion_card(s, start) for s in items],
                    "assumptions": state.assumptions, "climate_source": CLIMATE_SOURCE}
         return Step("\n".join(lines), facts="\n".join(lines), payload=payload)
@@ -405,6 +407,8 @@ class TripsDomain:
         cancel_until = (trip.date_in - timedelta(days=pkg.hotel.free_cancel_days)).isoformat() \
             if pkg.hotel.free_cancel_days is not None else None
         state.order = {"number": number, "total": total, "package": pkg.key, "dest": trip.dest.name,
+                       "origin_code": trip.origin.iata, "dest_code": trip.dest.iata, "origin": trip.origin.name,
+                       "people": _people(trip.adults, trip.children),
                        "date_in": trip.date_in.isoformat(), "date_out": trip.date_out.isoformat(),
                        "hotel": pkg.hotel.name, "hotel_id": pkg.hotel.id, "check_in": pkg.hotel.check_in,
                        "early_checkin_fee": pkg.hotel.early_checkin_fee, "cancel_until": cancel_until,
@@ -509,6 +513,7 @@ class TripsDomain:
     @staticmethod
     def _suggestion_card(s: Suggestion, start: date) -> dict:
         return {"id": s.dest.id, "name": s.dest.name, "country": s.dest.country, "total": fmt_money(s.est_total),
+                "lat": s.dest.lat, "lon": s.dest.lon,
                 "travel": hm(s.minutes), "mode": s.mode, "stops": s.stops, "reasons": s.reasons, "risks": s.risks,
                 "weather": s.weather.describe() if s.weather else None, "highlights": list(s.dest.highlights),
                 "visa": s.dest.visa if s.dest.abroad else None}
@@ -516,7 +521,10 @@ class TripsDomain:
     @staticmethod
     def _trip_card(trip: Trip) -> dict:
         w = climate(trip.dest.id, trip.date_in.month)
-        return {"dest": trip.dest.name, "country": trip.dest.country, "origin": trip.origin.name,
+        return {"dest": trip.dest.name, "dest_id": trip.dest.id, "lat": trip.dest.lat, "lon": trip.dest.lon,
+                "origin_lat": trip.origin.lat, "origin_lon": trip.origin.lon,
+                "origin_code": trip.origin.iata, "dest_code": trip.dest.iata,
+                "country": trip.dest.country, "origin": trip.origin.name,
                 "from": trip.origin.from_, "dates": _dates(trip.date_in, trip.date_out), "people": _people(trip.adults, trip.children),
                 "weather": w.describe() if w else None, "budget": fmt_money(trip.budget) if trip.budget else None}
 
@@ -540,5 +548,5 @@ class TripsDomain:
                 "hotel": self._hotel_card(p.hotel, p.hotel_total, trip),
                 "transfer": {"minutes": hm(p.transfer_in.minutes), "price": fmt_money(p.transfer_in.price + p.transfer_out.price),
                              "note": p.transfer_in.note},
-                "why": p.why, "tradeoffs": p.tradeoffs,
+                "why": p.why, "tradeoffs": p.tradeoffs, "timeline": timeline(p, trip),
                 "checks": [{"level": k, "text": t} for k, t in p.checks]}

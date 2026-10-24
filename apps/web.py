@@ -15,6 +15,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from core.agent import Agent, Session
@@ -22,7 +23,7 @@ from core.config import get_settings
 from core.llm import OpenAICompatLLM
 from core.ru import MONTHS_GEN, fmt_money, plural
 from domains.trips.domain import TripsDomain
-from domains.trips.geo import BY_ID, DESTINATIONS, TAG_NAMES
+from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS
 from domains.trips.state import TripState
 
@@ -127,10 +128,11 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         agent = Agent(TripsDomain(), llm, nlg=settings.llm_nlg)
     sessions = Sessions(agent)
     app = FastAPI(title="О!дин запрос — агент поездки", docs_url="/api/docs")
+    app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.get("/")
     def index() -> FileResponse:
-        return FileResponse(STATIC / "index.html")
+        return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
     @app.get("/health")
     def health() -> dict:
@@ -139,6 +141,8 @@ def build_app(agent: Agent | None = None) -> FastAPI:
     @app.get("/api/info")
     def info() -> dict:
         return {"llm": settings.llm_model if agent.llm is not None else None, "destinations": len(DESTINATIONS),
+                "places": [{"id": d.id, "name": d.name, "lat": d.lat, "lon": d.lon} for d in DESTINATIONS],
+                "origins": [{"name": o.name, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
                 "examples": EXAMPLES, "stages": [{"key": k, "title": t} for k, t in STAGES]}
 
     @app.post("/api/chat")

@@ -344,3 +344,30 @@ def check(pkg: Package, trip: Trip) -> list[tuple[str, str]]:
         last = trip.date_in - timedelta(days=pkg.hotel.free_cancel_days)
         out.append(("ok", f"отмена отеля бесплатно до {last:%d.%m}"))
     return out
+
+
+def timeline(pkg: Package, trip: Trip) -> list[dict]:
+    """Лента поездки для интерфейса: точки времени с уровнем риска (ok | warn | risk)."""
+    exit_min = 40 if pkg.out.mode == "plane" else 15
+    at_hotel = pkg.out.arrive + timedelta(minutes=exit_min + pkg.transfer_in.minutes)
+    hotel_in = pkg.hotel_in or trip.date_in
+    check_in = _parse_time(max(hotel_in, at_hotel.date()), pkg.hotel.check_in)
+    buffer = 120 if pkg.back.mode == "plane" else 40
+    leave = pkg.back.depart - timedelta(minutes=buffer + pkg.transfer_out.minutes)
+    check_out = _parse_time(pkg.hotel_out or trip.date_out, pkg.hotel.check_out)
+    night = lambda d: d.hour < 6 or d.hour >= 23  # noqa: E731
+    wait_in = at_hotel < check_in - timedelta(hours=2)
+    wait_out = leave > check_out + timedelta(hours=4)
+    station = "вокзал" if pkg.back.mode == "train" else "аэропорт"
+    return [
+        {"t": f"{pkg.out.depart:%d.%m %H:%M}", "label": f"Отправление {trip.origin.from_}",
+         "level": "warn" if night(pkg.out.depart) else "ok"},
+        {"t": f"{pkg.out.arrive:%d.%m %H:%M}", "label": f"Прибытие, {trip.dest.name}", "level": "ok"},
+        {"t": f"{at_hotel:%H:%M}", "label": f"В отеле — трансфер {hm(pkg.transfer_in.minutes)}",
+         "level": "warn" if wait_in or night(at_hotel) else "ok"},
+        {"t": f"{check_in:%d.%m %H:%M}", "label": "Заселение", "level": "warn" if wait_in else "ok"},
+        {"t": f"{check_out:%d.%m %H:%M}", "label": "Выезд из номера", "level": "warn" if wait_out else "ok"},
+        {"t": f"{leave:%H:%M}", "label": f"Трансфер в {station}", "level": "risk" if leave.date() < check_out.date() else "ok"},
+        {"t": f"{pkg.back.depart:%d.%m %H:%M}", "label": "Обратно", "level": "warn" if night(pkg.back.depart) else "ok"},
+        {"t": f"{pkg.back.arrive:%d.%m %H:%M}", "label": "Дома", "level": "ok"},
+    ]

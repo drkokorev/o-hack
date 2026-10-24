@@ -2,150 +2,219 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>О!дин запрос — агент поездки</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #e9efee; --paper: #ffffff; --ink: #10242b; --muted: #5b6f75; --line: #cfdad8;
-    --cobalt: #2346d8; --cobalt-soft: #e3e8fd; --sun: #f2b705; --ok: #1f7a4d; --warn: #a86b00; --risk: #b3261e;
+    --bg: #eef2f1; --surface: #ffffff; --ink: #0d1b22; --muted: #5d6f75; --faint: #8a9ca1; --line: #d9e2e0;
+    --accent: #2346d8; --accent-ink: #ffffff; --accent-soft: #e4e9fd; --sun: #f2b705;
+    --ok: #1f7a4d; --warn: #a86b00; --risk: #b3261e; --dot: #c4d1ce; --dot-strong: #93a6a3;
     --display: "Unbounded", "Golos Text", system-ui, sans-serif;
     --body: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --r-lg: 22px; --r-md: 16px;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #0e1b20; --paper: #152830; --ink: #e6efee; --muted: #93a7ab; --line: #284049;
-      --cobalt: #7d95ff; --cobalt-soft: #1d2d5c; --sun: #f5c739; --ok: #5fcf95; --warn: #f0b44c; --risk: #ff8a80; }
+    :root { --bg: #0a141b; --surface: #101e27; --ink: #e8f0ef; --muted: #91a4a9; --faint: #6a7e84; --line: #1d313d;
+      --accent: #7d95ff; --accent-ink: #0a141b; --accent-soft: #1b2a55; --sun: #f5c739;
+      --ok: #5fcf95; --warn: #f0b44c; --risk: #ff8a80; --dot: #1f3747; --dot-strong: #3a5a6d; }
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { margin: 0; }
-  body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); min-height: 100vh; }
+  body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased; }
   button, input { font: inherit; color: inherit; }
-  :focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; }
-  .app { display: grid; grid-template-columns: minmax(320px, 400px) 1fr; min-height: 100vh; }
-  .app > * { min-width: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .num { font-variant-numeric: tabular-nums; }
 
-  .talk { background: var(--paper); border-right: 1px solid var(--line); display: flex; flex-direction: column;
-    height: 100vh; position: sticky; top: 0; }
-  .brand { padding: 20px 24px 10px; }
-  .brand h1 { font: 700 22px/1.15 var(--display); margin: 0; }
-  .brand p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
-  .log { flex: 1; overflow-y: auto; padding: 8px 20px 16px; display: flex; flex-direction: column; gap: 10px; }
-  .msg { max-width: 94%; padding: 10px 14px; border-radius: 14px; white-space: pre-wrap; font-size: 15px; }
-  .msg.user { align-self: flex-end; background: var(--cobalt); color: #fff; border-bottom-right-radius: 4px; }
-  .msg.bot { align-self: flex-start; background: var(--bg); border-bottom-left-radius: 4px; }
-  .msg .meta { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
-  .examples { display: flex; flex-direction: column; gap: 6px; padding: 0 20px 12px; }
-  .examples button, .quick button { text-align: left; background: none; border: 1px dashed var(--line);
-    border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 14px; color: var(--muted); }
-  .examples button:hover, .quick button:hover { border-color: var(--cobalt); color: var(--ink); }
-  .quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 8px; }
-  .quick button { padding: 5px 10px; font-size: 13px; }
-  form.ask { display: flex; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid var(--line); }
-  form.ask input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--paper); }
-  .btn { border: 0; border-radius: 12px; padding: 10px 16px; background: var(--cobalt); color: #fff; font-weight: 600; cursor: pointer; }
-  .btn.ghost { background: none; color: var(--muted); font-weight: 500; padding: 10px 8px; }
-  .btn.line { background: none; color: var(--cobalt); border: 1px solid var(--cobalt); }
+  .shell { display: grid; grid-template-columns: 1fr 400px; min-height: 100vh; }
+  .shell > * { min-width: 0; }
+  header.top { grid-column: 1 / -1; display: flex; align-items: center; gap: 24px; padding: 18px 32px; height: 63px;
+    border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5;
+    background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .logo { font: 600 17px/1 var(--display); letter-spacing: -0.01em; white-space: nowrap; }
+  .logo span { color: var(--accent); }
+  .stages { display: flex; list-style: none; margin: 0 auto; padding: 0; }
+  .stages li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--faint); }
+  .stages li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
+  .stages li:not(:last-child)::after { content: ""; display: block; width: 28px; height: 1px; background: var(--line); margin: 0 10px 0 2px; }
+  .stages li.done { color: var(--muted); }
+  .stages li.done::before { background: var(--accent); border-color: var(--accent); }
+  .stages li.now { color: var(--ink); font-weight: 600; }
+  .stages li.now::before { background: var(--sun); border-color: var(--sun); box-shadow: 0 0 0 4px color-mix(in srgb, var(--sun) 25%, transparent); }
+  .link { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 6px 4px; font-size: 14px; white-space: nowrap; }
+  .link:hover { color: var(--ink); }
+
+  main.board { padding: 36px 44px 64px; }
+  aside.chat { border-left: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column;
+    height: calc(100vh - 63px); position: sticky; top: 63px; }
+
+  .hero h1 { font: 500 clamp(34px, 4.4vw, 62px)/1.05 var(--display); letter-spacing: -0.035em; margin: 0; max-width: 16ch; }
+  .hero p { color: var(--muted); font-size: 18px; max-width: 48ch; margin: 18px 0 0; }
+  .route { display: flex; align-items: baseline; gap: 10px 20px; flex-wrap: wrap; }
+  .route .codes { font: 500 clamp(40px, 6vw, 84px)/1 var(--display); letter-spacing: -0.04em; white-space: nowrap; }
+  .route .codes i { font-style: normal; color: var(--faint); font-weight: 400; padding: 0 .1em; }
+  .route .names { color: var(--muted); font-size: 16px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+  .chip { border-radius: 999px; padding: 5px 12px; font-size: 13px; background: var(--surface); border: 1px solid var(--line); }
+  .chip.assumed { border-style: dashed; color: var(--muted); background: none; }
+
+  .map { margin: 24px 0 4px; }
+  .map svg { width: 100%; height: auto; display: block; overflow: hidden; max-height: 46vh; transition: max-height .4s ease; }
+  .board.compact .map svg { max-height: 28vh; }
+  .map svg { --z: 1; }
+  .map .land { fill: var(--dot); }
+  .map .place { fill: var(--dot-strong); r: calc(.55px * var(--z)); }
+  .map .pin { fill: var(--accent); }
+  .map .origin { fill: var(--sun); }
+  .map .halo { fill: none; stroke: var(--sun); stroke-width: calc(.25px * var(--z)); opacity: .7; }
+  .map .arc { fill: none; stroke: var(--accent); stroke-width: calc(.38px * var(--z)); stroke-linecap: round; }
+  .map .arc.dim { stroke-dasharray: calc(.6px * var(--z)) calc(.9px * var(--z)); opacity: .8; }
+  .map .label { font: 500 calc(2.3px * var(--z)) var(--body); fill: var(--ink); paint-order: stroke; stroke: var(--bg); stroke-width: calc(.7px * var(--z)); }
+  .map .badge { font: 600 calc(1.8px * var(--z)) var(--body); fill: var(--accent-ink); text-anchor: middle; dominant-baseline: central; }
+  @media (prefers-reduced-motion: no-preference) {
+    .map .arc.draw { transition: stroke-dashoffset 1.1s cubic-bezier(.3,.7,.2,1); }
+  }
+
+  .section-title { font: 500 24px/1.2 var(--display); letter-spacing: -0.02em; margin: 32px 0 4px; }
+  .section-sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; }
+  .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px;
+    display: flex; flex-direction: column; gap: 14px; }
+  .card.best { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .card .kicker { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .card .kicker b { color: var(--accent); font-weight: 600; }
+  .card h3 { margin: 0; font: 500 24px/1.15 var(--display); letter-spacing: -0.025em; }
+  .price { font: 500 30px/1 var(--display); letter-spacing: -0.03em; }
+  .price small { display: block; font: 400 13px/1.4 var(--body); letter-spacing: 0; color: var(--muted); margin-top: 6px; }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; margin: 0; }
+  .facts dt { color: var(--muted); }
+  .facts dd { margin: 0; }
+  .card h4 { margin: 0 0 6px; font-size: 13px; color: var(--muted); font-weight: 500; }
+  ul.marks { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 14px; }
+  ul.marks li { display: grid; grid-template-columns: 16px 1fr; gap: 6px; }
+  ul.marks li::before { font-weight: 700; content: "·"; color: var(--faint); }
+  ul.marks.why li::before { content: "✓"; color: var(--ok); }
+  ul.marks.trade li::before { content: "−"; color: var(--faint); }
+  ul.marks li.ok::before { content: "✓"; color: var(--ok); }
+  ul.marks li.warn::before { content: "!"; color: var(--warn); }
+  ul.marks li.risk::before { content: "!"; color: var(--risk); }
+  ul.marks li.risk { color: var(--risk); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
+  .actions { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+  .btn { border: 1px solid transparent; border-radius: 999px; padding: 11px 20px; background: var(--ink); color: var(--bg); font-weight: 600; cursor: pointer; font-size: 15px; }
+  .btn.accent { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: none; color: var(--ink); border-color: var(--line); }
+  .btn.ghost:hover { border-color: var(--accent); }
   .btn:disabled { opacity: .5; cursor: wait; }
 
-  .board { padding: 24px clamp(16px, 3vw, 40px) 48px; max-width: 1100px; }
-  .stages { display: flex; gap: 0; margin: 0 0 16px; padding: 0; list-style: none; flex-wrap: wrap; }
-  .stages li { flex: 1; min-width: 90px; font-size: 13px; color: var(--muted); padding: 6px 0 0; border-top: 3px solid var(--line); margin-right: 4px; }
-  .stages li.done { border-color: var(--cobalt); color: var(--ink); }
-  .stages li.now { border-color: var(--sun); color: var(--ink); font-weight: 600; }
+  .timeline { list-style: none; margin: 0; padding: 0; display: grid; font-size: 13.5px; }
+  .timeline li { display: grid; grid-template-columns: 14px 84px 1fr; gap: 8px; align-items: baseline; position: relative; padding: 3px 0; }
+  .timeline li::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--ok); align-self: center; z-index: 1; }
+  .timeline li:not(:last-child)::after { content: ""; position: absolute; left: 5.5px; top: 50%; height: 100%; width: 1px; background: var(--line); }
+  .timeline li.warn::before { border-color: var(--warn); }
+  .timeline li.risk::before { border-color: var(--risk); background: var(--risk); }
+  .timeline time { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .notice { border-radius: var(--r-md); padding: 14px 18px; background: var(--accent-soft); font-size: 15px; margin: 22px 0 0; }
 
-  .ticket { background: var(--paper); border-radius: 18px; padding: 18px 22px; display: grid; gap: 10px; }
-  .ticket .title { font: 700 clamp(24px, 3.4vw, 38px)/1.1 var(--display); margin: 0; letter-spacing: -0.01em; }
-  .ticket .title.empty { color: var(--muted); font-weight: 500; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { background: var(--cobalt-soft); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 500; }
-  .chip.assumed { background: none; border: 1px dashed var(--muted); color: var(--muted); }
-  .hint { color: var(--muted); font-size: 14px; margin: 0; }
-  .notice { margin: 14px 0 0; padding: 12px 16px; border-radius: 12px; font-size: 14px;
-    background: color-mix(in srgb, var(--sun) 22%, var(--paper)); }
+  .split { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+  table.receipt { width: 100%; border-collapse: collapse; font-size: 15px; }
+  table.receipt td { padding: 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.receipt td small { color: var(--muted); }
+  table.receipt td:last-child { text-align: right; white-space: nowrap; padding-left: 16px; font-variant-numeric: tabular-nums; }
+  table.receipt tr.total td { border: 0; font: 500 22px var(--display); letter-spacing: -0.02em; padding-top: 16px; }
+  .pass { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); display: grid; grid-template-columns: 1fr 230px; margin-top: 8px; position: relative; }
+  .pass .main { padding: 26px 28px; display: grid; gap: 16px; }
+  .pass .stub { border-left: 2px dashed var(--line); padding: 26px 22px; display: grid; gap: 6px; align-content: start; position: relative; }
+  .pass .stub::before, .pass .stub::after { content: ""; position: absolute; left: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); }
+  .pass .stub::before { top: -12px; } .pass .stub::after { bottom: -12px; }
+  .pass .label { font-size: 12px; color: var(--muted); }
+  .pass .big { font: 500 22px/1.1 var(--display); letter-spacing: -0.02em; margin-bottom: 8px; }
 
-  .grid { display: grid; gap: 14px; margin-top: 18px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
-  .card { background: var(--paper); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
-  .card.best { outline: 2px solid var(--cobalt); }
-  .card h3 { margin: 0; font-size: 19px; font-weight: 600; }
-  .card .sub { color: var(--muted); font-size: 14px; margin-top: -6px; }
-  .price { font: 700 24px/1.1 var(--display); font-variant-numeric: tabular-nums; }
-  .price small { font: 500 13px var(--body); color: var(--muted); display: block; margin-top: 2px; }
-  .card h4 { margin: 4px 0 2px; font-size: 13px; color: var(--muted); font-weight: 500; }
-  .card ul, .cart ul { margin: 0; padding: 0; list-style: none; font-size: 14px; display: grid; gap: 3px; }
-  .why li::before { content: "✓ "; color: var(--ok); font-weight: 700; }
-  .trade li::before { content: "– "; color: var(--muted); font-weight: 700; }
-  .checks li.ok::before { content: "✓ "; color: var(--ok); font-weight: 700; }
-  .checks li.warn::before { content: "! "; color: var(--warn); font-weight: 700; }
-  .checks li.risk::before { content: "⚠ "; color: var(--risk); font-weight: 700; }
-  .checks li.risk { color: var(--risk); }
-  .leg { font-size: 14px; display: grid; grid-template-columns: 4.5rem 1fr; gap: 2px 8px; }
-  .leg b { font-weight: 600; }
-  .card .actions { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
-  .tag { display: inline-block; font-size: 12px; background: var(--bg); border-radius: 6px; padding: 1px 8px; margin: 0 4px 4px 0; }
-  .cart { background: var(--paper); border-radius: 16px; padding: 20px 22px; margin-top: 18px; display: grid; gap: 12px; }
-  .cart table { width: 100%; border-collapse: collapse; font-size: 15px; }
-  .cart td { padding: 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-  .cart td:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: 12px; }
-  .cart tr.total td { font-weight: 600; font-size: 18px; border-bottom: 0; }
-  .order { font: 700 28px var(--display); }
-  .source { font-size: 12px; color: var(--muted); margin-top: 18px; }
-
-  @media (max-width: 900px) {
-    .app { grid-template-columns: 1fr; }
-    .talk { height: auto; position: static; border-right: 0; order: 2; }
-    .log { max-height: 55vh; }
-    .board { order: 1; padding: 16px; }
-  }
+  .log { flex: 1; overflow-y: auto; padding: 24px 22px 12px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { font-size: 15px; white-space: pre-wrap; line-height: 1.5; }
+  .msg.user { align-self: flex-end; max-width: 88%; background: var(--accent); color: var(--accent-ink); padding: 9px 15px; border-radius: 18px 18px 4px 18px; }
+  .msg.bot { align-self: flex-start; max-width: 96%; }
+  .msg .meta { display: block; margin-top: 4px; font-size: 11.5px; color: var(--faint); }
+  .typing { display: inline-flex; gap: 4px; padding: 6px 0; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
   @media (prefers-reduced-motion: no-preference) {
-    .fresh { animation: rise .3s ease-out both; }
-    @keyframes rise { from { transform: translateY(6px); } }
+    .typing i { animation: blink 1.2s infinite both; }
+    .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  }
+  .suggest { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 18px 10px; }
+  .suggest button { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; color: var(--muted); cursor: pointer; text-align: left; }
+  .suggest button:hover { border-color: var(--accent); color: var(--ink); }
+  form.composer { padding: 12px 16px 18px; border-top: 1px solid var(--line); background: var(--surface); }
+  .composer .field { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 24px; padding: 5px 5px 5px 16px; background: var(--bg); }
+  .composer .field:focus-within { border-color: var(--accent); }
+  .composer input { flex: 1; min-width: 0; border: 0; background: none; padding: 9px 0; outline: none; font-size: 15px; }
+  .composer button { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; display: grid; place-items: center; flex: none; }
+  .composer button:disabled { opacity: .5; }
+  .fine { font-size: 12px; color: var(--faint); margin: 40px 0 0; max-width: 70ch; }
+
+  @media (max-width: 1180px) { .split { grid-template-columns: 1fr; } .shell { grid-template-columns: 1fr 360px; } }
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    header.top { padding: 12px 16px; gap: 12px; height: auto; }
+    .stages li { font-size: 0; gap: 0; } .stages li.now { font-size: 12px; gap: 6px; }
+    .stages li:not(:last-child)::after { width: 10px; margin: 0 4px; }
+    main.board { padding: 22px 16px 16px; }
+    aside.chat { position: static; height: auto; border-left: 0; border-top: 1px solid var(--line); }
+    .log { max-height: 60vh; }
+    form.composer { position: sticky; bottom: 0; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+    .pass { grid-template-columns: 1fr; } .pass .stub { border-left: 0; border-top: 2px dashed var(--line); }
+    .pass .stub::before, .pass .stub::after { display: none; }
   }
 </style>
 </head>
 <body>
-<div class="app">
-  <section class="talk" aria-label="Разговор с агентом">
-    <div class="brand">
-      <h1>О!дин запрос</h1>
-      <p>Опишите поездку своими словами — агент подберёт направление, соберёт перелёт, отель и трансфер, проверит состыковки и оформит заказ.</p>
-    </div>
-    <div class="log" id="log" aria-live="polite"></div>
-    <div class="examples" id="examples"></div>
-    <div class="quick" id="quick" hidden>
-      <button type="button" data-say="а если на два дня позже?">На 2 дня позже</button>
-      <button type="button" data-say="подешевле">Дешевле</button>
-      <button type="button" data-say="покажи другие отели">Другие отели</button>
-      <button type="button" data-say="только без пересадок">Без пересадок</button>
-      <button type="button" data-say="другое направление">Другое направление</button>
-    </div>
-    <form class="ask" id="ask">
-      <input id="text" autocomplete="off" placeholder="Например: в горы в июле вдвоём до 150 000" aria-label="Ваш запрос">
-      <button type="submit" class="btn" id="send">Отправить</button>
-      <button type="button" class="btn ghost" id="reset">Заново</button>
-    </form>
-  </section>
+<div class="shell">
+  <header class="top">
+    <div class="logo">О<span>!</span>дин запрос</div>
+    <ol class="stages" id="stages" aria-label="Этапы поездки"></ol>
+    <button class="link" id="reset" type="button">Начать заново</button>
+  </header>
 
   <main class="board">
-    <ol class="stages" id="stages"></ol>
-    <div class="ticket">
-      <p class="title empty" id="title">Куда едем?</p>
-      <div class="chips" id="chips"><p class="hint">Здесь появится всё, что агент понял из разговора. Пунктиром — то, что он предположил сам.</p></div>
-    </div>
-    <div id="view"></div>
-    <p class="source">Погода — реальные средние Open-Meteo за 2022–2025 годы. Отели, рейсы, поезда и цены — модельные данные прототипа, перевозчики вымышленные. Оплата имитируется.</p>
+    <section id="head"></section>
+    <div class="map" id="map" aria-hidden="true"></div>
+    <section id="view"></section>
+    <p class="fine">Погода — реальные средние Open-Meteo за 2022–2025 годы. Отели, рейсы, поезда и цены — модельные данные прототипа, перевозчики вымышленные. Оплата имитируется.</p>
   </main>
+
+  <aside class="chat" aria-label="Разговор с агентом">
+    <div class="log" id="log" aria-live="polite"></div>
+    <div class="suggest" id="suggest"></div>
+    <form class="composer" id="ask">
+      <div class="field">
+        <input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение агенту">
+        <button type="submit" id="send" aria-label="Отправить">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </form>
+  </aside>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-let sessionId = null, busy = false, stages = [];
+let sessionId = null, busy = false, info = null, land = null;
+const QUICK = {
+  destination: ["покажи другие направления", "только по России", "а за границу?"],
+  plan: ["а если на два дня позже?", "подешевле", "покажи другие отели", "только без пересадок", "другое направление"],
+  cart: ["да, оформляй", "нет, вернуться к вариантам", "а если на день раньше?"],
+  booked: ["запроси ранний заезд", "поздний выезд", "перенеси на 2 дня позже", "отмени бронь"],
+};
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
+    if (v === null || v === undefined || v === false) continue;
     if (k === "class") node.className = v;
     else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
     else node.setAttribute(k, v);
@@ -153,113 +222,230 @@ function el(tag, attrs = {}, ...children) {
   for (const c of children.flat()) if (c !== null && c !== undefined && c !== false) node.append(c);
   return node;
 }
-const list = (cls, items) => el("ul", { class: cls }, items.map((t) => typeof t === "string" ? el("li", {}, t) : el("li", { class: t.level }, t.text)));
-const say = (text) => el("button", { type: "button", class: "btn line", onclick: () => send(text) }, text);
+function svg(tag, attrs = {}, text) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text) node.textContent = text;
+  return node;
+}
+const marks = (cls, items) => el("ul", { class: "marks " + cls }, items.map((t) => typeof t === "string" ? el("li", {}, t) : el("li", { class: t.level }, t.text)));
+const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button", class: cls, onclick: () => send(text || label) }, label);
 
-function addMessage(role, text, meta) {
-  $("log").append(el("div", { class: `msg ${role}` }, text, meta ? el("span", { class: "meta" }, meta) : null));
-  $("log").scrollTop = $("log").scrollHeight;
+/* Карта: точки суши (Natural Earth), направления каталога, дуга маршрута */
+const K = 0.82, LON0 = 5, LAT0 = 75;
+const px = (lon, lat) => [(lon - LON0) * K, LAT0 - lat];
+function arcPath(a, b) {
+  const [x1, y1] = px(a.lon, a.lat), [x2, y2] = px(b.lon, b.lat);
+  const d = Math.hypot(x2 - x1, y2 - y1) || 1;
+  const nx = -(y2 - y1) / d, ny = (x2 - x1) / d;          // нормаль к отрезку
+  const sgn = ny > 0 ? -1 : 1;                              // дуга всегда выгибается вверх
+  const cx = (x1 + x2) / 2 + sgn * nx * d * 0.22, cy = (y1 + y2) / 2 + sgn * ny * d * 0.22;
+  return `M${x1.toFixed(2)},${y1.toFixed(2)} Q${cx.toFixed(2)},${cy.toFixed(2)} ${x2.toFixed(2)},${y2.toFixed(2)}`;
 }
-function shortReply(text, kind) {
-  if (!["destinations", "packages", "cart", "hotels"].includes(kind)) return text;
-  const blocks = text.split("\n\n");
-  return [blocks[0].split("\n")[0], blocks[blocks.length - 1]].join("\n");
+const FULL = { x: 0, y: 0, w: (170 - LON0) * K, h: 95 };
+function fitView(points) {
+  if (!points.length) return FULL;
+  const xs = points.map((p) => px(p.lon, p.lat)[0]), ys = points.map((p) => px(p.lon, p.lat)[1]);
+  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const ratio = FULL.w / FULL.h;
+  let w = Math.max(x1 - x0, 36) * 1.5, h = Math.max(y1 - y0, 20) * 1.6;
+  if (w / h < ratio) w = h * ratio; else h = w / ratio;
+  w = Math.min(w, FULL.w); h = Math.min(h, FULL.h);
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 - h * 0.06;
+  const x = Math.min(Math.max(cx - w / 2, 0), FULL.w - w), y = Math.min(Math.max(cy - h / 2, 0), FULL.h - h);
+  return { x, y, w, h };
+}
+function drawMap(opts = {}) {
+  if (!land || !info) return;
+  const pts = opts.origin ? [opts.origin, ...(opts.targets || [])] : [];
+  const v = fitView(pts);
+  const root = svg("svg", { viewBox: `${v.x.toFixed(2)} ${v.y.toFixed(2)} ${v.w.toFixed(2)} ${v.h.toFixed(2)}`, role: "presentation" });
+  root.style.setProperty("--z", (v.w / FULL.w).toFixed(3));
+  const g = svg("g");
+  for (const [lon, lat] of land.dots) { const [x, y] = px(lon, lat); g.append(svg("circle", { class: "land", cx: x.toFixed(2), cy: y.toFixed(2), r: 0.3 })); }
+  root.append(g);
+  for (const p of info.places) { const [x, y] = px(p.lon, p.lat); root.append(svg("circle", { class: "place", cx: x, cy: y, r: 0.55 })); }
+  const z = v.w / FULL.w;
+  const toDraw = [];
+  const targets = opts.targets || [];
+  if (opts.origin) {
+    const [ox, oy] = px(opts.origin.lon, opts.origin.lat);
+    for (const t of targets) {
+      const path = svg("path", { class: "arc" + (targets.length > 1 ? " dim" : ""), d: arcPath(opts.origin, t) });
+      root.append(path); if (targets.length === 1) toDraw.push(path);
+    }
+    root.append(svg("circle", { class: "halo", cx: ox, cy: oy, r: 1.8 * z }), svg("circle", { class: "origin", cx: ox, cy: oy, r: 0.95 * z }),
+      svg("text", { class: "label", x: ox - 1.6 * z, y: oy - 1.6 * z, "text-anchor": "end" }, opts.origin.name));
+    const placed = [[ox, oy - 1.6 * z]];
+    targets.forEach((t, i) => {
+      const [x, y] = px(t.lon, t.lat);
+      const right = x >= ox || targets.length === 1;
+      let ly = y + 0.8 * z;
+      while (placed.some(([px2, py2]) => Math.abs(px2 - x) < 14 * z && Math.abs(py2 - ly) < 2.8 * z)) ly += 2.9 * z;
+      placed.push([x, ly]);
+      root.append(svg("circle", { class: "pin", cx: x, cy: y, r: (targets.length > 1 ? 1.45 : 1.15) * z }));
+      if (targets.length > 1) root.append(svg("text", { class: "badge", x, y: y + 0.05 * z }, String(i + 1)));
+      root.append(svg("text", { class: "label", x: x + (right ? 2.2 : -2.2) * z, y: ly, "text-anchor": right ? "start" : "end" }, t.name));
+    });
+  }
+  $("map").replaceChildren(root);
+  for (const path of toDraw) {
+    const len = path.getTotalLength();
+    path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
+    requestAnimationFrame(() => requestAnimationFrame(() => { path.classList.add("draw"); path.style.strokeDashoffset = 0; }));
+  }
 }
 
-function renderStages(stage) {
-  const idx = stages.findIndex((s) => s.key === stage);
-  $("stages").replaceChildren(...stages.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : "" }, s.title)));
-}
-function renderTicket(data) {
-  const p = data.payload || {};
-  const title = p.trip ? `${p.trip.dest} · ${p.trip.dates}` : (p.order ? p.order.dest : null);
-  $("title").textContent = title || (data.understood.length ? "Подбираю поездку" : "Куда едем?");
-  $("title").classList.toggle("empty", !title);
-  const chips = data.understood.map((c) => el("span", { class: "chip" }, c))
-    .concat((data.assumptions || []).map((a) => el("span", { class: "chip assumed", title: "Агент предположил — поправьте, если не так" }, a)));
-  $("chips").replaceChildren(...(chips.length ? chips : [el("p", { class: "hint" }, "Здесь появится всё, что агент понял из разговора.")]));
+function renderHead(data) {
+  const p = (data && data.payload) || {};
+  const trip = p.trip || (p.order && { origin_code: p.order.origin_code, dest_code: p.order.dest_code, origin: p.order.origin, dest: p.order.dest });
+  const understood = data ? data.understood : [], assumed = data ? data.assumptions || [] : [];
+  const chips = understood.map((c) => el("span", { class: "chip" }, c))
+    .concat(assumed.map((a) => el("span", { class: "chip assumed", title: "Агент предположил сам — поправьте, если не так" }, a)));
+  if (p.kind === "order") { $("head").replaceChildren(); return; }
+  if (trip && trip.dest_code) {
+    $("head").replaceChildren(el("div", { class: "route" },
+      el("div", { class: "codes" }, trip.origin_code, el("i", {}, "→"), trip.dest_code),
+      el("div", { class: "names" }, [trip.origin + " — " + trip.dest, trip.dates, trip.people].filter(Boolean).join(" · "))),
+      chips.length ? el("div", { class: "chips" }, chips) : null);
+  } else if (chips.length) {
+    $("head").replaceChildren(el("div", { class: "hero" }, el("h1", {}, "Подбираю направление")), el("div", { class: "chips" }, chips));
+  } else {
+    $("head").replaceChildren(el("div", { class: "hero" },
+      el("h1", {}, "Расскажите о поездке. Остальное соберёт агент."),
+      el("p", {}, "Направление, перелёт или поезд, отель и трансфер — с объяснением выбора, проверкой состыковок и оформлением.")));
+  }
 }
 
-function legRow(label, leg) {
-  const kind = leg.mode === "train" ? "🚆" : "✈";
-  const extra = leg.stops ? `, пересадка ${leg.via} ${leg.layover}` : (leg.mode === "plane" ? ", прямой" : "");
-  return [el("b", {}, label), el("span", {}, `${kind} ${leg.depart} → ${leg.arrive} · ${leg.duration}${extra}${leg.mode === "plane" && !leg.baggage ? ", без багажа" : ""}`)];
-}
+const legLine = (leg) => {
+  const kind = leg.mode === "train" ? "Поезд" : "Рейс";
+  const via = leg.stops ? ` · пересадка ${leg.via}, ${leg.layover}` : (leg.mode === "plane" ? " · прямой" : "");
+  return `${kind} ${leg.depart} → ${leg.arrive} · ${leg.duration}${via}${leg.mode === "plane" && !leg.baggage ? " · без багажа" : ""}`;
+};
+const timelineEl = (items) => el("ol", { class: "timeline" }, items.map((t) => el("li", { class: t.level }, el("time", {}, t.t), el("span", {}, t.label))));
+const tripRoute = (t) => ({ origin: { name: t.origin, lat: t.origin_lat, lon: t.origin_lon }, targets: [{ name: t.dest, lat: t.lat, lon: t.lon }] });
 
 const views = {
   destinations(p) {
-    return [el("div", { class: "grid" }, p.items.map((d, i) => el("article", { class: "card fresh" + (i === 0 ? " best" : "") },
-      el("h3", {}, `${i + 1}. ${d.name}`), el("div", { class: "sub" }, `${d.country}${d.visa ? " · виза: " + d.visa : ""}`),
-      el("div", { class: "price" }, `от ${d.total}`, el("small", {}, "за всю поездку на всех")),
-      d.weather && el("div", {}, el("h4", {}, "Погода в этом месяце"), el("div", {}, d.weather)),
-      el("div", {}, el("h4", {}, "Почему"), list("why", d.reasons)),
-      d.risks.length ? el("div", {}, el("h4", {}, "Учтите"), list("checks", d.risks.map((t) => ({ level: "warn", text: t })))) : null,
-      el("div", {}, d.highlights.map((h) => el("span", { class: "tag" }, h))),
-      el("div", { class: "actions" }, say(`давай ${d.name}`)))))];
+    drawMap({ origin: p.origin, targets: p.items.map((d) => ({ name: d.name, lat: d.lat, lon: d.lon })) });
+    return [el("h2", { class: "section-title" }, "Куда можно поехать"),
+      el("p", { class: "section-sub" }, `Цена — ориентир за всю поездку на всех, ${p.nights} ночей. Номера совпадают с точками на карте.`),
+      el("div", { class: "cards" }, p.items.map((d, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
+        el("div", { class: "kicker" }, el("span", {}, `${i + 1} · ${d.country}`), i === 0 ? el("b", {}, "Лучше всего подходит") : null),
+        el("h3", {}, d.name),
+        el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, d.visa ? `виза: ${d.visa}` : "виза не нужна")),
+        el("dl", { class: "facts" }, el("dt", {}, "Погода"), el("dd", {}, d.weather || "—"),
+          el("dt", {}, "Дорога"), el("dd", {}, `${d.mode === "train" ? "поезд" : d.stops ? "с пересадкой" : "прямой рейс"}, ${d.travel}`)),
+        marks("why", d.reasons.filter((r) => !/^(перелёт|поезд)/.test(r))),
+        d.risks.length ? marks("", d.risks.map((t) => ({ level: "warn", text: t }))) : null,
+        el("div", { class: "tags" }, d.highlights.map((h) => el("span", { class: "tag" }, h))),
+        el("div", { class: "actions" }, sayBtn(`Выбрать ${d.name}`, `давай ${d.name}`, i === 0 ? "btn accent" : "btn ghost")))))];
   },
   packages(p) {
-    const head = [];
-    if (p.diff && p.diff.length) head.push(el("p", { class: "notice" }, "Пересобрал план: " + p.diff.join("; ") + "."));
-    if (p.relaxed && p.relaxed.length) head.push(el("p", { class: "notice" }, "Чтобы что-то нашлось, я " + p.relaxed.join(", ") + "."));
-    return head.concat([el("div", { class: "grid" }, p.items.map((k, i) => el("article", { class: "card fresh" + (i === 0 ? " best" : "") },
-      el("h3", {}, `${i + 1}. ${k.title}`),
-      el("div", { class: "price" }, k.total, el("small", {}, `перелёт/поезд, отель, трансферы · ${p.trip.people}`)),
-      el("div", { class: "leg" }, legRow("Туда", k.out), legRow("Обратно", k.back)),
-      el("div", {}, el("h4", {}, `${k.hotel.name} · ${k.hotel.stars}★ · ${k.hotel.rating}`), el("div", { class: "sub" }, `${k.hotel.meal}, ${k.hotel.area}, ${k.hotel.price} за проживание`)),
-      el("div", {}, el("h4", {}, "Почему подходит"), list("why", k.why.slice(1))),
-      k.tradeoffs.length ? el("div", {}, el("h4", {}, "Чем жертвуем"), list("trade", k.tradeoffs)) : null,
-      el("div", {}, el("h4", {}, "Проверил состыковки"), list("checks", k.checks)),
-      el("div", { class: "actions" }, say(`беру ${i + 1} вариант`)))))]);
+    drawMap(tripRoute(p.trip));
+    const out = [];
+    if (p.diff && p.diff.length) out.push(el("p", { class: "notice" }, "Пересобрал план: " + p.diff.join("; ") + "."));
+    if (p.relaxed && p.relaxed.length) out.push(el("p", { class: "notice" }, "Чтобы что-то нашлось, я " + p.relaxed.join(", ") + "."));
+    out.push(el("h2", { class: "section-title" }, p.items.length > 1 ? `${p.items.length} способа поехать` : "Ваша поездка"),
+      el("p", { class: "section-sub" }, `${p.trip.weather ? "Погода: " + p.trip.weather + ". " : ""}Цена — за всё: дорога туда и обратно, отель, трансферы.`),
+      el("div", { class: "cards" }, p.items.map((k, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
+        el("div", { class: "kicker" }, el("span", {}, `Вариант ${i + 1}`), i === 0 ? el("b", {}, "Рекомендую") : null),
+        el("h3", {}, k.title),
+        el("div", { class: "price num" }, k.total, el("small", {}, p.trip.people)),
+        el("dl", { class: "facts" },
+          el("dt", {}, "Туда"), el("dd", {}, legLine(k.out)),
+          el("dt", {}, "Обратно"), el("dd", {}, legLine(k.back)),
+          el("dt", {}, "Отель"), el("dd", {}, `${k.hotel.name}, ${k.hotel.stars}★, ${k.hotel.rating} · ${k.hotel.meal}`)),
+        el("div", {}, el("h4", {}, "Почему подходит"), marks("why", k.why.slice(1, 6))),
+        k.tradeoffs.length ? el("div", {}, el("h4", {}, "Чем жертвуем"), marks("trade", k.tradeoffs.slice(0, 4))) : null,
+        el("div", {}, el("h4", {}, "Поездка по часам"), timelineEl(k.timeline)),
+        k.checks.some((c) => c.level !== "ok") ? el("div", {}, el("h4", {}, "Обратите внимание"), marks("", k.checks.filter((c) => c.level !== "ok"))) : null,
+        el("div", { class: "actions" }, sayBtn("Выбрать вариант", `беру ${i + 1} вариант`, i === 0 ? "btn accent" : "btn ghost"))))));
+    return out;
   },
   hotels(p) {
-    return [el("div", { class: "grid" }, p.items.map((h, i) => el("article", { class: "card fresh" },
-      el("h3", {}, `${i + 1}. ${h.name}`), el("div", { class: "sub" }, `${h.stars}★ · рейтинг ${h.rating} (${h.reviews}) · ${h.area}`),
-      el("div", { class: "price" }, h.price, el("small", {}, `${h.per_night} за ночь · ${h.meal}`)),
-      el("div", {}, h.amenities.map((a) => el("span", { class: "tag" }, a))),
-      el("div", {}, el("h4", {}, "Хвалят"), list("why", h.praise)),
-      el("div", {}, el("h4", {}, "Жалуются"), list("trade", h.complaints)),
-      el("div", { class: "actions" }, say(`${i + 1}`)))))];
+    return [el("h2", { class: "section-title" }, "Другие отели"),
+      el("p", { class: "section-sub" }, "Выберите — пересоберу поездку с ним, дорогу оставлю."),
+      el("div", { class: "cards" }, p.items.map((h, i) => el("article", { class: "card" },
+        el("div", { class: "kicker" }, el("span", {}, `${h.stars}★ · ${h.area}`), el("span", {}, `${h.rating} · ${h.reviews} отзывов`)),
+        el("h3", {}, h.name),
+        el("div", { class: "price num" }, h.price, el("small", {}, `${h.per_night} за ночь · ${h.meal}`)),
+        el("div", { class: "tags" }, h.amenities.map((a) => el("span", { class: "tag" }, a))),
+        el("div", {}, el("h4", {}, "Хвалят"), marks("why", h.praise)),
+        el("div", {}, el("h4", {}, "Жалуются"), marks("trade", h.complaints)),
+        el("div", { class: "actions" }, sayBtn("Взять этот отель", `${i + 1}`)))))];
   },
   cart(p) {
+    drawMap(tripRoute(p.trip));
     const k = p.package;
     const rows = [
-      [`Туда: ${k.out.carrier} ${k.out.number}, ${k.out.depart} → ${k.out.arrive}`, k.out.price],
-      [`Отель: ${k.hotel.name} ${k.hotel.stars}★, ${k.hotel.meal}, заезд с ${k.hotel.check_in}`, k.hotel.price],
-      [`Трансферы туда и обратно: ${k.transfer.note}, ${k.transfer.minutes}`, k.transfer.price],
-      [`Обратно: ${k.back.carrier} ${k.back.number}, ${k.back.depart} → ${k.back.arrive}`, k.back.price],
+      [`Туда · ${k.out.carrier} ${k.out.number}`, `${k.out.depart} → ${k.out.arrive}`, k.out.price],
+      [`Отель · ${k.hotel.name}, ${k.hotel.stars}★`, `${k.hotel.meal}, заезд с ${k.hotel.check_in}`, k.hotel.price],
+      ["Трансферы", `${k.transfer.note}, ${k.transfer.minutes} в одну сторону`, k.transfer.price],
+      [`Обратно · ${k.back.carrier} ${k.back.number}`, `${k.back.depart} → ${k.back.arrive}`, k.back.price],
     ];
     return [
       p.diff && p.diff.length ? el("p", { class: "notice" }, "Пересобрал корзину: " + p.diff.join("; ") + ".") : null,
-      el("section", { class: "cart fresh" },
-        el("h3", {}, `Корзина — «${k.title}»`),
-        el("table", {}, rows.map(([a, b]) => el("tr", {}, el("td", {}, a), el("td", {}, b))),
-          el("tr", { class: "total" }, el("td", {}, `Итого · ${p.trip.people}`), el("td", {}, p.total))),
-        el("div", {}, el("h4", {}, "Проверил состыковки"), list("checks", k.checks)),
-        el("div", { class: "actions" }, el("button", { type: "button", class: "btn", onclick: () => send("да, оформляй") }, "Оформить и оплатить"),
-          say("нет, вернуться к вариантам")))];
+      el("h2", { class: "section-title" }, `Корзина · ${k.title}`),
+      el("p", { class: "section-sub" }, "Перед оплатой проверил, что всё стыкуется."),
+      el("div", { class: "split" },
+        el("article", { class: "card" },
+          el("table", { class: "receipt" }, rows.map(([a, b, c]) => el("tr", {}, el("td", {}, el("div", {}, a), el("small", {}, b)), el("td", {}, c))),
+            el("tr", { class: "total" }, el("td", {}, "Итого"), el("td", {}, p.total))),
+          el("div", { class: "actions" }, el("button", { type: "button", class: "btn accent", onclick: () => send("да, оформляй") }, "Оформить и оплатить"),
+            sayBtn("К вариантам", "нет, вернуться к вариантам"))),
+        el("article", { class: "card" }, el("h4", {}, "Поездка по часам"), timelineEl(k.timeline),
+          el("h4", {}, "Состыковки"), marks("", k.checks)))];
   },
   order(p) {
     const o = p.order;
-    return [el("section", { class: "cart fresh" },
-      el("div", { class: "order" }, `Заказ ${o.number}`),
-      el("div", {}, `${o.dest}: ${o.hotel}`), el("div", { class: "sub" }, `Туда: ${o.out}`), el("div", { class: "sub" }, `Обратно: ${o.back}`),
-      el("div", { class: "price" }, new Intl.NumberFormat("ru-RU").format(o.total) + " ₽", el("small", {}, "оплачено (имитация)")),
-      p.requests && p.requests.length ? el("div", {}, el("h4", {}, "Запросы в отель"), list("why", p.requests)) : null,
-      el("div", { class: "actions" }, say("запроси ранний заезд"), say("поздний выезд"), say("перенеси на 2 дня позже"), say("отмени бронь")))];
+    $("map").replaceChildren();
+    const cancel = o.cancel_until ? `бесплатно до ${o.cancel_until.split("-").reverse().join(".")}` : "невозвратный тариф";
+    return [el("h2", { class: "section-title" }, "Поездка оформлена"),
+      el("p", { class: "section-sub" }, "Оплата имитирована. Билеты и ваучер отеля пришли бы на почту."),
+      el("article", { class: "pass" },
+        el("div", { class: "main" },
+          el("div", { class: "route" }, el("div", { class: "codes" }, o.origin_code, el("i", {}, "→"), o.dest_code)),
+          el("dl", { class: "facts" }, el("dt", {}, "Туда"), el("dd", {}, o.out), el("dt", {}, "Обратно"), el("dd", {}, o.back),
+            el("dt", {}, "Отель"), el("dd", {}, o.hotel), el("dt", {}, "Отмена"), el("dd", {}, cancel)),
+          p.requests && p.requests.length ? el("div", {}, el("h4", {}, "Запросы в отель"), marks("why", p.requests)) : null,
+          el("div", { class: "actions" }, sayBtn("Ранний заезд", "запроси ранний заезд"), sayBtn("Поздний выезд", "поздний выезд"),
+            sayBtn("Перенести на 2 дня", "перенеси на 2 дня позже"), sayBtn("Отменить", "отмени бронь"))),
+        el("div", { class: "stub" },
+          el("div", { class: "label" }, "Номер заказа"), el("div", { class: "big num" }, o.number),
+          el("div", { class: "label" }, "Оплачено"), el("div", { class: "big num" }, new Intl.NumberFormat("ru-RU").format(o.total) + " ₽"),
+          el("div", { class: "label" }, "Путешественники"), el("div", {}, o.people || "")))];
   },
 };
 
+function addMessage(role, content, meta) {
+  const m = el("div", { class: `msg ${role}` }, content, meta ? el("span", { class: "meta" }, meta) : null);
+  $("log").append(m); $("log").scrollTop = $("log").scrollHeight; return m;
+}
+function shortReply(text, kind) {
+  if (kind === "order") { const lines = text.split("\n"); return [lines[0], lines[lines.length - 1]].join("\n"); }
+  if (!["destinations", "packages", "cart", "hotels"].includes(kind)) return text;
+  const blocks = text.split("\n\n");
+  const head = blocks[0].split("\n").filter((l) => !/^\s*(\d+\.|•)\s/.test(l));
+  return [head.slice(0, kind === "cart" ? 1 : 3).join("\n"), blocks[blocks.length - 1]].join("\n");
+}
+function renderStages(stage) {
+  const list = info ? info.stages : [];
+  const idx = list.findIndex((s) => s.key === stage);
+  $("stages").replaceChildren(...list.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : null }, s.title)));
+}
+function renderSuggest(stage) {
+  const items = stage === "start" ? (info ? info.examples : []) : (QUICK[stage] || []);
+  $("suggest").replaceChildren(...items.map((q) => el("button", { type: "button", onclick: () => send(q) }, q)));
+}
 function render(data) {
   sessionId = data.session_id;
-  renderStages(data.stage);
-  renderTicket(data);
+  renderStages(data.stage); renderHead(data); renderSuggest(data.stage);
+  document.querySelector(".board").classList.toggle("compact", ["plan", "cart", "booked"].includes(data.stage));
   const p = data.payload || {};
-  const view = views[p.kind];
-  if (view) $("view").replaceChildren(...view(p).filter(Boolean));
-  else if (p.kind === "greeting") $("view").replaceChildren();
-  $("quick").hidden = !["plan", "cart"].includes(data.stage);
+  if (views[p.kind]) $("view").replaceChildren(...views[p.kind](p).filter(Boolean));
+  else if (p.kind === "greeting") { $("view").replaceChildren(); drawMap({}); }
 }
-
 async function post(path, body) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!r.ok) throw new Error(`Сервер ответил ${r.status}`);
@@ -267,35 +453,33 @@ async function post(path, body) {
 }
 async function send(text) {
   if (busy || !text.trim()) return;
-  busy = true; $("send").disabled = true; $("examples").hidden = true;
+  busy = true; $("send").disabled = true;
   addMessage("user", text);
+  const typing = addMessage("bot", el("span", { class: "typing", role: "status", "aria-label": "Агент думает" }, el("i"), el("i"), el("i")));
   try {
     const data = await post("/api/chat", { text, session_id: sessionId });
-    addMessage("bot", shortReply(data.reply, (data.payload || {}).kind), `${data.nlu || "—"}, ${data.ms} мс`);
+    typing.remove();
+    addMessage("bot", shortReply(data.reply, (data.payload || {}).kind), `${data.nlu || "—"} · ${data.ms} мс`);
     render(data);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (e) {
-    addMessage("bot", "Не удалось связаться с сервером. Проверьте, что он запущен, и повторите запрос.");
+    typing.remove();
+    addMessage("bot", "Сервер не ответил. Проверьте, что приложение запущено, и отправьте сообщение ещё раз.");
   } finally { busy = false; $("send").disabled = false; $("text").focus(); }
 }
-
+function greet() {
+  addMessage("bot", "Привет! Опишите поездку одной фразой: куда или какой отдых хотите, когда, кто едет и бюджет. Не знаете, куда, — подскажу.",
+    info && info.llm ? `модель: ${info.llm}` : "без LLM — понимаю запросы по правилам");
+}
+function start() { renderStages("start"); renderHead(null); renderSuggest("start"); drawMap({}); greet(); }
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; send(t); });
-$("quick").addEventListener("click", (e) => { const b = e.target.closest("button[data-say]"); if (b) send(b.dataset.say); });
 $("reset").addEventListener("click", async () => {
   if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
-  sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); $("quick").hidden = true;
-  renderStages("start"); renderTicket({ understood: [], assumptions: [] }); $("examples").hidden = false; greet();
+  sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); start();
 });
-let info = null;
-function greet() {
-  if (!info) return;
-  addMessage("bot", "Привет! Опишите поездку одной фразой — куда или какой отдых хотите, когда, кто едет и бюджет. Если не знаете, куда, — подскажу.",
-    info.llm ? `модель: ${info.llm}` : "LLM не подключена — понимаю запросы по правилам");
-}
-fetch("/api/info").then((r) => r.json()).then((i) => {
-  info = i; stages = i.stages; renderStages("start");
-  $("examples").replaceChildren(...i.examples.map((q) => el("button", { type: "button", onclick: () => send(q) }, q)));
-  greet();
-}).catch(() => addMessage("bot", "Сервер недоступен."));
+Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/landdots.json").then((r) => r.json())])
+  .then(([i, l]) => { info = i; land = l; start(); })
+  .catch(() => addMessage("bot", "Сервер недоступен."));
 </script>
 </body>
 </html>
