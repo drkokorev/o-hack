@@ -88,8 +88,8 @@ def _leg_penalty(leg: Leg, trip: Trip) -> float:
         if leg.layover_min < 90:
             p += 3000
     hour = leg.depart.hour
-    if hour < 6 or hour >= 23:
-        p += 2500 * trip.people + (5000 if trip.children else 0)
+    if hour < 6 or hour >= 23:  # ночной рейс: не выспаться, а обратно — выезд из отеля ночью
+        p += 6000 * trip.people + (8000 if trip.children else 0)
     arr = leg.arrive.hour
     if arr < 6 and leg.mode == "plane":
         p += 2000 * trip.people
@@ -157,9 +157,13 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
     if not hotels:
         return [], ["нет отелей, которые принимают ваши условия"]
 
-    if trip.children or trip.nights >= 5:  # с ребёнком или на неделю без багажа не летают
-        outs = [leg for leg in outs if leg.baggage] or outs
-        backs = [leg for leg in backs if leg.baggage] or backs
+    if trip.children or trip.nights >= 5:  # с ребёнком или на неделю без багажа не летают…
+        night = lambda leg: leg.depart.hour < 6 or leg.depart.hour >= 23  # noqa: E731
+        with_bag_out = [leg for leg in outs if leg.baggage]
+        with_bag_back = [leg for leg in backs if leg.baggage]
+        # …но если с багажом остались только ночные рейсы, оставляем и дневные без багажа — пусть решит пользователь
+        outs = with_bag_out if with_bag_out and not all(map(night, with_bag_out)) else outs
+        backs = with_bag_back if with_bag_back and not all(map(night, with_bag_back)) else backs
     best_out = min(outs, key=lambda leg: _leg_penalty(leg, trip))
     best_back = min(backs, key=lambda leg: _leg_penalty(leg, trip))
     cheap_out = min(outs, key=lambda leg: (leg.price_per_person, leg.minutes))
@@ -173,8 +177,11 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
 
     by_value = sorted(hotels, key=lambda hp: -_hotel_value(hp[0], hp[1], trip))
     pinned = next((hp for hp in hotels if hp[0].id == pinned_hotel), None)
+    def stay_cost(hp: tuple[Hotel, int]) -> int:  # отель вместе с трансферами туда и обратно
+        return hp[1] + transfer(hp[0], trip.people, outs[0].mode == "train").price * 2
+
     decent = [hp for hp in hotels if hp[0].rating >= 7.5] or hotels
-    cheap_hotel = min(decent, key=lambda hp: hp[1])
+    cheap_hotel = min(decent, key=stay_cost)
     comfy = [hp for hp in hotels if hp[0].stars >= 4] or hotels
     comfort_hotel = max(comfy, key=lambda hp: (hp[0].rating, hp[0].stars, -hp[1]))
 
@@ -186,6 +193,8 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
                 optimal_hotel = hp
                 break
 
+    if stay_cost(optimal_hotel) < stay_cost(cheap_hotel):  # «Экономный» обязан быть самым дешёвым
+        cheap_hotel = optimal_hotel
     packages = []
     for key, out, back, (hotel, price) in (
         ("optimal", best_out, best_back, optimal_hotel),

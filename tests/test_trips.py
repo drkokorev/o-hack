@@ -185,3 +185,16 @@ def test_questions_are_answered_without_changing_stage():
     assert "°" in step.reply and s.state.stage == "cart"
     step = a.handle(s, "давай подумаем")
     assert s.state.stage == "cart" and "не тороплю" in step.reply
+
+
+@pytest.mark.parametrize("query", ["Анталья с 5 по 12 декабря вдвоём", "Хургада с 10 по 17 ноября, с ребёнком",
+                                   "Сочи с 5 по 12 декабря вдвоём", "Калининград с 6 по 9 ноября",
+                                   "Пхукет с 10 по 24 января вдвоём", "Казань из Питера на выходные с собакой, поездом"])
+def test_package_invariants(query):
+    _, step = talk(agent(), query)
+    items = {i["key"]: i for i in step.payload["items"]}
+    money = lambda s: int(s.replace("\xa0", "").replace("₽", "").replace(" ", ""))  # noqa: E731
+    if "budget" in items:
+        assert money(items["budget"]["total"]) <= min(money(i["total"]) for i in items.values())
+    optimal = step.payload["items"][0]
+    assert not any(c["level"] == "risk" and "ночью" in c["text"] for c in optimal["checks"])

@@ -321,7 +321,7 @@ class TripsDomain:
             direct_only=bool(state.direct_only), max_hours=state.max_travel_hours, meal=state.meal,
             free_cancellation=bool(state.free_cancellation), stars_min=state.stars_min,
             wishes=list(state.hotel_wishes or []) + (["pets"] if state.pets else []),
-            trip_types=list(state.trip_types or dest.tags[:2]))
+            trip_types=list(state.trip_types or []))
         trip.budget_night = state.budget_night
         return trip, None
 
