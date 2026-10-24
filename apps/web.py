@@ -29,6 +29,8 @@ from domains.trips.state import TripState
 log = logging.getLogger(__name__)
 STATIC = Path(__file__).parent / "static"
 MAX_SESSIONS = 1000
+MONTHS_NOM = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь",
+              "ноябрь", "декабрь"]
 STAGES = [("start", "Запрос"), ("destination", "Направление"), ("plan", "Варианты"),
           ("cart", "Корзина"), ("booked", "Покупка")]
 
@@ -89,7 +91,7 @@ def understood(state: TripState) -> list[str]:
         chips.append(f"{state.date_from.day} {MONTHS_GEN[state.date_from.month - 1]} — "
                      f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]}")
     elif state.month:
-        chips.append(f"месяц: {MONTHS_GEN[state.month - 1]}")
+        chips.append(MONTHS_NOM[state.month - 1])
     if state.adults:
         chips.append(f"{state.adults} {plural(state.adults, 'взрослый', 'взрослых', 'взрослых')}")
     if state.children:
