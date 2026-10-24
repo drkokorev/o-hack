@@ -13,7 +13,7 @@ class FakeLLM:
         self.responses = list(responses)
         self.calls: list[list[dict]] = []
 
-    def complete(self, messages, *, json_mode=False):
+    def complete(self, messages, *, json_mode=False, schema=None):
         self.calls.append(messages)
         item = self.responses.pop(0) if self.responses else {}
         if isinstance(item, Exception):

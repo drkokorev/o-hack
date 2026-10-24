@@ -12,6 +12,7 @@
 | Данные и сервисы | Где используется | Условия |
 | :--- | :--- | :--- |
 | Open-Meteo Historical Weather и Marine API | `domains/trips/data/climate.json` (собрано `tools/build_climate.py`) | CC BY 4.0, указываем источник в интерфейсе |
+| Natural Earth 110m land | `apps/static/landdots.json` (собрано `tools/build_landdots.py`) | Public domain |
 | Шрифты Golos Text, Unbounded (Google Fonts) | `apps/static/index.html` | SIL Open Font License 1.1 |
 | LLM через OpenAI-совместимое API (необязательно) | `core/llm.py`, по ключу из `.env` | По условиям провайдера |
 

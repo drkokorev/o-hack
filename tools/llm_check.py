@@ -11,7 +11,7 @@ import time
 from datetime import date
 
 from core.config import get_settings
-from core.llm import OpenAICompatLLM, extract
+from core.llm import build_llm, extract
 from domains.trips.domain import TripsDomain
 from domains.trips.state import TripState, TripUpdate
 
@@ -22,7 +22,8 @@ def main() -> int:
     if not settings.llm_enabled:
         print("LLM_API_KEY не задан в .env — агент работает только на правилах.")
         return 1
-    llm = OpenAICompatLLM(settings)
+    llm = build_llm(settings)
+    assert llm is not None
     started = time.perf_counter()
     try:
         raw = llm.complete([{"role": "user", "content": "Ответь одним словом: да"}])

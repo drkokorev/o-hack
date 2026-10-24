@@ -20,7 +20,7 @@ from pydantic import BaseModel
 
 from core.agent import Agent, Session
 from core.config import get_settings
-from core.llm import OpenAICompatLLM
+from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
@@ -124,7 +124,7 @@ def understood(state: TripState) -> list[str]:
 def build_app(agent: Agent | None = None) -> FastAPI:
     settings = get_settings()
     if agent is None:
-        llm = OpenAICompatLLM(settings) if settings.llm_enabled else None
+        llm = build_llm(settings)
         agent = Agent(TripsDomain(), llm, nlg=settings.llm_nlg)
     sessions = Sessions(agent)
     app = FastAPI(title="О!дин запрос — агент поездки", docs_url="/api/docs")
@@ -140,7 +140,10 @@ def build_app(agent: Agent | None = None) -> FastAPI:
 
     @app.get("/api/info")
     def info() -> dict:
-        return {"llm": settings.llm_model if agent.llm is not None else None, "destinations": len(DESTINATIONS),
+        breaker = getattr(agent.llm, "breaker", None)
+        return {"llm": settings.llm_model if agent.llm is not None else None,
+                "llm_state": breaker.state if breaker else "off",
+                "destinations": len(DESTINATIONS),
                 "places": [{"id": d.id, "name": d.name, "lat": d.lat, "lon": d.lon} for d in DESTINATIONS],
                 "origins": [{"name": o.name, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
                 "examples": EXAMPLES, "stages": [{"key": k, "title": t} for k, t in STAGES]}
@@ -154,6 +157,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         return {
             "session_id": session_id, "reply": step.reply, "payload": step.payload, "stage": state.stage,
             "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
+            "checked": session.last_notes,
             "ms": round((time.perf_counter() - started) * 1000),
         }
 

@@ -52,6 +52,7 @@ class TripState(TripParams):
     order: dict | None = None            # оформленный заказ
     requests: list[str] = Field(default_factory=list)        # запросы после покупки
     act: dict = Field(default_factory=dict)                  # действия последней реплики (выбор, «да», сдвиг)
+    pending: str | None = None                               # ждём подтверждения необратимого действия: cancel
     params_changed: bool = False                             # пожелания изменились — пересобрать план
 
     def params(self) -> TripParams:
@@ -67,5 +68,8 @@ class TripUpdate(TripParams):
     confirm: bool | None = Field(None, description="true — согласие оформить/подтвердить, false — отказ")
     shift_days: int | None = Field(None, description="Сдвиг дат: +2 «на два дня позже», -1 «на день раньше»")
     show_hotels: bool | None = Field(None, description="true, если просит другие отели")
+    hesitate: bool | None = Field(None, description="true, если сомневается и хочет подумать («давай подумаем», «подожди»)")
+    question: str | None = Field(None, description="О чём спрашивает: visa | cancellation | baggage | weather | "
+                                 "transfer | pets — если задаёт вопрос, а не меняет условия")
     after_sale: str | None = Field(None, description="После покупки: early_checkin | late_checkout | "
-                                   "change_dates | cancel")
+                                   "change_dates | cancel (просит отменить) | cancel_info (спрашивает об условиях)")

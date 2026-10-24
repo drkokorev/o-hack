@@ -6,7 +6,7 @@ import sys
 
 from core.agent import Agent
 from core.config import get_settings
-from core.llm import OpenAICompatLLM
+from core.llm import build_llm
 from domains import build_domain
 
 
@@ -20,7 +20,7 @@ def main() -> None:
     settings = get_settings()
     if not settings.llm_enabled:
         print("⚠️  LLM_API_KEY не задан в .env — агент не сможет разобрать запрос", file=sys.stderr)
-    llm = OpenAICompatLLM(settings) if settings.llm_enabled else None
+    llm = build_llm(settings)
     agent = Agent(build_domain(args.domain), llm, nlg=settings.llm_nlg)
     session = agent.new_session()
     print(f"Модель: {settings.llm_model if llm else 'нет (правила)'}. Команды: /state, /reset, /quit")

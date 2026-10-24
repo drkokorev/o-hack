@@ -29,8 +29,14 @@ WISH_WORDS = {
 }
 MEAL_WORDS = [("all_inclusive", r"вс[её] включено|all inclusive|олл? инклюзив|ультра"),
               ("half_board", r"полупансион"), ("breakfast", r"завтрак")]
-CONFIRM_YES = r"^(да|ага|угу|ок|окей|давай|конечно|подтверждаю|оформля\w*|бронир\w*|оплачива\w*|покупаю|бер[уё]м?|согласен|согласна|верно|всё верно|все верно)\b"
-CONFIRM_NO = r"^(нет|не надо|не нужно|отмена|стоп|не хочу)\b"
+# Согласие на необратимое действие должно быть явным: «давай подумаем», «да нет», «ок, а что с визой?» — не согласие
+CONFIRM_NO = r"^(нет|неа|не надо|не нужно|не стоит|отмена|стоп|не хочу|да нет)\b|передума"
+HESITATE = r"подума|подожд|погоди|не уверен|не готов|позже реш|не сейчас|пока нет|сомнева|посоветуюсь"
+QUESTION_TOPICS = [("visa", r"виз|паспорт|границ"), ("cancellation", r"отмен|вернуть деньги|возврат"),
+                   ("baggage", r"багаж|чемодан|ручн\w* клад"), ("weather", r"погод|температур|тепло ли|холодно|дожд|мор[еяю] .*тепл|вода"),
+                   ("transfer", r"трансфер|как добрат|до отеля|такси"), ("pets", r"собак|кошк|животн|питом")]
+CONFIRM_STRONG = r"^(да\b(?!\s*нет)|оформля|оформи|бронир|оплачива|оплати|покупаю|подтвержда|согласн|верно|всё верно|все верно|бер[уё]м?\b|давай оформ|давай брон|давай бер|давайте оформ)"
+CONFIRM_SHORT = r"^(ок|окей|ага|угу|конечно|давай|давайте|го|поехали|отлично|супер)[.!]*$"
 ORDINALS = {"перв": 1, "втор": 2, "трет": 3, "четв": 4, "пят": 5}
 _OFFSET_WORDS = {"день": 1, "дня": 1, "дней": 1, "сутки": 1, "неделю": 7, "недели": 7}
 
@@ -184,7 +190,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["max_travel_hours"] = float(m.group(1))
     elif re.search(r"без долг\w+ (перел[её]т|дорог)|недалеко|не очень далеко|близко лететь|недолго лететь", t):
         data["max_travel_hours"] = 5.0
-    if re.search(r"поезд|на поезде|ж/?д|по железной", t) and not re.search(r"без поезд|не поезд", t):
+    if re.search(r"поезд|\bж/?д\b|по железной|сапсан|ласточк", t) and not re.search(r"без поезд|не поезд", t):
         data["transport"] = "train"
     elif re.search(r"самол[её]т|перел[её]т|лететь|полет", t) and not re.search(r"без (долг|перел)|не лететь", t):
         if re.search(r"самол[её]т|только перел", t):
@@ -214,20 +220,30 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     # Действия
     if (pick := _pick(t)) is not None:
         data["pick"] = pick
-    if re.search(CONFIRM_YES, t.strip()) and not data.get("pick"):
-        data["confirm"] = True
-    elif re.search(CONFIRM_NO, t.strip()):
+    stripped = t.strip()
+    if re.search(HESITATE, stripped):
+        data["hesitate"] = True
+    elif re.search(CONFIRM_NO, stripped):
         data["confirm"] = False
+    elif "?" not in text and not data.get("pick") and (re.search(CONFIRM_STRONG, stripped)
+                                                       or re.fullmatch(CONFIRM_SHORT, stripped)):
+        data["confirm"] = True
     if shift is not None:
         data["shift_days"] = shift
     if re.search(r"друг\w* отел|ещ[её] отел|покажи отел|другой вариант жиль|все отели|сменить отель", t):
         data["show_hotels"] = True
-    if re.search(r"ранн\w* заезд|заселит\w* раньше|заселиться пораньше", t):
+    asking = "?" in text or re.search(r"\b(можно ли|если|а что если|какие условия|условия отмены)\b", t)
+    if "?" in text or re.search(r"^(а |какая |какие |какой |нужн\w+ ли|есть ли|сколько )", t):
+        for topic, pattern in QUESTION_TOPICS:
+            if re.search(pattern, t) and not (topic == "pets" and data.get("pets")):
+                data["question"] = topic
+                break
+    if (mm := re.search(r"ранн\w* заезд|заселит\w* раньше|заселиться пораньше", t)) and not negated(t, mm.start()):
         data["after_sale"] = "early_checkin"
-    elif re.search(r"поздн\w* выезд|выехать позже", t):
+    elif (mm := re.search(r"поздн\w* выезд|выехать позже", t)) and not negated(t, mm.start()):
         data["after_sale"] = "late_checkout"
-    elif re.search(r"отмени\w* (бронь|заказ|поездку)|отмена (брони|заказа)", t):
-        data["after_sale"] = "cancel"
+    elif re.search(r"отмен\w*\s+(\w+\s+)?(брон\w*|заказ\w*|поездк\w*)|отмена (брони|заказа)", t):
+        data["after_sale"] = "cancel_info" if asking else "cancel"
     elif state.stage == "booked" and (shift is not None or d_in):
         data["after_sale"] = "change_dates"
     return TripUpdate(**data)

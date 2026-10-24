@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Callable, Protocol
@@ -10,6 +11,8 @@ from pydantic import BaseModel
 
 from .guard import looks_like_injection, sanitize
 from .llm import LLM, Message, extract, strip_think
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -39,6 +42,8 @@ class Domain(Protocol):
 
     # Необязательно: def rule_extract(self, state, text, today) -> update_model
     # Детерминированный разбор — fallback, когда LLM нет, она упала или ничего не извлекла.
+    # Необязательно: def arbitrate(self, state, text, llm_update, rule_update) -> (update, notes)
+    # Сверка ответа LLM с текстом и правилами: что принять, что отбросить и почему.
 
     def step(self, state: BaseModel) -> Step:
         """Policy домена. Может обновлять служебные поля состояния (предложенные слоты, запись)."""
@@ -50,7 +55,8 @@ class Session:
     state: BaseModel
     history: list[Message] = field(default_factory=list)
     last: Step | None = None
-    last_nlu: str = ""  # кто разобрал последнюю реплику: llm | rules | none
+    last_nlu: str = ""  # кто разобрал последнюю реплику: llm | llm+rules | rules | none
+    last_notes: list[str] = field(default_factory=list)  # что отброшено из ответа LLM и почему
 
 
 NLG_SYSTEM = (
@@ -99,8 +105,9 @@ class Agent:
         return step
 
     def _understand(self, session: Session, text: str) -> tuple[BaseModel, str]:
-        """LLM — основной путь; правила домена дополняют то, что LLM пропустила, и заменяют её при сбое."""
+        """LLM — основной путь; домен сверяет её ответ с текстом и правилами, правила заменяют её при сбое."""
         today = self.today()
+        session.last_notes = []
         rules = getattr(self.domain, "rule_extract", None)
         by_rules = rules(session.state, text, today) if rules is not None else None
         if self.llm is not None:
@@ -109,6 +116,12 @@ class Agent:
             )
             update = extract(self.llm, self.domain.update_model, messages)
             if update.model_dump(exclude_none=True):
+                arbitrate = getattr(self.domain, "arbitrate", None)
+                if arbitrate is not None and by_rules is not None:
+                    update, session.last_notes = arbitrate(session.state, text, update, by_rules)
+                    if session.last_notes:
+                        log.info("Сверка LLM: %s", "; ".join(session.last_notes))
+                    return update, "llm+rules" if by_rules.model_dump(exclude_none=True) else "llm"
                 if by_rules is None:
                     return update, "llm"
                 gaps = {k: v for k, v in by_rules.model_dump(exclude_none=True).items()

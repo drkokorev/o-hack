@@ -459,7 +459,8 @@ async function send(text) {
   try {
     const data = await post("/api/chat", { text, session_id: sessionId });
     typing.remove();
-    addMessage("bot", shortReply(data.reply, (data.payload || {}).kind), `${data.nlu || "—"} · ${data.ms} мс`);
+    const checked = (data.checked || []).length ? ` · сверка: отброшено ${data.checked.length}` : "";
+    addMessage("bot", shortReply(data.reply, (data.payload || {}).kind), `${data.nlu || "—"} · ${data.ms} мс${checked}`);
     render(data);
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (e) {
