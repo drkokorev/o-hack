@@ -102,11 +102,20 @@ class OpenAICompatLLM:
     def _before_call(self) -> None:
         """Точка для обновления токена (GigaChat)."""
 
+    def _model_extras(self) -> dict:
+        """Особенности семейств моделей: рассуждения gpt-oss съедают лимит токенов, Qwen3 по умолчанию «думает»."""
+        name = self._model.lower()
+        if "gpt-oss" in name or re.search(r"\bo[134]\b", name):
+            return {"extra_body": {"reasoning_effort": self._settings.llm_reasoning_effort}}
+        if "qwen3" in name and "instruct" not in name:
+            return {"extra_body": {"chat_template_kwargs": {"enable_thinking": False}}}
+        return {}
+
     def complete(self, messages: list[Message], *, json_mode: bool = False, schema: dict | None = None) -> str:
         from openai import BadRequestError
 
         self._before_call()
-        extra: dict = {}
+        extra: dict = self._model_extras()
         if schema is not None and self._schema_mode:
             extra["response_format"] = {"type": "json_schema",
                                         "json_schema": {"name": "update", "strict": True, "schema": schema}}
@@ -114,14 +123,15 @@ class OpenAICompatLLM:
             extra["response_format"] = {"type": "json_object"}
         try:
             resp = self._client.chat.completions.create(model=self._model, messages=messages, temperature=0,
-                                                        max_tokens=600, **extra)
+                                                        max_tokens=1500, **extra)
         except BadRequestError as err:
-            if not extra:
+            if "response_format" not in extra and "extra_body" not in extra:
                 raise
-            log.warning("Провайдер отверг response_format (%s) — дальше без него", type(err).__name__)
+            log.warning("Провайдер отверг параметры запроса (%s) — повторяю без response_format и extra_body",
+                        type(err).__name__)
             self._json_mode = self._schema_mode = False
             resp = self._client.chat.completions.create(model=self._model, messages=messages, temperature=0,
-                                                        max_tokens=600)
+                                                        max_tokens=1500)
         return resp.choices[0].message.content or ""
 
 

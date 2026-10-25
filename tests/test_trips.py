@@ -198,3 +198,28 @@ def test_package_invariants(query):
         assert money(items["budget"]["total"]) <= min(money(i["total"]) for i in items.values())
     optimal = step.payload["items"][0]
     assert not any(c["level"] == "risk" and "ночью" in c["text"] for c in optimal["checks"])
+
+
+def test_price_calendar_and_picking_a_day_keeps_trip_length():
+    a = agent()
+    s, step = talk(a, "Сочи с 5 по 12 декабря вдвоём")
+    cal = step.payload["calendar"]
+    assert len(cal) >= 10 and sum(d["chosen"] for d in cal) == 1 and any(d["cheap"] for d in cal)
+    a.handle(s, "с 9 декабря")
+    assert (s.state.date_from, s.state.date_to) == (date(2026, 12, 9), date(2026, 12, 16))
+
+
+def test_images_are_attached_by_id(tmp_path):
+    import json
+
+    from apps.web import Images
+
+    (tmp_path / "credits.json").write_text(json.dumps({
+        "dest/sochi.jpg": {"author": "A", "license": "CC BY-SA 4.0", "page": "https://commons"},
+        "hotel/resort-1.jpg": {"author": "B", "license": "CC0", "page": None}}))
+    images = Images(tmp_path)
+    payload = {"kind": "destinations", "items": [{"id": "sochi"}, {"id": "nowhere"}]}
+    images.decorate(payload)
+    assert payload["items"][0]["image"]["src"] == "/static/img/dest/sochi.jpg"
+    assert payload["items"][1]["image"] is None
+    assert images.hotel("sochi-h01", "sochi")["src"] == "/static/img/hotel/resort-1.jpg"

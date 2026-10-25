@@ -22,24 +22,25 @@ class Suggestion:
     weather: MonthClimate | None
     reasons: list[str] = field(default_factory=list)
     risks: list[str] = field(default_factory=list)
+    start: date | None = None
 
 
 def estimate(origin: Origin, dest: Destination, start: date, nights: int, adults: int, children: int,
-             mode: str | None = None) -> tuple[int, int, str, int] | None:
-    """Оценка поездки: (итого, минут в пути, вид транспорта, пересадок). None — не добраться."""
+             mode: str | None = None, pets: bool = False, meal: str | None = None,
+             stars_min: int | None = None) -> tuple[int, int, str, int] | None:
+    """Оценка поездки тем же планировщиком, что соберёт варианты: (цена «от», минут в пути, транспорт, пересадок)."""
     from datetime import timedelta
 
-    out = transport_options(origin, dest, start, mode)
-    back = transport_options(origin, dest, start + timedelta(days=nights), mode)
-    if not out or not back:
+    from .planner import Trip, make_packages
+
+    trip = Trip(origin, dest, start, start + timedelta(days=nights), adults, children, pets=pets, mode=mode,
+                meal=meal, stars_min=stars_min)
+    packages, _ = make_packages(trip)
+    if not packages:
         return None
-    people = adults + children
-    best_out = min(out, key=lambda leg: leg.price_per_person + leg.minutes * 15)
-    cheapest_back = min(leg.price_per_person for leg in back)
-    hotels = [h for h in hotels_for(dest.id) if 3 <= h.stars <= 4] or list(hotels_for(dest.id))
-    stay = median(hotel_price(h, start, nights, adults, children) for h in hotels)
-    total = int((best_out.price_per_person + cheapest_back) * people + stay + 3000)
-    return int(round(total, -3)), best_out.minutes, best_out.mode, best_out.stops
+    cheapest = min(p.total(trip.people) for p in packages)
+    best = packages[0].out
+    return int(cheapest // 1000 * 1000), best.minutes, best.mode, best.stops
 
 
 def _hours(minutes: int) -> str:
@@ -49,7 +50,10 @@ def _hours(minutes: int) -> str:
 
 def suggest(origin: Origin, start: date, nights: int, adults: int, children: int, *, trip_types: list[str],
             budget: int | None, max_hours: float | None, abroad: bool | None, pets: bool, mode: str | None,
-            exclude: set[str] | None = None, limit: int = 3, economy: bool = False) -> list[Suggestion]:
+            exclude: set[str] | None = None, limit: int = 3, economy: bool = False, meal: str | None = None,
+            stars_min: int | None = None, window: tuple[date, date] | None = None) -> list[Suggestion]:
+    from .planner import MEAL_RANK, cheapest_start
+
     wants = set(trip_types)
     beach = bool(wants & {"sea", "beach"})
     warm = "warm" in wants or beach
@@ -60,11 +64,17 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             continue
         if abroad is False and dest.abroad or abroad is True and not dest.abroad:
             continue
-        est = estimate(origin, dest, start, nights, adults, children, mode)
+        hotels = hotels_for(dest.id)
+        if meal and not any(MEAL_RANK[h.meal] >= MEAL_RANK.get(meal, 0) for h in hotels):
+            continue  # просили «всё включено» — туда, где его нет, не зовём
+        if stars_min and not any(h.stars >= stars_min for h in hotels):
+            continue
+        day = (cheapest_start(origin, dest, window[0], window[1], nights, mode) if window else start) or start
+        est = estimate(origin, dest, day, nights, adults, children, mode, pets, meal, stars_min)
         if est is None:
             continue
         total, minutes, leg_mode, stops = est
-        weather = climate(dest.id, start.month)
+        weather = climate(dest.id, day.month)
         score, reasons, risks = 0.0, [], []
 
         core = wants - {"warm", "sea", "beach", "food"}
@@ -119,7 +129,7 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             score -= total / (120_000 if economy else 400_000)
         if economy and not budget:
             reasons.append(f"≈ {total // max(adults + children, 1) // 1000} тыс. ₽ на человека")
-        if start.month in dest.peak_months:
+        if day.month in dest.peak_months:
             score += 0.6  # сейчас там сезон — поэтому туда и едут
         if dest.abroad:
             if pets:
@@ -127,9 +137,9 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
                 risks.append("за границу с животным: ветпаспорт, чип и правила страны")
             if dest.visa != "не нужна":
                 risks.append(f"виза: {dest.visa}")
-        if start.month in dest.peak_months:
+        if day.month in dest.peak_months:
             risks.append("высокий сезон — цены выше")
-        out.append(Suggestion(dest, round(score, 3), total, minutes, leg_mode, stops, weather, reasons, risks))
+        out.append(Suggestion(dest, round(score, 3), total, minutes, leg_mode, stops, weather, reasons, risks, day))
     out.sort(key=lambda s: -s.score)
     if not wants:  # пожеланий нет — показываем разные типы отдыха, а не три похожих города
         diverse, kinds = [], set()
@@ -147,5 +157,5 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
     if not out and wants:  # ничего не подошло строго — ослабляем тип отдыха, а не молчим
         return suggest(origin, start, nights, adults, children, trip_types=[t for t in trip_types if t in ("sea", "warm")],
                        budget=budget, max_hours=max_hours, abroad=abroad, pets=pets, mode=mode, exclude=exclude,
-                       limit=limit, economy=economy) if set(trip_types) - {"sea", "warm"} else []
+                       limit=limit, economy=economy, meal=meal, stars_min=stars_min, window=window) if set(trip_types) - {"sea", "warm"} else []
     return out[:limit]

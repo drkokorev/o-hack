@@ -121,12 +121,80 @@ def understood(state: TripState) -> list[str]:
     return chips
 
 
+class Images:
+    """Фото направлений и иллюстрации отелей (Wikimedia Commons, свободные лицензии) — в ответы API по id."""
+
+    HOTEL_KINDS = ("resort", "pool", "city", "room", "mountain", "lobby")
+
+    def __init__(self, root: Path = STATIC / "img"):
+        import json
+
+        path = root / "credits.json"
+        self.credits: dict[str, dict] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        self.by_kind = {k: sorted(f for f in self.credits if f.startswith(f"hotel/{k}-")) for k in self.HOTEL_KINDS}
+
+    def _ref(self, key: str | None) -> dict | None:
+        if not key or key not in self.credits:
+            return None
+        c = self.credits[key]
+        return {"src": f"/static/img/{key}", "credit": f"{c['author']}, {c['license']}", "page": c.get("page")}
+
+    def dest(self, dest_id: str | None) -> dict | None:
+        return self._ref(f"dest/{dest_id}.jpg")
+
+    def hotel(self, hotel_id: str, dest_id: str, avoid: set[str] | None = None) -> dict | None:
+        """Иллюстрация по типу направления; `avoid` — уже показанные рядом, чтобы карточки не повторялись."""
+        import zlib
+
+        tags = BY_ID[dest_id].tags if dest_id in BY_ID else ()
+        kinds = (["resort", "pool", "room"] if "beach" in tags else ["mountain", "room", "lobby"] if "ski" in tags
+                 else ["city", "room", "lobby"])
+        pool = [f for k in kinds for f in self.by_kind.get(k, [])] or [f for v in self.by_kind.values() for f in v]
+        if not pool:
+            return None
+        start = zlib.crc32(hotel_id.encode()) % len(pool)
+        for i in range(len(pool)):
+            key = pool[(start + i) % len(pool)]
+            if not avoid or key not in avoid:
+                if avoid is not None:
+                    avoid.add(key)
+                return self._ref(key)
+        return self._ref(pool[start])
+
+    def decorate(self, payload: dict | None) -> dict | None:
+        if not payload:
+            return payload
+        kind = payload.get("kind")
+        if kind == "destinations":
+            for item in payload["items"]:
+                item["image"] = self.dest(item["id"])
+        if payload.get("trip"):
+            payload["trip"]["image"] = self.dest(payload["trip"].get("dest_id"))
+        dest_id = (payload.get("trip") or {}).get("dest_id")
+        shown: set[str] = set()
+        same: dict[str, dict | None] = {}  # один и тот же отель в разных вариантах — одна картинка
+        for item in payload.get("items", []) if kind == "packages" else []:
+            hid = item["hotel"]["id"]
+            if hid not in same:
+                same[hid] = self.hotel(hid, dest_id, shown)
+            item["hotel"]["image"] = same[hid]
+        if kind == "hotels":
+            for item in payload["items"]:
+                item["image"] = self.hotel(item["id"], item["id"].rsplit("-h", 1)[0], shown)
+        if kind == "cart":
+            payload["package"]["hotel"]["image"] = self.hotel(payload["package"]["hotel"]["id"], dest_id)
+        if kind == "order":
+            payload["order"]["image"] = self.dest(payload["order"].get("dest_id"))
+        return payload
+
+
 def build_app(agent: Agent | None = None) -> FastAPI:
     settings = get_settings()
     if agent is None:
         llm = build_llm(settings)
         agent = Agent(TripsDomain(), llm, nlg=settings.llm_nlg)
     sessions = Sessions(agent)
+    images = Images()
     app = FastAPI(title="О!дин запрос — агент поездки", docs_url="/api/docs")
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
@@ -155,7 +223,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         step = agent.handle(session, body.text)
         state: TripState = session.state  # type: ignore[assignment]
         return {
-            "session_id": session_id, "reply": step.reply, "payload": step.payload, "stage": state.stage,
+            "session_id": session_id, "reply": step.reply, "payload": images.decorate(step.payload), "stage": state.stage,
             "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
             "checked": session.last_notes,
             "ms": round((time.perf_counter() - started) * 1000),

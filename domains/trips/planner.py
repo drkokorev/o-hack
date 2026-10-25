@@ -98,18 +98,27 @@ def _leg_penalty(leg: Leg, trip: Trip) -> float:
     return p
 
 
-def _hotel_filter(h: Hotel, trip: Trip, strict: int) -> bool:
+RELAX_STEPS = (  # ослабляем по одному условию, от наименее важного; пишем пользователю, что именно
+    ("wishes", "удобства из пожеланий сделал желательными"),
+    ("free_cancellation", "бесплатную отмену сделал желательной"),
+    ("budget_night", "немного превысил цену за ночь"),
+    ("stars_min", "снял ограничение по звёздам"),
+    ("meal", "снял требование к питанию"),
+)
+
+
+def _hotel_filter(h: Hotel, trip: Trip, relaxed: set[str]) -> bool:
     if trip.pets and "pets" not in h.amenities:
         return False
-    if strict >= 1 and trip.budget_night and h.base_price > trip.budget_night * 1.1:
+    if "budget_night" not in relaxed and trip.budget_night and h.base_price > trip.budget_night * 1.1:
         return False
-    if strict >= 1 and trip.stars_min and h.stars < trip.stars_min:
+    if "stars_min" not in relaxed and trip.stars_min and h.stars < trip.stars_min:
         return False
-    if strict >= 1 and trip.meal and MEAL_RANK[h.meal] < MEAL_RANK.get(trip.meal, 0):
+    if "meal" not in relaxed and trip.meal and MEAL_RANK[h.meal] < MEAL_RANK.get(trip.meal, 0):
         return False
-    if strict >= 2 and trip.free_cancellation and h.free_cancel_days is None:
+    if "free_cancellation" not in relaxed and trip.free_cancellation and h.free_cancel_days is None:
         return False
-    if strict >= 2 and any(w not in h.amenities for w in trip.wishes if w != "pets"):
+    if "wishes" not in relaxed and any(w not in h.amenities for w in trip.wishes if w != "pets"):
         return False
     return True
 
@@ -134,17 +143,22 @@ def _hotel_value(h: Hotel, price: int, trip: Trip) -> float:
 
 
 def candidate_hotels(trip: Trip) -> tuple[list[tuple[Hotel, int]], list[str]]:
-    """Отели по фильтрам с лестницей ослабления; второе значение — что пришлось ослабить."""
-    relaxed: list[str] = []
-    notes = {2: "удобства и бесплатную отмену сделал желательными",
-             1: "убрал ограничения по звёздам, питанию и цене за ночь"}
-    for strict in (2, 1, 0):
-        hotels = [h for h in hotels_for(trip.dest.id) if _hotel_filter(h, trip, strict)]
+    """Отели по фильтрам; если пусто — ослабляем по одному условию. Второе значение — что пришлось ослабить."""
+    relaxed: set[str] = set()
+    notes: list[str] = []
+    active = {"wishes": bool([w for w in trip.wishes if w != "pets"]), "free_cancellation": trip.free_cancellation,
+              "budget_night": bool(trip.budget_night), "stars_min": bool(trip.stars_min), "meal": bool(trip.meal)}
+    for key, note in ((None, None), *RELAX_STEPS):
+        if key is not None:
+            if not active[key]:
+                continue
+            relaxed.add(key)
+            notes.append(note)
+        hotels = [h for h in hotels_for(trip.dest.id) if _hotel_filter(h, trip, relaxed)]
         if hotels:
             priced = [(h, hotel_price(h, trip.date_in, trip.nights, trip.adults, trip.children)) for h in hotels]
-            return priced, relaxed
-        relaxed.append(notes.get(strict, ""))
-    return [], relaxed
+            return priced, notes
+    return [], notes
 
 
 def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Package], list[str]]:
@@ -259,12 +273,12 @@ def explain(pkg: Package, trip: Trip, all_: list[Package]) -> None:
     people = trip.people
     totals = {p.key: p.total(people) for p in all_}
     trade = []
-    cheapest = min(totals.values())
-    if totals[pkg.key] > cheapest:
-        trade.append(f"дороже экономного на {fmt_money(totals[pkg.key] - cheapest)}")
-    best_rating = max(p.hotel.rating for p in all_)
-    if h.rating < best_rating - 0.3:
-        trade.append(f"рейтинг отеля ниже, чем в «Комфорте» ({h.rating:.1f} против {best_rating:.1f})")
+    cheapest_key = min(totals, key=totals.get)
+    if totals[pkg.key] > totals[cheapest_key]:
+        trade.append(f"дороже варианта «{PACKAGE_TITLES[cheapest_key]}» на {fmt_money(totals[pkg.key] - totals[cheapest_key])}")
+    best = max(all_, key=lambda p: p.hotel.rating)
+    if h.rating < best.hotel.rating - 0.3:
+        trade.append(f"рейтинг отеля ниже, чем в варианте «{best.title}» ({h.rating:.1f} против {best.hotel.rating:.1f})")
     fastest = min(p.out.minutes for p in all_)
     if pkg.out.minutes > fastest + 60:
         trade.append(f"дорога дольше на {hm(pkg.out.minutes - fastest)}")
@@ -321,7 +335,7 @@ def check(pkg: Package, trip: Trip) -> list[tuple[str, str]]:
                             f"{'вокзал' if pkg.back.mode == 'train' else 'рейс'} в {leave:%H:%M} — "
                             "попросим поздний выезд или хранение багажа"))
     elif leave.hour < 5:
-        out.append(("warn", f"выезд в отель в {leave:%H:%M} — очень рано"))
+        out.append(("warn", f"выезд из отеля в {leave:%H:%M} — очень рано"))
     else:
         out.append(("ok", f"выезд в {leave:%H:%M} → {'вокзал' if pkg.back.mode == 'train' else 'аэропорт'} "
                           f"с запасом {hm(buffer)}"))
@@ -380,3 +394,33 @@ def timeline(pkg: Package, trip: Trip) -> list[dict]:
         {"t": f"{pkg.back.depart:%d.%m %H:%M}", "label": "Обратно", "level": "warn" if night(pkg.back.depart) else "ok"},
         {"t": f"{pkg.back.arrive:%d.%m %H:%M}", "label": "Дома", "level": "ok"},
     ]
+
+
+def cheapest_start(origin: Origin, dest: Destination, first: date, last: date, nights: int,
+                   mode: str | None = None) -> date | None:
+    """Самая выгодная дата заезда в окне [first, last] по цене дороги туда-обратно (её же видит календарь цен)."""
+    best, best_cost = None, None
+    day = first
+    while day <= last:
+        out = transport_options(origin, dest, day, mode)
+        back = transport_options(origin, dest, day + timedelta(days=nights), mode)
+        if out and back:
+            cost = min(o.price_per_person for o in out) + min(b.price_per_person for b in back)
+            if best_cost is None or cost < best_cost:
+                best, best_cost = day, cost
+        day += timedelta(days=1)
+    return best
+
+
+def month_window(month: int, part: str | None, today: date) -> tuple[date, date]:
+    """Окно дат заезда: весь месяц или его начало (1–10), середина (11–20), конец (21+)."""
+    from calendar import monthrange
+
+    year = today.year + (1 if month < today.month else 0)
+    end = monthrange(year, month)[1]
+    lo, hi = {"early": (1, 10), "mid": (11, 20), "late": (21, end)}.get(part or "", (1, end - 1))
+    first = max(date(year, month, lo), today + timedelta(days=3))
+    last = date(year, month, hi)
+    if first > last:  # окно уже прошло — берём тот же период в следующем году
+        first, last = date(year + 1, month, lo), date(year + 1, month, hi)
+    return first, last

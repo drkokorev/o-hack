@@ -78,6 +78,14 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
             check_out = check_out.replace(year=check_out.year + 1)
         return check_in, check_out
 
+    # «5-12.12», «5–12.12.2026»
+    m = re.search(r"\b(\d{1,2})\s*[-–—]\s*(\d{1,2})\.(\d{1,2})(?:\.\d{2,4})?\b", t)
+    if m and 1 <= int(m.group(3)) <= 12:
+        check_in = future_date(int(m.group(1)), int(m.group(3)), today)
+        check_out = future_date(int(m.group(2)), int(m.group(3)), today)
+        if check_in and check_out and check_out > check_in:
+            return check_in, check_out
+
     # «7.11 — 9.11», «07.11.2026»
     dots = re.findall(r"\b(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?\b", t)
     parsed = [future_date(int(d), int(mo), today) for d, mo, _ in dots if 1 <= int(mo) <= 12]

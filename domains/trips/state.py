@@ -15,6 +15,7 @@ class TripParams(BaseModel):
     trip_types: list[str] | None = Field(None, description="Коды типа отдыха: sea, beach, warm, mountains, ski, "
                                          "city, culture, nature, food, spa, exotic")
     month: int | None = Field(None, description="Месяц поездки 1–12, если точных дат нет")
+    month_part: str | None = Field(None, description="early | mid | late — «в начале/середине/конце месяца»")
     date_from: date | None = Field(None, description="Дата начала поездки YYYY-MM-DD")
     date_to: date | None = Field(None, description="Дата окончания поездки YYYY-MM-DD")
     nights: int | None = Field(None, description="Число ночей")
@@ -32,6 +33,7 @@ class TripParams(BaseModel):
     hotel_wishes: list[str] | None = Field(None, description="Коды удобств: pool, kids_club, spa, gym, parking, "
                                            "pets, beach_line, kitchen")
     abroad: bool | None = Field(None, description="true — за границу, false — только по России")
+    baggage: bool | None = Field(None, description="true, если нужен багаж в самолёте")
     economy: bool | None = Field(None, description="true, если важна низкая цена («недорого», «бюджетно»)")
 
 
@@ -53,7 +55,12 @@ class TripState(TripParams):
     order: dict | None = None            # оформленный заказ
     requests: list[str] = Field(default_factory=list)        # запросы после покупки
     act: dict = Field(default_factory=dict)                  # действия последней реплики (выбор, «да», сдвиг)
-    pending: str | None = None                               # ждём подтверждения необратимого действия: cancel
+    pending: str | None = None                               # ждём подтверждения: cancel | change
+    dates_assumed: bool = False                              # даты выбрал агент (их можно пересчитать)
+    past_orders: list[dict] = Field(default_factory=list)    # прошлые заказы, если начата новая поездка
+    rejected: list[str] = Field(default_factory=list)        # направления, от которых пользователь отказался
+    unclear: bool = False                                    # реплика не дала ни параметров, ни действий
+    last_view: dict | None = None                            # последний показанный список — повторить при непонятной реплике
     params_changed: bool = False                             # пожелания изменились — пересобрать план
 
     def params(self) -> TripParams:
@@ -71,8 +78,13 @@ class TripUpdate(TripParams):
     show_hotels: bool | None = Field(None, description="true, если просит другие отели")
     wants_ideas: bool | None = Field(None, description="true, если хочет поехать, но не знает куда («хочу отдохнуть», "
                                      "«куда поехать?», «посоветуй»)")
+    more: bool | None = Field(None, description="true, если просит другие варианты направлений («покажи ещё»)")
+    back: bool | None = Field(None, description="true, если хочет вернуться к выбору направления")
+    unknown_place: str | None = Field(None, description="Город или страна, которых нет в каталоге (служебное поле правил)")
+    unknown_origin: str | None = Field(None, description="Город вылета, которого нет в списке (служебное поле правил)")
+    add_adults: int | None = Field(None, description="Сколько взрослых добавить («ещё один взрослый» → 1)")
     hesitate: bool | None = Field(None, description="true, если сомневается и хочет подумать («давай подумаем», «подожди»)")
     question: str | None = Field(None, description="О чём спрашивает: visa | cancellation | baggage | weather | "
                                  "transfer | pets — если задаёт вопрос, а не меняет условия")
-    after_sale: str | None = Field(None, description="После покупки: early_checkin | late_checkout | "
-                                   "change_dates | cancel (просит отменить) | cancel_info (спрашивает об условиях)")
+    after_sale: str | None = Field(None, description="После покупки: early_checkin | late_checkout | change_dates | "
+                                   "cancel (просит отменить) | cancel_info (спрашивает об условиях) | reminder | transfer")

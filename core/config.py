@@ -17,6 +17,7 @@ class Settings:
     llm_schema_mode: bool      # строгая JSON-схема (structured outputs), если провайдер умеет
     llm_timeout: float
     llm_nlg: bool
+    llm_reasoning_effort: str  # для рассуждающих моделей (gpt-oss): low — быстрее и дешевле
     gigachat_auth_key: str
     gigachat_scope: str
     gigachat_oauth_url: str
@@ -45,6 +46,7 @@ def get_settings() -> Settings:
         llm_schema_mode=os.getenv("LLM_SCHEMA_MODE", "0") == "1",
         llm_timeout=float(os.getenv("LLM_TIMEOUT", "8")),
         llm_nlg=os.getenv("LLM_NLG", "0") == "1",
+        llm_reasoning_effort=os.getenv("LLM_REASONING_EFFORT", "low"),
         gigachat_auth_key=os.getenv("GIGACHAT_AUTH_KEY", ""),
         gigachat_scope=os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS"),
         gigachat_oauth_url=os.getenv("GIGACHAT_OAUTH_URL", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"),

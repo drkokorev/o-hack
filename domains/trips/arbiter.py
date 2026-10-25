@@ -47,6 +47,11 @@ CUES = {
     "show_hotels": r"отел|гостиниц|жиль|вариант",
     "new_search": r"заново|сначала|нов\w+ (поиск|поездк)|друг\w+ поездк",
     "after_sale": r"заезд|выезд|отмен|перенес|перенест|дат",
+    "month_part": r"начал|середин|конц|конец|половин",
+    "baggage": r"багаж|чемодан",
+    "more": r"ещ[её]|друг|покажи|что ещ",
+    "back": r"верн|назад",
+    "add_adults": r"добав|ещ[её]|\+",
     "wants_ideas": r"отдох|поех|съезд|отпуск|путешеств|куда|поездк|тур|посовет|иде",
     "hesitate": r"подума|подожд|погоди|уверен|готов|позже|сейчас|сомнева|посовет",
     "question": r"\?|виз|паспорт|отмен|багаж|погод|трансфер|животн|собак",
@@ -66,8 +71,10 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     rule_data = rules.model_dump()
     notes: list[str] = []
 
+    for field in ("unknown_place", "unknown_origin"):  # служебные поля — только из правил
+        data[field] = rule_data.get(field)
     for field, value in list(data.items()):
-        if value is None:
+        if value is None or field in ("unknown_place", "unknown_origin"):
             continue
         ruled = rule_data.get(field)
         if field in RULES_WIN and ruled is not None:

@@ -24,7 +24,7 @@
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { margin: 0; }
-  body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased; }
+  body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   button, input { font: inherit; color: inherit; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .num { font-variant-numeric: tabular-nums; }
@@ -120,6 +120,32 @@
   .timeline time { color: var(--muted); font-variant-numeric: tabular-nums; }
   .notice { border-radius: var(--r-md); padding: 14px 18px; background: var(--accent-soft); font-size: 15px; margin: 22px 0 0; }
 
+  .photo { position: relative; overflow: hidden; background: var(--line); aspect-ratio: 16 / 10; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo .credit { position: absolute; right: 10px; bottom: 7px; max-width: 75%; font-size: 10.5px; color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.7); opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+  .photo .badge-ill { position: absolute; left: 10px; top: 10px; font-size: 11px; color: #fff; background: rgba(0,0,0,.45);
+    border-radius: 999px; padding: 2px 9px; backdrop-filter: blur(6px); }
+  .card > .photo:first-child { margin: -22px -22px 2px; border-radius: 21px 21px 0 0; }
+  .cover { border-radius: var(--r-lg); aspect-ratio: auto; height: clamp(180px, 26vw, 300px); margin-top: 22px; }
+  .cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.55)); }
+  .cover .over { position: absolute; left: 24px; bottom: 20px; right: 24px; z-index: 1; color: #fff; }
+  .cover .over b { display: block; font: 500 clamp(26px, 3.4vw, 40px)/1.05 var(--display); letter-spacing: -0.03em; }
+  .cover .over span { font-size: 15px; opacity: .92; }
+  .cover .credit { z-index: 1; }
+  .pass .photo { border-radius: 14px; aspect-ratio: 16 / 7; }
+  .cal { display: flex; gap: 4px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: thin; }
+  .cal button { flex: none; width: 54px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px;
+    padding: 6px 0 7px; cursor: pointer; display: grid; justify-items: center; gap: 2px; font-size: 12px; color: var(--muted); }
+  .cal button b { font: 500 16px/1.1 var(--display); color: var(--ink); }
+  .cal button .bar { width: 22px; border-radius: 4px; background: var(--dot-strong); margin-top: 2px; }
+  .cal button.cheap .bar { background: var(--ok); }
+  .cal button.cheap { color: var(--ok); }
+  .cal button.chosen { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .cal button:hover { border-color: var(--accent); }
+  .ask-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 26px 28px;
+    margin-top: 22px; font: 500 22px/1.35 var(--display); letter-spacing: -0.02em; max-width: 46ch; }
+  .say { display: none; }
   .split { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
   table.receipt { width: 100%; border-collapse: collapse; font-size: 15px; }
   table.receipt td { padding: 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -160,13 +186,23 @@
   @media (max-width: 1180px) { .split { grid-template-columns: 1fr; } .shell { grid-template-columns: 1fr 360px; } }
   @media (max-width: 900px) {
     .shell { grid-template-columns: 1fr; }
-    header.top { padding: 12px 16px; gap: 12px; height: auto; }
-    .stages li { font-size: 0; gap: 0; } .stages li.now { font-size: 12px; gap: 6px; }
-    .stages li:not(:last-child)::after { width: 10px; margin: 0 4px; }
+    header.top { padding: 12px 16px; gap: 10px; height: auto; overflow: hidden; }
+    .logo { font-size: 15px; }
+    .stages { min-width: 0; margin: 0 auto; }
+    .stages li:not(.now) { display: none; }
+    .stages li.now { font-size: 12px; gap: 6px; white-space: nowrap; }
+    .stages li.now::after { display: none !important; }
+    .link { font-size: 13px; padding: 4px 0; }
+    .link .long { display: none; }
     main.board { padding: 22px 16px 16px; }
     aside.chat { position: static; height: auto; border-left: 0; border-top: 1px solid var(--line); }
     .log { max-height: 60vh; }
-    form.composer { position: sticky; bottom: 0; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+    form.composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; padding-bottom: max(12px, env(safe-area-inset-bottom));
+      box-shadow: 0 -6px 24px rgba(0,0,0,.08); }
+    .shell { padding-bottom: 84px; }
+    .say { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px;
+      font-size: 15px; white-space: pre-wrap; margin: 0 0 16px; }
+    .say:empty { display: none; }
     .pass { grid-template-columns: 1fr; } .pass .stub { border-left: 0; border-top: 2px dashed var(--line); }
     .pass .stub::before, .pass .stub::after { display: none; }
   }
@@ -177,14 +213,15 @@
   <header class="top">
     <div class="logo">О<span>!</span>дин запрос</div>
     <ol class="stages" id="stages" aria-label="Этапы поездки"></ol>
-    <button class="link" id="reset" type="button">Начать заново</button>
+    <button class="link" id="reset" type="button"><span class="long">Начать </span>заново</button>
   </header>
 
   <main class="board">
+    <div class="say" id="say" aria-live="polite"></div>
     <section id="head"></section>
     <div class="map" id="map" aria-hidden="true"></div>
     <section id="view"></section>
-    <p class="fine">Погода — реальные средние Open-Meteo за 2022–2025 годы. Отели, рейсы, поезда и цены — модельные данные прототипа, перевозчики вымышленные. Оплата имитируется.</p>
+    <p class="fine">Фото направлений — Wikimedia Commons (авторы и лицензии на снимках), фото отелей — иллюстрации. Погода — реальные средние Open-Meteo за 2022–2025 годы. Отели, рейсы, поезда и цены — модельные данные прототипа, перевозчики вымышленные. Оплата имитируется.</p>
   </main>
 
   <aside class="chat" aria-label="Разговор с агентом">
@@ -317,6 +354,14 @@ function renderHead(data) {
   }
 }
 
+function photo(img, opts = {}) {
+  if (!img) return null;
+  return el("div", { class: "photo " + (opts.cls || "") },
+    el("img", { src: img.src, alt: opts.alt || "", loading: "lazy", decoding: "async" }),
+    opts.badge ? el("span", { class: "badge-ill" }, opts.badge) : null,
+    opts.over || null,
+    el("a", { class: "credit", href: img.page || "#", target: "_blank", rel: "noopener", title: "Фото: " + img.credit }, "Фото: " + img.credit));
+}
 const legLine = (leg) => {
   const kind = leg.mode === "train" ? "Поезд" : "Рейс";
   const via = leg.stops ? ` · пересадка ${leg.via}, ${leg.layover}` : (leg.mode === "plane" ? " · прямой" : "");
@@ -329,26 +374,42 @@ const views = {
   destinations(p) {
     drawMap({ origin: p.origin, targets: p.items.map((d) => ({ name: d.name, lat: d.lat, lon: d.lon })) });
     return [el("h2", { class: "section-title" }, "Куда можно поехать"),
-      el("p", { class: "section-sub" }, `Цена — ориентир за всю поездку на всех, ${p.nights} ночей. Номера совпадают с точками на карте.`),
+      el("p", { class: "section-sub" }, `Цена «от» — за всю поездку на всех: дорога, отель, трансферы, ${p.nights_label || p.nights + " ночей"}. Номера совпадают с точками на карте.`),
       el("div", { class: "cards" }, p.items.map((d, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
+        photo(d.image, { alt: d.name }),
         el("div", { class: "kicker" }, el("span", {}, `${i + 1} · ${d.country}`), i === 0 ? el("b", {}, "Лучше всего подходит") : null),
         el("h3", {}, d.name),
         el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, d.visa ? `виза: ${d.visa}` : "виза не нужна")),
         el("dl", { class: "facts" }, el("dt", {}, "Погода"), el("dd", {}, d.weather || "—"),
           el("dt", {}, "Дорога"), el("dd", {}, `${d.mode === "train" ? "поезд" : d.stops ? "с пересадкой" : "прямой рейс"}, ${d.travel}`)),
         marks("why", d.reasons.filter((r) => !/^(перелёт|поезд)/.test(r))),
-        d.risks.length ? marks("", d.risks.map((t) => ({ level: "warn", text: t }))) : null,
+        d.risks.filter((r) => !r.startsWith("виза")).length ? marks("", d.risks.filter((r) => !r.startsWith("виза")).map((t) => ({ level: "warn", text: t }))) : null,
         el("div", { class: "tags" }, d.highlights.map((h) => el("span", { class: "tag" }, h))),
         el("div", { class: "actions" }, sayBtn(`Выбрать ${d.name}`, `давай ${d.name}`, i === 0 ? "btn accent" : "btn ghost")))))];
   },
   packages(p) {
     drawMap(tripRoute(p.trip));
     const out = [];
+    if (p.notice) out.push(el("p", { class: "notice" }, p.notice));
     if (p.diff && p.diff.length) out.push(el("p", { class: "notice" }, "Пересобрал план: " + p.diff.join("; ") + "."));
     if (p.relaxed && p.relaxed.length) out.push(el("p", { class: "notice" }, "Чтобы что-то нашлось, я " + p.relaxed.join(", ") + "."));
+    out.push(photo(p.trip.image, { cls: "cover", alt: p.trip.dest,
+      over: el("div", { class: "over" }, el("b", {}, p.trip.dest), el("span", {}, p.trip.weather ? `${p.trip.dates} · ${p.trip.weather}` : p.trip.dates)) }));
+    if (p.calendar && p.calendar.length > 3) {
+      const prices = p.calendar.map((d) => d.price), lo = Math.min(...prices), hi = Math.max(...prices);
+      out.push(el("h2", { class: "section-title" }, "Когда выгоднее ехать"),
+        el("p", { class: "section-sub" }, `Дорога туда и обратно на человека по дате заезда, поездка на ${p.trip.dates.match(/\((.*)\)/)?.[1] || "те же ночи"}. Зелёные — самые выгодные дни.`),
+        el("div", { class: "cal", role: "list" }, p.calendar.map((d) => el("button", {
+          type: "button", class: [d.cheap ? "cheap" : "", d.chosen ? "chosen" : ""].join(" "), title: `${d.day} ${d.month}: ${d.label}`,
+          onclick: () => d.chosen || send(`с ${d.day} ${d.month}`) },
+          el("span", {}, d.wd), el("b", {}, String(d.day)),
+          el("span", { class: "bar", style: `height:${(6 + 22 * (d.price - lo) / Math.max(hi - lo, 1)).toFixed(0)}px` }),
+          el("span", {}, d.label)))));
+    }
     out.push(el("h2", { class: "section-title" }, p.items.length > 1 ? `${p.items.length} способа поехать` : "Ваша поездка"),
       el("p", { class: "section-sub" }, `${p.trip.weather ? "Погода: " + p.trip.weather + ". " : ""}Цена — за всё: дорога туда и обратно, отель, трансферы.`),
       el("div", { class: "cards" }, p.items.map((k, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
+        photo(k.hotel.image, { alt: k.hotel.name, badge: "иллюстрация отеля" }),
         el("div", { class: "kicker" }, el("span", {}, `Вариант ${i + 1}`), i === 0 ? el("b", {}, "Рекомендую") : null),
         el("h3", {}, k.title),
         el("div", { class: "price num" }, k.total, el("small", {}, p.trip.people)),
@@ -367,6 +428,7 @@ const views = {
     return [el("h2", { class: "section-title" }, "Другие отели"),
       el("p", { class: "section-sub" }, "Выберите — пересоберу поездку с ним, дорогу оставлю."),
       el("div", { class: "cards" }, p.items.map((h, i) => el("article", { class: "card" },
+        photo(h.image, { alt: h.name, badge: "иллюстрация" }),
         el("div", { class: "kicker" }, el("span", {}, `${h.stars}★ · ${h.area}`), el("span", {}, `${h.rating} · ${h.reviews} отзывов`)),
         el("h3", {}, h.name),
         el("div", { class: "price num" }, h.price, el("small", {}, `${h.per_night} за ночь · ${h.meal}`)),
@@ -394,7 +456,8 @@ const views = {
             el("tr", { class: "total" }, el("td", {}, "Итого"), el("td", {}, p.total))),
           el("div", { class: "actions" }, el("button", { type: "button", class: "btn accent", onclick: () => send("да, оформляй") }, "Оформить и оплатить"),
             sayBtn("К вариантам", "нет, вернуться к вариантам"))),
-        el("article", { class: "card" }, el("h4", {}, "Поездка по часам"), timelineEl(k.timeline),
+        el("article", { class: "card" }, photo(k.hotel.image, { alt: k.hotel.name, badge: "иллюстрация отеля" }),
+          el("h4", {}, "Поездка по часам"), timelineEl(k.timeline),
           el("h4", {}, "Состыковки"), marks("", k.checks)))];
   },
   order(p) {
@@ -405,6 +468,7 @@ const views = {
       el("p", { class: "section-sub" }, "Оплата имитирована. Билеты и ваучер отеля пришли бы на почту."),
       el("article", { class: "pass" },
         el("div", { class: "main" },
+          photo(o.image, { alt: o.dest }),
           el("div", { class: "route" }, el("div", { class: "codes" }, o.origin_code, el("i", {}, "→"), o.dest_code)),
           el("dl", { class: "facts" }, el("dt", {}, "Туда"), el("dd", {}, o.out), el("dt", {}, "Обратно"), el("dd", {}, o.back),
             el("dt", {}, "Отель"), el("dd", {}, o.hotel), el("dt", {}, "Отмена"), el("dd", {}, cancel)),
@@ -443,8 +507,13 @@ function render(data) {
   renderStages(data.stage); renderHead(data); renderSuggest(data.stage);
   document.querySelector(".board").classList.toggle("compact", ["plan", "cart", "booked"].includes(data.stage));
   const p = data.payload || {};
-  if (views[p.kind]) $("view").replaceChildren(...views[p.kind](p).filter(Boolean));
+  const notice = p.notice && p.kind !== "packages" ? el("p", { class: "notice" }, p.notice) : null;
+  if (views[p.kind]) $("view").replaceChildren(...[notice, ...views[p.kind](p)].filter(Boolean));
   else if (p.kind === "greeting") { $("view").replaceChildren(); drawMap({}); }
+  else if (p.kind === "question") {
+    $("view").replaceChildren(...[notice, el("div", { class: "ask-card" }, data.reply.split("\n\n").pop())].filter(Boolean));
+    if (data.stage !== "destination") drawMap({});
+  }
 }
 async function post(path, body) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -462,7 +531,9 @@ async function send(text) {
     const checked = (data.checked || []).length ? ` · сверка: отброшено ${data.checked.length}` : "";
     addMessage("bot", shortReply(data.reply, (data.payload || {}).kind), `${data.nlu || "—"} · ${data.ms} мс${checked}`);
     render(data);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    $("say").textContent = mobile ? shortReply(data.reply, (data.payload || {}).kind) : "";
+    if (data.payload) window.scrollTo({ top: 0, behavior: mobile ? "auto" : "smooth" });
   } catch (e) {
     typing.remove();
     addMessage("bot", "Сервер не ответил. Проверьте, что приложение запущено, и отправьте сообщение ещё раз.");
@@ -476,7 +547,7 @@ function start() { renderStages("start"); renderHead(null); renderSuggest("start
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; send(t); });
 $("reset").addEventListener("click", async () => {
   if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
-  sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); start();
+  sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); $("say").textContent = ""; start();
 });
 Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/landdots.json").then((r) => r.json())])
   .then(([i, l]) => { info = i; land = l; start(); })

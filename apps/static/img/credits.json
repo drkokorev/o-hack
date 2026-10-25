@@ -1,0 +1,290 @@
+{
+ "dest/sochi.jpg": {
+  "file": "File:Sochi_Marina.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sochi_Marina.jpg",
+  "author": "Trace",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/kaliningrad.jpg": {
+  "file": "File:Куршская_коса_у_посёлка_Рыбачий.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%D0%9A%D1%83%D1%80%D1%88%D1%81%D0%BA%D0%B0%D1%8F_%D0%BA%D0%BE%D1%81%D0%B0_%D1%83_%D0%BF%D0%BE%D1%81%D1%91%D0%BB%D0%BA%D0%B0_%D0%A0%D1%8B%D0%B1%D0%B0%D1%87%D0%B8%D0%B9.jpg",
+  "author": "Dion Art",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/kazan.jpg": {
+  "file": "File:Kazan_Kremlin_-_panoramio_(6).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Kazan_Kremlin_-_panoramio_(6).jpg",
+  "author": "Айрат Хайруллин",
+  "license": "CC BY 3.0"
+ },
+ "dest/spb.jpg": {
+  "file": "File:RUS-2016-Aerial-SPB-Winter_Palace.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:RUS-2016-Aerial-SPB-Winter_Palace.jpg",
+  "author": "Godot13",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/moscow.jpg": {
+  "file": "File:Kremlin_and_Red_Square.1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Kremlin_and_Red_Square.1.jpg",
+  "author": "mos.ru",
+  "license": "CC BY 4.0"
+ },
+ "dest/kislovodsk.jpg": {
+  "file": "File:Kislovodsk_PA140163_2495.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Kislovodsk_PA140163_2495.jpg",
+  "author": "Alexxx1979",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/altai.jpg": {
+  "file": "File:Телецкое_озеро_с_севера.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%D0%A2%D0%B5%D0%BB%D0%B5%D1%86%D0%BA%D0%BE%D0%B5_%D0%BE%D0%B7%D0%B5%D1%80%D0%BE_%D1%81_%D1%81%D0%B5%D0%B2%D0%B5%D1%80%D0%B0.jpg",
+  "author": "Grozovsky",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/baikal.jpg": {
+  "file": "File:Мыс_Лударь,_17_июня_2013_года.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%D0%9C%D1%8B%D1%81_%D0%9B%D1%83%D0%B4%D0%B0%D1%80%D1%8C,_17_%D0%B8%D1%8E%D0%BD%D1%8F_2013_%D0%B3%D0%BE%D0%B4%D0%B0.jpg",
+  "author": "Svetlana Bazykina",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/dagestan.jpg": {
+  "file": "File:Сулакский_каньон.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%D0%A1%D1%83%D0%BB%D0%B0%D0%BA%D1%81%D0%BA%D0%B8%D0%B9_%D0%BA%D0%B0%D0%BD%D1%8C%D0%BE%D0%BD.jpg",
+  "author": "Sobolev Alexander",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/kamchatka.jpg": {
+  "file": "File:Klyuchevskoi.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Klyuchevskoi.jpg",
+  "author": "Wikimedia Commons",
+  "license": "Public domain"
+ },
+ "dest/sheregesh.jpg": {
+  "file": "File:Шерегеш.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%D0%A8%D0%B5%D1%80%D0%B5%D0%B3%D0%B5%D1%88.jpg",
+  "author": "Марина Ворфоломеева",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/karelia.jpg": {
+  "file": "File:Kizhi_06-2017_img08_Pogost_view.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Kizhi_06-2017_img08_Pogost_view.jpg",
+  "author": "A.Savin",
+  "license": "FAL"
+ },
+ "dest/nnovgorod.jpg": {
+  "file": "File:Вид_на_Нижегородский_кремль_с_высоты_cropped.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%D0%92%D0%B8%D0%B4_%D0%BD%D0%B0_%D0%9D%D0%B8%D0%B6%D0%B5%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D1%81%D0%BA%D0%B8%D0%B9_%D0%BA%D1%80%D0%B5%D0%BC%D0%BB%D1%8C_%D1%81_%D0%B2%D1%8B%D1%81%D0%BE%D1%82%D1%8B_cropped.jpg",
+  "author": "WildPea",
+  "license": "CC0"
+ },
+ "dest/antalya.jpg": {
+  "file": "File:Falezlerden_Antalya_Konyaaltı_Plajına_doğru_bir_görünüm.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Falezlerden_Antalya_Konyaalt%C4%B1_Plaj%C4%B1na_do%C4%9Fru_bir_g%C3%B6r%C3%BCn%C3%BCm.jpg",
+  "author": "Esginmurat",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/istanbul.jpg": {
+  "file": "File:Hagia_Sophia_Mars_2013.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Hagia_Sophia_Mars_2013.jpg",
+  "author": "Arild Vågen",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/hurghada.jpg": {
+  "file": "File:Hurghada beach 01.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Hurghada_beach_01.JPG",
+  "author": "Ad Meskens",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/sharm.jpg": {
+  "file": "File:Sharm_El_Sheikh._Naama_Bay..jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sharm_El_Sheikh._Naama_Bay..jpg",
+  "author": "Svetlana Grechkina",
+  "license": "CC BY-SA 2.0"
+ },
+ "dest/phuket.jpg": {
+  "file": "File:Flickr_-_Shinrya_-_Paradise_in_Phuket.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Flickr_-_Shinrya_-_Paradise_in_Phuket.jpg",
+  "author": "Pete Stewart from Perth, Australia",
+  "license": "CC BY-SA 2.0"
+ },
+ "dest/srilanka.jpg": {
+  "file": "File:Sigiriya.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sigiriya.jpg",
+  "author": "Bernard Gagnon",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/batumi.jpg": {
+  "file": "File:Batumi_Marine.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Batumi_Marine.jpg",
+  "author": "Commander, U.S. Naval Forces Europe-Africa/U.S. 6th Fleet",
+  "license": "Public domain"
+ },
+ "dest/yerevan.jpg": {
+  "file": "File:Mount_Ararat_and_the_Yerevan_skyline_(June_2018).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Mount_Ararat_and_the_Yerevan_skyline_(June_2018).jpg",
+  "author": "Սէրուժ Ուրիշեան (Serouj Ourishian)",
+  "license": "CC BY 4.0"
+ },
+ "dest/minsk.jpg": {
+  "file": "File:Church_of_Saints_Simon_and_Helena_(Minsk).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Church_of_Saints_Simon_and_Helena_(Minsk).jpg",
+  "author": "Homoatrox",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/almaty.jpg": {
+  "file": "File:Medeobanen1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Medeobanen1.jpg",
+  "author": "Kefi",
+  "license": "CC0"
+ },
+ "dest/bali.jpg": {
+  "file": "File:Pura_Taman_Ayun_terletak_di_Mengwi,_Bali.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Pura_Taman_Ayun_terletak_di_Mengwi,_Bali.jpg",
+  "author": "Cindi CGJ",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/resort-1.jpg": {
+  "file": "File:San Pedro Ambergris Caye beach resort Jul 2015.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:San_Pedro_Ambergris_Caye_beach_resort_Jul_2015.jpg",
+  "author": "Asdfjrjjj",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/resort-2.jpg": {
+  "file": "File:Odessa Arcadia Plaza Beach Sea Water Sweaming Pool.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Odessa_Arcadia_Plaza_Beach_Sea_Water_Sweaming_Pool.JPG",
+  "author": "HOBOPOCC",
+  "license": "CC BY-SA 3.0"
+ },
+ "hotel/city-1.jpg": {
+  "file": "File:The Edgewater Hotel - panoramio.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:The_Edgewater_Hotel_-_panoramio.jpg",
+  "author": "Corey Coyle",
+  "license": "CC BY 3.0"
+ },
+ "hotel/city-2.jpg": {
+  "file": "File:Hotel Russell, Bernard Street facade - geograph.org.uk - 4581156.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Hotel_Russell,_Bernard_Street_facade_-_geograph.org.uk_-_4581156.jpg",
+  "author": "Martin Bodman",
+  "license": "CC BY-SA 2.0"
+ },
+ "hotel/room-1.jpg": {
+  "file": "File:Restaurant room of Amantaka luxury Resort & Hotel in Luang Prabang Laos.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Restaurant_room_of_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/room-3.jpg": {
+  "file": "File:DSC 6622 Cozy modern hotel room with a large king bed colorful wall art and a minimalist seating area.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:DSC_6622_Cozy_modern_hotel_room_with_a_large_king_bed_colorful_wall_art_and_a_minimalist_seating_area.jpg",
+  "author": "PattayaPatrol",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/pool-1.jpg": {
+  "file": "File:Swimming Pool in a hotel in Tamil Nadu 03.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Swimming_Pool_in_a_hotel_in_Tamil_Nadu_03.jpg",
+  "author": "Kritzolina",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/pool-2.jpg": {
+  "file": "File:Swimming pool of Khan Pool Suite in Amantaka luxury Resort & Hotel in Luang Prabang Laos.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Swimming_pool_of_Khan_Pool_Suite_in_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/pool-3.jpg": {
+  "file": "File:Swimming pool and terrasse of Amantaka luxury Resort & Hotel in Luang Prabang Laos.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Swimming_pool_and_terrasse_of_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/mountain-1.jpg": {
+  "file": "File:Mountain's chalet in summer.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Mountain%27s_chalet_in_summer.jpg",
+  "author": "An insect photographer",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/mountain-3.jpg": {
+  "file": "File:Chalet Hôtel du lac d'Orédon (Hautes-Pyrénées) 1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Chalet_H%C3%B4tel_du_lac_d%27Or%C3%A9don_(Hautes-Pyr%C3%A9n%C3%A9es)_1.jpg",
+  "author": "Sotos",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/lobby-1.jpg": {
+  "file": "File:Lobby lounge of Amantaka Suite Amantaka luxury Resort & Hotel Luang Prabang Laos.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lobby_lounge_of_Amantaka_Suite_Amantaka_luxury_Resort_%26_Hotel_Luang_Prabang_Laos.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/lobby-2.jpg": {
+  "file": "File:Entrance lobby of Amantaka luxury Resort & Hotel at blue hour in Luang Prabang Laos.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Entrance_lobby_of_Amantaka_luxury_Resort_%26_Hotel_at_blue_hour_in_Luang_Prabang_Laos.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "hotel/lobby-3.jpg": {
+  "file": "File:Lobby hall with couches and chandelier at The Fullerton Bay Hotel Singapore.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lobby_hall_with_couches_and_chandelier_at_The_Fullerton_Bay_Hotel_Singapore.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/murmansk.jpg": {
+  "file": "File:Полярное сияние под Кировском 3.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%D0%9F%D0%BE%D0%BB%D1%8F%D1%80%D0%BD%D0%BE%D0%B5_%D1%81%D0%B8%D1%8F%D0%BD%D0%B8%D0%B5_%D0%BF%D0%BE%D0%B4_%D0%9A%D0%B8%D1%80%D0%BE%D0%B2%D1%81%D0%BA%D0%BE%D0%BC_3.jpg",
+  "author": "Apollonikus",
+  "license": "CC BY 4.0"
+ },
+ "dest/vladivostok.jpg": {
+  "file": "File:Russky Bridge 2022-08.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Russky_Bridge_2022-08.jpg",
+  "author": "Svetlov Artem",
+  "license": "CC0"
+ },
+ "dest/dubai.jpg": {
+  "file": "File:Dubai Skyline mit Burj Khalifa (cropped).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Dubai_Skyline_mit_Burj_Khalifa_(cropped).jpg",
+  "author": "Tim Reckmann from Hamm, Deutschland",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/nhatrang.jpg": {
+  "file": "File:Nha Trang Beach 5.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Nha_Trang_Beach_5.jpg",
+  "author": "Christophe95",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/sanya.jpg": {
+  "file": "File:Strand in der Yalong Bay Bucht in Sanya auf der Insel Hainan.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Strand_in_der_Yalong_Bay_Bucht_in_Sanya_auf_der_Insel_Hainan.jpg",
+  "author": "Kusafiri",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/maldives.jpg": {
+  "file": "File:Diamonds Thudufushi Beach and Water Villas, May 2017 -03.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Diamonds_Thudufushi_Beach_and_Water_Villas,_May_2017_-03.jpg",
+  "author": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/tbilisi.jpg": {
+  "file": "File:Old Town and Narikala, Tbilisi.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Old_Town_and_Narikala,_Tbilisi.jpg",
+  "author": "Saskia Heijltjes",
+  "license": "CC BY-SA 2.0"
+ },
+ "dest/samarkand.jpg": {
+  "file": "File:Registan Samarkand Uzbekistan.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Registan_Samarkand_Uzbekistan.JPG",
+  "author": "Stomac",
+  "license": "CC BY-SA 2.0 fr"
+ },
+ "dest/baku.jpg": {
+  "file": "File:Flame towers from Baku boulevard.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Flame_towers_from_Baku_boulevard.JPG",
+  "author": "Xoncha",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/goa.jpg": {
+  "file": "File:Vagator Beach, Goa, India, Palms.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Vagator_Beach,_Goa,_India,_Palms.jpg",
+  "author": "Vyacheslav Argenberg",
+  "license": "CC BY 4.0"
+ }
+}
