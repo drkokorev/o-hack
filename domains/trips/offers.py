@@ -17,7 +17,7 @@ from random import Random
 
 from pydantic import BaseModel, Field
 
-from .geo import BY_ID, Area, Destination, Origin, distance_km
+from .geo import BY_ID, HUBS, Area, Destination, Origin, distance_km
 
 AIRLINES = ("Авиа Альфа", "Авиа Бета", "Авиа Гамма", "Авиа Дельта", "Авиа Сигма")
 HUB_MOSCOW = (55.756, 37.617)
@@ -177,6 +177,13 @@ _NOT_OFFICIAL = re.compile(r"wikipedia|wikidata|facebook|instagram|vk\.com|ok\.r
                           r"ostrovok|airbnb|expedia|agoda|hotels\.com|yandex|google|2gis|tiktok|youtube", re.I)
 
 
+def _clean_name(name: str) -> str:
+    """«so_white_club_resort» → «So White Club Resort»: в открытых данных встречаются технические названия."""
+    if "_" in name or name.islower():
+        name = " ".join(w[:1].upper() + w[1:] for w in name.replace("_", " ").split())
+    return name
+
+
 def _official_site(url: str | None) -> str | None:
     """Ссылка «сайт» — только на собственный сайт отеля, не на агрегаторы и соцсети."""
     return url if url and not _NOT_OFFICIAL.search(url) else None
@@ -200,7 +207,7 @@ def _from_real(dest: Destination, records: list[dict]) -> list[Hotel]:
         area = rec.get("street") or rec.get("city") or dest.name
         lat, lon = rec["lat"], rec["lon"]
         out.append(Hotel(
-            id=f"{dest.id}-h{rec['id']}", dest_id=dest.id, name=rec["name"], kind=kind, area=area[:60],
+            id=f"{dest.id}-h{rec['id']}", dest_id=dest.id, name=_clean_name(rec["name"]), kind=kind, area=area[:60],
             center_km=center, beach_km=beach,
             airport_km=round(distance_km(rec["lat"], rec["lon"], *airport)) if airport else 25,
             source="overture", website=_official_site(rec.get("web")),
@@ -274,6 +281,8 @@ def _flight_minutes(km: float) -> int:
 
 
 def _origin_has_direct(origin: Origin, dest: Destination, rng: Random) -> bool:
+    if dest.via:  # из России туда прямых нет — только с пересадкой в хабе
+        return False
     if origin.hub:
         return dest.id != "kamchatka" or origin.name == "Москва"
     popular = {"sochi", "antalya", "dubai", "hurghada", "moscow", "spb", "kaliningrad"}
@@ -281,7 +290,7 @@ def _origin_has_direct(origin: Origin, dest: Destination, rng: Random) -> bool:
 
 
 def flights(origin: Origin, dest: Destination, day: date) -> list[Leg]:
-    """Варианты перелёта на дату. Без прямого рейса — с пересадкой в Москве."""
+    """Варианты перелёта на дату. Без прямого рейса — с пересадкой в Москве или в хабе направления (`via`)."""
     if origin.name == dest.name:
         return []
     km = distance_km(origin.lat, origin.lon, dest.lat, dest.lon)
@@ -304,16 +313,19 @@ def flights(origin: Origin, dest: Destination, day: date) -> list[Leg]:
                            arrive=dep + timedelta(minutes=minutes), baggage=baggage,
                            price_per_person=int(round(price, -2))))
         else:
-            hub_km_1 = distance_km(origin.lat, origin.lon, *HUB_MOSCOW)
-            hub_km_2 = distance_km(*HUB_MOSCOW, dest.lat, dest.lon)
+            hub_name = dest.via or "Москва"
+            hub = HUBS.get(hub_name, HUB_MOSCOW)
+            hub_km_1 = distance_km(origin.lat, origin.lon, *hub)
+            hub_km_2 = distance_km(*hub, dest.lat, dest.lon)
             if hub_km_1 < 300 or hub_km_2 < 300:
                 continue
             layover = rng.choice([80, 120, 180, 260, 420, 600])
             minutes = _flight_minutes(hub_km_1) + layover + _flight_minutes(hub_km_2)
-            price = (2600 + (hub_km_1 + hub_km_2) * 3.6) * season_factor(dest, day) * rng.uniform(0.8, 1.1)
-            out.append(Leg(id=f"{origin.iata}-MOW-{dest.iata}-{day:%m%d}-{i}", mode="plane", carrier=airline,
+            price = (2600 + (hub_km_1 + hub_km_2) * (4.3 if dest.via else 3.6)) * season_factor(dest, day)
+            price *= rng.uniform(0.8, 1.1) * (1.25 if dest.abroad else 1.0)
+            out.append(Leg(id=f"{origin.iata}-{hub_name[:3]}-{dest.iata}-{day:%m%d}-{i}", mode="plane", carrier=airline,
                            number=f"{airline.split()[1][0]}{rng.randint(100, 999)}", depart=dep,
-                           arrive=dep + timedelta(minutes=minutes), stops=1, via="Москва",
+                           arrive=dep + timedelta(minutes=minutes), stops=1, via=hub_name,
                            layover_min=layover, baggage=baggage,
                            price_per_person=int(round(price * (1.0 if baggage else 0.85), -2))))
     return sorted(out, key=lambda leg: leg.depart)

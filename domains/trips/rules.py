@@ -190,7 +190,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["clear"] = ["destination"]
     if re.search(r"вернись|верни\w* к направлен|назад к направлен|к выбору направлен|покажи направлен", t):
         data["back"] = True
-    if re.search(r"друг\w* (вариант|идеи|направлени)|ещ[её] (вариант|идеи|направлени)|покажи ещ[её]|что ещ[её] есть|другие места", t):
+    if re.search(r"друг\w* (вариант|идеи|направлени)|ещ[её] (вариант|идеи|направлени)|покажи ещ[её]|что ещ[её] есть|другие места", t) \
+            or re.fullmatch(r"(а |и |давай |можно )?ещ[её]\W*", t.strip()):
         data["more"] = True
 
     types = [code for code, pattern in TRIP_TYPE_WORDS

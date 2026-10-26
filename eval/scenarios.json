@@ -27,7 +27,7 @@
      "turns": ["Горы и природа в июле на неделю, вдвоём, по России, до 200 тысяч"],
      "expect": {"stage": "destination", "suggested_domestic": true}},
     {"id": "unknown_destination", "persona": "направление вне каталога",
-     "turns": ["Хочу в Лиссабон в мае"],
+     "turns": ["Хочу в Осло в мае"],
      "expect": {"stage": "destination"}},
     {"id": "cheaper", "persona": "экономит",
      "turns": ["Сочи с 5 по 12 декабря вдвоём", "подешевле"],

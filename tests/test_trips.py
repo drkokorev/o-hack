@@ -141,8 +141,21 @@ def test_llm_understanding_and_fallback_to_rules():
 
 
 def test_unknown_destination_is_honest():
-    s, step = talk(agent(), "хочу в Лиссабон в мае")
+    s, step = talk(agent(), "хочу в Осло в мае")
     assert s.state.stage == "destination"
+
+
+@pytest.mark.parametrize("text, dest_id, via", [
+    ("хочу в Черногорию в июле на неделю вдвоём", "budva", "Белград"),
+    ("Нью-Йорк в декабре на 10 ночей", "newyork", "Стамбул"),
+    ("на Кипр в июне", "cyprus", "Стамбул"),
+    ("Токио весной, в апреле", "tokyo", "Пекин"),
+])
+def test_world_destinations_route_via_hub(text, dest_id, via):
+    s, step = talk(agent(), text)
+    assert s.state.dest_id == dest_id and s.state.stage == "plan"
+    pkg = step.payload["items"][0]
+    assert pkg["out"]["via"] == via
 
 
 def test_web_api_and_health():
@@ -273,3 +286,21 @@ def test_sea_trip_variants_stay_near_beach_and_differ():
     near = [h for h in hotels_for("sochi") if h.beach_km is not None and h.beach_km <= 1.5]
     if near:  # с настоящим датасетом у моря есть из чего выбрать
         assert all(p.hotel.beach_km is not None and p.hotel.beach_km <= 1.5 for p in packages[1:])
+
+
+def test_more_pages_through_new_destinations():
+    a = agent()
+    s, step = talk(a, "Хочу на море в феврале, куда-нибудь экзотично")
+    seen = {d["id"] for d in step.payload["items"]}
+    for _ in range(3):
+        step = a.handle(s, "ещё")
+        ids = {d["id"] for d in step.payload["items"]}
+        assert ids and not ids & seen  # каждый раз новые направления
+        seen |= ids
+
+
+def test_clean_hotel_names():
+    from domains.trips.offers import _clean_name
+
+    assert _clean_name("so_white_club_resort") == "So White Club Resort"
+    assert _clean_name("Отель Велес") == "Отель Велес"

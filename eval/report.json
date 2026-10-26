@@ -1,6 +1,6 @@
 {
- "commit": "d1c8726+изменения",
- "date": "2026-10-26 13:17",
+ "commit": "f291ea1+изменения",
+ "date": "2026-10-26 16:59",
  "today": "2026-10-24",
  "scenarios": 16,
  "modes": {
@@ -14,7 +14,7 @@
     "questions_per_scenario": 0.06,
     "first_reco_turn_median": 1,
     "latency_ms_p50": 7,
-    "latency_ms_p95": 352
+    "latency_ms_p95": 498
    },
    "results": [
     {
@@ -27,7 +27,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      3534,
+      4059,
       8,
       5,
       5
@@ -73,7 +73,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      8,
+      9,
       7,
       7,
       7
@@ -91,8 +91,8 @@
      "wrong_irreversible": 0,
      "ms": [
       3,
-      1,
-      1,
+      2,
+      2,
       1
      ],
      "nlu": "rules"
@@ -108,10 +108,10 @@
      "wrong_irreversible": 0,
      "ms": [
       3,
+      2,
+      2,
       1,
-      1,
-      0,
-      0
+      1
      ],
      "nlu": "rules"
     },
@@ -125,7 +125,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      352
+      554
      ],
      "nlu": "rules"
     },
@@ -139,7 +139,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      47
+      48
      ],
      "nlu": "rules"
     },
@@ -153,7 +153,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      371
+      495
      ],
      "nlu": "rules"
     },
@@ -184,7 +184,7 @@
      "ms": [
       9,
       6,
-      8
+      9
      ],
      "nlu": "rules"
     },
@@ -198,7 +198,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      26,
+      28,
       7
      ],
      "nlu": "rules"
@@ -243,10 +243,10 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      3,
-      1,
-      1,
-      0
+      4,
+      2,
+      2,
+      1
      ],
      "nlu": "rules"
     },
@@ -260,9 +260,9 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      386,
+      514,
       7,
-      352
+      498
      ],
      "nlu": "rules"
     }
@@ -278,7 +278,7 @@
     "questions_per_scenario": 0.06,
     "first_reco_turn_median": 1,
     "latency_ms_p50": 8,
-    "latency_ms_p95": 358
+    "latency_ms_p95": 503
    },
    "results": [
     {
@@ -291,10 +291,10 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      466,
+      519,
       10,
       6,
-      6
+      7
      ],
      "nlu": "llm+rules"
     },
@@ -322,8 +322,8 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      9,
-      9
+      10,
+      10
      ],
      "nlu": "llm+rules"
     },
@@ -337,7 +337,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      9,
+      10,
       8,
       8,
       8
@@ -355,9 +355,9 @@
      "wrong_irreversible": 0,
      "ms": [
       4,
-      2,
-      2,
-      2
+      3,
+      3,
+      3
      ],
      "nlu": "rules"
     },
@@ -372,10 +372,10 @@
      "wrong_irreversible": 0,
      "ms": [
       4,
+      3,
+      3,
       2,
-      2,
-      1,
-      1
+      2
      ],
      "nlu": "rules"
     },
@@ -389,7 +389,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      351
+      470
      ],
      "nlu": "rules"
     },
@@ -417,7 +417,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      376
+      585
      ],
      "nlu": "rules"
     },
@@ -432,7 +432,7 @@
      "wrong_irreversible": 0,
      "ms": [
       10,
-      11
+      12
      ],
      "nlu": "llm+rules"
     },
@@ -446,9 +446,9 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      9,
-      7,
-      9
+      10,
+      8,
+      10
      ],
      "nlu": "rules"
     },
@@ -462,7 +462,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      28,
+      29,
       8
      ],
      "nlu": "llm+rules"
@@ -491,7 +491,7 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      10,
+      11,
       8,
       9
      ],
@@ -507,10 +507,10 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      4,
-      2,
-      2,
-      1
+      5,
+      3,
+      3,
+      2
      ],
      "nlu": "llm+rules"
     },
@@ -524,9 +524,9 @@
      "first_reco_turn": 1,
      "wrong_irreversible": 0,
      "ms": [
-      391,
+      518,
       8,
-      358
+      503
      ],
      "nlu": "rules"
     }

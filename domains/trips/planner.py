@@ -12,7 +12,7 @@ from .geo import Destination, Origin
 from .offers import AMENITIES, MEALS, Hotel, Leg, Transfer, hotel_price, hotels_for, transfer, transport_options
 
 MEAL_RANK = {"room_only": 0, "breakfast": 1, "half_board": 2, "all_inclusive": 3}
-VIA_PREP = {"Москва": "Москве", "Стамбул": "Стамбуле"}
+VIA_PREP = {"Москва": "Москве", "Стамбул": "Стамбуле", "Дубай": "Дубае", "Белград": "Белграде", "Пекин": "Пекине"}
 PACKAGE_TITLES = {"optimal": "Оптимальный", "budget": "Экономный", "comfort": "Комфорт"}
 
 

@@ -94,8 +94,8 @@ def test_group_size(text, adults, children):
 def test_durations_and_unknown_places():
     st, _ = run("Таиланд на 2 недели в январе")
     assert st.nights == 14
-    st, step = run("хочу в Париж в декабре")
-    assert "Париж" in step.reply and st.dest_id is None
+    st, step = run("хочу в Рейкьявик в декабре")
+    assert "Рейкьявик" in step.reply and st.dest_id is None
     st, step = run("вылет из Краснодара в Сочи с 5 по 12 декабря")
     assert "Краснодара" in step.reply
     st, step = run("хочу в Москву на выходные")

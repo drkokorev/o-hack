@@ -43,9 +43,16 @@ def monthly(times: list[str], values: list[float | None]) -> dict[int, list[floa
 
 
 def main() -> None:
+    import sys
+
+    force = "--force" in sys.argv
     result: dict = {"source": "Open-Meteo Historical Weather & Marine API, open-meteo.com, CC BY 4.0",
                     "period": f"{START}..{END}", "destinations": {}}
+    if OUT.exists() and not force:  # докачиваем только новые направления
+        result["destinations"] = json.loads(OUT.read_text(encoding="utf-8"))["destinations"]
     for d in DESTINATIONS:
+        if d.id in result["destinations"]:
+            continue
         air = fetch("https://archive-api.open-meteo.com/v1/archive", {
             "latitude": d.lat, "longitude": d.lon, "start_date": START, "end_date": END,
             "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum", "timezone": "auto",
@@ -72,6 +79,7 @@ def main() -> None:
             }
         result["destinations"][d.id] = months
         print(d.name, "ок", months["11"])
+        OUT.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
         time.sleep(1)  # бережём бесплатный лимит
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")

@@ -32,6 +32,15 @@ DESTINATIONS = {
     "sharm": "Шарм-эш-Шейх", "phuket": "Пхукет", "nhatrang": "File:Nha Trang Beach 5.jpg", "sanya": "File:Strand in der Yalong Bay Bucht in Sanya auf der Insel Hainan.jpg", "maldives": "File:Diamonds Thudufushi Beach and Water Villas, May 2017 -03.jpg",
     "srilanka": "Сигирия", "tbilisi": "File:Old Town and Narikala, Tbilisi.jpg", "batumi": "Батуми", "yerevan": "Ереван", "samarkand": "File:Registan Samarkand Uzbekistan.JPG",
     "baku": "File:Flame towers from Baku boulevard.JPG", "minsk": "Минск", "almaty": "Медеу", "bali": "Бали", "goa": "File:Vagator Beach, Goa, India, Palms.jpg",
+    "budva": "Будва", "cyprus": "Айя-Напа", "crete": "File:Balos 1.jpg", "rome": "Колизей", "barcelona": "File:Park Güell 02.jpg",
+    "paris": "File:Eiffel Tower and Pont Alexandre III at night.jpg", "lisbon": "Лиссабон", "prague": "File:Prague 07-2016 View from Petrinska Tower img2.jpg", "budapest": "File:Hungarian Parliament Building 2023-9.jpg",
+    "belgrade": "File:Temple of Saint Sava (Crkva Svetog Save, Beograd).jpg", "dubrovnik": "File:Dubrovnik as seen from Srđ - September 2017.jpg", "durres": "File:Plaża w Durrës 3.jpg", "tokyo": "File:Tokyo Tower, Minato City.jpg",
+    "seoul": "File:Gyeonghoeru (Royal Banquet Hall) at Gyeongbokgung Palace, Seoul.jpg", "bangkok": "File:Templo Wat Arun, Bangkok, Tailandia, 2013-08-22, DD 37.jpg", "phuquoc": "File:Bai-sao-phu-quoc-tuonglamphotos.jpg", "beijing": "File:Beijing forbidden city Belvedere of Embodying Benevolence-20071018-RM-142403.jpg",
+    "kualalumpur": "File:The Twins SE Asia 2019 (49171985716).jpg", "singapore": "File:Marina Bay Singapore-3499.jpg", "doha": "File:Doha skyline0001.JPG", "muscat": "File:Old Muscat City View, Muscat, Oman3.jpg",
+    "aqaba": "File:Petra Jordan BW 43.JPG", "marrakech": "File:Jamaa El Fna, Marrakesh, Morocco, 20250124 1804 7017.jpg", "tunisia": "File:Hammamet Yasmine R01.jpg", "zanzibar": "File:Nungwi,Zanzibar - panoramio.jpg",
+    "seychelles": "File:Grand Anse-La Digue-Seychellen.jpg", "mauritius": "File:Sunbathing at Le Morne Beach in Mauritius (53697787846).jpg", "newyork": "File:Lower Manhattan from Jersey City September 2020 panorama.jpg", "miami": "File:Lifeguard stand, Miami Beach.jpg",
+    "losangeles": "File:Los Angeles (California, USA), Santa Monica Beach -- 2012 -- 5301.jpg", "cancun": "File:Cancun Beach.jpg", "varadero": "File:Varaderobeach1.JPG", "puntacana": "File:Bavaro Beach 045.jpg",
+    "rio": "File:Sugarloaf Sunrise 2.jpg", "buenosaires": "File:Puerto Madero, Buenos Aires, Argentina3.jpg",
 }
 # Иллюстрации отелей по типу: поиск по Commons, берём первые подходящие фото
 HOTEL_QUERIES = {
@@ -62,6 +71,26 @@ GALLERY = {
     "baku": ["Baku", "Baku Old City", "Flame Towers"], "minsk": ["Minsk", "Mir Castle", "Nesvizh"],
     "almaty": ["Almaty", "Medeu", "Big Almaty Lake", "Charyn"], "bali": ["Bali", "Ubud", "Bali temple", "Bali beach"],
     "goa": ["Goa India", "Goa beach", "Panaji"],
+    "budva": ["Budva", "Bay of Kotor", "Sveti Stefan"], "cyprus": ["Ayia Napa", "Cape Greco", "Protaras", "Cyprus beach"],
+    "crete": ["Crete", "Balos", "Chania", "Heraklion"], "rome": ["Rome", "Colosseum", "Trevi", "Vatican"],
+    "barcelona": ["Barcelona", "Sagrada Familia", "Park Güell"], "paris": ["Paris", "Eiffel Tower", "Seine Paris"],
+    "lisbon": ["Lisbon", "Belém", "Alfama", "Sintra"], "prague": ["Prague", "Charles Bridge", "Prague Castle"],
+    "budapest": ["Budapest", "Hungarian Parliament", "Danube Budapest"],
+    "belgrade": ["Belgrade", "Kalemegdan", "Saint Sava Belgrade"], "dubrovnik": ["Dubrovnik", "Dubrovnik old town"],
+    "durres": ["Durrës", "Albania coast", "Tirana"], "tokyo": ["Tokyo", "Shibuya", "Asakusa", "Mount Fuji"],
+    "seoul": ["Seoul", "Gyeongbokgung", "Bukchon"], "bangkok": ["Bangkok", "Wat Arun", "Grand Palace Bangkok"],
+    "phuquoc": ["Phu Quoc", "Phú Quốc beach"], "beijing": ["Beijing", "Forbidden City", "Great Wall"],
+    "kualalumpur": ["Kuala Lumpur", "Petronas", "Batu Caves"], "singapore": ["Singapore", "Marina Bay", "Gardens by the Bay"],
+    "doha": ["Doha", "Doha skyline", "Souq Waqif"], "muscat": ["Muscat", "Oman coast", "Sultan Qaboos Grand Mosque"],
+    "aqaba": ["Aqaba", "Petra", "Wadi Rum"], "marrakech": ["Marrakesh", "Jemaa el-Fnaa", "Majorelle"],
+    "tunisia": ["Hammamet", "Tunisia coast", "Sidi Bou Said"], "zanzibar": ["Zanzibar", "Stone Town", "Nungwi"],
+    "seychelles": ["Seychelles", "La Digue", "Praslin"], "mauritius": ["Mauritius", "Le Morne", "Mauritius beach"],
+    "newyork": ["New York City", "Manhattan", "Brooklyn Bridge", "Central Park"],
+    "miami": ["Miami", "Miami Beach", "South Beach"], "losangeles": ["Los Angeles", "Santa Monica", "Hollywood"],
+    "cancun": ["Cancún", "Tulum", "Chichen Itza", "Playa del Carmen"], "varadero": ["Varadero", "Havana", "Cuba beach"],
+    "puntacana": ["Punta Cana", "Dominican Republic beach", "Saona"],
+    "rio": ["Rio de Janeiro", "Copacabana", "Sugarloaf", "Christ the Redeemer"],
+    "buenosaires": ["Buenos Aires", "La Boca", "Puerto Madero"],
 }
 # Отобранные вручную снимки галереи (из кандидатов `--candidates`): виды, а не цветы, стадионы и интерьеры
 GALLERY_FILES: dict[str, list[str]] = {
@@ -258,6 +287,183 @@ GALLERY_FILES: dict[str, list[str]] = {
         "File:Panaji - Church of Our Lady of the Immaculate Conception - 1.jpg",
         "File:Streets of Fontainhas, Panaji (04).jpg",
     ],
+    "budva": [
+        "File:Sveti Stefan (06).jpg",
+        "File:Bay of Kotor 3.jpg",
+        "File:Budva, Montenegro, 2014-04-18, DD 01.JPG",
+        "File:Wyspa św. Jerzego w Peraście 02.jpg",
+    ],
+    "cyprus": [
+        "File:Sea caves Cape Greco 9.jpg",
+        "File:02 Cyprus vacation, sandy beach of Ayia Thekla, Sotira, Cyprus.jpg",
+        "File:Cape Greco 2006 06 10 0888-90 panorama.jpg",
+        "File:FamagustaDistrict 01-2017 img11 Agia Napa.jpg",
+    ],
+    "crete": [
+        "File:Lighthouse in Chania. Crete, Greece.jpg",
+        "File:Balos 9.jpg",
+        "File:Kreta - Chania - Kathedrale der drei Märtyrer.jpg",
+    ],
+    "rome": [
+        "File:Colosseum in Rome-April 2007-1- copie 2B.jpg",
+        "File:Fontaine Trevi - Rome.jpg",
+        "File:St Peter's Square, Vatican City - April 2007.jpg",
+        "File:Sant'Angelo bridge, dusk, Rome, Italy.jpg",
+    ],
+    "barcelona": [
+        "File:SF_maig_2_cropped.jpg",
+        "File:Sagrada Família 2010.JPG",
+        "File:Barcelona parc Güell la placa 2013 04.jpg",
+        "File:Parc Güell Terrace.jpg",
+    ],
+    "paris": [
+        "File:Tour_Eiffel_Wikimedia_Commons_(cropped).jpg",
+        "File:Paris - The Eiffel Tower in spring - 2307.jpg",
+        "File:Paris Notre-Dame East View 02.JPG",
+        "File:Tour Saint-Jacques au crépuscule.jpg",
+    ],
+    "lisbon": [
+        "File:Alfama, Lisbon (DSC03371).jpg",
+        "File:Sintra Portugal Palácio da Pena-01.jpg",
+        "File:Alfama, Lisbon (DSC03373).jpg",
+        "File:Seascape after sunset denoised.jpg",
+    ],
+    "prague": [
+        "File:Praha_Karlov_Most_005.jpg",
+        "File:Vltava river in Prague.jpg",
+        "File:Prague 07-2016 View from Old Town Hall Tower img3.jpg",
+        "File:Castillo de Praga, Praga, República Checa, 2022-07-01, DD 23-25 HDR.jpg",
+    ],
+    "budapest": [
+        "File:Széchenyi Chain Bridge in Budapest at night.jpg",
+        "File:Liberty Bridge Budapest 2.jpg",
+        "File:Vajdahunyad vára Budapest September 2013.jpg",
+    ],
+    "belgrade": [
+        "File:Church of Saint Sava (Belgrade, Serbia).jpg",
+        "File:Cultural Heritage Preservation Institute of Belgrade by night.JPG",
+        "File:Црква светог Саве, Београд (Church of Saint Sava, 2023).jpg",
+    ],
+    "dubrovnik": [
+        "File:Casco viejo de Dubrovnik, Croacia, 2014-04-14, DD 07.JPG",
+        "File:Fort Lovrijenac In Dubrovnik.jpg",
+        "File:Panoramic view of the old city of Dubrovnik - September 2017.jpg",
+    ],
+    "durres": [
+        "File:Amphitheatre of Durrës (by Pudelek).JPG",
+        "File:Gjipe beach, Albania.JPG",
+        "File:Tirana - Skanderbeg Square (Sheshi Skënderbej) - by Pudelek.jpg",
+    ],
+    "tokyo": [
+        "File:Mount Fuji at sunset, March 2025.jpg",
+        "File:Minato City, Tokyo, Japan.jpg",
+        "File:Shinjuku Gyoen National Garden and NTT DoCoMo Yoyogi Building, Tokyo, Japan.jpg",
+    ],
+    "seoul": [
+        "File:Front view of the Imperial Throne Hall Geunjeongjeon at Gyeongbokgung Palace with blue sky in Seoul.jpg",
+        "File:Bukchon-ro 11-gil street with hanok houses and blue sky in Bukchon Hanok Village Seoul.jpg",
+        "File:Front view of the tower of Jibokjae Hall under blue sky at Gyeongbokgung Palace in Seoul.jpg",
+    ],
+    "bangkok": [
+        "File:Templo Wat Arun, Bangkok, Tailandia, 2013-08-22, DD 30.jpg",
+        "File:Temple of the Emerald Buddha.jpg",
+        "File:วัดพระศรีรัตนศาสดาราม วัดพระแก้ว กรุงเทพมหานคร - Wat Phra Kaew, Temple of Emerald Buddha, Bangkok, Thailand.jpg",
+    ],
+    "beijing": [
+        "File:Badaling China Great-Wall-of-China-01.jpg",
+        "File:Peking Fünf Drachen Pavillons-20131229-RM-120744.jpg",
+        "File:The Forbidden City - View from Coal Hill.jpg",
+    ],
+    "singapore": [
+        "File:Supertree Grove, Gardens by the Bay, Singapore1.jpg",
+        "File:Singapore (SG), Gardens By The Bay -- 2019 -- 4755.jpg",
+        "File:At Jewel Changi, Singapore 2023 36.jpg",
+    ],
+    "doha": [
+        "File:Souq Waqif, Doha, Catar, 2013-08-05, DD 84.JPG",
+        "File:Souq Waqif, Doha, Catar, 2013-08-05, DD 75.JPG",
+    ],
+    "muscat": [
+        "File:Costa de Mutrah, Omán, 2024-08-14, DD 01.jpg",
+        "File:Bahía de Al Mirani, Mascate, Omán, 2024-08-14, DD 44.jpg",
+        "File:Fuerte de Al Mirani, Mascate, Omán, 2024-08-14, DD 45.jpg",
+    ],
+    "aqaba": [
+        "File:Wadi Rum BW 16.JPG",
+        "File:Wadi rum desert.jpg",
+        "File:The Monastery, Petra, Jordan8.jpg",
+    ],
+    "marrakech": [
+        "File:Lámparas, Djemaa el Fna -- 2014 -- Marrakech, Marruecos.jpg",
+        "File:Jamaa El Fna, Marrakesh, Morocco, 20250124 1804 7018.jpg",
+        "File:Ksar Aït Benhaddou, Marocco (أيت بن حدو، المغرب, ⴰⵢⵜ ⵃⴰⴷⴷⵓ).jpg",
+    ],
+    "tunisia": [
+        "File:Vue aerienne large de la presqu'ile d'Eddzira et de la cote tunisienne.jpg",
+        "File:Hammamet-Sud beach R02.jpg",
+        "File:Hammamet Yasmine R02.jpg",
+    ],
+    "seychelles": [
+        "File:198 Granite rock in La Digue Island at sunset Photo by Giles Laurent.jpg",
+        "File:Anse Source d'Argent 2-La Digue.jpg",
+        "File:Île Turc - Seychelles - 1.jpg",
+    ],
+    "newyork": [
+        "File:View of Empire State Building from Rockefeller Center New York City dllu.jpg",
+        "File:2024-11-19-Central Park-0669.jpg",
+        "File:Brooklyn Bridge August 2017.jpg",
+    ],
+    "miami": [
+        "File:North View of Miami and Miami River from 1st St 20160709 1.jpg",
+        "File:Miami-Florida09.JPG",
+    ],
+    "losangeles": [
+        "File:Image-Disney Concert Hall by Carol Highsmith edit.jpg",
+        "File:Santa Monica, California, beach and coastal bluffs.jpg",
+    ],
+    "cancun": [
+        "File:Chichen Itza 3.jpg",
+        "File:Tulum - 01.jpg",
+        "File:Tulum - God of the Winds Temple 04.JPG",
+    ],
+    "varadero": [
+        "File:AvMalecon-LaHabanaCuba-04735.jpg",
+        "File:National-Capitol-and-classic-cars-in-Havana-Cuba-225-031-061A.jpg",
+        "File:Atardecer en la Costa.jpg",
+    ],
+    "rio": [
+        "File:Redentor Over Clouds 1.jpg",
+        "File:Rio skyline and Cristo Redentor from Sugarloaf Mountain, Brazil.jpg",
+        "File:Bell 206L-4 LongRanger IV over Botafogo Bay, Rio de Janeiro.jpg",
+    ],
+    "buenosaires": [
+        "File:Casa Rosada, Buenos Aires, Argentina.jpg",
+        "File:Puerto Madero, Buenos Aires, Argentina2.jpg",
+    ],
+    "phuquoc": [
+        "File:1 Phu Quoc sunset.jpg",
+        "File:Phu Quoc sunset.jpg",
+    ],
+    "zanzibar": [
+        "File:Dhow Zanzibar-7.jpg",
+        "File:Departamento de museos y antigüedades, Stone Town, Zanzíbar, Tanzania, 2024-05-31, DD 33-35 HDR.jpg",
+        "File:Nungwi Beach Zanzibar.jpg",
+    ],
+    "mauritius": [
+        "File:Le Morne Peninsula in Mauritius (53697779236).jpg",
+        "File:MAURITIUS ISLAND, COCONUT ROCK ON THE LAGOON, OCTOBER 2013 - panoramio.jpg",
+        "File:Mauritius beach.jpg",
+    ],
+    "puntacana": [
+        "File:Saona Island December 2020.jpg",
+        "File:2023 - Saona Island - 38.jpg",
+        "File:Caribbean Sunset, Bavaro, Dominican Republic (14702746147).jpg",
+    ],
+    "kualalumpur": [
+        "File:Kuala Lumpur Malaysia Skyline-03.jpg",
+        "File:Kuala Lumpur Malaysia Petronas-Twin-Towers-01.jpg",
+        "File:Kuala Lumpur, Malaysia, Night lights.jpg",
+    ],
 }
 _BAD = re.compile(r"map|karte|flag|coat|logo|plan|scheme|insect|beetle|butterfl|moth|bird|flower|lilium|orchid|"
                   r"spider|portrait|interior|inside|museum|icon|fresco|altar|ceiling|detail|sign|plate|stamp|"
@@ -266,8 +472,8 @@ _BAD = re.compile(r"map|karte|flag|coat|logo|plan|scheme|insect|beetle|butterfl|
 
 
 def fetch(url: str, timeout: int = 60) -> bytes:
-    """GET с повторами: Википедия отвечает 429 при частых запросах."""
-    from urllib.error import HTTPError
+    """GET с повторами: Википедия отвечает 429 при частых запросах, сеть бывает нестабильной."""
+    from urllib.error import HTTPError, URLError
 
     for attempt in range(6):
         try:
@@ -279,6 +485,11 @@ def fetch(url: str, timeout: int = 60) -> bytes:
             wait = int(err.headers.get("Retry-After") or 0) or 5 * (attempt + 1)
             print(f"  {err.code}, жду {wait} с")
             time.sleep(wait)
+        except (URLError, TimeoutError, ConnectionError) as err:  # обрыв или DNS — пауза и повтор
+            if attempt == 5:
+                raise
+            print(f"  {type(err).__name__}, жду {10 * (attempt + 1)} с")
+            time.sleep(10 * (attempt + 1))
     raise RuntimeError("недостижимо")
 
 
@@ -302,7 +513,12 @@ def file_info(filename: str) -> dict | None:
 
 
 def page_image(title: str) -> str | None:
-    data = get_json(f"https://ru.wikipedia.org/api/rest_v1/page/summary/{quote(title)}")
+    from urllib.error import HTTPError
+
+    try:
+        data = get_json(f"https://ru.wikipedia.org/api/rest_v1/page/summary/{quote(title)}")
+    except HTTPError:  # статьи нет — фото возьмём из галереи
+        return None
     src = (data.get("originalimage") or data.get("thumbnail") or {}).get("source")
     if not src:
         return None

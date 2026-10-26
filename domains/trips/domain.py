@@ -427,17 +427,26 @@ class TripsDomain:
         start, nights, assumed_dates = self._period(state, today, None)
         assert start is not None
         window = None if state.date_from else month_window(start.month, state.month_part, today)
-        exclude = set(state.rejected) | (set(state.suggested) if exclude_shown else set())
+        if not exclude_shown:
+            state.seen = []
+        exclude = set(state.rejected) | (set(state.seen) | set(state.suggested) if exclude_shown else set())
         common = dict(trip_types=list(state.trip_types or []), abroad=state.abroad, pets=bool(state.pets),
                       mode=state.transport, meal=state.meal, stars_min=state.stars_min, window=window)
         items = suggest(ORIGIN_BY_NAME[origin_name], start, nights, adults, children, budget=state.budget_total,
                         max_hours=state.max_travel_hours, exclude=exclude or None, economy=bool(state.economy), **common)
+        if not items and exclude_shown and state.seen:  # показали всё подходящее — начинаем подборку заново
+            state.seen = []
+            exclude = set(state.rejected) | set(state.suggested)
+            items = suggest(ORIGIN_BY_NAME[origin_name], start, nights, adults, children, budget=state.budget_total,
+                            max_hours=state.max_travel_hours, exclude=exclude or None, economy=bool(state.economy),
+                            **common)
         if not items:
             items = suggest(ORIGIN_BY_NAME[origin_name], start, nights, adults, children, budget=None, max_hours=None,
                             exclude=exclude or None, **common)
             prefix = (prefix + " " if prefix else "") + "Под все условия сразу ничего не нашлось — ослабил бюджет и время в пути."
         state.stage, state.showing = "destination", "destinations"
         state.suggested = [s.dest.id for s in items]
+        state.seen = sorted(set(state.seen) | set(state.suggested))
         state.month = state.month or start.month
         state.nights = state.nights or nights
         state.assumptions = assumed + assumed_dates

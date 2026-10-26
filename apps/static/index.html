@@ -284,7 +284,7 @@ const marks = (cls, items) => el("ul", { class: "marks " + cls }, items.map((t) 
 const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button", class: cls, onclick: () => send(text || label) }, label);
 
 /* Карта: точки суши (Natural Earth), направления каталога, дуга маршрута */
-const K = 0.82, LON0 = 5, LAT0 = 75;
+const K = 0.82, LON0 = -168, LAT0 = 75;
 const px = (lon, lat) => [(lon - LON0) * K, LAT0 - lat];
 function arcPath(a, b) {
   const [x1, y1] = px(a.lon, a.lat), [x2, y2] = px(b.lon, b.lat);
@@ -294,15 +294,16 @@ function arcPath(a, b) {
   const cx = (x1 + x2) / 2 + sgn * nx * d * 0.22, cy = (y1 + y2) / 2 + sgn * ny * d * 0.22;
   return `M${x1.toFixed(2)},${y1.toFixed(2)} Q${cx.toFixed(2)},${cy.toFixed(2)} ${x2.toFixed(2)},${y2.toFixed(2)}`;
 }
-const FULL = { x: 0, y: 0, w: (170 - LON0) * K, h: 95 };
+const FULL = { x: 0, y: 0, w: (180 - LON0) * K, h: 131 };           // весь мир
+const HOME = { x: (5 - LON0) * K, y: 0, w: 165 * K, h: 95 };          // стартовый вид: Европа, Азия, Африка
 function fitView(points) {
-  if (!points.length) return FULL;
+  if (!points.length) return HOME;
   const xs = points.map((p) => px(p.lon, p.lat)[0]), ys = points.map((p) => px(p.lon, p.lat)[1]);
   let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const ratio = FULL.w / FULL.h;
+  const ratio = HOME.w / HOME.h;
   let w = Math.max(x1 - x0, 36) * 1.5, h = Math.max(y1 - y0, 20) * 1.6;
   if (w / h < ratio) w = h * ratio; else h = w / ratio;
-  w = Math.min(w, FULL.w); h = Math.min(h, FULL.h);
+  if (w > FULL.w) { w = FULL.w; h = w / ratio; }
   const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 - h * 0.06;
   const x = Math.min(Math.max(cx - w / 2, 0), FULL.w - w), y = Math.min(Math.max(cy - h / 2, 0), FULL.h - h);
   return { x, y, w, h };
@@ -312,12 +313,12 @@ function drawMap(opts = {}) {
   const pts = opts.origin ? [opts.origin, ...(opts.targets || [])] : [];
   const v = fitView(pts);
   const root = svg("svg", { viewBox: `${v.x.toFixed(2)} ${v.y.toFixed(2)} ${v.w.toFixed(2)} ${v.h.toFixed(2)}`, role: "presentation" });
-  root.style.setProperty("--z", (v.w / FULL.w).toFixed(3));
+  root.style.setProperty("--z", (v.w / HOME.w).toFixed(3));
   const g = svg("g");
   for (const [lon, lat] of land.dots) { const [x, y] = px(lon, lat); g.append(svg("circle", { class: "land", cx: x.toFixed(2), cy: y.toFixed(2), r: 0.3 })); }
   root.append(g);
   for (const p of info.places) { const [x, y] = px(p.lon, p.lat); root.append(svg("circle", { class: "place", cx: x, cy: y, r: 0.55 })); }
-  const z = v.w / FULL.w;
+  const z = v.w / HOME.w;
   const toDraw = [];
   const targets = opts.targets || [];
   if (opts.origin) {

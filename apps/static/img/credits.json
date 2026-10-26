@@ -1036,5 +1036,857 @@
   "page": "https://commons.wikimedia.org/wiki/File:Streets_of_Fontainhas,_Panaji_(04).jpg",
   "author": "iMahesh",
   "license": "CC BY-SA 4.0"
+ },
+ "dest/budva.jpg": {
+  "file": "File:View_over_the_Old_Town_of_Budva_from_the_Citadel.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:View_over_the_Old_Town_of_Budva_from_the_Citadel.jpg",
+  "author": "DinoMNE",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/cyprus.jpg": {
+  "file": "File:Cyprus,_Ayia_Napa._2017-12-30.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Cyprus,_Ayia_Napa._2017-12-30.jpg",
+  "author": "dimitrisvetsikas1969",
+  "license": "CC0"
+ },
+ "dest/crete.jpg": {
+  "file": "File:Balos 1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Balos_1.jpg",
+  "author": "Olaf Tausch",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/rome.jpg": {
+  "file": "File:Colosseo_2020.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Colosseo_2020.jpg",
+  "author": "FeaturedPics",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/barcelona.jpg": {
+  "file": "File:Park Güell 02.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Park_G%C3%BCell_02.jpg",
+  "author": "Bernard Gagnon",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/paris.jpg": {
+  "file": "File:Eiffel Tower and Pont Alexandre III at night.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Eiffel_Tower_and_Pont_Alexandre_III_at_night.jpg",
+  "author": "Getfunky Paris",
+  "license": "CC BY 2.0"
+ },
+ "dest/lisbon.jpg": {
+  "file": "File:Lisbon_(36831596786)_(cropped).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lisbon_(36831596786)_(cropped).jpg",
+  "author": "Deensel",
+  "license": "CC BY 2.0"
+ },
+ "dest/prague.jpg": {
+  "file": "File:Prague 07-2016 View from Petrinska Tower img2.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Prague_07-2016_View_from_Petrinska_Tower_img2.jpg",
+  "author": "A.Savin",
+  "license": "FAL"
+ },
+ "dest/budapest.jpg": {
+  "file": "File:Hungarian Parliament Building 2023-9.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Hungarian_Parliament_Building_2023-9.jpg",
+  "author": "Pierre Blaché",
+  "license": "CC0"
+ },
+ "dest/belgrade.jpg": {
+  "file": "File:Temple of Saint Sava (Crkva Svetog Save, Beograd).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Temple_of_Saint_Sava_(Crkva_Svetog_Save,_Beograd).jpg",
+  "author": "Petar Milošević",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/dubrovnik.jpg": {
+  "file": "File:Dubrovnik as seen from Srđ - September 2017.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Dubrovnik_as_seen_from_Sr%C4%91_-_September_2017.jpg",
+  "author": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/durres.jpg": {
+  "file": "File:Plaża w Durrës 3.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Pla%C5%BCa_w_Durr%C3%ABs_3.jpg",
+  "author": "Marcin Konsek",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/tokyo.jpg": {
+  "file": "File:Tokyo Tower, Minato City.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Tokyo_Tower,_Minato_City.jpg",
+  "author": "David Kernan",
+  "license": "CC BY 4.0"
+ },
+ "dest/seoul.jpg": {
+  "file": "File:Gyeonghoeru (Royal Banquet Hall) at Gyeongbokgung Palace, Seoul.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Gyeonghoeru_(Royal_Banquet_Hall)_at_Gyeongbokgung_Palace,_Seoul.jpg",
+  "author": "Frank Schulenburg",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/bangkok.jpg": {
+  "file": "File:Templo Wat Arun, Bangkok, Tailandia, 2013-08-22, DD 37.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Templo_Wat_Arun,_Bangkok,_Tailandia,_2013-08-22,_DD_37.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/phuquoc.jpg": {
+  "file": "File:Bai-sao-phu-quoc-tuonglamphotos.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Bai-sao-phu-quoc-tuonglamphotos.jpg",
+  "author": "[//commons.wikimedia.org/wiki/User:Trantuonglam Trantuonglam]",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/beijing.jpg": {
+  "file": "File:Beijing forbidden city Belvedere of Embodying Benevolence-20071018-RM-142403.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Beijing_forbidden_city_Belvedere_of_Embodying_Benevolence-20071018-RM-142403.jpg",
+  "author": "Ermell",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/kualalumpur.jpg": {
+  "file": "File:The Twins SE Asia 2019 (49171985716).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:The_Twins_SE_Asia_2019_(49171985716).jpg",
+  "author": "James Kerwin from Tbilisi",
+  "license": "CC BY 2.0"
+ },
+ "dest/singapore.jpg": {
+  "file": "File:Marina Bay Singapore-3499.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Marina_Bay_Singapore-3499.jpg",
+  "author": "Bijay Chaurasia",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/doha.jpg": {
+  "file": "File:Doha skyline0001.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Doha_skyline0001.JPG",
+  "author": "Sebbe xy",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/muscat.jpg": {
+  "file": "File:Old Muscat City View, Muscat, Oman3.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Old_Muscat_City_View,_Muscat,_Oman3.jpg",
+  "author": "Domenico Convertini",
+  "license": "CC BY-SA 2.0"
+ },
+ "dest/aqaba.jpg": {
+  "file": "File:Petra Jordan BW 43.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Petra_Jordan_BW_43.JPG",
+  "author": "Berthold Werner",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/marrakech.jpg": {
+  "file": "File:Jamaa El Fna, Marrakesh, Morocco, 20250124 1804 7017.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Jamaa_El_Fna,_Marrakesh,_Morocco,_20250124_1804_7017.jpg",
+  "author": "Jakub Hałun",
+  "license": "CC BY 4.0"
+ },
+ "dest/tunisia.jpg": {
+  "file": "File:Hammamet Yasmine R01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Hammamet_Yasmine_R01.jpg",
+  "author": "Marc Ryckaert (MJJR)",
+  "license": "CC BY 3.0"
+ },
+ "dest/zanzibar.jpg": {
+  "file": "File:Nungwi,Zanzibar - panoramio.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Nungwi,Zanzibar_-_panoramio.jpg",
+  "author": "Jang Woo Lee",
+  "license": "CC BY 3.0"
+ },
+ "dest/seychelles.jpg": {
+  "file": "File:Grand Anse-La Digue-Seychellen.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Grand_Anse-La_Digue-Seychellen.jpg",
+  "author": "Tobias Alt, Tobi 87",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/mauritius.jpg": {
+  "file": "File:Sunbathing at Le Morne Beach in Mauritius (53697787846).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sunbathing_at_Le_Morne_Beach_in_Mauritius_(53697787846).jpg",
+  "author": "\"dronepicr\"",
+  "license": "CC BY 2.0"
+ },
+ "dest/newyork.jpg": {
+  "file": "File:Lower Manhattan from Jersey City September 2020 panorama.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lower_Manhattan_from_Jersey_City_September_2020_panorama.jpg",
+  "author": "King of Hearts",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/miami.jpg": {
+  "file": "File:Lifeguard stand, Miami Beach.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lifeguard_stand,_Miami_Beach.jpg",
+  "author": "Radomianin",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/losangeles.jpg": {
+  "file": "File:Los Angeles (California, USA), Santa Monica Beach -- 2012 -- 5301.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Los_Angeles_(California,_USA),_Santa_Monica_Beach_--_2012_--_5301.jpg",
+  "author": "Dietmar Rabich",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/cancun.jpg": {
+  "file": "File:Cancun Beach.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Cancun_Beach.jpg",
+  "author": "Keith Pomakis",
+  "license": "CC BY-SA 2.5"
+ },
+ "dest/varadero.jpg": {
+  "file": "File:Varaderobeach1.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Varaderobeach1.JPG",
+  "author": "J. Drevet",
+  "license": "CC BY-SA 3.0"
+ },
+ "dest/puntacana.jpg": {
+  "file": "File:Bavaro Beach 045.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Bavaro_Beach_045.jpg",
+  "author": "Hans Buch",
+  "license": "Public domain"
+ },
+ "dest/rio.jpg": {
+  "file": "File:Sugarloaf Sunrise 2.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sugarloaf_Sunrise_2.jpg",
+  "author": "Donatas Dabravolskas",
+  "license": "CC BY-SA 4.0"
+ },
+ "dest/buenosaires.jpg": {
+  "file": "File:Puerto Madero, Buenos Aires, Argentina3.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Puerto_Madero,_Buenos_Aires,_Argentina3.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/budva-1.jpg": {
+  "file": "File:Sveti Stefan (06).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sveti_Stefan_(06).jpg",
+  "author": "Marcin Konsek",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/budva-2.jpg": {
+  "file": "File:Bay of Kotor 3.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Bay_of_Kotor_3.jpg",
+  "author": "kallerna",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/budva-3.jpg": {
+  "file": "File:Budva, Montenegro, 2014-04-18, DD 01.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Budva,_Montenegro,_2014-04-18,_DD_01.JPG",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/budva-4.jpg": {
+  "file": "File:Wyspa św. Jerzego w Peraście 02.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Wyspa_%C5%9Bw._Jerzego_w_Pera%C5%9Bcie_02.jpg",
+  "author": "Marcin Konsek",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/cyprus-1.jpg": {
+  "file": "File:Sea caves Cape Greco 9.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sea_caves_Cape_Greco_9.jpg",
+  "author": "kallerna",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/cyprus-2.jpg": {
+  "file": "File:02 Cyprus vacation, sandy beach of Ayia Thekla, Sotira, Cyprus.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:02_Cyprus_vacation,_sandy_beach_of_Ayia_Thekla,_Sotira,_Cyprus.jpg",
+  "author": "Marek Ślusarczyk (Tupungato) Photo portfolio",
+  "license": "CC BY 3.0"
+ },
+ "gallery/cyprus-3.jpg": {
+  "file": "File:Cape Greco 2006 06 10 0888-90 panorama.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Cape_Greco_2006_06_10_0888-90_panorama.jpg",
+  "author": "Anna Anichkova",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/cyprus-4.jpg": {
+  "file": "File:FamagustaDistrict 01-2017 img11 Agia Napa.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:FamagustaDistrict_01-2017_img11_Agia_Napa.jpg",
+  "author": "A.Savin",
+  "license": "FAL"
+ },
+ "gallery/crete-1.jpg": {
+  "file": "File:Lighthouse in Chania. Crete, Greece.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lighthouse_in_Chania._Crete,_Greece.jpg",
+  "author": "Ввласенко",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/crete-2.jpg": {
+  "file": "File:Balos 9.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Balos_9.jpg",
+  "author": "Olaf Tausch",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/crete-3.jpg": {
+  "file": "File:Kreta - Chania - Kathedrale der drei Märtyrer.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Kreta_-_Chania_-_Kathedrale_der_drei_M%C3%A4rtyrer.jpg",
+  "author": "Taxiarchos228",
+  "license": "FAL"
+ },
+ "gallery/rome-1.jpg": {
+  "file": "File:Colosseum in Rome-April 2007-1- copie 2B.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Colosseum_in_Rome-April_2007-1-_copie_2B.jpg",
+  "author": "Diliff",
+  "license": "CC BY-SA 2.5"
+ },
+ "gallery/rome-2.jpg": {
+  "file": "File:Fontaine Trevi - Rome.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Fontaine_Trevi_-_Rome.jpg",
+  "author": "Wilfredor",
+  "license": "CC0"
+ },
+ "gallery/rome-3.jpg": {
+  "file": "File:St Peter's Square, Vatican City - April 2007.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:St_Peter%27s_Square,_Vatican_City_-_April_2007.jpg",
+  "author": "Diliff",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/rome-4.jpg": {
+  "file": "File:Sant'Angelo bridge, dusk, Rome, Italy.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sant%27Angelo_bridge,_dusk,_Rome,_Italy.jpg",
+  "author": "Jebulon",
+  "license": "CC0"
+ },
+ "gallery/barcelona-1.jpg": {
+  "file": "File:SF_maig_2_cropped.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:SF_maig_2_cropped.jpg",
+  "author": "Canaan",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/barcelona-2.jpg": {
+  "file": "File:Sagrada Família 2010.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Sagrada_Fam%C3%ADlia_2010.JPG",
+  "author": "Jopparn",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/barcelona-3.jpg": {
+  "file": "File:Barcelona parc Güell la placa 2013 04.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Barcelona_parc_G%C3%BCell_la_placa_2013_04.jpg",
+  "author": "Isiwal",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/barcelona-4.jpg": {
+  "file": "File:Parc Güell Terrace.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Parc_G%C3%BCell_Terrace.jpg",
+  "author": "Daniel Kraft",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/paris-1.jpg": {
+  "file": "File:Tour_Eiffel_Wikimedia_Commons_(cropped).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Tour_Eiffel_Wikimedia_Commons_(cropped).jpg",
+  "author": "Benh LIEU SONG",
+  "license": "Public domain"
+ },
+ "gallery/paris-2.jpg": {
+  "file": "File:Paris - The Eiffel Tower in spring - 2307.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Paris_-_The_Eiffel_Tower_in_spring_-_2307.jpg",
+  "author": "Jorge Royan",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/paris-3.jpg": {
+  "file": "File:Paris Notre-Dame East View 02.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Paris_Notre-Dame_East_View_02.JPG",
+  "author": "Uoaei1",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/paris-4.jpg": {
+  "file": "File:Tour Saint-Jacques au crépuscule.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Tour_Saint-Jacques_au_cr%C3%A9puscule.jpg",
+  "author": "Fabien Barrau",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/lisbon-1.jpg": {
+  "file": "File:Alfama, Lisbon (DSC03371).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Alfama,_Lisbon_(DSC03371).jpg",
+  "author": "Matti Blume",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/lisbon-2.jpg": {
+  "file": "File:Sintra Portugal Palácio da Pena-01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sintra_Portugal_Pal%C3%A1cio_da_Pena-01.jpg",
+  "author": "CEphoto, Uwe Aranas",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/lisbon-3.jpg": {
+  "file": "File:Alfama, Lisbon (DSC03373).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Alfama,_Lisbon_(DSC03373).jpg",
+  "author": "Matti Blume",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/lisbon-4.jpg": {
+  "file": "File:Seascape after sunset denoised.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Seascape_after_sunset_denoised.jpg",
+  "author": "Rnbc (talk) at en.wikipedia",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/prague-1.jpg": {
+  "file": "File:Praha_Karlov_Most_005.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Praha_Karlov_Most_005.jpg",
+  "author": "БережнойСергей at Russian Wikipedia",
+  "license": "CC BY 2.5"
+ },
+ "gallery/prague-2.jpg": {
+  "file": "File:Vltava river in Prague.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Vltava_river_in_Prague.jpg",
+  "author": "Dmitry A. Mottl",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/prague-3.jpg": {
+  "file": "File:Prague 07-2016 View from Old Town Hall Tower img3.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Prague_07-2016_View_from_Old_Town_Hall_Tower_img3.jpg",
+  "author": "A.Savin",
+  "license": "FAL"
+ },
+ "gallery/prague-4.jpg": {
+  "file": "File:Castillo de Praga, Praga, República Checa, 2022-07-01, DD 23-25 HDR.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Castillo_de_Praga,_Praga,_Rep%C3%BAblica_Checa,_2022-07-01,_DD_23-25_HDR.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/budapest-1.jpg": {
+  "file": "File:Széchenyi Chain Bridge in Budapest at night.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg",
+  "author": "Wilfredor",
+  "license": "CC0"
+ },
+ "gallery/budapest-2.jpg": {
+  "file": "File:Liberty Bridge Budapest 2.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Liberty_Bridge_Budapest_2.jpg",
+  "author": "kallerna",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/budapest-3.jpg": {
+  "file": "File:Vajdahunyad vára Budapest September 2013.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Vajdahunyad_v%C3%A1ra_Budapest_September_2013.jpg",
+  "author": "Felix König",
+  "license": "CC BY 3.0"
+ },
+ "gallery/belgrade-1.jpg": {
+  "file": "File:Church of Saint Sava (Belgrade, Serbia).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Church_of_Saint_Sava_(Belgrade,_Serbia).jpg",
+  "author": "Petar Milošević",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/belgrade-2.jpg": {
+  "file": "File:Cultural Heritage Preservation Institute of Belgrade by night.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Cultural_Heritage_Preservation_Institute_of_Belgrade_by_night.JPG",
+  "author": "Pudelek",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/belgrade-3.jpg": {
+  "file": "File:Црква светог Саве, Београд (Church of Saint Sava, 2023).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%D0%A6%D1%80%D0%BA%D0%B2%D0%B0_%D1%81%D0%B2%D0%B5%D1%82%D0%BE%D0%B3_%D0%A1%D0%B0%D0%B2%D0%B5,_%D0%91%D0%B5%D0%BE%D0%B3%D1%80%D0%B0%D0%B4_(Church_of_Saint_Sava,_2023).jpg",
+  "author": "Petar Milošević",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/dubrovnik-1.jpg": {
+  "file": "File:Casco viejo de Dubrovnik, Croacia, 2014-04-14, DD 07.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Casco_viejo_de_Dubrovnik,_Croacia,_2014-04-14,_DD_07.JPG",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/dubrovnik-2.jpg": {
+  "file": "File:Fort Lovrijenac In Dubrovnik.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Fort_Lovrijenac_In_Dubrovnik.jpg",
+  "author": "Sumitsurai",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/dubrovnik-3.jpg": {
+  "file": "File:Panoramic view of the old city of Dubrovnik - September 2017.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Panoramic_view_of_the_old_city_of_Dubrovnik_-_September_2017.jpg",
+  "author": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/durres-1.jpg": {
+  "file": "File:Amphitheatre of Durrës (by Pudelek).JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Amphitheatre_of_Durr%C3%ABs_(by_Pudelek).JPG",
+  "author": "Pudelek",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/durres-2.jpg": {
+  "file": "File:Gjipe beach, Albania.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Gjipe_beach,_Albania.JPG",
+  "author": "Pudelek",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/durres-3.jpg": {
+  "file": "File:Tirana - Skanderbeg Square (Sheshi Skënderbej) - by Pudelek.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Tirana_-_Skanderbeg_Square_(Sheshi_Sk%C3%ABnderbej)_-_by_Pudelek.jpg",
+  "author": "Pudelek",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/tokyo-1.jpg": {
+  "file": "File:Mount Fuji at sunset, March 2025.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Mount_Fuji_at_sunset,_March_2025.jpg",
+  "author": "Romain Guy from San Francisco, USA",
+  "license": "CC0"
+ },
+ "gallery/tokyo-2.jpg": {
+  "file": "File:Minato City, Tokyo, Japan.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Minato_City,_Tokyo,_Japan.jpg",
+  "author": "David Kernan",
+  "license": "CC BY 4.0"
+ },
+ "gallery/tokyo-3.jpg": {
+  "file": "File:Shinjuku Gyoen National Garden and NTT DoCoMo Yoyogi Building, Tokyo, Japan.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Shinjuku_Gyoen_National_Garden_and_NTT_DoCoMo_Yoyogi_Building,_Tokyo,_Japan.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/seoul-1.jpg": {
+  "file": "File:Front view of the Imperial Throne Hall Geunjeongjeon at Gyeongbokgung Palace with blue sky in Seoul.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Front_view_of_the_Imperial_Throne_Hall_Geunjeongjeon_at_Gyeongbokgung_Palace_with_blue_sky_in_Seoul.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/seoul-2.jpg": {
+  "file": "File:Bukchon-ro 11-gil street with hanok houses and blue sky in Bukchon Hanok Village Seoul.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Bukchon-ro_11-gil_street_with_hanok_houses_and_blue_sky_in_Bukchon_Hanok_Village_Seoul.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/seoul-3.jpg": {
+  "file": "File:Front view of the tower of Jibokjae Hall under blue sky at Gyeongbokgung Palace in Seoul.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Front_view_of_the_tower_of_Jibokjae_Hall_under_blue_sky_at_Gyeongbokgung_Palace_in_Seoul.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/bangkok-1.jpg": {
+  "file": "File:Templo Wat Arun, Bangkok, Tailandia, 2013-08-22, DD 30.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Templo_Wat_Arun,_Bangkok,_Tailandia,_2013-08-22,_DD_30.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/bangkok-2.jpg": {
+  "file": "File:Temple of the Emerald Buddha.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Temple_of_the_Emerald_Buddha.jpg",
+  "author": "Nawit science",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/bangkok-3.jpg": {
+  "file": "File:วัดพระศรีรัตนศาสดาราม วัดพระแก้ว กรุงเทพมหานคร - Wat Phra Kaew, Temple of Emerald Buddha, Bangkok, Thailand.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%9E%E0%B8%A3%E0%B8%B0%E0%B8%A8%E0%B8%A3%E0%B8%B5%E0%B8%A3%E0%B8%B1%E0%B8%95%E0%B8%99%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%94%E0%B8%B2%E0%B8%A3%E0%B8%B2%E0%B8%A1_%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%9E%E0%B8%A3%E0%B8%B0%E0%B9%81%E0%B8%81%E0%B9%89%E0%B8%A7_%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%80%E0%B8%97%E0%B8%9E%E0%B8%A1%E0%B8%AB%E0%B8%B2%E0%B8%99%E0%B8%84%E0%B8%A3_-_Wat_Phra_Kaew,_Temple_of_Emerald_Buddha,_Bangkok,_Thailand.jpg",
+  "author": "Basile Morin",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/phuquoc-1.jpg": {
+  "file": "File:1 Phu Quoc sunset.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:1_Phu_Quoc_sunset.jpg",
+  "author": "Elmschrat",
+  "license": "CC0"
+ },
+ "gallery/phuquoc-2.jpg": {
+  "file": "File:Phu Quoc sunset.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Phu_Quoc_sunset.jpg",
+  "author": "Alex Valavanis",
+  "license": "CC BY-SA 2.0"
+ },
+ "gallery/beijing-1.jpg": {
+  "file": "File:Badaling China Great-Wall-of-China-01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Badaling_China_Great-Wall-of-China-01.jpg",
+  "author": "CEphoto, Uwe Aranas",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/beijing-2.jpg": {
+  "file": "File:Peking Fünf Drachen Pavillons-20131229-RM-120744.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Peking_F%C3%BCnf_Drachen_Pavillons-20131229-RM-120744.jpg",
+  "author": "Reinhold Möller Ermell",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/beijing-3.jpg": {
+  "file": "File:The Forbidden City - View from Coal Hill.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:The_Forbidden_City_-_View_from_Coal_Hill.jpg",
+  "author": "Pixelflake",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/kualalumpur-1.jpg": {
+  "file": "File:Kuala Lumpur Malaysia Skyline-03.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Kuala_Lumpur_Malaysia_Skyline-03.jpg",
+  "author": "CEphoto, Uwe Aranas",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/kualalumpur-2.jpg": {
+  "file": "File:Kuala Lumpur Malaysia Petronas-Twin-Towers-01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Kuala_Lumpur_Malaysia_Petronas-Twin-Towers-01.jpg",
+  "author": "CEphoto, Uwe Aranas",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/kualalumpur-3.jpg": {
+  "file": "File:Kuala Lumpur, Malaysia, Night lights.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Kuala_Lumpur,_Malaysia,_Night_lights.jpg",
+  "author": "Vyacheslav Argenberg",
+  "license": "CC BY 4.0"
+ },
+ "gallery/singapore-1.jpg": {
+  "file": "File:Supertree Grove, Gardens by the Bay, Singapore1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Supertree_Grove,_Gardens_by_the_Bay,_Singapore1.jpg",
+  "author": "Mustang Joe",
+  "license": "CC0"
+ },
+ "gallery/singapore-2.jpg": {
+  "file": "File:Singapore (SG), Gardens By The Bay -- 2019 -- 4755.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Singapore_(SG),_Gardens_By_The_Bay_--_2019_--_4755.jpg",
+  "author": "Dietmar Rabich",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/singapore-3.jpg": {
+  "file": "File:At Jewel Changi, Singapore 2023 36.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:At_Jewel_Changi,_Singapore_2023_36.jpg",
+  "author": "Photograph by Mike Peel (www.mikepeel.net).",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/doha-1.jpg": {
+  "file": "File:Souq Waqif, Doha, Catar, 2013-08-05, DD 84.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Souq_Waqif,_Doha,_Catar,_2013-08-05,_DD_84.JPG",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/doha-2.jpg": {
+  "file": "File:Souq Waqif, Doha, Catar, 2013-08-05, DD 75.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Souq_Waqif,_Doha,_Catar,_2013-08-05,_DD_75.JPG",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/muscat-1.jpg": {
+  "file": "File:Costa de Mutrah, Omán, 2024-08-14, DD 01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Costa_de_Mutrah,_Om%C3%A1n,_2024-08-14,_DD_01.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/muscat-2.jpg": {
+  "file": "File:Bahía de Al Mirani, Mascate, Omán, 2024-08-14, DD 44.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Bah%C3%ADa_de_Al_Mirani,_Mascate,_Om%C3%A1n,_2024-08-14,_DD_44.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/muscat-3.jpg": {
+  "file": "File:Fuerte de Al Mirani, Mascate, Omán, 2024-08-14, DD 45.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Fuerte_de_Al_Mirani,_Mascate,_Om%C3%A1n,_2024-08-14,_DD_45.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/aqaba-1.jpg": {
+  "file": "File:Wadi Rum BW 16.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Wadi_Rum_BW_16.JPG",
+  "author": "Berthold Werner",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/aqaba-2.jpg": {
+  "file": "File:Wadi rum desert.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Wadi_rum_desert.jpg",
+  "author": "Peter Chisholm",
+  "license": "CC0"
+ },
+ "gallery/aqaba-3.jpg": {
+  "file": "File:The Monastery, Petra, Jordan8.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:The_Monastery,_Petra,_Jordan8.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/marrakech-1.jpg": {
+  "file": "File:Lámparas, Djemaa el Fna -- 2014 -- Marrakech, Marruecos.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:L%C3%A1mparas,_Djemaa_el_Fna_--_2014_--_Marrakech,_Marruecos.jpg",
+  "author": "I.Barrios &amp; J.Ligero",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/marrakech-2.jpg": {
+  "file": "File:Jamaa El Fna, Marrakesh, Morocco, 20250124 1804 7018.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Jamaa_El_Fna,_Marrakesh,_Morocco,_20250124_1804_7018.jpg",
+  "author": "Jakub Hałun",
+  "license": "CC BY 4.0"
+ },
+ "gallery/marrakech-3.jpg": {
+  "file": "File:Ksar Aït Benhaddou, Marocco (أيت بن حدو، المغرب, ⴰⵢⵜ ⵃⴰⴷⴷⵓ).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Ksar_A%C3%AFt_Benhaddou,_Marocco_(%D8%A3%D9%8A%D8%AA_%D8%A8%D9%86_%D8%AD%D8%AF%D9%88%D8%8C_%D8%A7%D9%84%D9%85%D8%BA%D8%B1%D8%A8,_%E2%B4%B0%E2%B5%A2%E2%B5%9C_%E2%B5%83%E2%B4%B0%E2%B4%B7%E2%B4%B7%E2%B5%93).jpg",
+  "author": "Petar Milošević",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/tunisia-1.jpg": {
+  "file": "File:Vue aerienne large de la presqu'ile d'Eddzira et de la cote tunisienne.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Vue_aerienne_large_de_la_presqu%27ile_d%27Eddzira_et_de_la_cote_tunisienne.jpg",
+  "author": "Skander zarrad",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/tunisia-2.jpg": {
+  "file": "File:Hammamet-Sud beach R02.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Hammamet-Sud_beach_R02.jpg",
+  "author": "Marc Ryckaert (MJJR)",
+  "license": "CC BY 3.0"
+ },
+ "gallery/tunisia-3.jpg": {
+  "file": "File:Hammamet Yasmine R02.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Hammamet_Yasmine_R02.jpg",
+  "author": "Marc Ryckaert",
+  "license": "CC BY 3.0"
+ },
+ "gallery/zanzibar-1.jpg": {
+  "file": "File:Dhow Zanzibar-7.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Dhow_Zanzibar-7.jpg",
+  "author": "Fanny Schertzer",
+  "license": "CC BY 2.5"
+ },
+ "gallery/zanzibar-2.jpg": {
+  "file": "File:Departamento de museos y antigüedades, Stone Town, Zanzíbar, Tanzania, 2024-05-31, DD 33-35 HDR.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Departamento_de_museos_y_antig%C3%BCedades,_Stone_Town,_Zanz%C3%ADbar,_Tanzania,_2024-05-31,_DD_33-35_HDR.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/zanzibar-3.jpg": {
+  "file": "File:Nungwi Beach Zanzibar.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Nungwi_Beach_Zanzibar.jpg",
+  "author": "Kamusiyakitaa",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/seychelles-1.jpg": {
+  "file": "File:198 Granite rock in La Digue Island at sunset Photo by Giles Laurent.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:198_Granite_rock_in_La_Digue_Island_at_sunset_Photo_by_Giles_Laurent.jpg",
+  "author": "Giles Laurent",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/seychelles-2.jpg": {
+  "file": "File:Anse Source d'Argent 2-La Digue.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Anse_Source_d%27Argent_2-La_Digue.jpg",
+  "author": "Tobias Alt, Tobi 87",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/seychelles-3.jpg": {
+  "file": "File:Île Turc - Seychelles - 1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:%C3%8Ele_Turc_-_Seychelles_-_1.jpg",
+  "author": "NorbertNagel",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/mauritius-1.jpg": {
+  "file": "File:Le Morne Peninsula in Mauritius (53697779236).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Le_Morne_Peninsula_in_Mauritius_(53697779236).jpg",
+  "author": "\"dronepicr\"",
+  "license": "CC BY 2.0"
+ },
+ "gallery/mauritius-2.jpg": {
+  "file": "File:MAURITIUS ISLAND, COCONUT ROCK ON THE LAGOON, OCTOBER 2013 - panoramio.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:MAURITIUS_ISLAND,_COCONUT_ROCK_ON_THE_LAGOON,_OCTOBER_2013_-_panoramio.jpg",
+  "author": "otterboris",
+  "license": "CC BY 3.0"
+ },
+ "gallery/mauritius-3.jpg": {
+  "file": "File:Mauritius beach.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Mauritius_beach.jpg",
+  "author": "Dennis Sylvester Hurd",
+  "license": "CC0"
+ },
+ "gallery/newyork-1.jpg": {
+  "file": "File:View of Empire State Building from Rockefeller Center New York City dllu.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu.jpg",
+  "author": "Dllu",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/newyork-2.jpg": {
+  "file": "File:2024-11-19-Central Park-0669.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:2024-11-19-Central_Park-0669.jpg",
+  "author": "Superbass",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/newyork-3.jpg": {
+  "file": "File:Brooklyn Bridge August 2017.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Brooklyn_Bridge_August_2017.jpg",
+  "author": "Arild Vågen",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/miami-1.jpg": {
+  "file": "File:North View of Miami and Miami River from 1st St 20160709 1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:North_View_of_Miami_and_Miami_River_from_1st_St_20160709_1.jpg",
+  "author": "DXR",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/miami-2.jpg": {
+  "file": "File:Miami-Florida09.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Miami-Florida09.JPG",
+  "author": "Diego Delso",
+  "license": "CC BY 3.0"
+ },
+ "gallery/losangeles-1.jpg": {
+  "file": "File:Image-Disney Concert Hall by Carol Highsmith edit.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Image-Disney_Concert_Hall_by_Carol_Highsmith_edit.jpg",
+  "author": "Carol M. Highsmith",
+  "license": "Public domain"
+ },
+ "gallery/losangeles-2.jpg": {
+  "file": "File:Santa Monica, California, beach and coastal bluffs.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Santa_Monica,_California,_beach_and_coastal_bluffs.jpg",
+  "author": "Cayambe",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/cancun-1.jpg": {
+  "file": "File:Chichen Itza 3.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Chichen_Itza_3.jpg",
+  "author": "Daniel Schwen",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/cancun-2.jpg": {
+  "file": "File:Tulum - 01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Tulum_-_01.jpg",
+  "author": "Carlos Delgado",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/cancun-3.jpg": {
+  "file": "File:Tulum - God of the Winds Temple 04.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Tulum_-_God_of_the_Winds_Temple_04.JPG",
+  "author": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/varadero-1.jpg": {
+  "file": "File:AvMalecon-LaHabanaCuba-04735.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:AvMalecon-LaHabanaCuba-04735.jpg",
+  "author": "Ezarate\n\n\n\n\n\n\nThis  is a retouched picture, which means that it has been digital",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/varadero-2.jpg": {
+  "file": "File:National-Capitol-and-classic-cars-in-Havana-Cuba-225-031-061A.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:National-Capitol-and-classic-cars-in-Havana-Cuba-225-031-061A.jpg",
+  "author": "Fraganda",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/varadero-3.jpg": {
+  "file": "File:Atardecer en la Costa.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Atardecer_en_la_Costa.jpg",
+  "author": "Ivan2010",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/puntacana-1.jpg": {
+  "file": "File:Saona Island December 2020.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Saona_Island_December_2020.jpg",
+  "author": "Danu Widjajanto",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/puntacana-2.jpg": {
+  "file": "File:2023 - Saona Island - 38.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:2023_-_Saona_Island_-_38.jpg",
+  "author": "Oleg Yunakov",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/puntacana-3.jpg": {
+  "file": "File:Caribbean Sunset, Bavaro, Dominican Republic (14702746147).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Caribbean_Sunset,_Bavaro,_Dominican_Republic_(14702746147).jpg",
+  "author": "Joe deSousa",
+  "license": "CC0"
+ },
+ "gallery/rio-1.jpg": {
+  "file": "File:Redentor Over Clouds 1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Redentor_Over_Clouds_1.jpg",
+  "author": "Donatas Dabravolskas",
+  "license": "CC BY-SA 4.0"
+ },
+ "gallery/rio-2.jpg": {
+  "file": "File:Rio skyline and Cristo Redentor from Sugarloaf Mountain, Brazil.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Rio_skyline_and_Cristo_Redentor_from_Sugarloaf_Mountain,_Brazil.jpg",
+  "author": "Wilfredor",
+  "license": "CC0"
+ },
+ "gallery/rio-3.jpg": {
+  "file": "File:Bell 206L-4 LongRanger IV over Botafogo Bay, Rio de Janeiro.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Bell_206L-4_LongRanger_IV_over_Botafogo_Bay,_Rio_de_Janeiro.jpg",
+  "author": "Wilfredor",
+  "license": "CC0"
+ },
+ "gallery/buenosaires-1.jpg": {
+  "file": "File:Casa Rosada, Buenos Aires, Argentina.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Casa_Rosada,_Buenos_Aires,_Argentina.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
+ },
+ "gallery/buenosaires-2.jpg": {
+  "file": "File:Puerto Madero, Buenos Aires, Argentina2.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Puerto_Madero,_Buenos_Aires,_Argentina2.jpg",
+  "author": "Diego Delso",
+  "license": "CC BY-SA 3.0"
  }
 }

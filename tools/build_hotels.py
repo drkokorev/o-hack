@@ -36,16 +36,28 @@ KINDS = {"hotel": "hotel", "lodging": "hotel", "resort": "resort", "beach_resort
          "vacation_rental": "apartment", "service_apartment": "apartment", "apartment_hotel": "apartment",
          "cottage": "chalet", "cabin": "chalet", "chalet": "chalet", "lodge": "chalet", "mountain_hut": "chalet"}
 MIN_CONFIDENCE = 0.5
-MAX_PER_DEST = None  # берём все объекты, прошедшие фильтры (уверенность, страна, радиус)
+MAX_PER_DEST = None  # основные 34 направления: все объекты, прошедшие фильтры (уверенность, страна, радиус)
+SMALL = 300  # направления, добавленные 26.10 «по чуть-чуть»: лучшие 300
+SMALL_IDS = {"budva", "cyprus", "crete", "rome", "barcelona", "paris", "lisbon", "prague", "budapest", "belgrade",
+             "dubrovnik", "durres", "tokyo", "seoul", "bangkok", "phuquoc", "beijing", "kualalumpur", "singapore",
+             "doha", "muscat", "aqaba", "marrakech", "tunisia", "zanzibar", "seychelles", "mauritius", "newyork",
+             "miami", "losangeles", "cancun", "varadero", "puntacana", "rio", "buenosaires"}
 # Радиус поиска вокруг центра направления, км: курортные регионы шире города
 RADIUS = {"sochi": 50, "altai": 100, "baikal": 75, "murmansk": 130, "dagestan": 130, "kamchatka": 70,
           "karelia": 60, "antalya": 60, "dubai": 35, "hurghada": 30, "sharm": 25, "phuket": 30, "nhatrang": 35,
           "sanya": 35, "maldives": 60, "srilanka": 110, "bali": 50, "goa": 45, "kaliningrad": 45, "sheregesh": 15,
-          "kislovodsk": 30, "vladivostok": 30}
+          "kislovodsk": 30, "vladivostok": 30, "cyprus": 15, "crete": 40, "budva": 15, "tokyo": 12, "newyork": 10,
+          "losangeles": 30, "zanzibar": 50, "seychelles": 25, "mauritius": 45, "cancun": 40, "puntacana": 30,
+          "varadero": 20, "tunisia": 25, "durres": 15, "dubrovnik": 12}
 # Объект должен быть в стране направления: у Сочи в радиус попадает Абхазия, у Батуми — Турция
 ISO = {"Россия": "RU", "Турция": "TR", "ОАЭ": "AE", "Египет": "EG", "Таиланд": "TH", "Вьетнам": "VN", "Китай": "CN",
        "Мальдивы": "MV", "Шри-Ланка": "LK", "Грузия": "GE", "Армения": "AM", "Узбекистан": "UZ", "Азербайджан": "AZ",
-       "Беларусь": "BY", "Казахстан": "KZ", "Индонезия": "ID", "Индия": "IN"}
+       "Беларусь": "BY", "Казахстан": "KZ", "Индонезия": "ID", "Индия": "IN", "Черногория": "ME", "Кипр": "CY",
+       "Греция": "GR", "Италия": "IT", "Испания": "ES", "Франция": "FR", "Португалия": "PT", "Чехия": "CZ",
+       "Венгрия": "HU", "Сербия": "RS", "Хорватия": "HR", "Албания": "AL", "Япония": "JP", "Южная Корея": "KR",
+       "Малайзия": "MY", "Сингапур": "SG", "Катар": "QA", "Оман": "OM", "Иордания": "JO", "Марокко": "MA",
+       "Тунис": "TN", "Танзания": "TZ", "Сейшелы": "SC", "Маврикий": "MU", "США": "US", "Мексика": "MX", "Куба": "CU",
+       "Доминикана": "DO", "Бразилия": "BR", "Аргентина": "AR"}
 AIRPORTS_CSV = "https://davidmegginson.github.io/ourairports-data/airports.csv"
 UA = {"User-Agent": "o-odin-zapros/1.0 (hackathon prototype)"}
 
@@ -142,7 +154,7 @@ def main() -> None:
         box = bbox(d.lat, d.lon, RADIUS.get(d.id, 22))
         rows = places(con, box, f"taxonomy.primary in ({cats}) and coalesce(operating_status, 'open') = 'open'")
         recs = {rec["id"]: rec for row in rows if inside(d, row) and (rec := hotel_record(row))}
-        hotels = sorted(recs.values(), key=quality)[:MAX_PER_DEST]
+        hotels = sorted(recs.values(), key=quality)[:SMALL if d.id in SMALL_IDS else MAX_PER_DEST]
         data["hotels"][d.id] = hotels
         if d.sea:
             beaches = places(con, box, "taxonomy.primary = 'beach'")

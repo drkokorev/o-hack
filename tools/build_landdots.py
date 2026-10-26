@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 STEP = 1.5
-BOX = (5.0, -20.0, 170.0, 75.0)  # lon_min, lat_min, lon_max, lat_max — Европа, Азия, Африка до экватора
+BOX = (-168.0, -56.0, 180.0, 75.0)  # lon_min, lat_min, lon_max, lat_max — весь мир без полярных областей
 OUT = Path(__file__).resolve().parent.parent / "apps" / "static" / "landdots.json"
 
 
