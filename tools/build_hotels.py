@@ -36,8 +36,7 @@ KINDS = {"hotel": "hotel", "lodging": "hotel", "resort": "resort", "beach_resort
          "vacation_rental": "apartment", "service_apartment": "apartment", "apartment_hotel": "apartment",
          "cottage": "chalet", "cabin": "chalet", "chalet": "chalet", "lodge": "chalet", "mountain_hut": "chalet"}
 MIN_CONFIDENCE = 0.5
-MAX_PER_DEST = 1500
-FOCUS = {"sochi": 5000}  # основная локация демо — берём всё
+MAX_PER_DEST = None  # берём все объекты, прошедшие фильтры (уверенность, страна, радиус)
 # Радиус поиска вокруг центра направления, км: курортные регионы шире города
 RADIUS = {"sochi": 50, "altai": 100, "baikal": 75, "murmansk": 130, "dagestan": 130, "kamchatka": 70,
           "karelia": 60, "antalya": 60, "dubai": 35, "hurghada": 30, "sharm": 25, "phuket": 30, "nhatrang": 35,
@@ -143,7 +142,7 @@ def main() -> None:
         box = bbox(d.lat, d.lon, RADIUS.get(d.id, 22))
         rows = places(con, box, f"taxonomy.primary in ({cats}) and coalesce(operating_status, 'open') = 'open'")
         recs = {rec["id"]: rec for row in rows if inside(d, row) and (rec := hotel_record(row))}
-        hotels = sorted(recs.values(), key=quality)[:FOCUS.get(d.id, MAX_PER_DEST)]
+        hotels = sorted(recs.values(), key=quality)[:MAX_PER_DEST]
         data["hotels"][d.id] = hotels
         if d.sea:
             beaches = places(con, box, "taxonomy.primary = 'beach'")
