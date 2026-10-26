@@ -194,10 +194,13 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
     def stay_cost(hp: tuple[Hotel, int]) -> int:  # отель вместе с трансферами туда и обратно
         return hp[1] + transfer(hp[0], trip.people, outs[0].mode == "train").price * 2
 
-    decent = [hp for hp in hotels if hp[0].rating >= 7.5] or hotels
+    # Для отдыха на море даже «Экономный» и «Комфорт» — не дальше пешей прогулки до пляжа (если такие есть)
+    beach = bool({"sea", "beach"} & set(trip.trip_types)) or "beach_line" in trip.wishes
+    near = [hp for hp in hotels if hp[0].beach_km is not None and hp[0].beach_km <= 1.5] if beach else hotels
+    near = near or hotels
+    decent = [hp for hp in near if hp[0].rating >= 7.5] or near
     cheap_hotel = min(decent, key=stay_cost)
-    comfy = [hp for hp in hotels if hp[0].stars >= 4] or hotels
-    comfort_hotel = max(comfy, key=lambda hp: (hp[0].rating, hp[0].stars, -hp[1]))
+    comfy = [hp for hp in near if hp[0].stars >= 4] or near
 
     # Оптимальный: лучший отель по ценности, который вместе с дорогой укладывается в бюджет
     optimal_hotel = pinned or by_value[0]
@@ -206,6 +209,9 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
             if _total(best_out, best_back, hp[1], trip) <= trip.budget:
                 optimal_hotel = hp
                 break
+    # «Комфорт» — лучший по рейтингу и звёздам, но другой отель, чем в «Оптимальном»: иначе сравнивать нечего
+    comfort_pool = [hp for hp in comfy if hp[0].id != optimal_hotel[0].id] or comfy
+    comfort_hotel = max(comfort_pool, key=lambda hp: (hp[0].rating, hp[0].stars, -hp[1]))
 
     if stay_cost(optimal_hotel) < stay_cost(cheap_hotel):  # «Экономный» обязан быть самым дешёвым
         cheap_hotel = optimal_hotel

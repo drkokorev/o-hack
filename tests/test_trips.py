@@ -223,3 +223,53 @@ def test_images_are_attached_by_id(tmp_path):
     assert payload["items"][0]["image"]["src"] == "/static/img/dest/sochi.jpg"
     assert payload["items"][1]["image"] is None
     assert images.hotel("sochi-h01", "sochi")["src"] == "/static/img/hotel/resort-1.jpg"
+
+
+def test_dataset_records_become_real_hotels(monkeypatch):
+    from domains.trips import offers
+
+    fake = {"hotels": {"sochi": [
+        {"id": "o1", "name": "Бриз Хаус", "kind": "hotel", "lat": 43.585, "lon": 39.723, "stars": 4, "web": "briz.example",
+         "features": ["pool", "wifi"]},
+        {"id": "o2", "name": "У моря", "kind": "guest_house", "lat": 43.43, "lon": 39.92}]},
+        "beaches": {"sochi": [[43.584, 39.721], [43.43, 39.921]]}, "airports": {"AER": [43.4499, 39.9566]}}
+    monkeypatch.setattr(offers, "_real", lambda: fake)
+    offers.hotels_for.cache_clear()
+    try:
+        hotels = offers.hotels_for("sochi")
+        assert [h.name for h in hotels] == ["Бриз Хаус", "У моря"]
+        briz, guest = hotels
+        assert briz.source == "overture" and briz.stars == 4 and briz.center_km == 0 and "pool" in briz.amenities
+        assert "mlat=43.585" in briz.map_url and briz.website == "briz.example"
+        assert guest.kind == "Гостевой дом" and guest.beach_km is not None and guest.beach_km < 0.3
+        assert "beach_line" in guest.amenities and 2 <= guest.airport_km <= 5
+        assert offers.hotels_for("sochi") == hotels  # детерминированно
+    finally:
+        offers.hotels_for.cache_clear()
+
+
+def test_real_hotel_kind_stars_and_site_from_open_data():
+    from random import Random
+
+    from domains.trips import offers
+
+    kind_stars = lambda rec: offers._real_kind_stars(Random(1), rec)  # noqa: E731
+    assert kind_stars({"name": "База отдыха Адлер", "kind": "hotel"})[0] == "База отдыха"
+    assert kind_stars({"name": "Хостел Пушкин", "kind": "hotel"}) == ("Хостел", 2)
+    assert kind_stars({"name": "Hilton Garden", "kind": "hotel"}) == ("Отель", 5)
+    assert kind_stars({"name": "Отель Москва 4*", "kind": "hotel"}) == ("Отель", 4)
+    assert kind_stars({"name": "Holiday Inn", "kind": "hotel"}) == ("Отель", 4)  # не гостевой дом из-за «Inn»
+    assert offers._official_site("https://ru.wikipedia.org/wiki/Адлер") is None
+    assert offers._official_site("https://vk.com/hotel") is None
+    assert offers._official_site("http://veleshotel.com") == "http://veleshotel.com"
+
+
+def test_sea_trip_variants_stay_near_beach_and_differ():
+    trip = Trip(origin=MOSCOW, dest=BY_ID["sochi"], date_in=date(2027, 6, 11),
+                date_out=date(2027, 6, 18), adults=2, children=0, trip_types=["sea"])
+    packages, _ = make_packages(trip)
+    assert len(packages) == 3
+    assert len({p.hotel.id for p in packages}) >= 2
+    near = [h for h in hotels_for("sochi") if h.beach_km is not None and h.beach_km <= 1.5]
+    if near:  # с настоящим датасетом у моря есть из чего выбрать
+        assert all(p.hotel.beach_km is not None and p.hotel.beach_km <= 1.5 for p in packages[1:])

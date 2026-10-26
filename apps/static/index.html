@@ -134,6 +134,19 @@
   .cover .over span { font-size: 15px; opacity: .92; }
   .cover .credit { z-index: 1; }
   .pass .photo { border-radius: 14px; aspect-ratio: 16 / 7; }
+  .cover::after { pointer-events: none; }
+  .gal .track { display: flex; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .gal .track::-webkit-scrollbar { display: none; }
+  .gal .slide { flex: 0 0 100%; position: relative; scroll-snap-align: start; }
+  .gal .dots { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 5px; z-index: 2; pointer-events: none; }
+  .cover.gal .dots { left: auto; right: 24px; top: 16px; bottom: auto; }
+  .gal .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.5); transition: background .2s, width .2s; }
+  .gal .dots i.on { background: #fff; width: 16px; border-radius: 3px; }
+  .gal .nav { position: absolute; top: 50%; z-index: 2; width: 32px; height: 32px; margin-top: -16px; border: 0; border-radius: 50%;
+    background: rgba(255,255,255,.88); color: #111; font-size: 18px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .2s; }
+  .gal .nav.prev { left: 10px; } .gal .nav.next { right: 10px; }
+  .gal:hover .nav, .gal .nav:focus-visible { opacity: 1; }
+  @media (hover: none) { .gal .nav { display: none; } }
   .cal { display: flex; gap: 4px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: thin; }
   .cal button { flex: none; width: 54px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px;
     padding: 6px 0 7px; cursor: pointer; display: grid; justify-items: center; gap: 2px; font-size: 12px; color: var(--muted); }
@@ -146,6 +159,8 @@
   .ask-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 26px 28px;
     margin-top: 22px; font: 500 22px/1.35 var(--display); letter-spacing: -0.02em; max-width: 46ch; }
   .say { display: none; }
+  .src { font-size: 12px; color: var(--muted); }
+  .src a { color: var(--accent); text-decoration: none; }
   .split { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
   table.receipt { width: 100%; border-collapse: collapse; font-size: 15px; }
   table.receipt td { padding: 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -221,7 +236,7 @@
     <section id="head"></section>
     <div class="map" id="map" aria-hidden="true"></div>
     <section id="view"></section>
-    <p class="fine">Фото направлений — Wikimedia Commons (авторы и лицензии на снимках), фото отелей — иллюстрации. Погода — реальные средние Open-Meteo за 2022–2025 годы. Отели, рейсы, поезда и цены — модельные данные прототипа, перевозчики вымышленные. Оплата имитируется.</p>
+    <p class="fine">Фото направлений — Wikimedia Commons (авторы и лицензии на снимках), фото отелей — иллюстрации. Погода — реальные средние Open-Meteo за 2022–2025 годы. Отели — настоящие объекты из открытого датасета Overture Maps (CDLA Permissive 2.0); их цены, рейтинги и условия, а также рейсы и поезда — модельные данные прототипа, перевозчики вымышленные. Оплата имитируется.</p>
   </main>
 
   <aside class="chat" aria-label="Разговор с агентом">
@@ -362,6 +377,31 @@ function photo(img, opts = {}) {
     opts.over || null,
     el("a", { class: "credit", href: img.page || "#", target: "_blank", rel: "noopener", title: "Фото: " + img.credit }, "Фото: " + img.credit));
 }
+// Несколько фото направления — листаются свайпом, стрелками и точками; у каждого снимка своя подпись автора
+function gallery(imgs, opts = {}) {
+  imgs = (imgs || []).filter(Boolean);
+  if (imgs.length < 2) return photo(imgs[0], opts);
+  const dots = imgs.map((_, i) => el("i", { class: i ? "" : "on" }));
+  const track = el("div", { class: "track" }, imgs.map((img, i) => el("div", { class: "slide" },
+    el("img", { src: img.src, alt: opts.alt ? `${opts.alt}, фото ${i + 1}` : "", loading: "lazy", decoding: "async" }),
+    el("a", { class: "credit", href: img.page || "#", target: "_blank", rel: "noopener", title: "Фото: " + img.credit }, "Фото: " + img.credit))));
+  const go = (dir) => track.scrollBy({ left: dir * track.clientWidth, behavior: "smooth" });
+  track.addEventListener("scroll", () => {
+    const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+    dots.forEach((d, j) => d.classList.toggle("on", j === i));
+  }, { passive: true });
+  return el("div", { class: "photo gal " + (opts.cls || "") }, track,
+    el("button", { type: "button", class: "nav prev", "aria-label": "Предыдущее фото", onclick: () => go(-1) }, "‹"),
+    el("button", { type: "button", class: "nav next", "aria-label": "Следующее фото", onclick: () => go(1) }, "›"),
+    el("div", { class: "dots" }, dots), opts.over || null);
+}
+function hotelSource(h) {
+  if (h.source !== "overture") return el("div", { class: "src" }, "Модельный отель прототипа");
+  return el("div", { class: "src" }, "Настоящий объект · ",
+    el("a", { href: h.map_url, target: "_blank", rel: "noopener" }, "на карте"),
+    h.website ? [" · ", el("a", { href: h.website.startsWith("http") ? h.website : "https://" + h.website, target: "_blank", rel: "noopener" }, "сайт")] : null,
+    el("span", {}, " · цены и рейтинг — модель"));
+}
 const legLine = (leg) => {
   const kind = leg.mode === "train" ? "Поезд" : "Рейс";
   const via = leg.stops ? ` · пересадка ${leg.via}, ${leg.layover}` : (leg.mode === "plane" ? " · прямой" : "");
@@ -376,7 +416,7 @@ const views = {
     return [el("h2", { class: "section-title" }, "Куда можно поехать"),
       el("p", { class: "section-sub" }, `Цена «от» — за всю поездку на всех: дорога, отель, трансферы, ${p.nights_label || p.nights + " ночей"}. Номера совпадают с точками на карте.`),
       el("div", { class: "cards" }, p.items.map((d, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
-        photo(d.image, { alt: d.name }),
+        gallery(d.gallery || [d.image], { alt: d.name }),
         el("div", { class: "kicker" }, el("span", {}, `${i + 1} · ${d.country}`), i === 0 ? el("b", {}, "Лучше всего подходит") : null),
         el("h3", {}, d.name),
         el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, d.visa ? `виза: ${d.visa}` : "виза не нужна")),
@@ -393,7 +433,7 @@ const views = {
     if (p.notice) out.push(el("p", { class: "notice" }, p.notice));
     if (p.diff && p.diff.length) out.push(el("p", { class: "notice" }, "Пересобрал план: " + p.diff.join("; ") + "."));
     if (p.relaxed && p.relaxed.length) out.push(el("p", { class: "notice" }, "Чтобы что-то нашлось, я " + p.relaxed.join(", ") + "."));
-    out.push(photo(p.trip.image, { cls: "cover", alt: p.trip.dest,
+    out.push(gallery(p.trip.gallery || [p.trip.image], { cls: "cover", alt: p.trip.dest,
       over: el("div", { class: "over" }, el("b", {}, p.trip.dest), el("span", {}, p.trip.weather ? `${p.trip.dates} · ${p.trip.weather}` : p.trip.dates)) }));
     if (p.calendar && p.calendar.length > 3) {
       const prices = p.calendar.map((d) => d.price), lo = Math.min(...prices), hi = Math.max(...prices);
@@ -416,7 +456,7 @@ const views = {
         el("dl", { class: "facts" },
           el("dt", {}, "Туда"), el("dd", {}, legLine(k.out)),
           el("dt", {}, "Обратно"), el("dd", {}, legLine(k.back)),
-          el("dt", {}, "Отель"), el("dd", {}, `${k.hotel.name}, ${k.hotel.stars}★, ${k.hotel.rating} · ${k.hotel.meal}`)),
+          el("dt", {}, "Отель"), el("dd", {}, `${k.hotel.name}, ${k.hotel.stars}★, ${k.hotel.rating} · ${k.hotel.meal}`, hotelSource(k.hotel))),
         el("div", {}, el("h4", {}, "Почему подходит"), marks("why", k.why.slice(1, 6))),
         k.tradeoffs.length ? el("div", {}, el("h4", {}, "Чем жертвуем"), marks("trade", k.tradeoffs.slice(0, 4))) : null,
         el("div", {}, el("h4", {}, "Поездка по часам"), timelineEl(k.timeline)),
@@ -430,7 +470,7 @@ const views = {
       el("div", { class: "cards" }, p.items.map((h, i) => el("article", { class: "card" },
         photo(h.image, { alt: h.name, badge: "иллюстрация" }),
         el("div", { class: "kicker" }, el("span", {}, `${h.stars}★ · ${h.area}`), el("span", {}, `${h.rating} · ${h.reviews} отзывов`)),
-        el("h3", {}, h.name),
+        el("h3", {}, h.name), hotelSource(h),
         el("div", { class: "price num" }, h.price, el("small", {}, `${h.per_night} за ночь · ${h.meal}`)),
         el("div", { class: "tags" }, h.amenities.map((a) => el("span", { class: "tag" }, a))),
         el("div", {}, el("h4", {}, "Хвалят"), marks("why", h.praise)),

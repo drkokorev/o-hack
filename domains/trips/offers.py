@@ -7,9 +7,12 @@
 
 from __future__ import annotations
 
+import json
+import re
 import zlib
 from datetime import date, datetime, time, timedelta
 from functools import lru_cache
+from pathlib import Path
 from random import Random
 
 from pydantic import BaseModel, Field
@@ -62,6 +65,11 @@ class Hotel(BaseModel):
     free_cancel_days: int | None = None    # None — невозвратный тариф
     praise: list[str] = Field(default_factory=list)
     complaints: list[str] = Field(default_factory=list)
+    source: str = "model"                  # overture — настоящий объект из Overture Maps, model — синтетика
+    website: str | None = None
+    map_url: str | None = None
+    lat: float | None = None
+    lon: float | None = None
 
 
 _PREFIX = ("Гранд", "Ривьера", "Панорама", "Лагуна", "Бриз", "Резиденция", "Атриум", "Модерн", "Солнечный",
@@ -77,51 +85,149 @@ _COMPLAINTS = ("Шумно по вечерам", "Номера требуют р
                "Долгое заселение", "Далеко от магазинов", "Маленький пляж, рано занимают шезлонги")
 
 
+def _attributes(rng: Random, dest: Destination, stars: int, kind: str, beach_km: float | None,
+                center_km: float, known: set[str] = frozenset()) -> dict:
+    """Модельные атрибуты отеля: цена, рейтинг, питание, удобства, условия — их нет в открытых данных."""
+    price = int(round(dest.base_price * (0.45 + 0.2 * stars) * rng.uniform(0.8, 1.25), -2))
+    if kind in ("Хостел", "Гостевой дом", "База отдыха"):
+        price = int(price * 0.7)
+    rating = round(min(9.8, 6.2 + 0.55 * stars + rng.uniform(-0.7, 0.7)), 1)
+    meal = "room_only"
+    r = rng.random()
+    if dest.id in _ALL_INCLUSIVE_PLACES and stars >= 4 and kind in ("Резорт", "Отель") and r < 0.75:
+        meal = "all_inclusive"
+        price = int(price * 1.45)
+    elif r < 0.55 + 0.08 * stars and kind not in ("Апартаменты", "Хостел"):
+        meal = "breakfast"
+    elif r < 0.8 and kind == "Отель":
+        meal = "half_board" if "sea" in dest.tags and stars >= 4 else "breakfast"
+    chances = {"pool": 0.12 * stars + (0.3 if "warm" in dest.tags else 0), "kids_club": 0.08 * stars,
+               "spa": 0.13 * stars - 0.15, "gym": 0.14 * stars, "parking": 0.55, "pets": 0.25,
+               "kitchen": 0.8 if kind in ("Апартаменты", "Апарт-отель") else 0.05}
+    amenities = {"wifi"} | {a for a, p in chances.items() if rng.random() < p} | set(known)
+    if beach_km is not None and beach_km <= 0.25:
+        amenities.add("beach_line")
+    praise = [_PRAISE[a] for a in sorted(amenities) if a in _PRAISE][:2]
+    if meal in _PRAISE:
+        praise.insert(0, _PRAISE[meal])
+    if center_km <= 1.5:
+        praise.append(_PRAISE["center"])
+    return dict(stars=stars, base_price=price, rating=rating, reviews=rng.randint(30, 3500), meal=meal,
+                amenities=sorted(amenities), check_in=rng.choice(["14:00", "14:00", "15:00"]),
+                early_checkin_fee=rng.choice([None, int(price * 0.5 // 100 * 100), 0]) if stars >= 3 else None,
+                free_cancel_days=rng.choice([None, 1, 3, 3, 7, 14]), praise=praise[:3],
+                complaints=rng.sample(_COMPLAINTS, 1 if rating >= 8.5 else 2))
+
+
+@lru_cache(maxsize=1)
+def _real() -> dict:
+    """Настоящие объекты размещения (tools/build_hotels.py: Overture Maps Places)."""
+    path = Path(__file__).parent / "data" / "hotels.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+_REAL_KINDS = {"hotel": "Отель", "resort": "Резорт", "guest_house": "Гостевой дом", "apartment": "Апартаменты",
+               "hostel": "Хостел", "motel": "Мотель", "chalet": "Шале"}
+_KIND_STARS = {"Отель": (3, 3, 4, 4), "Резорт": (4, 5), "Гостевой дом": (2, 3, 3), "Апартаменты": (3, 3, 4),
+               "Хостел": (2,), "Мотель": (2, 3), "Шале": (3, 4), "База отдыха": (2, 3), "Санаторий": (3, 3, 4)}
+# Категория в открытых данных грубая («hotel» у базы отдыха и хостела) — уточняем по названию
+_NAME_KINDS = (
+    (re.compile(r"хостел|hostel", re.I), "Хостел"),
+    (re.compile(r"база отдыха|турбаз|кемпинг|camping|глэмпинг|glamping", re.I), "База отдыха"),
+    (re.compile(r"санатори|пансионат|sanatori", re.I), "Санаторий"),
+    (re.compile(r"гостев|guest ?house|гостиный двор|мини-?отель|mini.?hotel|вилла|villa|homestay", re.I),
+     "Гостевой дом"),
+    (re.compile(r"апарт|apart|квартир|\bflat|studio|студи", re.I), "Апартаменты"),
+    (re.compile(r"resort|резорт|курорт", re.I), "Резорт"),
+)
+_BRAND_STARS = (
+    (re.compile(r"four seasons|ritz|st\.? regis|waldorf|mandarin|kempinski|rixos|jumeirah|swiss[oô]tel|"
+                r"mriya|мрия|sheraton|hilton|marriott|hyatt|intercontinental|fairmont|sofitel|movenpick|"
+                r"mövenpick|radisson collection|shangri", re.I), 5),
+    (re.compile(r"radisson|novotel|holiday inn|park inn|hampton|courtyard|doubletree|crowne|pullman|"
+                r"mercure|azimut|азимут|cosmos|космос|ramada|wyndham|barcel[oó]|alean|алеан", re.I), 4),
+    (re.compile(r"\bibis\b|ibis budget|ibis styles|days inn|motel one", re.I), 3),
+)
+_STARS_IN_NAME = re.compile(r"(\d)\s?(?:\*|★|зв[её]зд|stars?)", re.I)
+
+
+def _real_kind_stars(rng: Random, rec: dict) -> tuple[str, int]:
+    name = rec["name"]
+    kind = next((k for rx, k in _NAME_KINDS if rx.search(name)), _REAL_KINDS.get(rec.get("kind"), "Отель"))
+    stars = rec.get("stars")
+    if not stars and (m := _STARS_IN_NAME.search(name)) and 1 <= int(m.group(1)) <= 5:
+        stars = int(m.group(1))
+    if not stars:
+        stars = next((s for rx, s in _BRAND_STARS if rx.search(name + " " + rec.get("brand", ""))), None)
+    return kind, stars or rng.choice(_KIND_STARS[kind])
+
+
+def _nearest_km(lat: float, lon: float, points: list[list[float]], grid: dict) -> float | None:
+    """Ближайшая точка (пляж) по сетке 0.05° — быстро даже для сотен отелей и тысяч пляжей."""
+    if not points:
+        return None
+    key = (round(lat * 20), round(lon * 20))
+    near = [p for dx in (-1, 0, 1) for dy in (-1, 0, 1) for p in grid.get((key[0] + dx, key[1] + dy), [])]
+    if not near:
+        return round(min(distance_km(lat, lon, p[0], p[1]) for p in points), 1)
+    return round(min(distance_km(lat, lon, p[0], p[1]) for p in near), 1)
+
+
+_NOT_OFFICIAL = re.compile(r"wikipedia|wikidata|facebook|instagram|vk\.com|ok\.ru|t\.me|booking\.|tripadvisor|"
+                          r"ostrovok|airbnb|expedia|agoda|hotels\.com|yandex|google|2gis|tiktok|youtube", re.I)
+
+
+def _official_site(url: str | None) -> str | None:
+    """Ссылка «сайт» — только на собственный сайт отеля, не на агрегаторы и соцсети."""
+    return url if url and not _NOT_OFFICIAL.search(url) else None
+
+
+def _from_real(dest: Destination, records: list[dict]) -> list[Hotel]:
+    data = _real()
+    beaches = data.get("beaches", {}).get(dest.id, [])
+    grid: dict = {}
+    for p in beaches:
+        grid.setdefault((round(p[0] * 20), round(p[1] * 20)), []).append(p)
+    airport = data.get("airports", {}).get(dest.iata)
+    out = []
+    for rec in records:
+        rng = _rng("real", rec["id"])
+        kind, stars = _real_kind_stars(rng, rec)
+        center = round(distance_km(rec["lat"], rec["lon"], dest.lat, dest.lon), 1)
+        beach = _nearest_km(rec["lat"], rec["lon"], beaches, grid) if beaches else None
+        known = {f for f in rec.get("features", []) if f in AMENITIES}
+        attrs = _attributes(rng, dest, stars, kind, beach, center, known)
+        area = rec.get("street") or rec.get("city") or dest.name
+        lat, lon = rec["lat"], rec["lon"]
+        out.append(Hotel(
+            id=f"{dest.id}-h{rec['id']}", dest_id=dest.id, name=rec["name"], kind=kind, area=area[:60],
+            center_km=center, beach_km=beach,
+            airport_km=round(distance_km(rec["lat"], rec["lon"], *airport)) if airport else 25,
+            source="overture", website=_official_site(rec.get("web")),
+            map_url=f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}#map=17/{lat}/{lon}",
+            lat=lat, lon=lon, **attrs))
+    return out
+
+
 @lru_cache(maxsize=None)
 def hotels_for(dest_id: str, count: int = 12) -> tuple[Hotel, ...]:
+    """Отели направления: настоящие из открытого датасета, если есть, иначе модельные."""
     dest = BY_ID[dest_id]
+    records = _real().get("hotels", {}).get(dest_id)
+    if records:
+        return tuple(_from_real(dest, records))
     rng = _rng("hotels", dest_id)
     names = rng.sample([f"{p} {k}" for p in _PREFIX for k, _ in _KINDS], count)
     out = []
     for i, name in enumerate(names):
         kind = name.split(" ", 1)[1]
-        kind_bonus = dict(_KINDS)[kind]
-        stars = max(2, min(5, rng.choice([3, 3, 4, 4, 4, 5]) + kind_bonus))
+        stars = max(2, min(5, rng.choice([3, 3, 4, 4, 4, 5]) + dict(_KINDS)[kind]))
         area: Area = rng.choice(dest.areas)
-        price = int(round(dest.base_price * (0.45 + 0.2 * stars) * rng.uniform(0.8, 1.25), -2))
-        rating = round(min(9.8, 6.2 + 0.55 * stars + rng.uniform(-0.7, 0.7)), 1)
-        meal = "room_only"
-        r = rng.random()
-        if dest_id in _ALL_INCLUSIVE_PLACES and stars >= 4 and kind in ("Резорт", "Отель") and r < 0.75:
-            meal = "all_inclusive"
-            price = int(price * 1.45)
-        elif r < 0.55 + 0.08 * stars:
-            meal = "breakfast"
-        elif r < 0.8:
-            meal = "half_board" if "sea" in dest.tags and stars >= 4 else "breakfast"
-        chances = {"pool": 0.12 * stars + (0.3 if "warm" in dest.tags else 0), "kids_club": 0.08 * stars,
-                   "spa": 0.13 * stars - 0.15, "gym": 0.14 * stars, "parking": 0.55, "pets": 0.25,
-                   "kitchen": 0.7 if kind == "Апарт-отель" else 0.05}
-        amenities = ["wifi"] + [a for a, p in chances.items() if rng.random() < p]
-        if area.beach_km is not None and area.beach_km <= 0.2:
-            amenities.append("beach_line")
-        praise = [_PRAISE[a] for a in amenities if a in _PRAISE][:2]
-        if meal in _PRAISE:
-            praise.insert(0, _PRAISE[meal])
-        if area.center_km <= 1.5:
-            praise.append(_PRAISE["center"])
-        complaints = rng.sample(_COMPLAINTS, 1 if rating >= 8.5 else 2)
-        out.append(Hotel(
-            id=f"{dest_id}-h{i + 1:02d}", dest_id=dest_id, name=name, kind=kind, stars=stars, area=area.name,
-            center_km=round(area.center_km * rng.uniform(0.7, 1.3), 1),
-            beach_km=round(area.beach_km * rng.uniform(0.6, 1.4), 1) if area.beach_km is not None else None,
-            airport_km=round(area.airport_km * rng.uniform(0.85, 1.15)), rating=rating,
-            reviews=rng.randint(60, 3500), base_price=price, meal=meal, amenities=sorted(set(amenities)),
-            check_in=rng.choice(["14:00", "14:00", "15:00"]),
-            early_checkin_fee=rng.choice([None, int(price * 0.5 // 100 * 100), 0]) if stars >= 3 else None,
-            free_cancel_days=rng.choice([None, 1, 3, 3, 7, 14]),
-            praise=praise[:3], complaints=complaints,
-        ))
+        center = round(area.center_km * rng.uniform(0.7, 1.3), 1)
+        beach = round(area.beach_km * rng.uniform(0.6, 1.4), 1) if area.beach_km is not None else None
+        out.append(Hotel(id=f"{dest_id}-h{i + 1:02d}", dest_id=dest_id, name=name, kind=kind, area=area.name,
+                         center_km=center, beach_km=beach, airport_km=round(area.airport_km * rng.uniform(0.85, 1.15)),
+                         **_attributes(rng, dest, stars, kind, beach, center)))
     return tuple(out)
 
 

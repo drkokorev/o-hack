@@ -750,7 +750,8 @@ class TripsDomain:
                 "area": h.area, "beach_km": h.beach_km, "center_km": h.center_km, "meal": MEALS[h.meal],
                 "amenities": [AMENITIES[a] for a in h.amenities if a in AMENITIES], "price": fmt_money(price),
                 "per_night": fmt_money(price // max(trip.nights, 1)), "check_in": h.check_in,
-                "free_cancel_days": h.free_cancel_days, "praise": h.praise, "complaints": h.complaints}
+                "free_cancel_days": h.free_cancel_days, "praise": h.praise, "complaints": h.complaints,
+                "kind": h.kind, "source": h.source, "website": h.website, "map_url": h.map_url}
 
     def _package_card(self, p: Package, trip: Trip) -> dict:
         return {"key": p.key, "title": p.title, "total": fmt_money(p.total(trip.people)),

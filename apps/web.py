@@ -24,7 +24,7 @@ from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
-from domains.trips.offers import AMENITIES, MEALS
+from domains.trips.offers import AMENITIES, MEALS, hotels_for
 from domains.trips.state import TripState
 
 log = logging.getLogger(__name__)
@@ -142,6 +142,11 @@ class Images:
     def dest(self, dest_id: str | None) -> dict | None:
         return self._ref(f"dest/{dest_id}.jpg")
 
+    def gallery(self, dest_id: str | None) -> list[dict]:
+        """Главное фото направления и галерея лучших снимков Commons."""
+        keys = [f"dest/{dest_id}.jpg"] + sorted(k for k in self.credits if k.startswith(f"gallery/{dest_id}-"))
+        return [ref for k in keys if (ref := self._ref(k))]
+
     def hotel(self, hotel_id: str, dest_id: str, avoid: set[str] | None = None) -> dict | None:
         """Иллюстрация по типу направления; `avoid` — уже показанные рядом, чтобы карточки не повторялись."""
         import zlib
@@ -168,8 +173,10 @@ class Images:
         if kind == "destinations":
             for item in payload["items"]:
                 item["image"] = self.dest(item["id"])
+                item["gallery"] = self.gallery(item["id"])
         if payload.get("trip"):
             payload["trip"]["image"] = self.dest(payload["trip"].get("dest_id"))
+            payload["trip"]["gallery"] = self.gallery(payload["trip"].get("dest_id"))
         dest_id = (payload.get("trip") or {}).get("dest_id")
         shown: set[str] = set()
         same: dict[str, dict | None] = {}  # один и тот же отель в разных вариантах — одна картинка
@@ -195,6 +202,8 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         agent = Agent(TripsDomain(), llm, nlg=settings.llm_nlg)
     sessions = Sessions(agent)
     images = Images()
+    # Отели датасета (~23 тыс.) собираются за ~1 с — в фоне при старте, чтобы первый запрос не ждал
+    threading.Thread(target=lambda: [hotels_for(d.id) for d in DESTINATIONS], daemon=True).start()
     app = FastAPI(title="О!дин запрос — агент поездки", docs_url="/api/docs")
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
@@ -212,6 +221,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         return {"llm": settings.llm_model if agent.llm is not None else None,
                 "llm_state": breaker.state if breaker else "off",
                 "destinations": len(DESTINATIONS),
+                "hotels": sum(len(hotels_for(d.id)) for d in DESTINATIONS),
                 "places": [{"id": d.id, "name": d.name, "lat": d.lat, "lon": d.lon} for d in DESTINATIONS],
                 "origins": [{"name": o.name, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
                 "examples": EXAMPLES, "stages": [{"key": k, "title": t} for k, t in STAGES]}

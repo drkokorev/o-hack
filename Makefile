@@ -1,6 +1,6 @@
 PY ?= .venv/bin/python
 
-.PHONY: install test run up down climate llm-check eval simulate
+.PHONY: install test run up down climate hotels images llm-check eval simulate
 
 install:
 	python3 -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
@@ -19,6 +19,12 @@ down:
 
 climate:
 	$(PY) -m tools.build_climate
+
+hotels:
+	$(PY) -m tools.build_hotels
+
+images:
+	$(PY) -m tools.build_images
 
 llm-check:
 	$(PY) -m tools.llm_check
