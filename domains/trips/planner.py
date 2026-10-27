@@ -257,7 +257,7 @@ def leg_text(leg: Leg) -> str:
 
 def explain(pkg: Package, trip: Trip, all_: list[Package]) -> None:
     h = pkg.hotel
-    why = [f"{h.name}, {h.stars}★, рейтинг {h.rating:.1f} ({h.reviews} отзывов)"]
+    why = [f"{h.name}, {h.stars}★, рейтинг {h.rating:.1f} ({h.reviews} отзывов, демо)"]
     if h.beach_km is not None and {"sea", "beach"} & set(trip.trip_types):
         why.append("первая линия" if h.beach_km <= 0.2 else f"{h.beach_km:g} км до пляжа")
     elif h.center_km <= 2:
@@ -296,7 +296,7 @@ def explain(pkg: Package, trip: Trip, all_: list[Package]) -> None:
     if not pkg.out.baggage and pkg.out.mode == "plane":
         trade.append("без багажа — только ручная кладь")
     if h.complaints:
-        trade.append(f"в отзывах жалуются: {h.complaints[0].lower()}")
+        trade.append(f"в демо-отзывах жалуются: {h.complaints[0].lower()}")
     pkg.tradeoffs = trade
 
 

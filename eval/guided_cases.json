@@ -35,5 +35,6 @@
   {"id": "written_budget", "turns": ["Бюджет на всё путешествие — не дороже ста пятидесяти тысяч рублей"], "state": {"budget_total": 150000, "adults": null}},
   {"id": "postposed_negation", "turns": ["Мне нужны горы и природа в июле, море не интересует"], "types_include": ["mountains", "nature"], "types_exclude": ["sea"]},
   {"id": "friends_with_cat", "turns": ["Еду я и два друга, с кошкой"], "state": {"party_size": 3, "adults": null, "pets": true}, "payload": "question"},
-  {"id": "family_list", "turns": ["В Сочи на неделю в ноябре, едем я, муж, ребёнок и собака"], "state": {"children": 1, "adults": null, "pets": true}, "payload": "question"}
+  {"id": "family_list", "turns": ["В Сочи на неделю в ноябре, едем я, муж, ребёнок и собака"], "state": {"children": 1, "adults": null, "pets": true}, "payload": "question"},
+  {"id": "other_hotels_keep_route", "turns": ["Сочи из Москвы с 5 по 12 декабря, двое взрослых", "покажи другие отели"], "payload": "hotels", "trip": {"origin": "Москва", "dest": "Сочи"}}
 ]

@@ -647,7 +647,8 @@ class TripsDomain:
             lines.append(f"{i}. {h.name} {h.stars}★, {h.rating:.1f} — {fmt_money(price)} за всё, "
                          f"{MEALS[h.meal]}, {h.area}")
         lines.append("Какой взять? Назовите номер — пересоберу поездку с ним.")
-        payload = {"kind": "hotels", "items": [self._hotel_card(h, price, trip) for h, price in ranked]}
+        payload = {"kind": "hotels", "trip": self._trip_card(trip),
+                   "items": [self._hotel_card(h, price, trip) for h, price in ranked]}
         return Step("\n".join(lines), payload=payload)
 
     def _plan(self, state: TripState, trip: Trip, packages: list[Package], relaxed: list[str],

@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <link href="/static/fonts/fonts.css" rel="stylesheet">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/trip-map.css">
 </head>
 <body>
 <div class="shell">
@@ -20,7 +21,7 @@
   <main class="board">
     <div class="say" id="say" aria-live="polite"></div>
     <section id="head"></section>
-    <div class="map" id="map" aria-label="Карта направлений"></div>
+    <div class="trip-map" id="map" aria-label="Карта направлений"></div>
     <section id="view"></section>
     <details class="fine"><summary>Данные и источники</summary><p>Фото направлений — Wikimedia Commons (авторы и лицензии на снимках), фото отелей — иллюстрации. Погода — средние Open-Meteo за 2022–2025 годы. Отели — объекты Overture Maps; цены, рейтинги и условия, рейсы и поезда — модельные данные. Названия и координаты городов: <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Визовые условия требуют проверки. Оплата имитируется.</p></details>
   </main>
@@ -40,6 +41,7 @@
   </aside>
 </div>
 
+<script src="/static/trip-map.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

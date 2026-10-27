@@ -44,6 +44,9 @@ def assess(case: dict, session, step) -> list[str]:
     payload = step.payload or {}
     if case.get("payload") and payload.get("kind") != case["payload"]:
         failures.append(f"экран: ожидался {case['payload']!r}, получен {payload.get('kind')!r}")
+    for field, expected in case.get("trip", {}).items():
+        if payload.get("trip", {}).get(field) != expected:
+            failures.append(f"маршрут {field}: ожидалось {expected!r}")
     if case.get("all_legs"):
         items = payload.get("items", [])
         if not items or any(item[leg]["mode"] != case["all_legs"] for item in items for leg in ("out", "back")):

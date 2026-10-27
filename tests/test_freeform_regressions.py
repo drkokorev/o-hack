@@ -49,3 +49,21 @@ def test_written_budget_is_understood_without_treating_distances_as_money():
     assert state.budget_total == 150000
     assert parse_budget('Планирую потратить около ста сорока пяти тысяч рублей')[0] == 145000
     assert parse_budget('Гора высотой пять тысяч метров')[0] is None
+
+
+def test_demo_hotel_reviews_are_present_and_identified():
+    _, step = conversation('Сочи из Москвы с 5 по 12 декабря, двое взрослых')
+    assert step.payload['kind'] == 'packages'
+    for item in step.payload['items']:
+        assert item['hotel']['reviews'] > 0 and item['hotel']['complaints']
+        assert any('отзывов, демо' in reason for reason in item['why'])
+        assert all('демо-отзывах' in tradeoff for tradeoff in item['tradeoffs'] if 'жалуются' in tradeoff)
+
+
+def test_other_hotels_keep_the_trip_context():
+    agent = Agent(TripsDomain(today=lambda: TODAY), None, today=lambda: TODAY)
+    session = agent.new_session()
+    agent.handle(session, 'Сочи из Москвы с 5 по 12 декабря, двое взрослых')
+    step = agent.handle(session, 'покажи другие отели')
+    assert step.payload['kind'] == 'hotels'
+    assert step.payload['trip']['origin'] == 'Москва' and step.payload['trip']['dest'] == 'Сочи'

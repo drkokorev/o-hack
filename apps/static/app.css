@@ -51,41 +51,6 @@
   .chip { border-radius: 999px; padding: 5px 12px; font-size: 13px; background: var(--surface); border: 1px solid var(--line); }
   .chip.assumed { border-style: dashed; color: var(--muted); background: none; }
 
-  .map { margin: 24px 0 4px; position: relative; overflow: hidden; border: 1px solid var(--line);
-    border-radius: var(--r-lg); background: radial-gradient(ellipse at 35% 28%, var(--surface), var(--bg) 78%); }
-  .map svg { width: 100%; height: auto; display: block; overflow: hidden; max-height: 46vh; transition: max-height .4s ease; }
-  .board.compact .map svg { max-height: 28vh; }
-  .map svg { --z: 1; }
-  .map .land { fill: var(--dot); stroke: var(--dot-strong); stroke-width: .08px; stroke-linejoin: round; fill-rule: evenodd; }
-  .map .graticule { stroke: var(--line); stroke-width: .12px; fill: none; }
-  .map .place { fill: var(--dot-strong); r: calc(.55px * var(--z)); }
-  .map .pin { fill: var(--accent); }
-  .map .origin { fill: var(--sun); }
-  .map .halo { fill: none; stroke: var(--sun); stroke-width: calc(.25px * var(--z)); opacity: .7; }
-  .map .arc { fill: none; stroke: var(--accent); stroke-width: calc(.38px * var(--z)); stroke-linecap: round; }
-  .map .arc.dim { stroke-dasharray: calc(.6px * var(--z)) calc(.9px * var(--z)); opacity: .8; }
-  .map .label { font: 500 calc(2.3px * var(--z)) var(--body); fill: var(--ink); paint-order: stroke; stroke: var(--bg); stroke-width: calc(.7px * var(--z)); pointer-events: none; }
-  .map .badge { font: 600 calc(1.8px * var(--z)) var(--body); fill: var(--accent-ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-  .map .map-point { cursor: pointer; }
-  .map .map-point:hover .place, .map .map-point:focus-visible .place { fill: var(--accent); }
-  .map .map-point:focus-visible .place, .map .map-point:focus-visible .pin { stroke: var(--ink); stroke-width: calc(.7px * var(--z)); }
-  .map-hint { position: absolute; left: 10px; top: 10px; right: 115px; width: fit-content; padding: 5px 9px;
-    border-radius: 12px; background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink);
-    font-size: 12px; line-height: 1.35; pointer-events: none; }
-  .map-scope { position: absolute; top: 8px; right: 10px; min-height: 40px; padding: 0 14px; border: 1px solid var(--line);
-    border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 12px; font-weight: 600; cursor: pointer; }
-  .map-scope:hover { border-color: var(--accent); }
-  .map-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px;
-    border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 75%, transparent); color: var(--muted); font-size: 12px; }
-  .map-footer select { min-height: 44px; min-width: 160px; max-width: 60%; padding: 0 12px; border: 1px solid var(--line);
-    border-radius: 12px; background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
-  .map-choice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px;
-    margin: 0 12px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); max-width: 360px; }
-  .map-choice button { min-height: 44px; }
-  @media (prefers-reduced-motion: no-preference) {
-    .map .arc.draw { transition: stroke-dashoffset 1.1s cubic-bezier(.3,.7,.2,1); }
-  }
-
   .section-title { font: 500 24px/1.2 var(--display); letter-spacing: -0.02em; margin: 32px 0 4px; }
   .section-sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; }
   .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
