@@ -43,7 +43,7 @@ def get_settings() -> Settings:
     gigachat = provider == "gigachat"
     return Settings(
         llm_provider=provider,
-        llm_base_url=os.getenv("LLM_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1" if gigachat
+        llm_base_url=os.getenv("LLM_BASE_URL", "https://api.giga.chat/v1" if gigachat
                                else "https://foundation-models.api.cloud.ru/v1"),
         llm_api_key=os.getenv("LLM_API_KEY", ""),
         llm_model=os.getenv("LLM_MODEL", "GigaChat-2" if gigachat else "Qwen/Qwen3-235B-A22B-Instruct-2507"),

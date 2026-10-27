@@ -19,7 +19,7 @@ docker compose up --build
 
 ## Языковая модель и надёжность
 
-Модель необязательна. Без ключа агент понимает реплики по правилам, и весь путь до покупки работает. С ключом модель лучше понимает свободные формулировки. Подключение — в `.env`: любой OpenAI-совместимый провайдер (Cloud.ru, Yandex AI Studio, vLLM, Ollama) или GigaChat с бесплатным тарифом (`LLM_PROVIDER=gigachat`, токен обновляется сам). Проверка ключа: `make llm-check`.
+Модель необязательна. Без ключа агент понимает реплики по правилам, и весь путь до покупки работает. С ключом модель лучше понимает свободные формулировки. Подключение — в `.env`: любой OpenAI-совместимый провайдер (Cloud.ru, Yandex AI Studio, vLLM, Ollama) или GigaChat (`LLM_PROVIDER=gigachat` и `GIGACHAT_AUTH_KEY=<ключ авторизации>`, токен обновляется сам). При переключении провайдера оставьте `LLM_BASE_URL`, `LLM_MODEL` и `LLM_JSON_MODE` закомментированными, если не хотите переопределить значения по умолчанию. Личный бесплатный ключ GigaChat подходит для личных тестов и не передаётся третьим лицам. Проверка ключа: `make llm-check`.
 
 Подключение Cloud.ru за 2 минуты:
 
@@ -61,9 +61,9 @@ make simulate       # LLM играет 8 путешественников
 | `LLM_PROVIDER` | `openai` | `openai` — OpenAI-совместимый API, `gigachat` — GigaChat |
 | `LLM_API_KEY` | пусто | Ключ OpenAI-совместимой LLM. Пусто — понимание запросов по правилам |
 | `GIGACHAT_AUTH_KEY`, `GIGACHAT_SCOPE`, `GIGACHAT_VERIFY_SSL` | пусто, `GIGACHAT_API_PERS`, `1` | Для GigaChat |
-| `LLM_BASE_URL` | `https://foundation-models.api.cloud.ru/v1` | Адрес провайдера |
-| `LLM_MODEL` | `Qwen/Qwen3-235B-A22B-Instruct-2507` | Модель |
-| `LLM_JSON_MODE` | `1` | Передавать `response_format=json_object` |
+| `LLM_BASE_URL` | Cloud.ru: `https://foundation-models.api.cloud.ru/v1`; GigaChat: `https://api.giga.chat/v1` | Адрес провайдера |
+| `LLM_MODEL` | Cloud.ru: `Qwen/Qwen3-235B-A22B-Instruct-2507`; GigaChat: `GigaChat-2` | Модель |
+| `LLM_JSON_MODE` | `1` для openai, `0` для GigaChat | Передавать `response_format=json_object` |
 | `LLM_SCHEMA_MODE` | `0` | Строгая JSON-схема ответа, если провайдер умеет |
 | `LLM_TIMEOUT` | `8` | Таймаут запроса к LLM, с |
 | `LLM_NLG` | `0` | Перефразировать ответы через LLM (факты не меняются) |
