@@ -457,7 +457,7 @@ const views = {
         el("dl", { class: "facts" },
           el("dt", {}, "Туда"), el("dd", {}, legLine(k.out)),
           el("dt", {}, "Обратно"), el("dd", {}, legLine(k.back)),
-          el("dt", {}, "Отель"), el("dd", {}, `${k.hotel.name}, ${k.hotel.stars}★, ${k.hotel.rating} · ${k.hotel.meal}`, hotelSource(k.hotel))),
+          el("dt", {}, "Отель"), el("dd", {}, `${k.hotel.name}, ${k.hotel.stars}★, ${k.hotel.rating} · ${k.hotel.meal} · ${k.hotel.dates}`, hotelSource(k.hotel))),
         el("div", {}, el("h4", {}, "Почему подходит"), marks("why", k.why.slice(1, 6))),
         k.tradeoffs.length ? el("div", {}, el("h4", {}, "Чем жертвуем"), marks("trade", k.tradeoffs.slice(0, 4))) : null,
         el("div", {}, el("h4", {}, "Поездка по часам"), timelineEl(k.timeline)),
@@ -483,7 +483,7 @@ const views = {
     const k = p.package;
     const rows = [
       [`Туда · ${k.out.carrier} ${k.out.number}`, `${k.out.depart} → ${k.out.arrive}`, k.out.price],
-      [`Отель · ${k.hotel.name}, ${k.hotel.stars}★`, `${k.hotel.meal}, заезд с ${k.hotel.check_in}`, k.hotel.price],
+      [`Отель · ${k.hotel.name}, ${k.hotel.stars}★`, `${k.hotel.dates}, ${k.hotel.meal}, заезд с ${k.hotel.check_in}`, k.hotel.price],
       ["Трансферы", `${k.transfer.note}, ${k.transfer.minutes} в одну сторону`, k.transfer.price],
       [`Обратно · ${k.back.carrier} ${k.back.number}`, `${k.back.depart} → ${k.back.arrive}`, k.back.price],
     ];
@@ -506,13 +506,13 @@ const views = {
     $("map").replaceChildren();
     const cancel = o.cancel_until ? `бесплатно до ${o.cancel_until.split("-").reverse().join(".")}` : "невозвратный тариф";
     return [el("h2", { class: "section-title" }, "Поездка оформлена"),
-      el("p", { class: "section-sub" }, "Оплата имитирована. Билеты и ваучер отеля пришли бы на почту."),
+      el("p", { class: "section-sub" }, "Оплата имитирована. Билеты и ваучер в демо не отправляются."),
       el("article", { class: "pass" },
         el("div", { class: "main" },
           photo(o.image, { alt: o.dest }),
           el("div", { class: "route" }, el("div", { class: "codes" }, o.origin_code, el("i", {}, "→"), o.dest_code)),
           el("dl", { class: "facts" }, el("dt", {}, "Туда"), el("dd", {}, o.out), el("dt", {}, "Обратно"), el("dd", {}, o.back),
-            el("dt", {}, "Отель"), el("dd", {}, o.hotel), el("dt", {}, "Отмена"), el("dd", {}, cancel)),
+            el("dt", {}, "Отель"), el("dd", {}, `${o.hotel} · ${o.hotel_dates || ""}`), el("dt", {}, "Отмена"), el("dd", {}, cancel)),
           p.requests && p.requests.length ? el("div", {}, el("h4", {}, "Запросы в отель"), marks("why", p.requests)) : null,
           el("div", { class: "actions" }, sayBtn("Ранний заезд", "запроси ранний заезд"), sayBtn("Поздний выезд", "поздний выезд"),
             sayBtn("Перенести на 2 дня", "перенеси на 2 дня позже"), sayBtn("Отменить", "отмени бронь"))),

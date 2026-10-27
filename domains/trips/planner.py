@@ -318,28 +318,32 @@ def check(pkg: Package, trip: Trip) -> list[tuple[str, str]]:
                             f"много для такой поездки, может, {alt}?"))
     exit_min = 40 if pkg.out.mode == "plane" else 15
     at_hotel = pkg.out.arrive + timedelta(minutes=exit_min + pkg.transfer_in.minutes)
-    check_in = _parse_time(at_hotel.date(), pkg.hotel.check_in)
+    # Учитываем уже оплаченную предыдущую ночь: приезд после полуночи не
+    # становится ранним заездом следующего дня.
+    check_in = _parse_time(pkg.hotel_in or trip.date_in, pkg.hotel.check_in)
     if at_hotel < check_in - timedelta(hours=2):
         fee = pkg.hotel.early_checkin_fee
         early = "ранний заезд бесплатно" if fee == 0 else (
-            f"ранний заезд за {fmt_money(fee)}" if fee else "ранний заезд только по наличию — оставите багаж")
+            f"ранний заезд за {fmt_money(fee)} при наличии; доплата не включена в итог" if fee
+            else "ранний заезд только по наличию — оставите багаж")
         out.append(("warn", f"в отеле в {at_hotel:%H:%M}, заселение с {pkg.hotel.check_in}: {early}"))
     elif at_hotel.hour >= 23 or at_hotel.hour < 5:
         out.append(("warn" if not trip.children else "risk",
-                    f"в отеле в {at_hotel:%H:%M} — поздний заезд, предупредим отель"))
+                    f"в отеле в {at_hotel:%H:%M} — поздний заезд, нужно предупредить отель"))
     else:
         out.append(("ok", f"прибытие → трансфер {hm(pkg.transfer_in.minutes)} → в отеле в {at_hotel:%H:%M}, "
                           f"заселение с {pkg.hotel.check_in}"))
 
     buffer = 120 if pkg.back.mode == "plane" else 40
     leave = pkg.back.depart - timedelta(minutes=buffer + pkg.transfer_out.minutes)
-    check_out = _parse_time(trip.date_out, pkg.hotel.check_out)
-    if leave.date() < trip.date_out:
+    hotel_out = pkg.hotel_out or trip.date_out
+    check_out = _parse_time(hotel_out, pkg.hotel.check_out)
+    if leave.date() < hotel_out:
         out.append(("risk", f"обратный рейс в {pkg.back.depart:%H:%M}: выезжать из отеля ночью накануне"))
     elif leave > check_out + timedelta(hours=4):
         out.append(("warn", f"выезд из номера в {pkg.hotel.check_out}, а ехать на "
                             f"{'вокзал' if pkg.back.mode == 'train' else 'рейс'} в {leave:%H:%M} — "
-                            "попросим поздний выезд или хранение багажа"))
+                            "можно запросить поздний выезд или хранение багажа"))
     elif leave.hour < 5:
         out.append(("warn", f"выезд из отеля в {leave:%H:%M} — очень рано"))
     else:
@@ -370,7 +374,7 @@ def check(pkg: Package, trip: Trip) -> list[tuple[str, str]]:
     if weather and weather.rain_days >= 10:
         out.append(("warn", f"сезон дождей: ~{weather.rain_days} дождливых дней в месяц"))
     if pkg.hotel.free_cancel_days is not None:
-        last = trip.date_in - timedelta(days=pkg.hotel.free_cancel_days)
+        last = (pkg.hotel_in or trip.date_in) - timedelta(days=pkg.hotel.free_cancel_days)
         out.append(("ok", f"отмена отеля бесплатно до {last:%d.%m}"))
     return out
 
@@ -380,23 +384,25 @@ def timeline(pkg: Package, trip: Trip) -> list[dict]:
     exit_min = 40 if pkg.out.mode == "plane" else 15
     at_hotel = pkg.out.arrive + timedelta(minutes=exit_min + pkg.transfer_in.minutes)
     hotel_in = pkg.hotel_in or trip.date_in
-    check_in = _parse_time(max(hotel_in, at_hotel.date()), pkg.hotel.check_in)
+    check_in_available = _parse_time(hotel_in, pkg.hotel.check_in)
+    check_in = max(at_hotel, check_in_available)
     buffer = 120 if pkg.back.mode == "plane" else 40
     leave = pkg.back.depart - timedelta(minutes=buffer + pkg.transfer_out.minutes)
-    check_out = _parse_time(pkg.hotel_out or trip.date_out, pkg.hotel.check_out)
+    check_out_deadline = _parse_time(pkg.hotel_out or trip.date_out, pkg.hotel.check_out)
+    check_out = min(leave, check_out_deadline)
     night = lambda d: d.hour < 6 or d.hour >= 23  # noqa: E731
-    wait_in = at_hotel < check_in - timedelta(hours=2)
-    wait_out = leave > check_out + timedelta(hours=4)
+    wait_in = at_hotel < check_in_available - timedelta(hours=2)
+    wait_out = leave > check_out_deadline + timedelta(hours=4)
     station = "вокзал" if pkg.back.mode == "train" else "аэропорт"
     return [
         {"t": f"{pkg.out.depart:%d.%m %H:%M}", "label": f"Отправление {trip.origin.from_}",
          "level": "warn" if night(pkg.out.depart) else "ok"},
         {"t": f"{pkg.out.arrive:%d.%m %H:%M}", "label": f"Прибытие, {trip.dest.name}", "level": "ok"},
-        {"t": f"{at_hotel:%H:%M}", "label": f"В отеле — трансфер {hm(pkg.transfer_in.minutes)}",
+        {"t": f"{at_hotel:%d.%m %H:%M}", "label": f"В отеле — трансфер {hm(pkg.transfer_in.minutes)}",
          "level": "warn" if wait_in or night(at_hotel) else "ok"},
         {"t": f"{check_in:%d.%m %H:%M}", "label": "Заселение", "level": "warn" if wait_in else "ok"},
         {"t": f"{check_out:%d.%m %H:%M}", "label": "Выезд из номера", "level": "warn" if wait_out else "ok"},
-        {"t": f"{leave:%H:%M}", "label": f"Трансфер в {station}", "level": "risk" if leave.date() < check_out.date() else "ok"},
+        {"t": f"{leave:%d.%m %H:%M}", "label": f"Трансфер в {station}", "level": "risk" if leave.date() < check_out_deadline.date() else "ok"},
         {"t": f"{pkg.back.depart:%d.%m %H:%M}", "label": "Обратно", "level": "warn" if night(pkg.back.depart) else "ok"},
         {"t": f"{pkg.back.arrive:%d.%m %H:%M}", "label": "Дома", "level": "ok"},
     ]

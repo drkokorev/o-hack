@@ -553,7 +553,8 @@ class TripsDomain:
         lines += [f"Корзина — «{pkg.title}», {trip.dest.name}, {_dates(trip.date_in, trip.date_out)}:",
                   f"• Туда: {leg_text(pkg.out)} — {fmt_money(pkg.out.price_per_person * trip.people)}",
                   f"• Трансфер: {hm(pkg.transfer_in.minutes)}, {pkg.transfer_in.note} — {fmt_money(pkg.transfer_in.price)}",
-                  f"• Отель: {pkg.hotel.name} {pkg.hotel.stars}★, {MEALS[pkg.hotel.meal]} — {fmt_money(pkg.hotel_total)}",
+                  f"• Отель: {pkg.hotel.name} {pkg.hotel.stars}★, {MEALS[pkg.hotel.meal]}, "
+                  f"{_dates(pkg.hotel_in or trip.date_in, pkg.hotel_out or trip.date_out)} — {fmt_money(pkg.hotel_total)}",
                   f"• Трансфер обратно — {fmt_money(pkg.transfer_out.price)}",
                   f"• Обратно: {leg_text(pkg.back)} — {fmt_money(pkg.back.price_per_person * trip.people)}",
                   f"Итого: {fmt_money(total)} на {_people(trip.adults, trip.children)}.",
@@ -568,25 +569,31 @@ class TripsDomain:
         pkg = next((p for p in packages if p.key == state.package), packages[0])
         total = pkg.total(trip.people)
         number = number or f"OST-{zlib.crc32(f'{pkg.out.id}{pkg.hotel.id}{pkg.back.id}'.encode()) % 1_000_000:06d}"
-        cancel_until = (trip.date_in - timedelta(days=pkg.hotel.free_cancel_days)).isoformat() \
+        hotel_in, hotel_out = pkg.hotel_in or trip.date_in, pkg.hotel_out or trip.date_out
+        cancel_until = (hotel_in - timedelta(days=pkg.hotel.free_cancel_days)).isoformat() \
             if pkg.hotel.free_cancel_days is not None else None
         state.order = {"number": number, "total": total, "package": pkg.key, "dest": trip.dest.name,
                        "dest_id": trip.dest.id,
                        "origin_code": trip.origin.iata, "dest_code": trip.dest.iata, "origin": trip.origin.name,
                        "people": _people(trip.adults, trip.children),
                        "date_in": trip.date_in.isoformat(), "date_out": trip.date_out.isoformat(),
+                       "hotel_date_in": hotel_in.isoformat(), "hotel_date_out": hotel_out.isoformat(),
+                       "hotel_dates": _dates(hotel_in, hotel_out),
                        "hotel": pkg.hotel.name, "hotel_id": pkg.hotel.id, "check_in": pkg.hotel.check_in,
                        "early_checkin_fee": pkg.hotel.early_checkin_fee, "cancel_until": cancel_until,
                        "out": leg_text(pkg.out), "back": leg_text(pkg.back)}
         state.stage, state.showing, state.hotel_id = "booked", None, pkg.hotel.id
         return self._order_step(state, f"Готово! Оплата прошла (имитация), заказ {number} на {fmt_money(total)}. "
-                                       "Билеты и ваучер отеля пришлём на почту.")
+                                       "Билеты и ваучер в демо не отправляются.")
 
     def _order_step(self, state: TripState, head: str) -> Step:
         o = state.order or {}
         cancel = f"бесплатная отмена отеля до {date.fromisoformat(o['cancel_until']):%d.%m}" if o.get("cancel_until") \
             else "тариф отеля невозвратный"
-        lines = [head, f"{o.get('dest')}: {o.get('hotel')}, {_dates(date.fromisoformat(o['date_in']), date.fromisoformat(o['date_out']))}.",
+        stay_in = date.fromisoformat(o.get("hotel_date_in") or o["date_in"])
+        stay_out = date.fromisoformat(o.get("hotel_date_out") or o["date_out"])
+        lines = [head, f"{o.get('dest')}: даты маршрута {_dates(date.fromisoformat(o['date_in']), date.fromisoformat(o['date_out']))}.",
+                 f"Отель: {o.get('hotel')}, {_dates(stay_in, stay_out)}.",
                  f"Туда: {o.get('out')}", f"Обратно: {o.get('back')}", f"Условия: {cancel}."]
         if state.requests:
             lines.append("Запросы в отель: " + "; ".join(state.requests) + ".")
@@ -600,12 +607,12 @@ class TripsDomain:
             fee = o.get("early_checkin_fee")
             terms = "бесплатно" if fee == 0 else (f"за {fmt_money(fee)}" if fee else "по наличию номеров")
             state.requests.append(f"ранний заезд ({terms})")
-            return self._order_step(state, f"Отправил в отель запрос на ранний заезд: {terms}. "
-                                           "Подтверждение придёт за сутки до заезда.")
+            return self._order_step(state, f"В демо записан запрос на ранний заезд: {terms}. "
+                                           "Реальному отелю он не отправлен.")
         if what == "late_checkout":
             state.requests.append("поздний выезд (по наличию)")
-            return self._order_step(state, "Запросил поздний выезд — отель подтвердит в день выезда, "
-                                           "если номер будет свободен.")
+            return self._order_step(state, "В демо записан запрос на поздний выезд. "
+                                           "Реальному отелю он не отправлен.")
         if what in ("cancel", "cancel_info"):
             until = o.get("cancel_until")
             free = bool(until and today <= date.fromisoformat(until))
@@ -618,10 +625,11 @@ class TripsDomain:
                                            "Напишите «да, отменить» или «нет».")
         if what == "reminder":
             state.requests.append("напоминание за сутки до отправления")
-            return self._order_step(state, "Напомню за сутки до отправления: время выезда, документы и трансфер.")
+            return self._order_step(state, "В демо записано напоминание за сутки до отправления. "
+                                           "Реальные уведомления не отправляются.")
         if what == "transfer":
-            return self._order_step(state, "Трансфер туда и обратно уже в заказе — водитель встретит в зоне "
-                                           "прилёта с табличкой. Время подачи пришлём накануне.")
+            return self._order_step(state, "В демо трансфер туда и обратно включён в заказ. "
+                                           "Реальный водитель не заказан.")
         moved = state.date_from and o.get("date_in") and state.date_from.isoformat() != o["date_in"]
         if what == "change_dates" or act.get("shift_days") or moved:
             if not moved:
@@ -754,18 +762,21 @@ class TripsDomain:
                 "via": leg.via, "layover": hm(leg.layover_min) if leg.stops else None, "baggage": leg.baggage,
                 "seat_class": leg.seat_class}
 
-    def _hotel_card(self, h, price: int, trip: Trip) -> dict:
+    def _hotel_card(self, h, price: int, trip: Trip, stay_in: date | None = None, stay_out: date | None = None) -> dict:
+        stay_in, stay_out = stay_in or trip.date_in, stay_out or trip.date_out
+        nights = max((stay_out - stay_in).days, 1)
         return {"id": h.id, "name": h.name, "stars": h.stars, "rating": h.rating, "reviews": h.reviews,
                 "area": h.area, "beach_km": h.beach_km, "center_km": h.center_km, "meal": MEALS[h.meal],
                 "amenities": [AMENITIES[a] for a in h.amenities if a in AMENITIES], "price": fmt_money(price),
-                "per_night": fmt_money(price // max(trip.nights, 1)), "check_in": h.check_in,
+                "per_night": fmt_money(price // nights), "check_in": h.check_in,
+                "date_in": stay_in.isoformat(), "date_out": stay_out.isoformat(), "dates": _dates(stay_in, stay_out),
                 "free_cancel_days": h.free_cancel_days, "praise": h.praise, "complaints": h.complaints,
                 "kind": h.kind, "source": h.source, "website": h.website, "map_url": h.map_url}
 
     def _package_card(self, p: Package, trip: Trip) -> dict:
         return {"key": p.key, "title": p.title, "total": fmt_money(p.total(trip.people)),
                 "out": self._leg_card(p.out, trip.people), "back": self._leg_card(p.back, trip.people),
-                "hotel": self._hotel_card(p.hotel, p.hotel_total, trip),
+                "hotel": self._hotel_card(p.hotel, p.hotel_total, trip, p.hotel_in, p.hotel_out),
                 "transfer": {"minutes": hm(p.transfer_in.minutes), "price": fmt_money(p.transfer_in.price + p.transfer_out.price),
                              "note": p.transfer_in.note},
                 "why": p.why, "tradeoffs": p.tradeoffs, "timeline": timeline(p, trip),
