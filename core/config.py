@@ -12,6 +12,11 @@ from dotenv import load_dotenv
 GIGACHAT_CA = Path(__file__).resolve().parent / "certs" / "russian_trusted_root_ca.pem"
 
 
+def _env(name: str, default: str) -> str:
+    """Пустые значения в .env.example означают настройки по умолчанию."""
+    return os.getenv(name) or default
+
+
 @dataclass(frozen=True)
 class Settings:
     llm_provider: str          # openai, gigachat или local (локальный OpenAI-совместимый сервер)
@@ -41,22 +46,22 @@ class Settings:
 @lru_cache
 def get_settings() -> Settings:
     load_dotenv()
-    provider = os.getenv("LLM_PROVIDER", "openai").lower()
+    provider = _env("LLM_PROVIDER", "openai").lower()
     gigachat = provider == "gigachat"
     local = provider == "local"
     return Settings(
         llm_provider=provider,
-        llm_base_url=os.getenv("LLM_BASE_URL", "" if local else "https://api.giga.chat/v1" if gigachat
-                               else "https://foundation-models.api.cloud.ru/v1"),
+        llm_base_url=_env("LLM_BASE_URL", "" if local else "https://api.giga.chat/v1" if gigachat
+                          else "https://foundation-models.api.cloud.ru/v1"),
         llm_api_key=os.getenv("LLM_API_KEY", ""),
-        llm_model=os.getenv("LLM_MODEL", "" if local else "GigaChat-2" if gigachat else "Qwen/Qwen3-235B-A22B-Instruct-2507"),
-        llm_json_mode=os.getenv("LLM_JSON_MODE", "0" if gigachat else "1") == "1",
-        llm_schema_mode=os.getenv("LLM_SCHEMA_MODE", "0") == "1",
-        llm_timeout=float(os.getenv("LLM_TIMEOUT", "8")),
-        llm_nlg=os.getenv("LLM_NLG", "0") == "1",
-        llm_reasoning_effort=os.getenv("LLM_REASONING_EFFORT", "low"),
+        llm_model=_env("LLM_MODEL", "" if local else "GigaChat-2" if gigachat else "Qwen/Qwen3-235B-A22B-Instruct-2507"),
+        llm_json_mode=_env("LLM_JSON_MODE", "0" if gigachat else "1") == "1",
+        llm_schema_mode=_env("LLM_SCHEMA_MODE", "0") == "1",
+        llm_timeout=float(_env("LLM_TIMEOUT", "8")),
+        llm_nlg=_env("LLM_NLG", "0") == "1",
+        llm_reasoning_effort=_env("LLM_REASONING_EFFORT", "low"),
         gigachat_auth_key=os.getenv("GIGACHAT_AUTH_KEY", ""),
-        gigachat_scope=os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS"),
-        gigachat_oauth_url=os.getenv("GIGACHAT_OAUTH_URL", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"),
-        gigachat_verify_ssl=os.getenv("GIGACHAT_VERIFY_SSL", str(GIGACHAT_CA)),
+        gigachat_scope=_env("GIGACHAT_SCOPE", "GIGACHAT_API_PERS"),
+        gigachat_oauth_url=_env("GIGACHAT_OAUTH_URL", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"),
+        gigachat_verify_ssl=_env("GIGACHAT_VERIFY_SSL", str(GIGACHAT_CA)),
     )

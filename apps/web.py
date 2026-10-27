@@ -225,7 +225,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
     if agent is None:
         llm = build_llm(settings)
         agent = Agent(TripsDomain(), llm, nlg=settings.llm_nlg)
-    sessions = Sessions(agent, ttl_seconds=float(os.getenv("SESSION_TTL_SECONDS", "3600")))
+    sessions = Sessions(agent, ttl_seconds=float(os.getenv("SESSION_TTL_SECONDS") or "3600"))
     images = Images()
 
     @asynccontextmanager
@@ -291,7 +291,7 @@ def main() -> None:
     import uvicorn
 
     logging.basicConfig(level=logging.INFO)
-    uvicorn.run(build_app(), host=os.getenv("APP_HOST", "127.0.0.1"), port=int(os.getenv("APP_PORT", "8080")),
+    uvicorn.run(build_app(), host=os.getenv("APP_HOST") or "127.0.0.1", port=int(os.getenv("APP_PORT") or "8080"),
                 access_log=False)
 
 

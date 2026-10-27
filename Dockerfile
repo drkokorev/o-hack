@@ -14,6 +14,6 @@ COPY apps ./apps
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app && chown -R app /app
 USER app
 EXPOSE 8080
-HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=5 \
-  CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2).status == 200 else 1)"
+HEALTHCHECK --interval=10s --timeout=10s --start-period=60s --retries=5 \
+  CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5).status == 200 else 1)"
 CMD ["python", "-m", "apps.web"]

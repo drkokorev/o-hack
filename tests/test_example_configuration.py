@@ -40,6 +40,21 @@ def test_example_keeps_cloud_defaults_without_a_key(example_env):
     assert not settings.llm_enabled
 
 
+def test_example_lists_variables_without_values():
+    example = Path(__file__).resolve().parents[1] / ".env.example"
+    values = dotenv_values(example)
+    assert values and all(value == "" for value in values.values())
+    assert {"LLM_PROVIDER", "LLM_API_KEY", "GIGACHAT_AUTH_KEY", "SESSION_TTL_SECONDS"} <= values.keys()
+
+
+def test_empty_session_timeout_allows_application_start(example_env):
+    from apps.web import build_app
+
+    example_env.setenv("SESSION_TTL_SECONDS", "")
+    app = build_app()
+    assert any(route.path == "/health" for route in app.routes)
+
+
 def test_explicit_provider_overrides_are_preserved(example_env):
     example_env.setenv("LLM_PROVIDER", "gigachat")
     example_env.setenv("LLM_BASE_URL", "https://example.test/v1")

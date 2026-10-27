@@ -3,8 +3,10 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .env
+.env.*
+!.env.example
 .DS_Store
 eval/guided_report.json
 
-# Данные хакатона не публикуем (п. 7.1 правил)
+# Локальные загрузки и рабочие данные не добавляем в репозиторий.
 /data/
