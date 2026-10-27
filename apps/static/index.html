@@ -523,7 +523,7 @@ const views = {
         el("div", { class: "kicker" }, el("span", {}, `${i + 1} · ${d.country}`), i === 0 ? el("b", {}, "Лучше всего подходит") : null),
         el("h3", {}, d.name),
         el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, d.visa ? `виза (демо): ${d.visa}` : "по России")),
-        el("dl", { class: "facts" }, el("dt", {}, "Погода"), el("dd", {}, d.weather || "—"),
+        el("dl", { class: "facts" }, el("dt", {}, "Климат в среднем"), el("dd", {}, d.weather || "—"),
           el("dt", {}, "Дорога"), el("dd", {}, `${d.mode === "train" ? "поезд" : d.stops ? "с пересадкой" : "прямой рейс"}, ${d.travel}`)),
         marks("why", d.reasons.filter((r) => !/^(перелёт|поезд)/.test(r))),
         d.risks.filter((r) => !r.startsWith("виза")).length ? marks("", d.risks.filter((r) => !r.startsWith("виза")).map((t) => ({ level: "warn", text: t }))) : null,
@@ -537,7 +537,7 @@ const views = {
     if (p.diff && p.diff.length) out.push(el("p", { class: "notice" }, "Пересобрал план: " + p.diff.join("; ") + "."));
     if (p.relaxed && p.relaxed.length) out.push(el("p", { class: "notice" }, "Чтобы что-то нашлось, я " + p.relaxed.join(", ") + "."));
     out.push(gallery(p.trip.gallery || [p.trip.image], { cls: "cover", alt: p.trip.dest,
-      over: el("div", { class: "over" }, el("b", {}, p.trip.dest), el("span", {}, p.trip.weather ? `${p.trip.dates} · ${p.trip.weather}` : p.trip.dates)) }));
+      over: el("div", { class: "over" }, el("b", {}, p.trip.dest), el("span", {}, p.trip.weather ? `${p.trip.dates} · климат в среднем: ${p.trip.weather}` : p.trip.dates)) }));
     if (p.calendar && p.calendar.length > 3) {
       const prices = p.calendar.map((d) => d.price), lo = Math.min(...prices), hi = Math.max(...prices);
       out.push(el("h2", { class: "section-title" }, "Когда выгоднее ехать"),
@@ -550,7 +550,7 @@ const views = {
           el("span", {}, d.label)))));
     }
     out.push(el("h2", { class: "section-title" }, p.items.length > 1 ? `${p.items.length} способа поехать` : "Ваша поездка"),
-      el("p", { class: "section-sub" }, `${p.trip.weather ? "Погода: " + p.trip.weather + ". " : ""}Демо-цены и расписание смоделированы; наличие не проверялось.`),
+      el("p", { class: "section-sub" }, `${p.trip.weather ? "Климат — средние за 2022–2025 годы, не прогноз: " + p.trip.weather + ". " : ""}Демо-цены и расписание смоделированы; наличие не проверялось.`),
       el("div", { class: "cards" }, p.items.map((k, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
         photo(k.hotel.image, { alt: k.hotel.name, badge: "иллюстрация отеля" }),
         el("div", { class: "kicker" }, el("span", {}, `Вариант ${i + 1}`), i === 0 ? el("b", {}, "Рекомендую") : null),

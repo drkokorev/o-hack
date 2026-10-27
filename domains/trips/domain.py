@@ -621,7 +621,7 @@ class TripsDomain:
             lines += ["", f"{i}. {s.dest.name}, {s.dest.country} — от {fmt_money(s.est_total)} за всё",
                       f"   Почему: {'; '.join(s.reasons)}"]
             if s.weather:
-                lines.append(f"   Погода: {s.weather.describe()}")
+                lines.append(f"   Климат (средние за 2022–2025 годы, не прогноз): {s.weather.describe()}")
             if s.risks:
                 lines.append(f"   Учтите: {'; '.join(s.risks)}")
         if state.assumptions:
