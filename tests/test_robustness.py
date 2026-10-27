@@ -15,7 +15,7 @@ from domains.trips.state import TripUpdate
 from tests.conftest import FakeLLM
 
 SAT = date(2026, 10, 24)
-TO_CART = ("Сочи с 5 по 12 декабря вдвоём", "беру 1 вариант")
+TO_CART = ("Сочи из Москвы с 5 по 12 декабря двое взрослых", "беру 1 вариант")
 
 
 def agent(llm=None):
@@ -40,18 +40,18 @@ def test_cart_is_not_booked_without_explicit_consent(text):
 
 
 @pytest.mark.parametrize("text", ["да, оформляй", "оформляй", "да", "бронируй", "подтверждаю", "ок"])
-def test_explicit_consent_books(text):
+def test_explicit_consent_opens_payment_without_booking(text):
     a = agent()
     s = session_at(a, *TO_CART)
     a.handle(s, text)
-    assert s.state.stage == "booked"
+    assert s.state.stage == "payment" and s.state.order is None
 
 
 def test_question_about_cancellation_does_not_cancel_and_cancel_needs_confirmation():
     a = agent()
-    s = session_at(a, *TO_CART, "да, оформляй")
+    s = session_at(a, *TO_CART, "да, оформляй", "оплата картой", "да, подтверждаю")
     step = a.handle(s, "а можно отменить бронь, если планы поменяются?")
-    assert s.state.order and "Условия отмены" in step.reply
+    assert s.state.order and "условия отмены" in step.reply.lower()
     step = a.handle(s, "отмени бронь")
     assert s.state.order and s.state.pending == "cancel"
     a.handle(s, "нет")
@@ -63,7 +63,7 @@ def test_question_about_cancellation_does_not_cancel_and_cancel_needs_confirmati
 
 def test_negated_after_sale_request_is_ignored():
     a = agent()
-    s = session_at(a, *TO_CART, "да, оформляй")
+    s = session_at(a, *TO_CART, "да, оформляй", "оплата картой", "да, подтверждаю")
     a.handle(s, "не хочу ранний заезд")
     assert not s.state.requests
 
@@ -81,7 +81,7 @@ def test_llm_yes_on_garbage_does_not_book():
 def test_llm_repeating_previous_action_is_dropped():
     a = agent(FakeLLM({"destination": "Сочи", "date_from": "2026-12-05", "date_to": "2026-12-12", "adults": 2},
                       {"shift_days": 2}, {"shift_days": 2, "pick": 1}))
-    s = session_at(a, "Сочи с 5 по 12 декабря вдвоём", "на два дня позже")
+    s = session_at(a, "Сочи из Москвы с 5 по 12 декабря двое взрослых", "на два дня позже")
     assert s.state.date_from == date(2026, 12, 7)
     a.handle(s, "давай первый")
     assert s.state.date_from == date(2026, 12, 7)  # второй сдвиг — повтор модели, не просьба пользователя
@@ -108,12 +108,12 @@ def test_breaker_skips_llm_after_failures_and_dialog_continues():
     llm.breaker = Breaker(threshold=3, cooldown=60)
     a = agent(llm)
     s = a.new_session()
-    for text in ("Сочи с 5 по 12 декабря", "вдвоём", "беру 1 вариант"):
+    for text in ("Сочи из Москвы с 5 по 12 декабря", "двое взрослых", "беру 1 вариант"):
         a.handle(s, text)
     assert s.last_nlu == "rules" and s.state.stage == "cart"
     calls = len(llm.calls)
     a.handle(s, "да, оформляй")
-    assert len(llm.calls) == calls and s.state.stage == "booked"  # предохранитель: модель не звали
+    assert len(llm.calls) == calls and s.state.stage == "payment"  # предохранитель: модель не звали
 
 
 def test_provider_rejecting_response_format_falls_back(monkeypatch):

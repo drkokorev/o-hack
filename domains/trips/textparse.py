@@ -46,11 +46,15 @@ def month_of(word: str) -> int:
 
 
 def future_date(day: int, month: int, today: date) -> date | None:
-    try:
-        d = date(today.year, month, day)
-    except ValueError:
-        return None
-    return d if d >= today else d.replace(year=today.year + 1)
+    # Включаем ближайший високосный год для 29 февраля; несуществующие даты не вызывают исключение.
+    for year in range(today.year, today.year + 9):
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            continue
+        if candidate >= today:
+            return candidate
+    return None
 
 
 def _nearest_weekend(today: date, next_week: bool) -> tuple[date, date]:
@@ -63,32 +67,54 @@ def _nearest_weekend(today: date, next_week: bool) -> tuple[date, date]:
     return friday, friday + timedelta(days=2)
 
 
+def _date_with_year(day: int, month: int, year: str | int | None, today: date) -> date | None:
+    """При явно указанном годе не подменять его ближайшей датой."""
+    if not year:
+        return future_date(day, month, today)
+    year = int(year)
+    if year < 100:
+        year += 2000
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
 def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[date | None, date | None]:
     t = norm(text)
     check_in = check_out = None
 
-    # «с 7 по 9 ноября», «7-9 ноября», «с 7 ноября по 9 ноября»
-    m = re.search(rf"(\d{{1,2}})\s*(?:{MONTH_RE}\s*)?(?:-|–|—|по|до)\s*(\d{{1,2}})\s+{MONTH_RE}", t)
+    # «7–9 ноября 2027», «28 декабря 2027 — 4 января 2028»
+    month_pattern = MONTH_RE[1:-1]
+    m = re.search(rf"(?P<day_in>\d{{1,2}})\s*(?:(?P<month_in>{month_pattern})\s*"
+                  rf"(?:(?P<year_in>20\d{{2}})\s*)?)?(?:-|–|—|по|до)\s*"
+                  rf"(?P<day_out>\d{{1,2}})\s+(?P<month_out>{month_pattern})"
+                  rf"(?:\s+(?P<year_out>20\d{{2}}))?", t)
     if m:
-        month_out = month_of(m.group(4))
-        month_in = month_of(m.group(2)) if m.group(2) else month_out
-        check_in = future_date(int(m.group(1)), month_in, today)
-        check_out = future_date(int(m.group(3)), month_out, today)
-        if check_in and check_out and check_out <= check_in:
+        month_out = month_of(m.group("month_out"))
+        month_in = month_of(m.group("month_in")) if m.group("month_in") else month_out
+        year_in, year_out = m.group("year_in"), m.group("year_out")
+        if year_out and not year_in:
+            year_in = int(year_out) - (month_in > month_out)
+        elif year_in and not year_out:
+            year_out = int(year_in) + (month_out < month_in)
+        check_in = _date_with_year(int(m.group("day_in")), month_in, year_in, today)
+        check_out = _date_with_year(int(m.group("day_out")), month_out, year_out, today)
+        if not (year_in or year_out) and check_in and check_out and check_out <= check_in:
             check_out = check_out.replace(year=check_out.year + 1)
         return check_in, check_out
 
     # «5-12.12», «5–12.12.2026»
-    m = re.search(r"\b(\d{1,2})\s*[-–—]\s*(\d{1,2})\.(\d{1,2})(?:\.\d{2,4})?\b", t)
+    m = re.search(r"\b(\d{1,2})\s*[-–—]\s*(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?\b", t)
     if m and 1 <= int(m.group(3)) <= 12:
-        check_in = future_date(int(m.group(1)), int(m.group(3)), today)
-        check_out = future_date(int(m.group(2)), int(m.group(3)), today)
+        check_in = _date_with_year(int(m.group(1)), int(m.group(3)), m.group(4), today)
+        check_out = _date_with_year(int(m.group(2)), int(m.group(3)), m.group(4), today)
         if check_in and check_out and check_out > check_in:
             return check_in, check_out
 
     # «7.11 — 9.11», «07.11.2026»
     dots = re.findall(r"\b(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?\b", t)
-    parsed = [future_date(int(d), int(mo), today) for d, mo, _ in dots if 1 <= int(mo) <= 12]
+    parsed = [_date_with_year(int(d), int(mo), year, today) for d, mo, year in dots if 1 <= int(mo) <= 12]
     parsed = [d for d in parsed if d]
     if len(parsed) >= 2:
         return parsed[0], parsed[1]
@@ -96,9 +122,9 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
         check_in = parsed[0]
 
     if check_in is None:
-        m = re.search(rf"(?:с|со|на|заезд\w*)?\s*(\d{{1,2}})(?:-?го)?\s+{MONTH_RE}", t)
+        m = re.search(rf"(?:с|со|на|заезд\w*)?\s*(\d{{1,2}})(?:-?го)?\s+{MONTH_RE}(?:\s+(20\d{{2}}))?", t)
         if m:
-            check_in = future_date(int(m.group(1)), month_of(m.group(2)), today)
+            check_in = _date_with_year(int(m.group(1)), month_of(m.group(2)), m.group(3), today)
     if check_in is None:
         m = re.search(r"\bс (\d{1,2})(?:-?го)?\b(?!\s*(?:до|ноч|звезд|человек|гост|\d))", t)
         if m:

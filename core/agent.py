@@ -9,7 +9,7 @@ from typing import Any, Callable, Protocol
 
 from pydantic import BaseModel
 
-from .guard import looks_like_injection, sanitize
+from .guard import contains_sensitive_data, looks_like_injection, sanitize
 from .llm import LLM, Message, extract, strip_think
 
 log = logging.getLogger(__name__)
@@ -89,6 +89,10 @@ class Agent:
         text = sanitize(text)
         if not text:
             step = Step("Напишите, пожалуйста, ваш запрос.")
+        elif contains_sensitive_data(text):
+            text = "[личные данные скрыты]"
+            session.last_nlu, session.last_notes = "none", []
+            step = Step("Для демонстрации не вводите личные и платёжные данные. Удалите их из сообщения и повторите запрос.")
         elif looks_like_injection(text):
             step = Step(self.domain.off_topic_reply)
         else:
@@ -101,6 +105,7 @@ class Agent:
             {"role": "user", "content": text},
             {"role": "assistant", "content": step.reply},
         ]
+        session.history = session.history[-self.history_messages:] if self.history_messages > 0 else []
         session.last = step
         return step
 
@@ -120,7 +125,7 @@ class Agent:
                 if arbitrate is not None and by_rules is not None:
                     update, session.last_notes = arbitrate(session.state, text, update, by_rules)
                     if session.last_notes:
-                        log.info("Сверка LLM: %s", "; ".join(session.last_notes))
+                        log.info("Сверка LLM: отклонено или исправлено полей: %d", len(session.last_notes))
                     return update, "llm+rules" if by_rules.model_dump(exclude_none=True) else "llm"
                 if by_rules is None:
                     return update, "llm"

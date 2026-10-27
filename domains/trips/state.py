@@ -12,20 +12,26 @@ class TripParams(BaseModel):
 
     origin: str | None = Field(None, description="Город вылета в именительном падеже")
     destination: str | None = Field(None, description="Куда едет: город, курорт или страна, если назван")
+    country: str | None = Field(None, description="Названная страна, если город ещё не выбран")
     trip_types: list[str] | None = Field(None, description="Коды типа отдыха: sea, beach, warm, mountains, ski, "
                                          "city, culture, nature, food, spa, exotic")
-    month: int | None = Field(None, description="Месяц поездки 1–12, если точных дат нет")
+    month: int | None = Field(None, ge=1, le=12, description="Месяц поездки 1–12, если точных дат нет")
+    season: str | None = Field(None, description="Время года без указанного месяца: summer, autumn, winter, spring")
+    year: int | None = Field(None, ge=1, le=9999, description="Год поездки, только если пользователь явно его назвал")
     month_part: str | None = Field(None, description="early | mid | late — «в начале/середине/конце месяца»")
     date_from: date | None = Field(None, description="Дата начала поездки YYYY-MM-DD")
     date_to: date | None = Field(None, description="Дата окончания поездки YYYY-MM-DD")
     nights: int | None = Field(None, description="Число ночей")
+    party_size: int | None = Field(None, description="Общее число путешественников, если известно; возрастной состав может быть не указан")
     adults: int | None = Field(None, description="Взрослых")
     children: int | None = Field(None, description="Детей")
+    children_unknown: bool | None = Field(None, description="Едут дети, но их число не указано")
     pets: bool | None = Field(None, description="Едут с животным")
+    lodging: str | None = Field(None, description="tent — палатка или своё размещение; hotel — нужен отель")
     budget_total: int | None = Field(None, description="Бюджет на всю поездку на всех, руб.")
     budget_night: int | None = Field(None, description="Лимит цены отеля за ночь, руб., если назван именно он")
     max_travel_hours: float | None = Field(None, description="Максимум часов в дороге в одну сторону")
-    transport: str | None = Field(None, description="plane | train, если пользователь выбрал вид транспорта")
+    transport: str | None = Field(None, description="plane | train; none — подходящего вида транспорта в прототипе нет")
     direct_only: bool | None = Field(None, description="Только без пересадок")
     meal: str | None = Field(None, description="breakfast | half_board | all_inclusive")
     free_cancellation: bool | None = Field(None, description="Нужна бесплатная отмена")
@@ -43,7 +49,7 @@ PARAM_FIELDS = tuple(TripParams.model_fields)
 class TripState(TripParams):
     """Состояние диалога: пожелания плюс то, что ведёт код агента."""
 
-    stage: str = "start"                 # start | destination | plan | cart | booked
+    stage: str = "start"                 # start | destination | plan | cart | payment | booked
     suggested: list[str] = Field(default_factory=list)       # id предложенных направлений
     seen: list[str] = Field(default_factory=list)            # все показанные в этом подборе — «ещё» листает дальше
     dest_id: str | None = None           # выбранное направление
@@ -61,6 +67,12 @@ class TripState(TripParams):
     past_orders: list[dict] = Field(default_factory=list)    # прошлые заказы, если начата новая поездка
     rejected: list[str] = Field(default_factory=list)        # направления, от которых пользователь отказался
     unclear: bool = False                                    # реплика не дала ни параметров, ни действий
+    country_conflict: str | None = None                      # страна не совпала с выбранным городом
+    place_country: str | None = None                         # уточнённая страна для неоднозначного названия
+    unavailable_origin: str | None = None                    # указанный город отправления отсутствует в демо
+    pending_question: str | None = None                      # какой недостающий параметр уточняем
+    skipped_questions: list[str] = Field(default_factory=list)  # отложенные пользователем уточнения
+    payment_method: str | None = None                        # только демонстрационный способ
     last_view: dict | None = None                            # последний показанный список — повторить при непонятной реплике
     params_changed: bool = False                             # пожелания изменились — пересобрать план
 
@@ -83,6 +95,12 @@ class TripUpdate(TripParams):
     back: bool | None = Field(None, description="true, если хочет вернуться к выбору направления")
     unknown_place: str | None = Field(None, description="Город или страна, которых нет в каталоге (служебное поле правил)")
     unknown_origin: str | None = Field(None, description="Город вылета, которого нет в списке (служебное поле правил)")
+    country_conflict: str | None = Field(None, description="Указанная страна не совпадает с городом (служебное поле правил)")
+    place_country: str | None = Field(None, description="Страна для уточнения географического названия (служебное поле правил)")
+    corrected_place: str | None = Field(None, description="Исходное написание места, исправленное по опечатке (служебное поле правил)")
+    unsure: bool | None = Field(None, description="true, если человек пока не знает ответ на уточняющий вопрос")
+    duration_not_given: bool | None = Field(None, description="true, если человек говорит, что не называл длительность")
+    payment_method: str | None = Field(None, description="Демонстрационный способ оплаты: card | sbp")
     add_adults: int | None = Field(None, description="Сколько взрослых добавить («ещё один взрослый» → 1)")
     hesitate: bool | None = Field(None, description="true, если сомневается и хочет подумать («давай подумаем», «подожди»)")
     question: str | None = Field(None, description="О чём спрашивает: visa | cancellation | baggage | weather | "

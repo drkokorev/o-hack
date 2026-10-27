@@ -1,0 +1,22 @@
+[
+  {"id":"family_and_pet", "text":"В Сочи на неделю в ноябре, едем я, муж, ребёнок и собака", "expect":{"destination":"sochi", "children":1, "pets":true, "adults":2, "nights":7, "month":11}, "empty":["date_from", "date_to"]},
+  {"id":"transport_train", "text":"Из Москвы в Казань с 10 по 14 ноября 2027 года, только поездом", "expect":{"origin":"Москва", "destination":"kazan", "transport":"train", "date_from":"2027-11-10", "date_to":"2027-11-14"}},
+  {"id":"refuse_flight", "text":"Хочу в Сочи на неделю в ноябре, боюсь самолётов, лететь не буду", "expect":{"destination":"sochi", "nights":7, "month":11}, "forbid":{"transport":"plane"}},
+  {"id":"exact_budget", "text":"Казань на выходные, бюджет на всю поездку не больше 85 тысяч рублей", "expect":{"destination":"kazan", "budget_total":85000}},
+  {"id":"words_budget", "text":"Бюджет на всё путешествие — не дороже ста пятидесяти тысяч рублей", "expect":{"budget_total":150000}, "empty":["destination", "pets", "children"]},
+  {"id":"per_night", "text":"На отель могу потратить до 7 тысяч рублей за ночь", "expect":{"budget_night":7000}, "empty":["destination"]},
+  {"id":"no_hallucinated_day", "text":"В Сочи в ноябре на неделю с собакой", "expect":{"destination":"sochi", "month":11, "nights":7, "pets":true}, "empty":["date_from", "date_to"]},
+  {"id":"hotel_wishes", "text":"Отель с бассейном и завтраками, обязательно бесплатная отмена", "expect":{"meal":"breakfast", "free_cancellation":true}, "contains":{"hotel_wishes":"pool"}},
+  {"id":"change_city", "text":"Я передумал насчёт Сочи, поеду в Казань", "expect":{"destination":"kazan"}},
+  {"id":"adult_child", "text":"Едем на двоих: один взрослый и один ребёнок", "expect":{"adults":1, "children":1}},
+  {"id":"three_children", "text":"Нас двое взрослых и трое детей", "expect":{"adults":2, "children":3}},
+  {"id":"no_children", "text":"Без детей, но со щенком", "expect":{"children":0, "pets":true}},
+  {"id":"friends_pet", "text":"Еду я и два друга, с кошкой", "expect":{"adults":3, "pets":true}},
+  {"id":"range_year", "text":"Казань с 5 по 12 декабря 2028 года", "expect":{"destination":"kazan", "date_from":"2028-12-05", "date_to":"2028-12-12"}},
+  {"id":"cross_year", "text":"Сочи с 29 декабря 2027 по 3 января 2028", "expect":{"destination":"sochi", "date_from":"2027-12-29", "date_to":"2028-01-03"}},
+  {"id":"no_confirm", "text":"Не оформляй, я ещё подумаю", "forbid":{"confirm":true, "after_sale":"cancel"}},
+  {"id":"explicit_confirm", "text":"Да, оформляй поездку", "expect":{"confirm":true}},
+  {"id":"change_duration", "text":"Сделаем поездку на три ночи", "expect":{"nights":3}, "empty":["destination", "pets"]},
+  {"id":"move_dates", "text":"Перенеси поездку на два дня позже", "expect":{"shift_days":2}},
+  {"id":"mountains_not_sea", "text":"Мне нужны горы и природа в июле, море не интересует", "expect":{"month":7}, "contains":{"trip_types":"mountains"}, "not_contains":{"trip_types":"sea"}}
+]

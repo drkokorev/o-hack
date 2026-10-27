@@ -30,7 +30,7 @@ llm-check:
 	$(PY) -m tools.llm_check
 
 eval:
-	$(PY) -m eval.run
+	$(PY) -m eval.compare_models --models rules --output eval/guided_report.json
 
 simulate:
 	$(PY) -m eval.simulate

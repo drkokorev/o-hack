@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 .env
 .DS_Store
+eval/guided_report.json
 
 # Данные хакатона не публикуем (п. 7.1 правил)
 /data/

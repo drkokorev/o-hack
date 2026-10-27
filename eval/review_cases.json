@@ -1,0 +1,22 @@
+[
+  {"id":"train_pet", "turns":["Из Санкт-Петербурга в Казань с 10 по 14 июля 2027 года, двое взрослых и собака, без самолёта, бюджет 80 тысяч рублей"], "state":{"dest_id":"kazan", "origin":"Санкт-Петербург", "pets":true, "transport":"train", "adults":2, "budget_total":80000, "date_from":"2027-07-10", "date_to":"2027-07-14"}, "payload":"packages", "all_legs":"train"},
+  {"id":"month_year", "turns":["Сочи на неделю в ноябре 2028 года, с собакой"], "state":{"dest_id":"sochi", "pets":true, "year":2028}, "date_year":2028, "assumed_dates":true, "payload":"packages"},
+  {"id":"child_total", "turns":["На неделю в Сочи в декабре, с ребёнком на двоих, до 150 тысяч"], "state":{"dest_id":"sochi", "adults":1, "children":1, "budget_total":150000}, "payload":"packages"},
+  {"id":"unsupported_transport", "turns":["В Казань в ноябре без самолёта и без поезда"], "state":{"transport":"none"}, "payload":"question"},
+  {"id":"exclude_flight", "turns":["В Казань из Москвы в декабре, не хочу лететь"], "state":{"dest_id":"kazan", "transport":"train"}, "payload":"packages", "all_legs":"train"},
+  {"id":"short_flight", "turns":["Тёплое море в ноябре, с ребёнком, без долгих перелётов"], "state":{"children":1, "max_travel_hours":5.0}, "types_include":["sea", "warm"], "payload":"destinations"},
+  {"id":"update_budget_nights", "turns":["Казань из Москвы с 10 по 15 ноября 2027, поездом, бюджет 100 тысяч", "Теперь на три ночи и до 70 тысяч"], "state":{"dest_id":"kazan", "transport":"train", "budget_total":70000, "nights":3, "date_from":"2027-11-10", "date_to":"2027-11-13"}, "payload":"packages"},
+  {"id":"replace_destination", "turns":["Сочи на неделю в декабре", "Нет, лучше Казань"], "state":{"dest_id":"kazan"}, "payload":"packages"},
+  {"id":"numeric_year", "turns":["Из Москвы в Казань с 05.11.2028 по 12.11.2028"], "state":{"dest_id":"kazan", "date_from":"2028-11-05", "date_to":"2028-11-12"}, "payload":"packages"},
+  {"id":"cross_year", "turns":["В Сочи с 28 декабря 2027 по 4 января 2028"], "state":{"dest_id":"sochi", "date_from":"2027-12-28", "date_to":"2028-01-04"}, "payload":"packages"},
+  {"id":"past_year", "turns":["В Казань с 10 по 14 ноября 2025 года"], "payload":"question"},
+  {"id":"backwards_dates", "turns":["В Казань с 14 по 10 ноября 2028 года"], "payload":"question"},
+  {"id":"not_yet_confirmed", "turns":["В Сочи с 10 по 15 ноября 2027", "выбираю первый вариант", "я пока подумаю"], "state":{"stage":"cart"}, "not_booked":true},
+  {"id":"mock_purchase", "turns":["В Сочи с 10 по 15 ноября 2027", "выбираю первый вариант", "да, оформить"], "state":{"stage":"booked"}, "has_order":true, "reply_contains":"имитац"},
+  {"id":"no_cancel_without_consent", "turns":["В Сочи с 10 по 15 ноября 2027", "выбираю первый вариант", "да, оформить", "отмени бронь", "нет"], "state":{"stage":"booked"}, "has_order":true},
+  {"id":"meal_cancel", "turns":["В Казань с 10 по 15 ноября 2027 с завтраком и бесплатной отменой"], "state":{"dest_id":"kazan", "meal":"breakfast", "free_cancellation":true}, "payload":"packages"},
+  {"id":"direct_flight", "turns":["В Сочи с 10 по 15 ноября 2027, самолётом без пересадок"], "state":{"dest_id":"sochi", "transport":"plane", "direct_only":true}, "payload":"packages", "all_legs":"plane"},
+  {"id":"remove_children", "turns":["В Казань в декабре с ребёнком", "ребёнок не едет"], "state":{"dest_id":"kazan", "children":0}, "payload":"packages"},
+  {"id":"pet_list", "turns":["В Казань в ноябре, двое взрослых и собака"], "state":{"dest_id":"kazan", "adults":2, "pets":true}, "payload":"packages"},
+  {"id":"no_implicit_booking", "turns":["В Сочи с 10 по 15 ноября 2027", "выбираю первый вариант", "что будет, если я соглашусь?"], "state":{"stage":"cart"}, "not_booked":true}
+]

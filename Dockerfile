@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.7
 FROM python:3.12.8-slim-bookworm AS build
 WORKDIR /build
-COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+COPY requirements.lock .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.lock
 
 FROM python:3.12.8-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 APP_HOST=0.0.0.0 APP_PORT=8080

@@ -74,7 +74,7 @@ def _leg_ok(leg: Leg, trip: Trip) -> bool:
         return False
     if trip.pets and not leg.pets_ok:
         return False
-    if trip.max_hours and leg.minutes > trip.max_hours * 60 * 1.15:
+    if trip.max_hours and leg.minutes > trip.max_hours * 60:
         return False
     return True
 
@@ -363,9 +363,9 @@ def check(pkg: Package, trip: Trip) -> list[tuple[str, str]]:
         else:
             out.append(("risk", f"дороже бюджета на {fmt_money(total - trip.budget)}"))
     if trip.dest.abroad:
-        out.append(("warn", f"нужен загранпаспорт; виза: {trip.dest.visa}"))
+        out.append(("warn", f"виза по демо-справочнику: {trip.dest.visa}; проверьте требования к документам"))
         if trip.pets:
-            out.append(("warn", "животному: чип, ветпаспорт и прививки по правилам страны"))
+            out.append(("warn", "с животным: уточните правила ввоза и необходимые документы"))
     if trip.pets and pkg.out.mode == "plane":
         out.append(("warn", "животное в салоне — до 8 кг с переноской, иначе в багажном отсеке"))
     weather = climate(trip.dest.id, trip.date_in.month)
@@ -424,15 +424,16 @@ def cheapest_start(origin: Origin, dest: Destination, first: date, last: date, n
     return best
 
 
-def month_window(month: int, part: str | None, today: date) -> tuple[date, date]:
+def month_window(month: int, part: str | None, today: date, year: int | None = None) -> tuple[date, date]:
     """Окно дат заезда: весь месяц или его начало (1–10), середина (11–20), конец (21+)."""
     from calendar import monthrange
 
-    year = today.year + (1 if month < today.month else 0)
+    explicit_year = year is not None
+    year = year if year is not None else today.year + (1 if month < today.month else 0)
     end = monthrange(year, month)[1]
     lo, hi = {"early": (1, 10), "mid": (11, 20), "late": (21, end)}.get(part or "", (1, end - 1))
     first = max(date(year, month, lo), today + timedelta(days=3))
     last = date(year, month, hi)
-    if first > last:  # окно уже прошло — берём тот же период в следующем году
+    if first > last and not explicit_year:  # для явно названного года не подменяем год
         first, last = date(year + 1, month, lo), date(year + 1, month, hi)
     return first, last

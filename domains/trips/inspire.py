@@ -55,6 +55,7 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
     from .planner import MEAL_RANK, cheapest_start
 
     wants = set(trip_types)
+    core = wants - {"warm", "sea", "beach", "food"}
     beach = bool(wants & {"sea", "beach"})
     warm = "warm" in wants or beach
     max_minutes = (max_hours or (6 if children else 9)) * 60
@@ -64,22 +65,33 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             continue
         if abroad is False and dest.abroad or abroad is True and not dest.abroad:
             continue
+        # Сначала дешёвые ограничения по направлению и климату: не строим тысячи отелей,
+        # если направление заведомо не подходит пользователю.
+        if core and not core & set(dest.tags):
+            continue
+        day = (cheapest_start(origin, dest, window[0], window[1], nights, mode) if window else start) or start
+        weather = climate(dest.id, day.month)
+        if beach and not (weather and (weather.beach_ok or (weather.sea is not None and weather.sea >= 21))):
+            continue
+        if not beach and warm and not (weather and weather.warm):
+            continue
+        if "ski" in wants and ("ski" not in dest.tags or not weather or weather.t_day > 2):
+            continue
+        # Если даже самый короткий транспорт не укладывается в явный лимит,
+        # полный подбор отелей для этого направления не изменит решение.
+        if max_hours and not any(leg.minutes <= max_minutes for leg in transport_options(origin, dest, day, mode)):
+            continue
         hotels = hotels_for(dest.id)
         if meal and not any(MEAL_RANK[h.meal] >= MEAL_RANK.get(meal, 0) for h in hotels):
             continue  # просили «всё включено» — туда, где его нет, не зовём
         if stars_min and not any(h.stars >= stars_min for h in hotels):
             continue
-        day = (cheapest_start(origin, dest, window[0], window[1], nights, mode) if window else start) or start
         est = estimate(origin, dest, day, nights, adults, children, mode, pets, meal, stars_min)
         if est is None:
             continue
         total, minutes, leg_mode, stops = est
-        weather = climate(dest.id, day.month)
         score, reasons, risks = 0.0, [], []
 
-        core = wants - {"warm", "sea", "beach", "food"}
-        if core and not core & set(dest.tags):
-            continue  # просили горы, природу, город — направление без этого не предлагаем
         matched = [TAG_NAMES[t] for t in wants & set(dest.tags) if t not in ("sea", "beach", "warm")]
         score += 0.6 * len(matched)
         if beach:
@@ -118,7 +130,7 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             risks.append("долгая дорога для ребёнка")
 
         if budget:
-            if total > budget * 1.15:
+            if total > budget:
                 continue
             score += 1.5 * (1 - total / budget)
             if total <= budget:
@@ -134,9 +146,9 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
         if dest.abroad:
             if pets:
                 score -= 2
-                risks.append("за границу с животным: ветпаспорт, чип и правила страны")
+                risks.append("за границу с животным: уточните правила ввоза страны")
             if dest.visa != "не нужна":
-                risks.append(f"виза: {dest.visa}")
+                risks.append(f"виза (демо): {dest.visa}; уточните требования страны")
         if day.month in dest.peak_months:
             risks.append("высокий сезон — цены выше")
         out.append(Suggestion(dest, round(score, 3), total, minutes, leg_mode, stops, weather, reasons, risks, day))
@@ -154,8 +166,4 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
                 diverse.append(s)
                 kinds.add(kind)
         out = diverse + [s for s in out if s not in diverse]
-    if not out and wants:  # ничего не подошло строго — ослабляем тип отдыха, а не молчим
-        return suggest(origin, start, nights, adults, children, trip_types=[t for t in trip_types if t in ("sea", "warm")],
-                       budget=budget, max_hours=max_hours, abroad=abroad, pets=pets, mode=mode, exclude=exclude,
-                       limit=limit, economy=economy, meal=meal, stars_min=stars_min, window=window) if set(trip_types) - {"sea", "warm"} else []
     return out[:limit]

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Помощник по поездкам</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font: 15px/1.45 system-ui, sans-serif; color: #12252d; background: #fff; display: flex; flex-direction: column; }
+  header { padding: 16px 18px; border-bottom: 1px solid #e0e9e6; font-weight: 700; }
+  header span { color: #2346d8; }
+  main { flex: 1; min-height: 0; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .message { padding: 10px 13px; background: #f0f4f3; border-radius: 16px 16px 16px 4px; white-space: pre-wrap; max-width: 95%; }
+  .message.user { align-self: flex-end; color: white; background: #2346d8; border-radius: 16px 16px 4px 16px; }
+  .cards { display: grid; gap: 8px; }
+  .card { border: 1px solid #d9e2e0; border-radius: 15px; padding: 12px; display: grid; gap: 8px; }
+  .card p { margin: 0; color: #52656c; font-size: 13px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .action { border: 1px solid #bccde0; border-radius: 999px; background: #fff; padding: 8px 13px; min-height: 40px; cursor: pointer; color: #183cb8; }
+  .action:focus-visible, input:focus-visible { outline: 2px solid #2346d8; outline-offset: 2px; }
+  form { border-top: 1px solid #e0e9e6; padding: 10px 14px 14px; }
+  .privacy { margin: 0 0 8px; color: #657980; font-size: 11px; }
+  .entry { display: flex; border: 1px solid #cbd9d6; border-radius: 22px; padding: 3px 4px 3px 12px; }
+  input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; outline: none; }
+  .send { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #2346d8; color: #fff; font-size: 20px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: wait; }
+</style>
+</head>
+<body>
+<header>О<span>!</span>дин запрос <small> · помощник по поездкам</small></header>
+<main id="log" aria-live="polite"><div class="message">Привет! Расскажите, куда или как хотите отдохнуть. Если пока не знаете — подскажу.</div></main>
+<form id="form">
+  <p class="privacy">Не вводите личные и платёжные данные. При подключении облачной модели текст отправляется её поставщику.</p>
+  <div class="entry"><input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение помощнику"><button class="send" aria-label="Отправить">↑</button></div>
+</form>
+<script>
+  const log = document.getElementById("log"), input = document.getElementById("text"), form = document.getElementById("form");
+  let session = null, busy = false;
+  function element(tag, className, text) {
+    const node = document.createElement(tag); if (className) node.className = className;
+    if (text != null) node.textContent = text; return node;
+  }
+  function message(text, user = false) {
+    log.append(element("div", `message${user ? " user" : ""}`, text)); log.scrollTop = log.scrollHeight;
+  }
+  function action(label, text) {
+    const button = element("button", "action", label); button.type = "button";
+    button.addEventListener("click", () => send(text)); return button;
+  }
+  function render(payload) {
+    const p = payload || {}, items = p.items || [];
+    const cards = element("div", "cards");
+    if (["ideas", "destinations"].includes(p.kind)) items.forEach((d, i) => {
+      const card = element("article", "card"); card.append(element("b", "", `${i + 1}. ${d.name}, ${d.country}`));
+      if (d.total) card.append(element("p", "", `Демо-цена: от ${d.total}`));
+      card.append(action("Хочу сюда", `давай ${d.name}`)); cards.append(card);
+    });
+    if (["packages", "tent_transport"].includes(p.kind)) items.forEach((item, i) => {
+      const card = element("article", "card"); card.append(element("b", "", `${item.title || `Вариант ${i + 1}`} · ${item.total}`));
+      card.append(element("p", "", "Цена и расписание демонстрационные"), action("Выбрать", `беру ${i + 1} вариант`)); cards.append(card);
+    });
+    if (["cart", "tent_cart"].includes(p.kind)) {
+      const row = element("div", "actions"); row.append(action("Выбрать способ оплаты", "да, оформляй"), action("К вариантам", "нет")); cards.append(row);
+    }
+    if (p.kind === "payment") {
+      const row = element("div", "actions"); row.append(action("Демо-карта", "оплата картой"), action("Демо-СБП", "оплата СБП"));
+      if (p.method) row.append(action("Подтвердить демонстрацию", "да, подтверждаю"));
+      row.append(action("В корзину", "нет")); cards.append(row);
+    }
+    if (cards.childNodes.length) log.append(cards);
+    log.scrollTop = log.scrollHeight;
+  }
+  async function send(text) {
+    text = String(text || "").trim(); if (!text || busy) return;
+    busy = true; form.querySelector("button").disabled = true; input.value = ""; message(text, true);
+    try {
+      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, session_id: session }) });
+      if (!response.ok) throw new Error("unavailable");
+      const data = await response.json(); session = data.session_id;
+      let reply = data.reply || "";
+      if (["destinations", "packages"].includes(data.payload?.kind)) {
+        reply = reply.split("\n").slice(0, 2).join("\n") + "\nВыберите вариант ниже.";
+      }
+      message(reply); render(data.payload);
+    } catch (_) { message("Не удалось связаться с помощником. Попробуйте ещё раз."); }
+    finally { busy = false; form.querySelector("button").disabled = false; input.focus(); }
+  }
+  form.addEventListener("submit", (event) => { event.preventDefault(); send(input.value); });
+</script>
+</body>
+</html>

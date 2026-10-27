@@ -1,0 +1,3675 @@
+{
+  "origins": [
+    {
+      "name": "Москва",
+      "iata": "MOW",
+      "lat": 55.756,
+      "lon": 37.617,
+      "hub": true,
+      "rail": true,
+      "gen": "Москвы"
+    },
+    {
+      "name": "Санкт-Петербург",
+      "iata": "LED",
+      "lat": 59.939,
+      "lon": 30.316,
+      "hub": true,
+      "rail": true,
+      "gen": "Санкт-Петербурга"
+    },
+    {
+      "name": "Казань",
+      "iata": "KZN",
+      "lat": 55.796,
+      "lon": 49.106,
+      "hub": false,
+      "rail": true,
+      "gen": "Казани"
+    },
+    {
+      "name": "Екатеринбург",
+      "iata": "SVX",
+      "lat": 56.838,
+      "lon": 60.597,
+      "hub": false,
+      "rail": true,
+      "gen": "Екатеринбурга"
+    },
+    {
+      "name": "Новосибирск",
+      "iata": "OVB",
+      "lat": 55.03,
+      "lon": 82.92,
+      "hub": false,
+      "rail": true,
+      "gen": "Новосибирска"
+    },
+    {
+      "name": "Нижний Новгород",
+      "iata": "GOJ",
+      "lat": 56.327,
+      "lon": 44.006,
+      "hub": false,
+      "rail": true,
+      "gen": "Нижнего Новгорода"
+    },
+    {
+      "name": "Самара",
+      "iata": "KUF",
+      "lat": 53.195,
+      "lon": 50.1,
+      "hub": false,
+      "rail": true,
+      "gen": "Самары"
+    }
+  ],
+  "hubs": {
+    "Стамбул": [
+      41.262,
+      28.742
+    ],
+    "Дубай": [
+      25.253,
+      55.365
+    ],
+    "Белград": [
+      44.818,
+      20.309
+    ],
+    "Пекин": [
+      40.08,
+      116.585
+    ]
+  },
+  "destinations": [
+    {
+      "id": "sochi",
+      "name": "Сочи",
+      "country": "Россия",
+      "iata": "AER",
+      "lat": 43.585,
+      "lon": 39.723,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "mountains",
+        "ski",
+        "nature",
+        "food"
+      ],
+      "base_price": 9000,
+      "highlights": [
+        "море и горы в одной поездке",
+        "Красная Поляна",
+        "Олимпийский парк"
+      ],
+      "areas": [
+        {
+          "name": "Центральный",
+          "center_km": 0.8,
+          "beach_km": 0.3,
+          "airport_km": 28
+        },
+        {
+          "name": "Адлер",
+          "center_km": 22,
+          "beach_km": 0.3,
+          "airport_km": 4
+        },
+        {
+          "name": "Хоста",
+          "center_km": 15,
+          "beach_km": 0.2,
+          "airport_km": 14
+        },
+        {
+          "name": "Красная Поляна",
+          "center_km": 45,
+          "beach_km": null,
+          "airport_km": 40
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": [
+        43.55,
+        39.68
+      ],
+      "peak_months": [
+        7,
+        8,
+        1,
+        2
+      ],
+      "aliases": [
+        "сочи",
+        "адлер",
+        "красная поляна"
+      ],
+      "via": null
+    },
+    {
+      "id": "kaliningrad",
+      "name": "Калининград",
+      "country": "Россия",
+      "iata": "KGD",
+      "lat": 54.71,
+      "lon": 20.452,
+      "tags": [
+        "sea",
+        "city",
+        "culture",
+        "nature",
+        "food"
+      ],
+      "base_price": 6000,
+      "highlights": [
+        "Куршская коса",
+        "Светлогорск и Зеленоградск",
+        "немецкая архитектура"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.8,
+          "beach_km": 32,
+          "airport_km": 20
+        },
+        {
+          "name": "Амалиенау",
+          "center_km": 3,
+          "beach_km": 33,
+          "airport_km": 22
+        },
+        {
+          "name": "Зеленоградск",
+          "center_km": 30,
+          "beach_km": 0.2,
+          "airport_km": 18
+        },
+        {
+          "name": "Светлогорск",
+          "center_km": 38,
+          "beach_km": 0.3,
+          "airport_km": 30
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": [
+        54.98,
+        20.1
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "калининград",
+        "кенигсберг"
+      ],
+      "via": null
+    },
+    {
+      "id": "kazan",
+      "name": "Казань",
+      "country": "Россия",
+      "iata": "KZN",
+      "lat": 55.796,
+      "lon": 49.106,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 6500,
+      "highlights": [
+        "Казанский кремль",
+        "татарская кухня",
+        "Свияжск"
+      ],
+      "areas": [
+        {
+          "name": "Вахитовский",
+          "center_km": 0.6,
+          "beach_km": null,
+          "airport_km": 26
+        },
+        {
+          "name": "Старо-Татарская слобода",
+          "center_km": 1.3,
+          "beach_km": null,
+          "airport_km": 25
+        },
+        {
+          "name": "Ново-Савиновский",
+          "center_km": 5,
+          "beach_km": null,
+          "airport_km": 30
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "aliases": [
+        "казань"
+      ],
+      "via": null
+    },
+    {
+      "id": "spb",
+      "name": "Санкт-Петербург",
+      "country": "Россия",
+      "iata": "LED",
+      "lat": 59.939,
+      "lon": 30.316,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 8000,
+      "highlights": [
+        "Эрмитаж и музеи",
+        "белые ночи",
+        "Петергоф"
+      ],
+      "areas": [
+        {
+          "name": "Центральный",
+          "center_km": 0.7,
+          "beach_km": null,
+          "airport_km": 19
+        },
+        {
+          "name": "Адмиралтейский",
+          "center_km": 1.2,
+          "beach_km": null,
+          "airport_km": 18
+        },
+        {
+          "name": "Петроградский",
+          "center_km": 3,
+          "beach_km": null,
+          "airport_km": 24
+        },
+        {
+          "name": "Васильевский остров",
+          "center_km": 3.8,
+          "beach_km": null,
+          "airport_km": 25
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [
+        6,
+        7
+      ],
+      "aliases": [
+        "питер",
+        "спб",
+        "петербург",
+        "санкт-петербург",
+        "ленинград"
+      ],
+      "via": null
+    },
+    {
+      "id": "moscow",
+      "name": "Москва",
+      "country": "Россия",
+      "iata": "SVO",
+      "lat": 55.756,
+      "lon": 37.617,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 9000,
+      "highlights": [
+        "музеи и театры",
+        "гастрономия",
+        "парки"
+      ],
+      "areas": [
+        {
+          "name": "Тверской",
+          "center_km": 0.8,
+          "beach_km": null,
+          "airport_km": 30
+        },
+        {
+          "name": "Арбат",
+          "center_km": 1.5,
+          "beach_km": null,
+          "airport_km": 32
+        },
+        {
+          "name": "Замоскворечье",
+          "center_km": 2,
+          "beach_km": null,
+          "airport_km": 33
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "москва",
+        "мск"
+      ],
+      "via": null
+    },
+    {
+      "id": "kislovodsk",
+      "name": "Кисловодск",
+      "country": "Россия",
+      "iata": "MRV",
+      "lat": 43.905,
+      "lon": 42.716,
+      "tags": [
+        "mountains",
+        "spa",
+        "nature"
+      ],
+      "base_price": 6000,
+      "highlights": [
+        "минеральные воды и санатории",
+        "Курортный парк",
+        "Эльбрус на день"
+      ],
+      "areas": [
+        {
+          "name": "Курортный парк",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 65
+        },
+        {
+          "name": "Центр",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 64
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "кисловодск",
+        "минеральные воды",
+        "кмв",
+        "пятигорск"
+      ],
+      "via": null
+    },
+    {
+      "id": "altai",
+      "name": "Горный Алтай",
+      "country": "Россия",
+      "iata": "RGK",
+      "lat": 51.958,
+      "lon": 85.96,
+      "tags": [
+        "mountains",
+        "nature"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "Чуйский тракт",
+        "Телецкое озеро",
+        "горные треки"
+      ],
+      "areas": [
+        {
+          "name": "Чемал",
+          "center_km": 90,
+          "beach_km": null,
+          "airport_km": 95
+        },
+        {
+          "name": "Манжерок",
+          "center_km": 30,
+          "beach_km": null,
+          "airport_km": 32
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "алтай",
+        "горный алтай",
+        "горно-алтайск"
+      ],
+      "via": null
+    },
+    {
+      "id": "baikal",
+      "name": "Байкал (Иркутск)",
+      "country": "Россия",
+      "iata": "IKT",
+      "lat": 52.287,
+      "lon": 104.281,
+      "tags": [
+        "nature",
+        "mountains"
+      ],
+      "base_price": 6500,
+      "highlights": [
+        "Листвянка",
+        "остров Ольхон",
+        "лёд Байкала зимой"
+      ],
+      "areas": [
+        {
+          "name": "Иркутск, центр",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 8
+        },
+        {
+          "name": "Листвянка",
+          "center_km": 65,
+          "beach_km": null,
+          "airport_km": 70
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        2,
+        3,
+        7,
+        8
+      ],
+      "aliases": [
+        "байкал",
+        "иркутск",
+        "ольхон"
+      ],
+      "via": null
+    },
+    {
+      "id": "murmansk",
+      "name": "Мурманск и Териберка",
+      "country": "Россия",
+      "iata": "MMK",
+      "lat": 68.97,
+      "lon": 33.075,
+      "tags": [
+        "nature",
+        "exotic"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "северное сияние",
+        "Териберка",
+        "Баренцево море"
+      ],
+      "areas": [
+        {
+          "name": "Мурманск, центр",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 25
+        },
+        {
+          "name": "Териберка",
+          "center_km": 120,
+          "beach_km": null,
+          "airport_km": 130
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [
+        12,
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "мурманск",
+        "териберка",
+        "северное сияние"
+      ],
+      "via": null
+    },
+    {
+      "id": "dagestan",
+      "name": "Дагестан",
+      "country": "Россия",
+      "iata": "MCX",
+      "lat": 42.983,
+      "lon": 47.504,
+      "tags": [
+        "mountains",
+        "nature",
+        "sea",
+        "food",
+        "culture"
+      ],
+      "base_price": 5500,
+      "highlights": [
+        "Сулакский каньон",
+        "Дербент",
+        "горные аулы"
+      ],
+      "areas": [
+        {
+          "name": "Махачкала, центр",
+          "center_km": 1,
+          "beach_km": 1.5,
+          "airport_km": 15
+        },
+        {
+          "name": "Дербент",
+          "center_km": 120,
+          "beach_km": 2,
+          "airport_km": 125
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": [
+        42.95,
+        47.6
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "дагестан",
+        "махачкала",
+        "дербент"
+      ],
+      "via": null
+    },
+    {
+      "id": "vladivostok",
+      "name": "Владивосток",
+      "country": "Россия",
+      "iata": "VVO",
+      "lat": 43.115,
+      "lon": 131.885,
+      "tags": [
+        "sea",
+        "city",
+        "food",
+        "nature"
+      ],
+      "base_price": 7500,
+      "highlights": [
+        "мосты и сопки",
+        "морепродукты",
+        "остров Русский"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.8,
+          "beach_km": 1,
+          "airport_km": 45
+        },
+        {
+          "name": "Остров Русский",
+          "center_km": 12,
+          "beach_km": 0.5,
+          "airport_km": 55
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": [
+        43.05,
+        131.9
+      ],
+      "peak_months": [
+        8,
+        9
+      ],
+      "aliases": [
+        "владивосток"
+      ],
+      "via": null
+    },
+    {
+      "id": "kamchatka",
+      "name": "Камчатка",
+      "country": "Россия",
+      "iata": "PKC",
+      "lat": 53.037,
+      "lon": 158.656,
+      "tags": [
+        "nature",
+        "mountains",
+        "exotic"
+      ],
+      "base_price": 9000,
+      "highlights": [
+        "вулканы",
+        "Долина гейзеров на вертолёте",
+        "термальные источники"
+      ],
+      "areas": [
+        {
+          "name": "Петропавловск, центр",
+          "center_km": 1,
+          "beach_km": 2,
+          "airport_km": 30
+        },
+        {
+          "name": "Паратунка",
+          "center_km": 60,
+          "beach_km": null,
+          "airport_km": 45
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        7,
+        8,
+        9
+      ],
+      "aliases": [
+        "камчатка",
+        "петропавловск-камчатский"
+      ],
+      "via": null
+    },
+    {
+      "id": "sheregesh",
+      "name": "Шерегеш",
+      "country": "Россия",
+      "iata": "NOZ",
+      "lat": 52.921,
+      "lon": 87.989,
+      "tags": [
+        "ski",
+        "mountains"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "лучший снег в России",
+        "фрирайд",
+        "апре-ски"
+      ],
+      "areas": [
+        {
+          "name": "Сектор Е",
+          "center_km": 0.3,
+          "beach_km": null,
+          "airport_km": 160
+        },
+        {
+          "name": "Посёлок",
+          "center_km": 2,
+          "beach_km": null,
+          "airport_km": 158
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "шерегеш"
+      ],
+      "via": null
+    },
+    {
+      "id": "karelia",
+      "name": "Карелия",
+      "country": "Россия",
+      "iata": "PES",
+      "lat": 61.785,
+      "lon": 34.346,
+      "tags": [
+        "nature"
+      ],
+      "base_price": 6000,
+      "highlights": [
+        "Кижи",
+        "Рускеала",
+        "озёра и водопады"
+      ],
+      "areas": [
+        {
+          "name": "Петрозаводск, центр",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 12
+        },
+        {
+          "name": "Рускеала",
+          "center_km": 250,
+          "beach_km": null,
+          "airport_km": 250
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [
+        6,
+        7,
+        8
+      ],
+      "aliases": [
+        "карелия",
+        "петрозаводск",
+        "рускеала"
+      ],
+      "via": null
+    },
+    {
+      "id": "nnovgorod",
+      "name": "Нижний Новгород",
+      "country": "Россия",
+      "iata": "GOJ",
+      "lat": 56.327,
+      "lon": 44.006,
+      "tags": [
+        "city",
+        "culture"
+      ],
+      "base_price": 5000,
+      "highlights": [
+        "стрелка Оки и Волги",
+        "кремль",
+        "канатная дорога"
+      ],
+      "areas": [
+        {
+          "name": "Верхний город",
+          "center_km": 0.6,
+          "beach_km": null,
+          "airport_km": 18
+        },
+        {
+          "name": "Нижний город",
+          "center_km": 1.5,
+          "beach_km": null,
+          "airport_km": 16
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "нижний новгород",
+        "нижний"
+      ],
+      "via": null
+    },
+    {
+      "id": "antalya",
+      "name": "Анталья",
+      "country": "Турция",
+      "iata": "AYT",
+      "lat": 36.897,
+      "lon": 30.713,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "culture",
+        "food"
+      ],
+      "base_price": 8000,
+      "highlights": [
+        "всё включено",
+        "античные города",
+        "тёплое море до ноября"
+      ],
+      "areas": [
+        {
+          "name": "Лара",
+          "center_km": 12,
+          "beach_km": 0.1,
+          "airport_km": 12
+        },
+        {
+          "name": "Кемер",
+          "center_km": 42,
+          "beach_km": 0.2,
+          "airport_km": 55
+        },
+        {
+          "name": "Белек",
+          "center_km": 35,
+          "beach_km": 0.2,
+          "airport_km": 30
+        },
+        {
+          "name": "Старый город",
+          "center_km": 0.5,
+          "beach_km": 1.5,
+          "airport_km": 13
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": [
+        36.8,
+        30.75
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "анталья",
+        "анталия",
+        "турция",
+        "кемер",
+        "белек"
+      ],
+      "via": null
+    },
+    {
+      "id": "istanbul",
+      "name": "Стамбул",
+      "country": "Турция",
+      "iata": "IST",
+      "lat": 41.008,
+      "lon": 28.978,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 9000,
+      "highlights": [
+        "Айя-София",
+        "Босфор",
+        "гастрономия"
+      ],
+      "areas": [
+        {
+          "name": "Султанахмет",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 45
+        },
+        {
+          "name": "Бейоглу",
+          "center_km": 2,
+          "beach_km": null,
+          "airport_km": 42
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        5,
+        6,
+        9
+      ],
+      "aliases": [
+        "стамбул"
+      ],
+      "via": null
+    },
+    {
+      "id": "dubai",
+      "name": "Дубай",
+      "country": "ОАЭ",
+      "iata": "DXB",
+      "lat": 25.204,
+      "lon": 55.27,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "city",
+        "exotic"
+      ],
+      "base_price": 14000,
+      "highlights": [
+        "пляжи и небоскрёбы",
+        "шопинг",
+        "пустыня"
+      ],
+      "areas": [
+        {
+          "name": "Дубай Марина",
+          "center_km": 25,
+          "beach_km": 0.3,
+          "airport_km": 35
+        },
+        {
+          "name": "Джумейра",
+          "center_km": 12,
+          "beach_km": 0.2,
+          "airport_km": 20
+        },
+        {
+          "name": "Даунтаун",
+          "center_km": 0.5,
+          "beach_km": 6,
+          "airport_km": 15
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": [
+        25.15,
+        55.15
+      ],
+      "peak_months": [
+        12,
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "дубай",
+        "оаэ",
+        "эмираты"
+      ],
+      "via": null
+    },
+    {
+      "id": "hurghada",
+      "name": "Хургада",
+      "country": "Египет",
+      "iata": "HRG",
+      "lat": 27.257,
+      "lon": 33.811,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "коралловые рифы",
+        "всё включено",
+        "тепло круглый год"
+      ],
+      "areas": [
+        {
+          "name": "Сахл-Хашиш",
+          "center_km": 20,
+          "beach_km": 0.1,
+          "airport_km": 15
+        },
+        {
+          "name": "Эль-Дахар",
+          "center_km": 2,
+          "beach_km": 0.5,
+          "airport_km": 6
+        }
+      ],
+      "visa": "по прибытии, $25",
+      "rail": false,
+      "sea": [
+        27.2,
+        33.9
+      ],
+      "peak_months": [
+        12,
+        1,
+        5,
+        10
+      ],
+      "aliases": [
+        "хургада",
+        "египет"
+      ],
+      "via": null
+    },
+    {
+      "id": "sharm",
+      "name": "Шарм-эль-Шейх",
+      "country": "Египет",
+      "iata": "SSH",
+      "lat": 27.916,
+      "lon": 34.33,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 7500,
+      "highlights": [
+        "снорклинг",
+        "Рас-Мохаммед",
+        "Синай"
+      ],
+      "areas": [
+        {
+          "name": "Наама-Бей",
+          "center_km": 1,
+          "beach_km": 0.2,
+          "airport_km": 12
+        },
+        {
+          "name": "Набк",
+          "center_km": 20,
+          "beach_km": 0.1,
+          "airport_km": 10
+        }
+      ],
+      "visa": "штамп Синай бесплатно",
+      "rail": false,
+      "sea": [
+        27.9,
+        34.4
+      ],
+      "peak_months": [
+        12,
+        1,
+        10
+      ],
+      "aliases": [
+        "шарм",
+        "шарм-эль-шейх"
+      ],
+      "via": null
+    },
+    {
+      "id": "phuket",
+      "name": "Пхукет",
+      "country": "Таиланд",
+      "iata": "HKT",
+      "lat": 7.88,
+      "lon": 98.392,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "food"
+      ],
+      "base_price": 8000,
+      "highlights": [
+        "пляжи Андаманского моря",
+        "острова Пхи-Пхи",
+        "тайская кухня"
+      ],
+      "areas": [
+        {
+          "name": "Патонг",
+          "center_km": 2,
+          "beach_km": 0.2,
+          "airport_km": 40
+        },
+        {
+          "name": "Карон",
+          "center_km": 8,
+          "beach_km": 0.2,
+          "airport_km": 45
+        },
+        {
+          "name": "Камала",
+          "center_km": 10,
+          "beach_km": 0.3,
+          "airport_km": 30
+        }
+      ],
+      "visa": "не нужна (60 дней)",
+      "rail": false,
+      "sea": [
+        7.88,
+        98.25
+      ],
+      "peak_months": [
+        12,
+        1,
+        2
+      ],
+      "aliases": [
+        "пхукет",
+        "таиланд",
+        "тайланд"
+      ],
+      "via": null
+    },
+    {
+      "id": "nhatrang",
+      "name": "Нячанг",
+      "country": "Вьетнам",
+      "iata": "CXR",
+      "lat": 12.238,
+      "lon": 109.197,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "food"
+      ],
+      "base_price": 5500,
+      "highlights": [
+        "недорогой пляжный отдых",
+        "острова",
+        "грязевые ванны"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 1,
+          "beach_km": 0.2,
+          "airport_km": 35
+        },
+        {
+          "name": "Камрань",
+          "center_km": 30,
+          "beach_km": 0.1,
+          "airport_km": 5
+        }
+      ],
+      "visa": "электронная, $25",
+      "rail": false,
+      "sea": [
+        12.23,
+        109.25
+      ],
+      "peak_months": [
+        2,
+        3,
+        4,
+        7
+      ],
+      "aliases": [
+        "нячанг",
+        "вьетнам"
+      ],
+      "via": null
+    },
+    {
+      "id": "sanya",
+      "name": "Санья (Хайнань)",
+      "country": "Китай",
+      "iata": "SYX",
+      "lat": 18.252,
+      "lon": 109.512,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 9000,
+      "highlights": [
+        "тропический остров",
+        "бухта Ялунвань",
+        "безвиз для россиян"
+      ],
+      "areas": [
+        {
+          "name": "Ялунвань",
+          "center_km": 20,
+          "beach_km": 0.1,
+          "airport_km": 30
+        },
+        {
+          "name": "Санья-Бэй",
+          "center_km": 3,
+          "beach_km": 0.2,
+          "airport_km": 10
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": [
+        18.2,
+        109.5
+      ],
+      "peak_months": [
+        1,
+        2
+      ],
+      "aliases": [
+        "санья",
+        "хайнань",
+        "китай"
+      ],
+      "via": null
+    },
+    {
+      "id": "maldives",
+      "name": "Мальдивы",
+      "country": "Мальдивы",
+      "iata": "MLE",
+      "lat": 4.175,
+      "lon": 73.509,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 30000,
+      "highlights": [
+        "виллы над водой",
+        "дайвинг",
+        "белый песок"
+      ],
+      "areas": [
+        {
+          "name": "Атолл Каафу",
+          "center_km": 25,
+          "beach_km": 0.0,
+          "airport_km": 25
+        },
+        {
+          "name": "Мале",
+          "center_km": 1,
+          "beach_km": 0.5,
+          "airport_km": 2
+        }
+      ],
+      "visa": "по прибытии бесплатно",
+      "rail": false,
+      "sea": [
+        4.1,
+        73.5
+      ],
+      "peak_months": [
+        12,
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "мальдивы"
+      ],
+      "via": null
+    },
+    {
+      "id": "srilanka",
+      "name": "Шри-Ланка",
+      "country": "Шри-Ланка",
+      "iata": "CMB",
+      "lat": 6.927,
+      "lon": 79.861,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "nature"
+      ],
+      "base_price": 6500,
+      "highlights": [
+        "чайные плантации",
+        "слоны",
+        "серфинг"
+      ],
+      "areas": [
+        {
+          "name": "Хиккадува",
+          "center_km": 100,
+          "beach_km": 0.1,
+          "airport_km": 120
+        },
+        {
+          "name": "Бентота",
+          "center_km": 65,
+          "beach_km": 0.1,
+          "airport_km": 85
+        }
+      ],
+      "visa": "электронная, $50",
+      "rail": false,
+      "sea": [
+        6.1,
+        80.05
+      ],
+      "peak_months": [
+        12,
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "шри-ланка",
+        "шри ланка",
+        "цейлон"
+      ],
+      "via": null
+    },
+    {
+      "id": "tbilisi",
+      "name": "Тбилиси",
+      "country": "Грузия",
+      "iata": "TBS",
+      "lat": 41.716,
+      "lon": 44.783,
+      "tags": [
+        "city",
+        "food",
+        "culture",
+        "mountains"
+      ],
+      "base_price": 6000,
+      "highlights": [
+        "вино и кухня",
+        "старый город",
+        "Казбеги"
+      ],
+      "areas": [
+        {
+          "name": "Старый город",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 18
+        },
+        {
+          "name": "Сололаки",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 19
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        5,
+        9,
+        10
+      ],
+      "aliases": [
+        "тбилиси",
+        "грузия"
+      ],
+      "via": null
+    },
+    {
+      "id": "batumi",
+      "name": "Батуми",
+      "country": "Грузия",
+      "iata": "BUS",
+      "lat": 41.645,
+      "lon": 41.637,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "food"
+      ],
+      "base_price": 6000,
+      "highlights": [
+        "Чёрное море",
+        "Ботанический сад",
+        "аджарская кухня"
+      ],
+      "areas": [
+        {
+          "name": "Старый Батуми",
+          "center_km": 0.5,
+          "beach_km": 0.4,
+          "airport_km": 3
+        },
+        {
+          "name": "Новый бульвар",
+          "center_km": 3,
+          "beach_km": 0.2,
+          "airport_km": 5
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": [
+        41.65,
+        41.58
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "батуми"
+      ],
+      "via": null
+    },
+    {
+      "id": "yerevan",
+      "name": "Ереван",
+      "country": "Армения",
+      "iata": "EVN",
+      "lat": 40.179,
+      "lon": 44.499,
+      "tags": [
+        "city",
+        "food",
+        "culture",
+        "mountains"
+      ],
+      "base_price": 6000,
+      "highlights": [
+        "коньяк и кухня",
+        "Гарни и Гегард",
+        "Севан"
+      ],
+      "areas": [
+        {
+          "name": "Кентрон",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 12
+        },
+        {
+          "name": "Арабкир",
+          "center_km": 3,
+          "beach_km": null,
+          "airport_km": 15
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        5,
+        9
+      ],
+      "aliases": [
+        "ереван",
+        "армения"
+      ],
+      "via": null
+    },
+    {
+      "id": "samarkand",
+      "name": "Самарканд",
+      "country": "Узбекистан",
+      "iata": "SKD",
+      "lat": 39.654,
+      "lon": 66.976,
+      "tags": [
+        "city",
+        "culture",
+        "food",
+        "exotic"
+      ],
+      "base_price": 5000,
+      "highlights": [
+        "Регистан",
+        "Великий шёлковый путь",
+        "плов"
+      ],
+      "areas": [
+        {
+          "name": "Регистан",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 6
+        },
+        {
+          "name": "Новый город",
+          "center_km": 2,
+          "beach_km": null,
+          "airport_km": 5
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        4,
+        5,
+        9,
+        10
+      ],
+      "aliases": [
+        "самарканд",
+        "узбекистан"
+      ],
+      "via": null
+    },
+    {
+      "id": "baku",
+      "name": "Баку",
+      "country": "Азербайджан",
+      "iata": "GYD",
+      "lat": 40.409,
+      "lon": 49.867,
+      "tags": [
+        "city",
+        "sea",
+        "food",
+        "culture"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "Ичери-шехер",
+        "Каспий",
+        "Пламенные башни"
+      ],
+      "areas": [
+        {
+          "name": "Ичери-шехер",
+          "center_km": 0.5,
+          "beach_km": 1,
+          "airport_km": 25
+        },
+        {
+          "name": "Приморский бульвар",
+          "center_km": 1,
+          "beach_km": 0.3,
+          "airport_km": 24
+        }
+      ],
+      "visa": "электронная, $26",
+      "rail": false,
+      "sea": [
+        40.35,
+        49.9
+      ],
+      "peak_months": [
+        5,
+        6,
+        9
+      ],
+      "aliases": [
+        "баку",
+        "азербайджан"
+      ],
+      "via": null
+    },
+    {
+      "id": "minsk",
+      "name": "Минск",
+      "country": "Беларусь",
+      "iata": "MSQ",
+      "lat": 53.902,
+      "lon": 27.561,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 5000,
+      "highlights": [
+        "Верхний город",
+        "Несвиж и Мир",
+        "драники"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 42
+        },
+        {
+          "name": "Немига",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 43
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "минск",
+        "беларусь",
+        "белоруссия"
+      ],
+      "via": null
+    },
+    {
+      "id": "almaty",
+      "name": "Алматы",
+      "country": "Казахстан",
+      "iata": "ALA",
+      "lat": 43.238,
+      "lon": 76.946,
+      "tags": [
+        "city",
+        "mountains",
+        "ski",
+        "nature"
+      ],
+      "base_price": 6500,
+      "highlights": [
+        "Медеу и Шымбулак",
+        "Большое Алматинское озеро",
+        "Чарынский каньон"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.8,
+          "beach_km": null,
+          "airport_km": 17
+        },
+        {
+          "name": "Медеу",
+          "center_km": 15,
+          "beach_km": null,
+          "airport_km": 30
+        }
+      ],
+      "visa": "не нужна",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        1,
+        2,
+        7,
+        8
+      ],
+      "aliases": [
+        "алматы",
+        "казахстан"
+      ],
+      "via": null
+    },
+    {
+      "id": "bali",
+      "name": "Бали",
+      "country": "Индонезия",
+      "iata": "DPS",
+      "lat": -8.409,
+      "lon": 115.189,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "nature"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "рисовые террасы",
+        "серфинг",
+        "храмы"
+      ],
+      "areas": [
+        {
+          "name": "Убуд",
+          "center_km": 35,
+          "beach_km": 30,
+          "airport_km": 37
+        },
+        {
+          "name": "Семиньяк",
+          "center_km": 10,
+          "beach_km": 0.3,
+          "airport_km": 12
+        },
+        {
+          "name": "Нуса-Дуа",
+          "center_km": 15,
+          "beach_km": 0.1,
+          "airport_km": 13
+        }
+      ],
+      "visa": "по прибытии, $35",
+      "rail": false,
+      "sea": [
+        -8.75,
+        115.15
+      ],
+      "peak_months": [
+        7,
+        8,
+        12
+      ],
+      "aliases": [
+        "бали",
+        "индонезия"
+      ],
+      "via": null
+    },
+    {
+      "id": "goa",
+      "name": "Гоа",
+      "country": "Индия",
+      "iata": "GOI",
+      "lat": 15.299,
+      "lon": 74.124,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 4500,
+      "highlights": [
+        "бюджетные пляжи",
+        "португальский колорит",
+        "рынки"
+      ],
+      "areas": [
+        {
+          "name": "Северный Гоа",
+          "center_km": 40,
+          "beach_km": 0.2,
+          "airport_km": 40
+        },
+        {
+          "name": "Южный Гоа",
+          "center_km": 30,
+          "beach_km": 0.2,
+          "airport_km": 25
+        }
+      ],
+      "visa": "электронная, $25",
+      "rail": false,
+      "sea": [
+        15.3,
+        73.8
+      ],
+      "peak_months": [
+        12,
+        1
+      ],
+      "aliases": [
+        "гоа",
+        "индия"
+      ],
+      "via": null
+    },
+    {
+      "id": "budva",
+      "name": "Будва",
+      "country": "Черногория",
+      "iata": "TIV",
+      "lat": 42.286,
+      "lon": 18.84,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "culture",
+        "nature"
+      ],
+      "base_price": 8000,
+      "highlights": [
+        "Адриатика",
+        "Старый город",
+        "Которский залив"
+      ],
+      "areas": [
+        {
+          "name": "Старый город",
+          "center_km": 0.5,
+          "beach_km": 0.2,
+          "airport_km": 20
+        },
+        {
+          "name": "Бечичи",
+          "center_km": 3,
+          "beach_km": 0.1,
+          "airport_km": 22
+        },
+        {
+          "name": "Петровац",
+          "center_km": 17,
+          "beach_km": 0.2,
+          "airport_km": 38
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": [
+        42.27,
+        18.84
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "будва",
+        "черногори",
+        "монтенегро",
+        "тиват"
+      ],
+      "via": "Белград"
+    },
+    {
+      "id": "cyprus",
+      "name": "Кипр (Айя-Напа)",
+      "country": "Кипр",
+      "iata": "LCA",
+      "lat": 34.985,
+      "lon": 33.999,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "culture",
+        "food"
+      ],
+      "base_price": 10000,
+      "highlights": [
+        "самое тёплое море Европы",
+        "пляжи с голубым флагом",
+        "античный Курион"
+      ],
+      "areas": [
+        {
+          "name": "Айя-Напа",
+          "center_km": 0.8,
+          "beach_km": 0.2,
+          "airport_km": 45
+        },
+        {
+          "name": "Протарас",
+          "center_km": 9,
+          "beach_km": 0.1,
+          "airport_km": 55
+        },
+        {
+          "name": "Ларнака",
+          "center_km": 40,
+          "beach_km": 0.3,
+          "airport_km": 6
+        }
+      ],
+      "visa": "национальная виза Кипра",
+      "rail": false,
+      "sea": [
+        34.97,
+        34.0
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "кипр",
+        "айя-напа",
+        "айя напа",
+        "ларнак",
+        "лимасол",
+        "протарас",
+        "пафос"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "crete",
+      "name": "Крит",
+      "country": "Греция",
+      "iata": "HER",
+      "lat": 35.339,
+      "lon": 25.144,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "culture",
+        "food"
+      ],
+      "base_price": 10000,
+      "highlights": [
+        "Кносский дворец",
+        "пляжи Балоса и Элафониси",
+        "критская кухня"
+      ],
+      "areas": [
+        {
+          "name": "Ираклион",
+          "center_km": 1,
+          "beach_km": 0.8,
+          "airport_km": 5
+        },
+        {
+          "name": "Херсониссос",
+          "center_km": 25,
+          "beach_km": 0.2,
+          "airport_km": 22
+        },
+        {
+          "name": "Ретимно",
+          "center_km": 75,
+          "beach_km": 0.2,
+          "airport_km": 80
+        }
+      ],
+      "visa": "шенгенская",
+      "rail": false,
+      "sea": [
+        35.37,
+        25.15
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "крит",
+        "греци",
+        "ираклион",
+        "ханья"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "rome",
+      "name": "Рим",
+      "country": "Италия",
+      "iata": "FCO",
+      "lat": 41.903,
+      "lon": 12.496,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 15000,
+      "highlights": [
+        "Колизей",
+        "Ватикан",
+        "паста и джелато"
+      ],
+      "areas": [
+        {
+          "name": "Центро Сторико",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 30
+        },
+        {
+          "name": "Трастевере",
+          "center_km": 2,
+          "beach_km": null,
+          "airport_km": 27
+        },
+        {
+          "name": "Термини",
+          "center_km": 2,
+          "beach_km": null,
+          "airport_km": 31
+        }
+      ],
+      "visa": "шенгенская",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        4,
+        5,
+        9,
+        10
+      ],
+      "aliases": [
+        "рим",
+        "итали",
+        "ватикан"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "barcelona",
+      "name": "Барселона",
+      "country": "Испания",
+      "iata": "BCN",
+      "lat": 41.387,
+      "lon": 2.17,
+      "tags": [
+        "sea",
+        "beach",
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 15000,
+      "highlights": [
+        "Гауди и Саграда Фамилия",
+        "городские пляжи",
+        "тапас"
+      ],
+      "areas": [
+        {
+          "name": "Эшампле",
+          "center_km": 1,
+          "beach_km": 2.5,
+          "airport_km": 15
+        },
+        {
+          "name": "Готический квартал",
+          "center_km": 0.3,
+          "beach_km": 1.2,
+          "airport_km": 14
+        },
+        {
+          "name": "Барселонета",
+          "center_km": 2,
+          "beach_km": 0.1,
+          "airport_km": 15
+        }
+      ],
+      "visa": "шенгенская",
+      "rail": false,
+      "sea": [
+        41.37,
+        2.2
+      ],
+      "peak_months": [
+        6,
+        7,
+        8
+      ],
+      "aliases": [
+        "барселон",
+        "испани",
+        "каталони"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "paris",
+      "name": "Париж",
+      "country": "Франция",
+      "iata": "CDG",
+      "lat": 48.857,
+      "lon": 2.352,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 18000,
+      "highlights": [
+        "Лувр",
+        "Эйфелева башня",
+        "кафе и бистро"
+      ],
+      "areas": [
+        {
+          "name": "Ле Марэ",
+          "center_km": 1.5,
+          "beach_km": null,
+          "airport_km": 26
+        },
+        {
+          "name": "Латинский квартал",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 28
+        },
+        {
+          "name": "Монмартр",
+          "center_km": 4,
+          "beach_km": null,
+          "airport_km": 24
+        }
+      ],
+      "visa": "шенгенская",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        5,
+        6,
+        9,
+        12
+      ],
+      "aliases": [
+        "париж",
+        "франци"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "lisbon",
+      "name": "Лиссабон",
+      "country": "Португалия",
+      "iata": "LIS",
+      "lat": 38.722,
+      "lon": -9.139,
+      "tags": [
+        "sea",
+        "beach",
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 12000,
+      "highlights": [
+        "трамвай 28",
+        "океан и Кашкайш",
+        "паштел-де-ната"
+      ],
+      "areas": [
+        {
+          "name": "Байша",
+          "center_km": 0.3,
+          "beach_km": 15,
+          "airport_km": 7
+        },
+        {
+          "name": "Алфама",
+          "center_km": 1,
+          "beach_km": 15,
+          "airport_km": 7
+        },
+        {
+          "name": "Кашкайш",
+          "center_km": 30,
+          "beach_km": 0.2,
+          "airport_km": 35
+        }
+      ],
+      "visa": "шенгенская",
+      "rail": false,
+      "sea": [
+        38.68,
+        -9.33
+      ],
+      "peak_months": [
+        6,
+        7,
+        8
+      ],
+      "aliases": [
+        "лиссабон",
+        "португали"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "prague",
+      "name": "Прага",
+      "country": "Чехия",
+      "iata": "PRG",
+      "lat": 50.075,
+      "lon": 14.437,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 10000,
+      "highlights": [
+        "Карлов мост",
+        "Пражский Град",
+        "пивные"
+      ],
+      "areas": [
+        {
+          "name": "Старе Место",
+          "center_km": 0.3,
+          "beach_km": null,
+          "airport_km": 17
+        },
+        {
+          "name": "Мала Страна",
+          "center_km": 1.5,
+          "beach_km": null,
+          "airport_km": 14
+        },
+        {
+          "name": "Винограды",
+          "center_km": 2.5,
+          "beach_km": null,
+          "airport_km": 18
+        }
+      ],
+      "visa": "шенгенская",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        5,
+        6,
+        12
+      ],
+      "aliases": [
+        "праг",
+        "чехи"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "budapest",
+      "name": "Будапешт",
+      "country": "Венгрия",
+      "iata": "BUD",
+      "lat": 47.498,
+      "lon": 19.04,
+      "tags": [
+        "city",
+        "culture",
+        "spa",
+        "food"
+      ],
+      "base_price": 9000,
+      "highlights": [
+        "термальные купальни",
+        "Парламент на Дунае",
+        "руин-бары"
+      ],
+      "areas": [
+        {
+          "name": "Пешт, центр",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 20
+        },
+        {
+          "name": "Буда",
+          "center_km": 2,
+          "beach_km": null,
+          "airport_km": 24
+        }
+      ],
+      "visa": "шенгенская",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        5,
+        6,
+        12
+      ],
+      "aliases": [
+        "будапешт",
+        "венгри"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "belgrade",
+      "name": "Белград",
+      "country": "Сербия",
+      "iata": "BEG",
+      "lat": 44.787,
+      "lon": 20.457,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "крепость Калемегдан",
+        "Дунай и Сава",
+        "балканская кухня"
+      ],
+      "areas": [
+        {
+          "name": "Стари Град",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 17
+        },
+        {
+          "name": "Врачар",
+          "center_km": 2,
+          "beach_km": null,
+          "airport_km": 18
+        },
+        {
+          "name": "Земун",
+          "center_km": 7,
+          "beach_km": null,
+          "airport_km": 12
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        5,
+        6,
+        9
+      ],
+      "aliases": [
+        "белград",
+        "серби"
+      ],
+      "via": null
+    },
+    {
+      "id": "dubrovnik",
+      "name": "Дубровник",
+      "country": "Хорватия",
+      "iata": "DBV",
+      "lat": 42.65,
+      "lon": 18.094,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "culture"
+      ],
+      "base_price": 14000,
+      "highlights": [
+        "стены Старого города",
+        "Адриатика",
+        "острова Элафити"
+      ],
+      "areas": [
+        {
+          "name": "Старый город",
+          "center_km": 0.3,
+          "beach_km": 0.3,
+          "airport_km": 20
+        },
+        {
+          "name": "Лапад",
+          "center_km": 4,
+          "beach_km": 0.2,
+          "airport_km": 24
+        }
+      ],
+      "visa": "шенгенская",
+      "rail": false,
+      "sea": [
+        42.63,
+        18.1
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "дубровник",
+        "хорвати"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "durres",
+      "name": "Дуррес",
+      "country": "Албания",
+      "iata": "TIA",
+      "lat": 41.323,
+      "lon": 19.441,
+      "tags": [
+        "sea",
+        "beach",
+        "warm"
+      ],
+      "base_price": 5000,
+      "highlights": [
+        "недорогая Адриатика",
+        "длинные песчаные пляжи",
+        "Тирана рядом"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.5,
+          "beach_km": 0.3,
+          "airport_km": 35
+        },
+        {
+          "name": "Голем",
+          "center_km": 12,
+          "beach_km": 0.1,
+          "airport_km": 45
+        }
+      ],
+      "visa": "не нужна (90 дней)",
+      "rail": false,
+      "sea": [
+        41.3,
+        19.42
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "дуррес",
+        "албани",
+        "тиран",
+        "саранд"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "tokyo",
+      "name": "Токио",
+      "country": "Япония",
+      "iata": "HND",
+      "lat": 35.681,
+      "lon": 139.767,
+      "tags": [
+        "city",
+        "culture",
+        "food",
+        "exotic"
+      ],
+      "base_price": 14000,
+      "highlights": [
+        "сакура и момидзи",
+        "Сибуя и Синдзюку",
+        "Фудзи рядом"
+      ],
+      "areas": [
+        {
+          "name": "Синдзюку",
+          "center_km": 6,
+          "beach_km": null,
+          "airport_km": 20
+        },
+        {
+          "name": "Гиндза",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 15
+        },
+        {
+          "name": "Асакуса",
+          "center_km": 5,
+          "beach_km": null,
+          "airport_km": 18
+        }
+      ],
+      "visa": "нужна, электронная виза Японии",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        3,
+        4,
+        11
+      ],
+      "aliases": [
+        "токио",
+        "япони",
+        "фудзи"
+      ],
+      "via": "Пекин"
+    },
+    {
+      "id": "seoul",
+      "name": "Сеул",
+      "country": "Южная Корея",
+      "iata": "ICN",
+      "lat": 37.566,
+      "lon": 126.978,
+      "tags": [
+        "city",
+        "culture",
+        "food",
+        "exotic"
+      ],
+      "base_price": 10000,
+      "highlights": [
+        "дворцы Чосон",
+        "K-pop и Мёндон",
+        "корейская кухня"
+      ],
+      "areas": [
+        {
+          "name": "Мёндон",
+          "center_km": 0.8,
+          "beach_km": null,
+          "airport_km": 52
+        },
+        {
+          "name": "Каннам",
+          "center_km": 9,
+          "beach_km": null,
+          "airport_km": 55
+        },
+        {
+          "name": "Хондэ",
+          "center_km": 6,
+          "beach_km": null,
+          "airport_km": 45
+        }
+      ],
+      "visa": "не нужна (60 дней)",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        4,
+        5,
+        10
+      ],
+      "aliases": [
+        "сеул",
+        "коре"
+      ],
+      "via": "Пекин"
+    },
+    {
+      "id": "bangkok",
+      "name": "Бангкок",
+      "country": "Таиланд",
+      "iata": "BKK",
+      "lat": 13.756,
+      "lon": 100.502,
+      "tags": [
+        "city",
+        "culture",
+        "food",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 5000,
+      "highlights": [
+        "храм Изумрудного Будды",
+        "уличная еда",
+        "шопинг"
+      ],
+      "areas": [
+        {
+          "name": "Сукхумвит",
+          "center_km": 6,
+          "beach_km": null,
+          "airport_km": 25
+        },
+        {
+          "name": "Риверсайд",
+          "center_km": 3,
+          "beach_km": null,
+          "airport_km": 32
+        },
+        {
+          "name": "Силом",
+          "center_km": 4,
+          "beach_km": null,
+          "airport_km": 30
+        }
+      ],
+      "visa": "не нужна (60 дней)",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        12,
+        1
+      ],
+      "aliases": [
+        "бангкок"
+      ],
+      "via": null
+    },
+    {
+      "id": "phuquoc",
+      "name": "Фукуок",
+      "country": "Вьетнам",
+      "iata": "PQC",
+      "lat": 10.227,
+      "lon": 103.964,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 6000,
+      "highlights": [
+        "белые пляжи Сао",
+        "канатная дорога над морем",
+        "безвиз на остров"
+      ],
+      "areas": [
+        {
+          "name": "Зыонгдонг",
+          "center_km": 1,
+          "beach_km": 0.2,
+          "airport_km": 8
+        },
+        {
+          "name": "Южный берег",
+          "center_km": 25,
+          "beach_km": 0.1,
+          "airport_km": 18
+        },
+        {
+          "name": "Онланг",
+          "center_km": 8,
+          "beach_km": 0.2,
+          "airport_km": 14
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": [
+        10.2,
+        103.9
+      ],
+      "peak_months": [
+        12,
+        1,
+        2
+      ],
+      "aliases": [
+        "фукуок",
+        "фу куок"
+      ],
+      "via": null
+    },
+    {
+      "id": "beijing",
+      "name": "Пекин",
+      "country": "Китай",
+      "iata": "PEK",
+      "lat": 39.904,
+      "lon": 116.407,
+      "tags": [
+        "city",
+        "culture",
+        "food",
+        "exotic"
+      ],
+      "base_price": 8000,
+      "highlights": [
+        "Запретный город",
+        "Великая стена",
+        "утка по-пекински"
+      ],
+      "areas": [
+        {
+          "name": "Дунчэн",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 27
+        },
+        {
+          "name": "Саньлитунь",
+          "center_km": 5,
+          "beach_km": null,
+          "airport_km": 22
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        5,
+        9,
+        10
+      ],
+      "aliases": [
+        "пекин",
+        "великая стена"
+      ],
+      "via": null
+    },
+    {
+      "id": "kualalumpur",
+      "name": "Куала-Лумпур",
+      "country": "Малайзия",
+      "iata": "KUL",
+      "lat": 3.139,
+      "lon": 101.687,
+      "tags": [
+        "city",
+        "food",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 6000,
+      "highlights": [
+        "башни Петронас",
+        "пещеры Бату",
+        "фуд-корты"
+      ],
+      "areas": [
+        {
+          "name": "Букит Бинтанг",
+          "center_km": 1.5,
+          "beach_km": null,
+          "airport_km": 55
+        },
+        {
+          "name": "KLCC",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 55
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        12,
+        1
+      ],
+      "aliases": [
+        "куала-лумпур",
+        "куала лумпур",
+        "малайзи"
+      ],
+      "via": "Дубай"
+    },
+    {
+      "id": "singapore",
+      "name": "Сингапур",
+      "country": "Сингапур",
+      "iata": "SIN",
+      "lat": 1.29,
+      "lon": 103.852,
+      "tags": [
+        "city",
+        "food",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 18000,
+      "highlights": [
+        "Marina Bay Sands",
+        "сады у залива",
+        "хокер-центры"
+      ],
+      "areas": [
+        {
+          "name": "Марина-Бэй",
+          "center_km": 1,
+          "beach_km": 3,
+          "airport_km": 18
+        },
+        {
+          "name": "Чайна-таун",
+          "center_km": 1.5,
+          "beach_km": 4,
+          "airport_km": 20
+        },
+        {
+          "name": "Сентоза",
+          "center_km": 7,
+          "beach_km": 0.2,
+          "airport_km": 25
+        }
+      ],
+      "visa": "нужна, электронная",
+      "rail": false,
+      "sea": [
+        1.25,
+        103.85
+      ],
+      "peak_months": [
+        12,
+        7
+      ],
+      "aliases": [
+        "сингапур"
+      ],
+      "via": "Дубай"
+    },
+    {
+      "id": "doha",
+      "name": "Доха",
+      "country": "Катар",
+      "iata": "DOH",
+      "lat": 25.285,
+      "lon": 51.531,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "city",
+        "culture"
+      ],
+      "base_price": 12000,
+      "highlights": [
+        "Музей исламского искусства",
+        "Сук Вакиф",
+        "зимнее солнце"
+      ],
+      "areas": [
+        {
+          "name": "Вест-Бэй",
+          "center_km": 5,
+          "beach_km": 0.5,
+          "airport_km": 15
+        },
+        {
+          "name": "Мушейреб",
+          "center_km": 1,
+          "beach_km": 2,
+          "airport_km": 10
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": [
+        25.3,
+        51.6
+      ],
+      "peak_months": [
+        12,
+        1,
+        2
+      ],
+      "aliases": [
+        "доха",
+        "катар"
+      ],
+      "via": null
+    },
+    {
+      "id": "muscat",
+      "name": "Маскат",
+      "country": "Оман",
+      "iata": "MCT",
+      "lat": 23.588,
+      "lon": 58.383,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "nature",
+        "culture"
+      ],
+      "base_price": 11000,
+      "highlights": [
+        "фьорды Мусандама",
+        "вади и пустыня",
+        "спокойный Восток"
+      ],
+      "areas": [
+        {
+          "name": "Курум",
+          "center_km": 5,
+          "beach_km": 0.2,
+          "airport_km": 12
+        },
+        {
+          "name": "Барр-эль-Джисса",
+          "center_km": 20,
+          "beach_km": 0.1,
+          "airport_km": 40
+        }
+      ],
+      "visa": "не нужна (14 дней)",
+      "rail": false,
+      "sea": [
+        23.62,
+        58.6
+      ],
+      "peak_months": [
+        12,
+        1,
+        2
+      ],
+      "aliases": [
+        "маскат",
+        "оман"
+      ],
+      "via": "Дубай"
+    },
+    {
+      "id": "aqaba",
+      "name": "Акаба",
+      "country": "Иордания",
+      "iata": "AQJ",
+      "lat": 29.532,
+      "lon": 35.006,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "culture",
+        "nature"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "Красное море",
+        "Петра",
+        "пустыня Вади-Рам"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.5,
+          "beach_km": 0.5,
+          "airport_km": 10
+        },
+        {
+          "name": "Южное побережье",
+          "center_km": 12,
+          "beach_km": 0.1,
+          "airport_km": 20
+        }
+      ],
+      "visa": "по прибытии (бесплатно через Акабу)",
+      "rail": false,
+      "sea": [
+        29.45,
+        34.97
+      ],
+      "peak_months": [
+        10,
+        11,
+        3,
+        4
+      ],
+      "aliases": [
+        "акаб",
+        "иордани",
+        "вади-рам"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "marrakech",
+      "name": "Марракеш",
+      "country": "Марокко",
+      "iata": "RAK",
+      "lat": 31.629,
+      "lon": -7.981,
+      "tags": [
+        "city",
+        "culture",
+        "food",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "площадь Джемаа-эль-Фна",
+        "риады и сады Мажорель",
+        "Атлас рядом"
+      ],
+      "areas": [
+        {
+          "name": "Медина",
+          "center_km": 0.5,
+          "beach_km": null,
+          "airport_km": 6
+        },
+        {
+          "name": "Гелиз",
+          "center_km": 2.5,
+          "beach_km": null,
+          "airport_km": 6
+        }
+      ],
+      "visa": "не нужна (90 дней)",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        3,
+        4,
+        10
+      ],
+      "aliases": [
+        "марракеш",
+        "марокк"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "tunisia",
+      "name": "Хаммамет",
+      "country": "Тунис",
+      "iata": "NBE",
+      "lat": 36.4,
+      "lon": 10.616,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "culture"
+      ],
+      "base_price": 5000,
+      "highlights": [
+        "всё включено недорого",
+        "медина и Карфаген",
+        "талассотерапия"
+      ],
+      "areas": [
+        {
+          "name": "Ясмин-Хаммамет",
+          "center_km": 9,
+          "beach_km": 0.1,
+          "airport_km": 40
+        },
+        {
+          "name": "Центр",
+          "center_km": 0.5,
+          "beach_km": 0.2,
+          "airport_km": 45
+        }
+      ],
+      "visa": "не нужна (90 дней)",
+      "rail": false,
+      "sea": [
+        36.38,
+        10.62
+      ],
+      "peak_months": [
+        7,
+        8
+      ],
+      "aliases": [
+        "хаммамет",
+        "тунис",
+        "сусс",
+        "монастир",
+        "джерб"
+      ],
+      "via": null
+    },
+    {
+      "id": "zanzibar",
+      "name": "Занзибар",
+      "country": "Танзания",
+      "iata": "ZNZ",
+      "lat": -6.165,
+      "lon": 39.199,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "nature"
+      ],
+      "base_price": 9000,
+      "highlights": [
+        "бирюзовый океан",
+        "Стоун-Таун",
+        "специи и сафари"
+      ],
+      "areas": [
+        {
+          "name": "Нунгви",
+          "center_km": 60,
+          "beach_km": 0.1,
+          "airport_km": 60
+        },
+        {
+          "name": "Пвани-Мчангани",
+          "center_km": 50,
+          "beach_km": 0.1,
+          "airport_km": 55
+        },
+        {
+          "name": "Стоун-Таун",
+          "center_km": 0.5,
+          "beach_km": 0.3,
+          "airport_km": 6
+        }
+      ],
+      "visa": "по прибытии, $50",
+      "rail": false,
+      "sea": [
+        -5.73,
+        39.3
+      ],
+      "peak_months": [
+        7,
+        8,
+        12,
+        1
+      ],
+      "aliases": [
+        "занзибар",
+        "танзани"
+      ],
+      "via": "Дубай"
+    },
+    {
+      "id": "seychelles",
+      "name": "Сейшелы",
+      "country": "Сейшелы",
+      "iata": "SEZ",
+      "lat": -4.62,
+      "lon": 55.455,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "nature"
+      ],
+      "base_price": 25000,
+      "highlights": [
+        "гранитные пляжи Ла-Диг",
+        "черепахи",
+        "заповедник Валле-де-Маи"
+      ],
+      "areas": [
+        {
+          "name": "Бо-Валлон",
+          "center_km": 6,
+          "beach_km": 0.1,
+          "airport_km": 15
+        },
+        {
+          "name": "Восточное побережье",
+          "center_km": 10,
+          "beach_km": 0.1,
+          "airport_km": 5
+        }
+      ],
+      "visa": "не нужна (разрешение на въезд по прилёте)",
+      "rail": false,
+      "sea": [
+        -4.6,
+        55.43
+      ],
+      "peak_months": [
+        12,
+        4,
+        5
+      ],
+      "aliases": [
+        "сейшел"
+      ],
+      "via": null
+    },
+    {
+      "id": "mauritius",
+      "name": "Маврикий",
+      "country": "Маврикий",
+      "iata": "MRU",
+      "lat": -20.16,
+      "lon": 57.499,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "nature"
+      ],
+      "base_price": 18000,
+      "highlights": [
+        "лагуны и рифы",
+        "водопад Шамарель",
+        "кайтсёрфинг"
+      ],
+      "areas": [
+        {
+          "name": "Гран-Бе",
+          "center_km": 25,
+          "beach_km": 0.1,
+          "airport_km": 70
+        },
+        {
+          "name": "Флик-ан-Флак",
+          "center_km": 15,
+          "beach_km": 0.1,
+          "airport_km": 45
+        },
+        {
+          "name": "Бель-Мар",
+          "center_km": 40,
+          "beach_km": 0.1,
+          "airport_km": 40
+        }
+      ],
+      "visa": "не нужна (60 дней)",
+      "rail": false,
+      "sea": [
+        -20.0,
+        57.55
+      ],
+      "peak_months": [
+        10,
+        11,
+        12
+      ],
+      "aliases": [
+        "маврики"
+      ],
+      "via": null
+    },
+    {
+      "id": "newyork",
+      "name": "Нью-Йорк",
+      "country": "США",
+      "iata": "JFK",
+      "lat": 40.713,
+      "lon": -74.006,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 25000,
+      "highlights": [
+        "Манхэттен",
+        "Центральный парк",
+        "бродвейские мюзиклы"
+      ],
+      "areas": [
+        {
+          "name": "Мидтаун",
+          "center_km": 4,
+          "beach_km": null,
+          "airport_km": 25
+        },
+        {
+          "name": "Нижний Манхэттен",
+          "center_km": 1,
+          "beach_km": null,
+          "airport_km": 23
+        },
+        {
+          "name": "Бруклин",
+          "center_km": 6,
+          "beach_km": null,
+          "airport_km": 22
+        }
+      ],
+      "visa": "нужна, виза США (подача в третьей стране)",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        6,
+        7,
+        12
+      ],
+      "aliases": [
+        "нью-йорк",
+        "нью йорк",
+        "нью-йорке",
+        "сша",
+        "америк",
+        "манхэттен"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "miami",
+      "name": "Майами",
+      "country": "США",
+      "iata": "MIA",
+      "lat": 25.762,
+      "lon": -80.192,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "city",
+        "food"
+      ],
+      "base_price": 22000,
+      "highlights": [
+        "Саут-Бич",
+        "ар-деко",
+        "Эверглейдс"
+      ],
+      "areas": [
+        {
+          "name": "Майами-Бич",
+          "center_km": 7,
+          "beach_km": 0.1,
+          "airport_km": 18
+        },
+        {
+          "name": "Брикелл",
+          "center_km": 1,
+          "beach_km": 3,
+          "airport_km": 13
+        }
+      ],
+      "visa": "нужна, виза США (подача в третьей стране)",
+      "rail": false,
+      "sea": [
+        25.77,
+        -80.1
+      ],
+      "peak_months": [
+        12,
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "майами",
+        "флорид"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "losangeles",
+      "name": "Лос-Анджелес",
+      "country": "США",
+      "iata": "LAX",
+      "lat": 34.052,
+      "lon": -118.244,
+      "tags": [
+        "sea",
+        "beach",
+        "city",
+        "warm",
+        "culture"
+      ],
+      "base_price": 22000,
+      "highlights": [
+        "Голливуд",
+        "Санта-Моника",
+        "Хайвей 1"
+      ],
+      "areas": [
+        {
+          "name": "Голливуд",
+          "center_km": 11,
+          "beach_km": 20,
+          "airport_km": 28
+        },
+        {
+          "name": "Санта-Моника",
+          "center_km": 25,
+          "beach_km": 0.3,
+          "airport_km": 15
+        },
+        {
+          "name": "Даунтаун",
+          "center_km": 1,
+          "beach_km": 25,
+          "airport_km": 27
+        }
+      ],
+      "visa": "нужна, виза США (подача в третьей стране)",
+      "rail": false,
+      "sea": [
+        33.95,
+        -118.55
+      ],
+      "peak_months": [
+        6,
+        7,
+        8
+      ],
+      "aliases": [
+        "лос-анджелес",
+        "лос анджелес",
+        "калифорни",
+        "голливуд"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "cancun",
+      "name": "Канкун",
+      "country": "Мексика",
+      "iata": "CUN",
+      "lat": 21.161,
+      "lon": -86.851,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "culture"
+      ],
+      "base_price": 14000,
+      "highlights": [
+        "Карибское море",
+        "пирамиды майя",
+        "сеноты"
+      ],
+      "areas": [
+        {
+          "name": "Отельная зона",
+          "center_km": 12,
+          "beach_km": 0.1,
+          "airport_km": 15
+        },
+        {
+          "name": "Плайя-дель-Кармен",
+          "center_km": 60,
+          "beach_km": 0.2,
+          "airport_km": 50
+        }
+      ],
+      "visa": "нужна виза или электронное разрешение",
+      "rail": false,
+      "sea": [
+        21.1,
+        -86.75
+      ],
+      "peak_months": [
+        12,
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "канкун",
+        "мексик",
+        "плайя-дель-кармен",
+        "тулум"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "varadero",
+      "name": "Варадеро",
+      "country": "Куба",
+      "iata": "VRA",
+      "lat": 23.153,
+      "lon": -81.245,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic",
+        "culture"
+      ],
+      "base_price": 8000,
+      "highlights": [
+        "20 км белого песка",
+        "Гавана рядом",
+        "ром и сигары"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 2,
+          "beach_km": 0.1,
+          "airport_km": 25
+        },
+        {
+          "name": "Полуостров Икакос",
+          "center_km": 12,
+          "beach_km": 0.1,
+          "airport_km": 35
+        }
+      ],
+      "visa": "не нужна (90 дней)",
+      "rail": false,
+      "sea": [
+        23.2,
+        -81.25
+      ],
+      "peak_months": [
+        12,
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "варадеро",
+        "кубу",
+        "кубе"
+      ],
+      "via": null
+    },
+    {
+      "id": "puntacana",
+      "name": "Пунта-Кана",
+      "country": "Доминикана",
+      "iata": "PUJ",
+      "lat": 18.582,
+      "lon": -68.405,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "exotic"
+      ],
+      "base_price": 12000,
+      "highlights": [
+        "Карибы всё включено",
+        "пальмовые пляжи Баваро",
+        "остров Саона"
+      ],
+      "areas": [
+        {
+          "name": "Баваро",
+          "center_km": 15,
+          "beach_km": 0.1,
+          "airport_km": 25
+        },
+        {
+          "name": "Кап-Кана",
+          "center_km": 12,
+          "beach_km": 0.1,
+          "airport_km": 15
+        }
+      ],
+      "visa": "не нужна (30 дней)",
+      "rail": false,
+      "sea": [
+        18.6,
+        -68.35
+      ],
+      "peak_months": [
+        12,
+        1,
+        2,
+        3
+      ],
+      "aliases": [
+        "пунта-кан",
+        "пунта кан",
+        "доминикан",
+        "баваро"
+      ],
+      "via": null
+    },
+    {
+      "id": "rio",
+      "name": "Рио-де-Жанейро",
+      "country": "Бразилия",
+      "iata": "GIG",
+      "lat": -22.907,
+      "lon": -43.173,
+      "tags": [
+        "sea",
+        "beach",
+        "warm",
+        "city",
+        "exotic"
+      ],
+      "base_price": 10000,
+      "highlights": [
+        "Копакабана и Ипанема",
+        "статуя Христа",
+        "самба"
+      ],
+      "areas": [
+        {
+          "name": "Копакабана",
+          "center_km": 8,
+          "beach_km": 0.1,
+          "airport_km": 25
+        },
+        {
+          "name": "Ипанема",
+          "center_km": 11,
+          "beach_km": 0.1,
+          "airport_km": 30
+        },
+        {
+          "name": "Ботафого",
+          "center_km": 6,
+          "beach_km": 1,
+          "airport_km": 22
+        }
+      ],
+      "visa": "не нужна (90 дней)",
+      "rail": false,
+      "sea": [
+        -22.99,
+        -43.18
+      ],
+      "peak_months": [
+        12,
+        1,
+        2
+      ],
+      "aliases": [
+        "рио",
+        "бразили",
+        "копакабан"
+      ],
+      "via": "Стамбул"
+    },
+    {
+      "id": "buenosaires",
+      "name": "Буэнос-Айрес",
+      "country": "Аргентина",
+      "iata": "EZE",
+      "lat": -34.604,
+      "lon": -58.382,
+      "tags": [
+        "city",
+        "culture",
+        "food"
+      ],
+      "base_price": 8000,
+      "highlights": [
+        "танго в Сан-Тельмо",
+        "стейки и мальбек",
+        "Ла-Бока"
+      ],
+      "areas": [
+        {
+          "name": "Палермо",
+          "center_km": 6,
+          "beach_km": null,
+          "airport_km": 30
+        },
+        {
+          "name": "Реколета",
+          "center_km": 3,
+          "beach_km": null,
+          "airport_km": 32
+        },
+        {
+          "name": "Сан-Тельмо",
+          "center_km": 1.5,
+          "beach_km": null,
+          "airport_km": 32
+        }
+      ],
+      "visa": "не нужна (90 дней)",
+      "rail": false,
+      "sea": null,
+      "peak_months": [
+        11,
+        12,
+        3
+      ],
+      "aliases": [
+        "буэнос-айрес",
+        "буэнос айрес",
+        "аргентин"
+      ],
+      "via": "Стамбул"
+    }
+  ]
+}

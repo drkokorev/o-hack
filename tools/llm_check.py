@@ -13,8 +13,10 @@ from statistics import median
 from core.config import get_settings
 from core.llm import build_llm, extract, strict_schema
 from domains.trips.domain import TripsDomain
-from domains.trips.rules import rule_extract
+from domains.trips.geo import BY_ID
+from domains.trips.rules import find_destination, rule_extract
 from domains.trips.state import TripState, TripUpdate
+from domains.trips.textparse import norm
 
 TODAY = date.today()
 SAMPLES = [
@@ -23,7 +25,7 @@ SAMPLES = [
     ("Казань из Питера на выходные с собакой, поездом", {"destination": "Казань", "pets": True, "transport": "train"}),
     ("мы с мужем и двумя детьми хотим в Сочи на неделю с 3 ноября до 300 тысяч",
      {"destination": "Сочи", "children": 2, "nights": 7, "budget_total": 300000}),
-    ("куда-нибудь в горы летом, природа, походы", {"trip_types": "mountains", "month": 7}),
+    ("куда-нибудь в горы летом, природа, походы", {"trip_types": "mountains", "month": {6, 7, 8}}),
     ("а если на два дня позже?", {"shift_days": 2}),
     ("давай подумаем", {"confirm": None}),
     ("Вылет из Екатеринбурга, хочу в Стамбул на майские вдвоём", {"origin": "Екатеринбург", "destination": "Стамбул",
@@ -35,7 +37,15 @@ SAMPLES = [
 def ok(update: TripUpdate, want: dict) -> bool:
     for key, value in want.items():
         got = getattr(update, key)
-        if isinstance(got, list):
+        if key == "destination" and isinstance(got, str) and isinstance(value, str):
+            actual_id = got if got in BY_ID else find_destination(norm(got))
+            expected_id = value if value in BY_ID else find_destination(norm(value))
+            if not actual_id or actual_id != expected_id:
+                return False
+        elif isinstance(value, (set, tuple)):
+            if got not in value:
+                return False
+        elif isinstance(got, list):
             if value not in got:
                 return False
         elif isinstance(value, str) and isinstance(got, str):

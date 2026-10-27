@@ -17,7 +17,8 @@ from random import Random
 
 from pydantic import BaseModel, Field
 
-from .geo import BY_ID, HUBS, Area, Destination, Origin, distance_km
+from .geo import BY_ID, DESTINATIONS, HUBS, Area, Destination, Origin, distance_km
+from .spatial import GeoPointIndex
 
 AIRLINES = ("Авиа Альфа", "Авиа Бета", "Авиа Гамма", "Авиа Дельта", "Авиа Сигма")
 HUB_MOSCOW = (55.756, 37.617)
@@ -126,6 +127,13 @@ def _real() -> dict:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
+@lru_cache(maxsize=1)
+def hotel_count() -> int:
+    """Размер каталога без генерации объектов и расчёта расстояний для каждого отеля."""
+    records = _real().get("hotels", {})
+    return sum(len(records[d.id]) if records.get(d.id) else 12 for d in DESTINATIONS)
+
+
 _REAL_KINDS = {"hotel": "Отель", "resort": "Резорт", "guest_house": "Гостевой дом", "apartment": "Апартаменты",
                "hostel": "Хостел", "motel": "Мотель", "chalet": "Шале"}
 _KIND_STARS = {"Отель": (3, 3, 4, 4), "Резорт": (4, 5), "Гостевой дом": (2, 3, 3), "Апартаменты": (3, 3, 4),
@@ -162,17 +170,6 @@ def _real_kind_stars(rng: Random, rec: dict) -> tuple[str, int]:
     return kind, stars or rng.choice(_KIND_STARS[kind])
 
 
-def _nearest_km(lat: float, lon: float, points: list[list[float]], grid: dict) -> float | None:
-    """Ближайшая точка (пляж) по сетке 0.05° — быстро даже для сотен отелей и тысяч пляжей."""
-    if not points:
-        return None
-    key = (round(lat * 20), round(lon * 20))
-    near = [p for dx in (-1, 0, 1) for dy in (-1, 0, 1) for p in grid.get((key[0] + dx, key[1] + dy), [])]
-    if not near:
-        return round(min(distance_km(lat, lon, p[0], p[1]) for p in points), 1)
-    return round(min(distance_km(lat, lon, p[0], p[1]) for p in near), 1)
-
-
 _NOT_OFFICIAL = re.compile(r"wikipedia|wikidata|facebook|instagram|vk\.com|ok\.ru|t\.me|booking\.|tripadvisor|"
                           r"ostrovok|airbnb|expedia|agoda|hotels\.com|yandex|google|2gis|tiktok|youtube", re.I)
 
@@ -192,16 +189,14 @@ def _official_site(url: str | None) -> str | None:
 def _from_real(dest: Destination, records: list[dict]) -> list[Hotel]:
     data = _real()
     beaches = data.get("beaches", {}).get(dest.id, [])
-    grid: dict = {}
-    for p in beaches:
-        grid.setdefault((round(p[0] * 20), round(p[1] * 20)), []).append(p)
+    beach_index = GeoPointIndex(beaches)
     airport = data.get("airports", {}).get(dest.iata)
     out = []
     for rec in records:
         rng = _rng("real", rec["id"])
         kind, stars = _real_kind_stars(rng, rec)
         center = round(distance_km(rec["lat"], rec["lon"], dest.lat, dest.lon), 1)
-        beach = _nearest_km(rec["lat"], rec["lon"], beaches, grid) if beaches else None
+        beach = beach_index.nearest_km(rec["lat"], rec["lon"])
         known = {f for f in rec.get("features", []) if f in AMENITIES}
         attrs = _attributes(rng, dest, stars, kind, beach, center, known)
         area = rec.get("street") or rec.get("city") or dest.name

@@ -14,7 +14,7 @@ GIGACHAT_CA = Path(__file__).resolve().parent / "certs" / "russian_trusted_root_
 
 @dataclass(frozen=True)
 class Settings:
-    llm_provider: str          # openai — любой OpenAI-совместимый API; gigachat — GigaChat с OAuth-токеном
+    llm_provider: str          # openai, gigachat или local (локальный OpenAI-совместимый сервер)
     llm_base_url: str
     llm_api_key: str
     llm_model: str
@@ -30,9 +30,11 @@ class Settings:
 
     @property
     def llm_enabled(self) -> bool:
-        """Без ключа LLM не вызывается: работает только разбор по правилам домена."""
+        """Локальному серверу не нужен облачный ключ; его адрес и модель задаются явно."""
         if self.llm_provider == "gigachat":
             return bool(self.gigachat_auth_key)
+        if self.llm_provider == "local":
+            return bool(self.llm_base_url and self.llm_model)
         return bool(self.llm_api_key)
 
 
@@ -41,12 +43,13 @@ def get_settings() -> Settings:
     load_dotenv()
     provider = os.getenv("LLM_PROVIDER", "openai").lower()
     gigachat = provider == "gigachat"
+    local = provider == "local"
     return Settings(
         llm_provider=provider,
-        llm_base_url=os.getenv("LLM_BASE_URL", "https://api.giga.chat/v1" if gigachat
+        llm_base_url=os.getenv("LLM_BASE_URL", "" if local else "https://api.giga.chat/v1" if gigachat
                                else "https://foundation-models.api.cloud.ru/v1"),
         llm_api_key=os.getenv("LLM_API_KEY", ""),
-        llm_model=os.getenv("LLM_MODEL", "GigaChat-2" if gigachat else "Qwen/Qwen3-235B-A22B-Instruct-2507"),
+        llm_model=os.getenv("LLM_MODEL", "" if local else "GigaChat-2" if gigachat else "Qwen/Qwen3-235B-A22B-Instruct-2507"),
         llm_json_mode=os.getenv("LLM_JSON_MODE", "0" if gigachat else "1") == "1",
         llm_schema_mode=os.getenv("LLM_SCHEMA_MODE", "0") == "1",
         llm_timeout=float(os.getenv("LLM_TIMEOUT", "8")),

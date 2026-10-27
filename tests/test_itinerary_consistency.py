@@ -22,7 +22,7 @@ def _amount(text):
 def test_night_train_stay_dates_survive_cart_and_booking():
     agent = _new_agent()
     session = agent.new_session()
-    plan = agent.handle(session, "Хочу в Сочи на неделю в ноябре с собакой, до 120 тысяч на двоих")
+    plan = agent.handle(session, "Хочу из Москвы в Сочи на неделю в ноябре с собакой, до 120 тысяч на двоих, двое взрослых")
     items = plan.payload["items"]
     index = next(i for i, item in enumerate(items) if item["key"] == "budget")
     hotel = items[index]["hotel"]
@@ -33,14 +33,16 @@ def test_night_train_stay_dates_survive_cart_and_booking():
     assert hotel["per_night"] == fmt_money(_amount(hotel["price"]) // 6)
 
     cart = agent.handle(session, f"беру {index + 1} вариант")
-    assert cart.payload["package"]["hotel"]["dates"] == "21–27 ноября (6 ночей)"
-    assert "21–27 ноября (6 ночей)" in cart.reply
+    assert cart.payload["package"]["hotel"]["dates"] == "21–27 ноября 2026 (6 ночей)"
+    assert "21–27 ноября 2026 (6 ночей)" in cart.reply
 
-    order = agent.handle(session, "да, оформляй")
+    agent.handle(session, "да, оформляй")
+    agent.handle(session, "оплата картой")
+    order = agent.handle(session, "да, подтверждаю")
     assert order.payload["order"]["date_in"] == "2026-11-20"  # дата отправления не меняется
     assert order.payload["order"]["hotel_date_in"] == "2026-11-21"
     assert order.payload["order"]["hotel_date_out"] == "2026-11-27"
-    assert "21–27 ноября (6 ночей)" in order.reply
+    assert "21–27 ноября 2026 (6 ночей)" in order.reply
     days = hotel["free_cancel_days"]
     if days is not None:
         assert order.payload["order"]["cancel_until"] == (date(2026, 11, 21) - timedelta(days=days)).isoformat()
@@ -49,7 +51,7 @@ def test_night_train_stay_dates_survive_cart_and_booking():
 def test_timeline_never_places_checkin_before_arrival_or_checkout_after_transfer():
     agent = _new_agent()
     session = agent.new_session()
-    plan = agent.handle(session, "Хочу в Сочи на неделю в ноябре с собакой, до 120 тысяч на двоих")
+    plan = agent.handle(session, "Хочу из Москвы в Сочи на неделю в ноябре с собакой, до 120 тысяч на двоих, двое взрослых")
     for package in plan.payload["items"]:
         points = package["timeline"]
         parsed = [datetime.strptime(point["t"] + " 2026", "%d.%m %H:%M %Y") for point in points]
@@ -59,10 +61,12 @@ def test_timeline_never_places_checkin_before_arrival_or_checkout_after_transfer
 def test_demo_post_sale_does_not_promise_a_real_email_or_request():
     agent = _new_agent()
     session = agent.new_session()
-    agent.handle(session, "Сочи с 20 по 27 ноября на двоих")
+    agent.handle(session, "Сочи из Москвы с 20 по 27 ноября на двоих, двое взрослых")
     agent.handle(session, "беру 1 вариант")
-    order = agent.handle(session, "да, оформляй")
-    assert "не отправ" in order.reply.lower()
+    agent.handle(session, "да, оформляй")
+    agent.handle(session, "оплата картой")
+    order = agent.handle(session, "да, подтверждаю")
+    assert "реальная бронь не создана" in order.reply.lower()
     reply = agent.handle(session, "запроси ранний заезд")
     assert "имитац" in reply.reply.lower() or "демо" in reply.reply.lower()
     assert "не отправ" in reply.reply.lower()

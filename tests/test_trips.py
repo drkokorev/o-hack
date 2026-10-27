@@ -25,6 +25,9 @@ def agent(llm=None):
 
 def talk(a, *messages):
     s = a.new_session()
+    # The planner cases below start with these known preferences. Separate
+    # dialogue tests verify that the actual app asks when they are missing.
+    s.state.origin, s.state.adults = "Москва", 2
     step = None
     for m in messages:
         step = a.handle(s, m)
@@ -65,7 +68,7 @@ def test_inspiration_for_warm_sea_in_november_with_a_child():
       "date_from": date(2026, 10, 30), "date_to": date(2026, 11, 1)}),
     ("Новый год на море, всё включено, 4 звезды",
      {"date_from": date(2026, 12, 30), "meal": "all_inclusive", "stars_min": 4}),
-    ("мы с мужем и двумя детьми хотим в Сочи на неделю с 3 ноября до 300 тысяч",
+    ("двое взрослых и двое детей хотят в Сочи на неделю с 3 ноября до 300 тысяч",
      {"destination": "sochi", "adults": 2, "children": 2, "nights": 7, "date_from": date(2026, 11, 3),
       "budget_total": 300_000}),
     ("а если на два дня позже?", {"shift_days": 2}),
@@ -90,15 +93,17 @@ def test_greeting_when_nothing_is_known():
 
 def test_full_path_from_one_message_to_purchase_without_llm():
     a = agent()
-    s, step = talk(a, "Хочу к тёплому морю в ноябре, недорого, с ребёнком, без долгих перелётов")
+    s, step = talk(a, "Хочу к тёплому морю в ноябре на неделю, недорого, с ребёнком, без долгих перелётов")
     assert s.state.stage == "destination" and len(step.payload["items"]) == 3
-    assert "вылет из Москвы" in s.state.assumptions  # предположения названы явно
+    assert s.state.origin == "Москва"  # город был известен до начала подбора
     step = a.handle(s, "давай первый")
     assert s.state.stage == "plan" and step.payload["kind"] == "packages"
     assert s.state.date_from.month == 11  # месяц из первой реплики сохранился
     step = a.handle(s, "беру 1 вариант")
     assert s.state.stage == "cart" and step.payload["kind"] == "cart"
-    step = a.handle(s, "да, оформляй")
+    a.handle(s, "да, оформляй")
+    a.handle(s, "оплата картой")
+    step = a.handle(s, "да, подтверждаю")
     assert s.state.stage == "booked" and step.payload["order"]["number"].startswith("OST-")
     step = a.handle(s, "запроси ранний заезд")
     assert "ранний заезд" in step.reply and s.state.requests
@@ -146,10 +151,10 @@ def test_unknown_destination_is_honest():
 
 
 @pytest.mark.parametrize("text, dest_id, via", [
-    ("хочу в Черногорию в июле на неделю вдвоём", "budva", "Белград"),
+    ("хочу в Будву в Черногории в июле на неделю вдвоём", "budva", "Белград"),
     ("Нью-Йорк в декабре на 10 ночей", "newyork", "Стамбул"),
-    ("на Кипр в июне", "cyprus", "Стамбул"),
-    ("Токио весной, в апреле", "tokyo", "Пекин"),
+    ("на Айя-Напу на Кипре в июне на неделю", "cyprus", "Стамбул"),
+    ("Токио весной, в апреле на неделю", "tokyo", "Пекин"),
 ])
 def test_world_destinations_route_via_hub(text, dest_id, via):
     s, step = talk(agent(), text)
@@ -163,7 +168,7 @@ def test_web_api_and_health():
     assert client.get("/health").json() == {"status": "ok"}
     info = client.get("/api/info").json()
     assert info["destinations"] >= 30 and info["llm"] is None
-    r = client.post("/api/chat", json={"text": "Казань из Питера на выходные с собакой, поездом"}).json()
+    r = client.post("/api/chat", json={"text": "Казань из Питера на выходные двое взрослых с собакой, поездом"}).json()
     assert r["stage"] == "plan" and r["payload"]["kind"] == "packages" and "с питомцем" in r["understood"]
     r = client.post("/api/chat", json={"text": "беру 1 вариант", "session_id": r["session_id"]}).json()
     assert r["stage"] == "cart"
@@ -176,15 +181,15 @@ def test_requested_trip_type_is_required():
 
 
 def test_seasons_economy_and_ideas_without_details():
-    assert rule_extract(TripState(), "хочу на Байкал зимой", SAT).month == 12
-    assert rule_extract(TripState(), "куда-нибудь летом", SAT).month == 7
+    assert rule_extract(TripState(), "хочу на Байкал зимой", SAT).season == "winter"
+    assert rule_extract(TripState(), "куда-нибудь летом", SAT).season == "summer"
     assert rule_extract(TripState(), "что-нибудь недорогое", SAT).economy is True
-    s, step = talk(agent(), "хочу отдохнуть")
-    assert s.state.stage == "destination" and len(step.payload["items"]) == 3
+    s, step = talk(agent(), "хочу отдохнуть", "не знаю")
+    assert s.state.stage == "destination" and step.payload["kind"] == "ideas" and len(step.payload["items"]) == 3
 
 
 def test_no_preferences_gives_different_kinds_of_trips():
-    s, step = talk(agent(), "посоветуй, куда съездить в декабре")
+    s, step = talk(agent(), "посоветуй, куда съездить в декабре на неделю")
     weathers = [i["weather"] for i in step.payload["items"]]
     assert any("море" in (w or "") for w in weathers)  # среди идей есть тёплое море, а не три похожих города
 

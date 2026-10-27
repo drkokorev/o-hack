@@ -11,6 +11,7 @@ import threading
 import time
 import uuid
 from collections import OrderedDict
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -24,7 +25,7 @@ from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
-from domains.trips.offers import AMENITIES, MEALS, hotels_for
+from domains.trips.offers import AMENITIES, MEALS, hotel_count
 from domains.trips.state import TripState
 
 log = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ MAX_SESSIONS = 1000
 MONTHS_NOM = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь",
               "ноябрь", "декабрь"]
 STAGES = [("start", "Запрос"), ("destination", "Направление"), ("plan", "Варианты"),
-          ("cart", "Корзина"), ("booked", "Покупка")]
+          ("cart", "Корзина"), ("payment", "Оплата"), ("booked", "Готово")]
 
 EXAMPLES = [
     "Хочу к тёплому морю в ноябре, недорого, с ребёнком, без долгих перелётов",
@@ -53,24 +54,45 @@ class ResetIn(BaseModel):
 
 
 class Sessions:
-    """Сессии в памяти процесса с вытеснением самых старых."""
+    """Сессии в памяти процесса с ограничением количества и времени бездействия."""
 
-    def __init__(self, agent: Agent, limit: int = MAX_SESSIONS):
+    def __init__(self, agent: Agent, limit: int = MAX_SESSIONS, ttl_seconds: float = 3600,
+                 clock=time.monotonic):
+        if limit <= 0 or ttl_seconds <= 0:
+            raise ValueError("Лимит сессий и время хранения должны быть положительными")
         self.agent = agent
         self.limit = limit
-        self._items: OrderedDict[str, Session] = OrderedDict()
+        self.ttl_seconds = ttl_seconds
+        self.clock = clock
+        self._items: OrderedDict[str, tuple[Session, float]] = OrderedDict()
         self.lock = threading.Lock()
+
+    def _prune_locked(self, now: float) -> int:
+        removed = 0
+        while self._items and now - next(iter(self._items.values()))[1] >= self.ttl_seconds:
+            self._items.popitem(last=False)
+            removed += 1
+        return removed
+
+    def prune(self) -> int:
+        with self.lock:
+            return self._prune_locked(self.clock())
 
     def get(self, session_id: str | None) -> tuple[str, Session]:
         with self.lock:
+            now = self.clock()
+            self._prune_locked(now)
             if session_id and session_id in self._items:
+                session, _ = self._items[session_id]
+                self._items[session_id] = (session, now)
                 self._items.move_to_end(session_id)
-                return session_id, self._items[session_id]
+                return session_id, session
             session_id = uuid.uuid4().hex
-            self._items[session_id] = self.agent.new_session()
+            session = self.agent.new_session()
+            self._items[session_id] = (session, now)
             while len(self._items) > self.limit:
                 self._items.popitem(last=False)
-            return session_id, self._items[session_id]
+            return session_id, session
 
     def drop(self, session_id: str) -> None:
         with self.lock:
@@ -89,12 +111,15 @@ def understood(state: TripState) -> list[str]:
     for t in state.trip_types or []:
         chips.append(TAG_NAMES.get(t, t))
     if state.date_from and state.date_to:
-        chips.append(f"{state.date_from.day} {MONTHS_GEN[state.date_from.month - 1]} — "
-                     f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]}")
+        start_year = f" {state.date_from.year}" if state.date_from.year != state.date_to.year else ""
+        chips.append(f"{state.date_from.day} {MONTHS_GEN[state.date_from.month - 1]}{start_year} — "
+                     f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]} {state.date_to.year}")
     elif state.month:
-        chips.append(MONTHS_NOM[state.month - 1])
+        chips.append(MONTHS_NOM[state.month - 1] + (f" {state.year}" if state.year else ""))
     if state.adults:
         chips.append(f"{state.adults} {plural(state.adults, 'взрослый', 'взрослых', 'взрослых')}")
+    elif state.party_size:
+        chips.append(f"{state.party_size} {plural(state.party_size, 'путешественник', 'путешественника', 'путешественников')}")
     if state.children:
         chips.append(f"{state.children} {plural(state.children, 'ребёнок', 'ребёнка', 'детей')}")
     if state.pets:
@@ -106,7 +131,7 @@ def understood(state: TripState) -> list[str]:
     if state.max_travel_hours:
         chips.append(f"в пути до {state.max_travel_hours:g} ч")
     if state.transport:
-        chips.append("поезд" if state.transport == "train" else "самолёт")
+        chips.append({"train": "поезд", "plane": "самолёт", "none": "нет подходящего транспорта"}.get(state.transport, state.transport))
     if state.direct_only:
         chips.append("без пересадок")
     if state.meal:
@@ -200,11 +225,26 @@ def build_app(agent: Agent | None = None) -> FastAPI:
     if agent is None:
         llm = build_llm(settings)
         agent = Agent(TripsDomain(), llm, nlg=settings.llm_nlg)
-    sessions = Sessions(agent)
+    sessions = Sessions(agent, ttl_seconds=float(os.getenv("SESSION_TTL_SECONDS", "3600")))
     images = Images()
-    # Отели датасета (~23 тыс.) собираются за ~1 с — в фоне при старте, чтобы первый запрос не ждал
-    threading.Thread(target=lambda: [hotels_for(d.id) for d in DESTINATIONS], daemon=True).start()
-    app = FastAPI(title="О!дин запрос — агент поездки", docs_url="/api/docs")
+
+    @asynccontextmanager
+    async def lifespan(_app):
+        stopped = threading.Event()
+
+        def cleanup() -> None:
+            while not stopped.wait(min(60, sessions.ttl_seconds)):
+                sessions.prune()
+
+        worker = threading.Thread(target=cleanup, name="session-cleanup", daemon=True)
+        worker.start()
+        try:
+            yield
+        finally:
+            stopped.set()
+            worker.join(timeout=1)
+
+    app = FastAPI(title="О!дин запрос — агент поездки", docs_url="/api/docs", lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.get("/")
@@ -221,7 +261,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         return {"llm": settings.llm_model if agent.llm is not None else None,
                 "llm_state": breaker.state if breaker else "off",
                 "destinations": len(DESTINATIONS),
-                "hotels": sum(len(hotels_for(d.id)) for d in DESTINATIONS),
+                "hotels": hotel_count(),
                 "places": [{"id": d.id, "name": d.name, "lat": d.lat, "lon": d.lon} for d in DESTINATIONS],
                 "origins": [{"name": o.name, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
                 "examples": EXAMPLES, "stages": [{"key": k, "title": t} for k, t in STAGES]}
@@ -251,7 +291,8 @@ def main() -> None:
     import uvicorn
 
     logging.basicConfig(level=logging.INFO)
-    uvicorn.run(build_app(), host=os.getenv("APP_HOST", "127.0.0.1"), port=int(os.getenv("APP_PORT", "8080")))
+    uvicorn.run(build_app(), host=os.getenv("APP_HOST", "127.0.0.1"), port=int(os.getenv("APP_PORT", "8080")),
+                access_log=False)
 
 
 if __name__ == "__main__":

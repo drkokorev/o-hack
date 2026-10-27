@@ -16,7 +16,8 @@ from .state import TripState, TripUpdate
 from .textparse import norm
 
 # Поля, где правила точнее модели: если правила что-то нашли, берём их значение
-RULES_WIN = {"date_from", "date_to", "nights", "month", "budget_total", "budget_night", "adults", "children",
+RULES_WIN = {"date_from", "date_to", "nights", "month", "season", "year", "budget_total", "budget_night", "adults", "children", "pets", "trip_types", "transport", "lodging",
+             "meal", "hotel_wishes", "abroad", "economy", "direct_only", "baggage",
              "max_travel_hours", "stars_min", "shift_days", "pick", "confirm", "after_sale", "origin"}
 
 _NUM = r"\d|один|одна|дв|три|четыр|пят|шест|сем|восем|девят|десят|пар"
@@ -25,12 +26,14 @@ _MONTHS = r"январ|феврал|март|апрел|ма[йяе]|июн|ию
 CUES = {
     "origin": r"\bиз\b|вылет|отправ|живу|выезжа",
     "month": _MONTHS + r"|майск|нов\w+ год|лет[оа]м?|летн|зим|весн|осен",
+    "year": r"\b20\d{2}\b",
     "date_from": _NUM + "|" + _MONTHS + r"|выходн|недел|завтра|сегодня|майск|год|числ",
     "date_to": _NUM + "|" + _MONTHS + r"|выходн|недел|завтра|майск|год|числ",
     "nights": _NUM + r"|недел|выходн|ноч|сут|дн",
     "adults": _NUM + r"|взросл|вдво|втро|вчетв|нас\b|муж|жен|один|одна|сам\b|друз|компан|семь|пар[аео]",
     "children": r"реб|дет|сын|доч|малыш|школьн|подрост|семь",
     "pets": r"соба|кош|кот|пит[оеё]м|живот|п[её]с|щен",
+    "lodging": r"палат|кемпинг|отел|жиль",
     "budget_total": _NUM + r"|тыс|к\b|млн|миллион|бюджет|руб|₽|дешев|недорог",
     "budget_night": _NUM + r"|тыс|к\b|ноч|сутк",
     "max_travel_hours": _NUM + r"|час|долг|далек|близк|недалек",
@@ -71,10 +74,11 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     rule_data = rules.model_dump()
     notes: list[str] = []
 
-    for field in ("unknown_place", "unknown_origin"):  # служебные поля — только из правил
+    service_fields = ("unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "corrected_place", "unsure", "duration_not_given", "payment_method", "season", "children_unknown", "party_size")
+    for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
     for field, value in list(data.items()):
-        if value is None or field in ("unknown_place", "unknown_origin"):
+        if value is None or field in service_fields:
             continue
         ruled = rule_data.get(field)
         if field in RULES_WIN and ruled is not None:
@@ -90,16 +94,64 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
             notes.append(f"{field}={value!r}: нет опоры в тексте")
             data[field] = None
 
+    if rules.month is not None and rules.date_from is None and (data.get("date_from") or data.get("date_to")):
+        notes.append("модель указала точные даты, хотя правила нашли только месяц")
+        data["date_from"] = data["date_to"] = None
+
+    if rules.season and not rules.month and not rules.date_from:
+        # A season is a range, not an invented month or exact departure date.
+        data["month"] = data["date_from"] = data["date_to"] = None
+    if re.search(r"вайб\s+лета|летн\w*\s+настроен", t) and not rules.month and not rules.season:
+        data["month"] = data["date_from"] = data["date_to"] = None
+    if rules.duration_not_given:
+        data["nights"] = None
+        if not rules.date_from:
+            data["date_from"] = data["date_to"] = None
+
     if data.get("pick_name") and norm(data["pick_name"])[:4] not in t:
         notes.append(f"pick_name={data['pick_name']!r}: нет в тексте")
         data["pick_name"] = None
 
+    if data.get("origin") and not rules.origin and norm(data["origin"])[:4] not in t:
+        notes.append("origin: в реплике нет указанного моделью города отправления")
+        data["origin"] = None
+
+    if data.get("meal") and not rules.meal:
+        # Mentioning food in general is not a request for a hotel meal plan.
+        notes.append("meal: конкретный тип питания пользователь не назвал")
+        data["meal"] = None
+
+    for field in ("budget_total", "budget_night", "adults", "children", "nights", "hotel_wishes"):
+        if data.get(field) is not None and rule_data.get(field) is None:
+            notes.append(f"{field}: точное значение в реплике не подтверждено")
+            data[field] = None
+
+    explicit_day = re.search(r"\b\d{1,2}\s*[./]\s*\d{1,2}|\b\d{1,2}\s*(?:–|-|по\b|"
+                             r"январ|феврал|март|апрел|ма[йяе]|июн|июл|август|сентябр|октябр|ноябр|декабр)|"
+                             r"\b(?:завтра|послезавтра|сегодня)\b", t)
+    if not rules.date_from and not explicit_day:
+        data["date_from"] = data["date_to"] = None
+    elif not rules.date_to and data.get("date_to"):
+        notes.append("date_to: дата окончания поездки явно не подтверждена")
+        data["date_to"] = None
+
     # Направление: правила знают каталог точно; без упоминания в тексте модель часто повторяет контекст
     if data.get("destination"):
         dest = data["destination"]
-        if rule_data.get("destination") and rule_data["destination"] != find_destination(norm(dest)):
+        if rule_data.get("country") and not rule_data.get("destination"):
+            data["destination"] = None
+        elif rule_data.get("destination") and rule_data["destination"] != find_destination(norm(dest)):
             notes.append(f"destination: правила {rule_data['destination']} вместо LLM {dest}")
             data["destination"] = rule_data["destination"]
+        elif rule_data.get("unknown_place"):
+            data["destination"] = rule_data["unknown_place"]
+        elif not rule_data.get("destination"):
+            # Do not turn generic tags ("mountains") or an origin city into
+            # a destination merely because the model produced a valid string.
+            destination_text = re.sub(r"(?:\bиз|вылет\w* из|едем из|летим из|живу в)\s+[а-яё\-]+", " ", t)
+            if norm(dest) not in destination_text:
+                notes.append("destination: в реплике нет указанного моделью места")
+                data["destination"] = None
         elif find_destination(norm(dest)) == state.dest_id and state.dest_id:
             data["destination"] = None
 

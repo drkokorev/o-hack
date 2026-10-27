@@ -144,9 +144,10 @@ class GigaChatLLM(OpenAICompatLLM):
 
     def __init__(self, settings: Settings):
         import httpx
+        import ssl
 
-        verify: bool | str = settings.gigachat_verify_ssl
-        verify = {"1": True, "0": False}.get(str(verify), verify)
+        setting = settings.gigachat_verify_ssl
+        verify = True if setting == "1" else False if setting == "0" else ssl.create_default_context(cafile=setting)
         self._http = httpx.Client(verify=verify, timeout=settings.llm_timeout)
         self._token, self._expires = "", 0.0
         self._lock = threading.Lock()
@@ -255,7 +256,7 @@ def extract(llm: LLM, schema: type[T], messages: list[Message]) -> T:
                 breaker.ok(int((time.perf_counter() - started) * 1000))
             return result
         except ValueError as err:  # json.JSONDecodeError и pydantic.ValidationError — подклассы ValueError
-            log.warning("Невалидный ответ LLM (попытка %d): %s", attempt + 1, str(err)[:200])
+            log.warning("Невалидный ответ LLM (попытка %d): %s", attempt + 1, type(err).__name__)
             msgs += [
                 {"role": "assistant", "content": raw},
                 {"role": "user", "content": f"Ответ невалиден: {str(err)[:300]}. Верни только исправленный JSON-объект."},

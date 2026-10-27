@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>О!дин запрос — агент поездки</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link href="/static/fonts/fonts.css" rel="stylesheet">
 <style>
   :root {
     --bg: #eef2f1; --surface: #ffffff; --ink: #0d1b22; --muted: #5d6f75; --faint: #8a9ca1; --line: #d9e2e0;
@@ -61,19 +60,27 @@
   .chip { border-radius: 999px; padding: 5px 12px; font-size: 13px; background: var(--surface); border: 1px solid var(--line); }
   .chip.assumed { border-style: dashed; color: var(--muted); background: none; }
 
-  .map { margin: 24px 0 4px; }
+  .map { margin: 24px 0 4px; position: relative; overflow: hidden; border: 1px solid var(--line);
+    border-radius: var(--r-lg); background: radial-gradient(ellipse at 35% 28%, var(--surface), var(--bg) 78%); }
   .map svg { width: 100%; height: auto; display: block; overflow: hidden; max-height: 46vh; transition: max-height .4s ease; }
   .board.compact .map svg { max-height: 28vh; }
   .map svg { --z: 1; }
-  .map .land { fill: var(--dot); }
+  .map .land { fill: var(--dot); stroke: var(--dot-strong); stroke-width: .08px; stroke-linejoin: round; fill-rule: evenodd; }
+  .map .graticule { stroke: var(--line); stroke-width: .12px; fill: none; }
   .map .place { fill: var(--dot-strong); r: calc(.55px * var(--z)); }
   .map .pin { fill: var(--accent); }
   .map .origin { fill: var(--sun); }
   .map .halo { fill: none; stroke: var(--sun); stroke-width: calc(.25px * var(--z)); opacity: .7; }
   .map .arc { fill: none; stroke: var(--accent); stroke-width: calc(.38px * var(--z)); stroke-linecap: round; }
   .map .arc.dim { stroke-dasharray: calc(.6px * var(--z)) calc(.9px * var(--z)); opacity: .8; }
-  .map .label { font: 500 calc(2.3px * var(--z)) var(--body); fill: var(--ink); paint-order: stroke; stroke: var(--bg); stroke-width: calc(.7px * var(--z)); }
-  .map .badge { font: 600 calc(1.8px * var(--z)) var(--body); fill: var(--accent-ink); text-anchor: middle; dominant-baseline: central; }
+  .map .label { font: 500 calc(2.3px * var(--z)) var(--body); fill: var(--ink); paint-order: stroke; stroke: var(--bg); stroke-width: calc(.7px * var(--z)); pointer-events: none; }
+  .map .badge { font: 600 calc(1.8px * var(--z)) var(--body); fill: var(--accent-ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .map .map-point { cursor: pointer; }
+  .map .map-point:hover .place, .map .map-point:focus-visible .place { fill: var(--accent); }
+  .map-hint { position: absolute; left: 18px; top: 14px; color: var(--muted); font-size: 12px; pointer-events: none; }
+  .map-choice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px;
+    margin: 0 12px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); max-width: 360px; }
+  .map-choice button { min-height: 44px; }
   @media (prefers-reduced-motion: no-preference) {
     .map .arc.draw { transition: stroke-dashoffset 1.1s cubic-bezier(.3,.7,.2,1); }
   }
@@ -122,8 +129,8 @@
 
   .photo { position: relative; overflow: hidden; background: var(--line); aspect-ratio: 16 / 10; }
   .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .photo .credit { position: absolute; right: 10px; bottom: 7px; max-width: 75%; font-size: 10.5px; color: #fff;
-    text-shadow: 0 1px 3px rgba(0,0,0,.7); opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+  .photo .credit { position: absolute; right: 10px; bottom: 8px; font-size: 12px; color: #fff; width: 24px; height: 24px;
+    display: grid; place-items: center; border-radius: 50%; background: rgba(0,0,0,.55); text-decoration: none; }
   .photo .badge-ill { position: absolute; left: 10px; top: 10px; font-size: 11px; color: #fff; background: rgba(0,0,0,.45);
     border-radius: 999px; padding: 2px 9px; backdrop-filter: blur(6px); }
   .card > .photo:first-child { margin: -22px -22px 2px; border-radius: 21px 21px 0 0; }
@@ -191,6 +198,7 @@
   .suggest button { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; color: var(--muted); cursor: pointer; text-align: left; }
   .suggest button:hover { border-color: var(--accent); color: var(--ink); }
   form.composer { padding: 12px 16px 18px; border-top: 1px solid var(--line); background: var(--surface); }
+  .composer .privacy { margin: 0 2px 7px; color: var(--muted); font-size: 12px; line-height: 1.35; }
   .composer .field { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 24px; padding: 5px 5px 5px 16px; background: var(--bg); }
   .composer .field:focus-within { border-color: var(--accent); }
   .composer input { flex: 1; min-width: 0; border: 0; background: none; padding: 9px 0; outline: none; font-size: 15px; }
@@ -214,7 +222,7 @@
     .log { max-height: 60vh; }
     form.composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; padding-bottom: max(12px, env(safe-area-inset-bottom));
       box-shadow: 0 -6px 24px rgba(0,0,0,.08); }
-    .shell { padding-bottom: 84px; }
+    .shell { padding-bottom: 126px; }
     .say { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px;
       font-size: 15px; white-space: pre-wrap; margin: 0 0 16px; }
     .say:empty { display: none; }
@@ -228,21 +236,23 @@
   <header class="top">
     <div class="logo">О<span>!</span>дин запрос</div>
     <ol class="stages" id="stages" aria-label="Этапы поездки"></ol>
+    <a class="link" href="/static/widget-demo.html" target="_blank" rel="noopener">Виджет</a>
     <button class="link" id="reset" type="button"><span class="long">Начать </span>заново</button>
   </header>
 
   <main class="board">
     <div class="say" id="say" aria-live="polite"></div>
     <section id="head"></section>
-    <div class="map" id="map" aria-hidden="true"></div>
+    <div class="map" id="map" aria-label="Карта направлений"></div>
     <section id="view"></section>
-    <p class="fine">Фото направлений — Wikimedia Commons (авторы и лицензии на снимках), фото отелей — иллюстрации. Погода — реальные средние Open-Meteo за 2022–2025 годы. Отели — настоящие объекты из открытого датасета Overture Maps (CDLA Permissive 2.0); их цены, рейтинги и условия, а также рейсы и поезда — модельные данные прототипа, перевозчики вымышленные. Оплата имитируется.</p>
+    <details class="fine"><summary>Данные и источники</summary><p>Фото направлений — Wikimedia Commons (авторы и лицензии на снимках), фото отелей — иллюстрации. Погода — средние Open-Meteo за 2022–2025 годы. Отели — объекты Overture Maps; цены, рейтинги и условия, рейсы и поезда — модельные данные. Названия и координаты городов: <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Визовые условия требуют проверки. Оплата имитируется.</p></details>
   </main>
 
   <aside class="chat" aria-label="Разговор с агентом">
     <div class="log" id="log" aria-live="polite"></div>
     <div class="suggest" id="suggest"></div>
     <form class="composer" id="ask">
+      <p class="privacy">Не вводите личные и платёжные данные. При подключении облачной модели текст отправляется её поставщику.</p>
       <div class="field">
         <input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение агенту">
         <button type="submit" id="send" aria-label="Отправить">
@@ -260,6 +270,7 @@ const QUICK = {
   destination: ["покажи другие направления", "только по России", "а за границу?"],
   plan: ["а если на два дня позже?", "подешевле", "покажи другие отели", "только без пересадок", "другое направление"],
   cart: ["да, оформляй", "нет, вернуться к вариантам", "а если на день раньше?"],
+  payment: ["оплата картой", "оплата СБП", "нет"],
   booked: ["запроси ранний заезд", "поздний выезд", "перенеси на 2 дня позже", "отмени бронь"],
 };
 
@@ -283,7 +294,7 @@ function svg(tag, attrs = {}, text) {
 const marks = (cls, items) => el("ul", { class: "marks " + cls }, items.map((t) => typeof t === "string" ? el("li", {}, t) : el("li", { class: t.level }, t.text)));
 const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button", class: cls, onclick: () => send(text || label) }, label);
 
-/* Карта: точки суши (Natural Earth), направления каталога, дуга маршрута */
+/* Карта: контуры суши Natural Earth, направления каталога, дуга маршрута. */
 const K = 0.82, LON0 = -168, LAT0 = 75;
 const px = (lon, lat) => [(lon - LON0) * K, LAT0 - lat];
 function arcPath(a, b) {
@@ -310,38 +321,82 @@ function fitView(points) {
 }
 function drawMap(opts = {}) {
   if (!land || !info) return;
-  const pts = opts.origin ? [opts.origin, ...(opts.targets || [])] : [];
+  const pts = [...(opts.origin ? [opts.origin] : []), ...(opts.targets || [])];
   const v = fitView(pts);
-  const root = svg("svg", { viewBox: `${v.x.toFixed(2)} ${v.y.toFixed(2)} ${v.w.toFixed(2)} ${v.h.toFixed(2)}`, role: "presentation" });
+  const root = svg("svg", { viewBox: `${v.x.toFixed(2)} ${v.y.toFixed(2)} ${v.w.toFixed(2)} ${v.h.toFixed(2)}`, role: "group", "aria-label": "Выберите направление на карте" });
   root.style.setProperty("--z", (v.w / HOME.w).toFixed(3));
-  const g = svg("g");
-  for (const [lon, lat] of land.dots) { const [x, y] = px(lon, lat); g.append(svg("circle", { class: "land", cx: x.toFixed(2), cy: y.toFixed(2), r: 0.3 })); }
-  root.append(g);
-  for (const p of info.places) { const [x, y] = px(p.lon, p.lat); root.append(svg("circle", { class: "place", cx: x, cy: y, r: 0.55 })); }
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const [x1, y1] = px(-168, lat), [x2, y2] = px(180, lat);
+    root.append(svg("path", { class: "graticule", d: `M${x1},${y1} L${x2},${y2}` }));
+  }
+  for (let lon = -150; lon <= 180; lon += 30) {
+    const [x1, y1] = px(lon, 75), [x2, y2] = px(lon, -56);
+    root.append(svg("path", { class: "graticule", d: `M${x1},${y1} L${x2},${y2}` }));
+  }
+  for (const feature of land.features) {
+    const path = feature.geometry.coordinates.map((ring) => ring.map(([lon, lat], index) => {
+      const [x, y] = px(lon, lat); return `${index ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`;
+    }).join(" ") + " Z").join(" ");
+    root.append(svg("path", { class: "land", d: path }));
+  }
+  const markers = [];
+  const chooseOnMap = (p) => {
+    const choice = el("div", { class: "map-choice", role: "status" }, el("b", {}, p.name),
+      sayBtn("Хочу сюда", `хочу в ${p.name}`, "btn accent"));
+    $("map").querySelector(".map-choice")?.remove();
+    $("map").append(choice);
+  };
+  const bindMarker = (marker, place) => {
+    marker.setAttribute("tabindex", markers.length ? "-1" : "0");
+    markers.push(marker);
+    marker.addEventListener("click", () => chooseOnMap(place));
+    marker.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); chooseOnMap(place); }
+      if (["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(event.key)) {
+        event.preventDefault();
+        const delta = ["ArrowRight", "ArrowDown"].includes(event.key) ? 1 : -1;
+        const next = markers[(markers.indexOf(marker) + delta + markers.length) % markers.length];
+        marker.setAttribute("tabindex", "-1"); next.setAttribute("tabindex", "0"); next.focus();
+      }
+    });
+  };
+  const targets = opts.targets || [];
+  for (const p of info.places) {
+    const [x, y] = px(p.lon, p.lat);
+    if (x < v.x || x > v.x + v.w || y < v.y || y > v.y + v.h || targets.some((t) => t.name === p.name)) continue;
+    const marker = svg("g", { class: "map-point", role: "button", "aria-label": `Выбрать ${p.name}` });
+    marker.append(svg("circle", { cx: x, cy: y, r: 2.3, fill: "transparent" }), svg("circle", { class: "place", cx: x, cy: y, r: 0.55 }));
+    bindMarker(marker, p);
+    root.append(marker);
+  }
   const z = v.w / HOME.w;
   const toDraw = [];
-  const targets = opts.targets || [];
-  if (opts.origin) {
-    const [ox, oy] = px(opts.origin.lon, opts.origin.lat);
+  if (opts.origin || targets.length) {
+    const [ox, oy] = opts.origin ? px(opts.origin.lon, opts.origin.lat) : [0, 0];
+    if (opts.origin) {
     for (const t of targets) {
       const path = svg("path", { class: "arc" + (targets.length > 1 ? " dim" : ""), d: arcPath(opts.origin, t) });
       root.append(path); if (targets.length === 1) toDraw.push(path);
     }
     root.append(svg("circle", { class: "halo", cx: ox, cy: oy, r: 1.8 * z }), svg("circle", { class: "origin", cx: ox, cy: oy, r: 0.95 * z }),
       svg("text", { class: "label", x: ox - 1.6 * z, y: oy - 1.6 * z, "text-anchor": "end" }, opts.origin.name));
-    const placed = [[ox, oy - 1.6 * z]];
+    }
+    const placed = opts.origin ? [[ox, oy - 1.6 * z]] : [];
     targets.forEach((t, i) => {
       const [x, y] = px(t.lon, t.lat);
       const right = x >= ox || targets.length === 1;
       let ly = y + 0.8 * z;
       while (placed.some(([px2, py2]) => Math.abs(px2 - x) < 14 * z && Math.abs(py2 - ly) < 2.8 * z)) ly += 2.9 * z;
       placed.push([x, ly]);
-      root.append(svg("circle", { class: "pin", cx: x, cy: y, r: (targets.length > 1 ? 1.45 : 1.15) * z }));
+      const marker = svg("g", { class: "map-point", role: "button", "aria-label": `Выбрать ${t.name}` });
+      marker.append(svg("circle", { cx: x, cy: y, r: 3 * z, fill: "transparent" }), svg("circle", { class: "pin", cx: x, cy: y, r: (targets.length > 1 ? 1.45 : 1.15) * z }));
+      bindMarker(marker, t);
+      root.append(marker);
       if (targets.length > 1) root.append(svg("text", { class: "badge", x, y: y + 0.05 * z }, String(i + 1)));
       root.append(svg("text", { class: "label", x: x + (right ? 2.2 : -2.2) * z, y: ly, "text-anchor": right ? "start" : "end" }, t.name));
     });
   }
-  $("map").replaceChildren(root);
+  $("map").replaceChildren(root, el("span", { class: "map-hint" }, "Выберите точку на карте"));
   for (const path of toDraw) {
     const len = path.getTotalLength();
     path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
@@ -376,7 +431,8 @@ function photo(img, opts = {}) {
     el("img", { src: img.src, alt: opts.alt || "", loading: "lazy", decoding: "async" }),
     opts.badge ? el("span", { class: "badge-ill" }, opts.badge) : null,
     opts.over || null,
-    el("a", { class: "credit", href: img.page || "#", target: "_blank", rel: "noopener", title: "Фото: " + img.credit }, "Фото: " + img.credit));
+    el("a", { class: "credit", href: img.page || "#", target: "_blank", rel: "noopener", title: "Фото: " + img.credit,
+      "aria-label": "Фото: " + img.credit + ". Сведения об авторе и лицензии" }, "ⓘ"));
 }
 // Несколько фото направления — листаются свайпом, стрелками и точками; у каждого снимка своя подпись автора
 function gallery(imgs, opts = {}) {
@@ -385,7 +441,8 @@ function gallery(imgs, opts = {}) {
   const dots = imgs.map((_, i) => el("i", { class: i ? "" : "on" }));
   const track = el("div", { class: "track" }, imgs.map((img, i) => el("div", { class: "slide" },
     el("img", { src: img.src, alt: opts.alt ? `${opts.alt}, фото ${i + 1}` : "", loading: "lazy", decoding: "async" }),
-    el("a", { class: "credit", href: img.page || "#", target: "_blank", rel: "noopener", title: "Фото: " + img.credit }, "Фото: " + img.credit))));
+    el("a", { class: "credit", href: img.page || "#", target: "_blank", rel: "noopener", title: "Фото: " + img.credit,
+      "aria-label": "Фото: " + img.credit + ". Сведения об авторе и лицензии" }, "ⓘ"))));
   const go = (dir) => track.scrollBy({ left: dir * track.clientWidth, behavior: "smooth" });
   track.addEventListener("scroll", () => {
     const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
@@ -412,15 +469,60 @@ const timelineEl = (items) => el("ol", { class: "timeline" }, items.map((t) => e
 const tripRoute = (t) => ({ origin: { name: t.origin, lat: t.origin_lat, lon: t.origin_lon }, targets: [{ name: t.dest, lat: t.lat, lon: t.lon }] });
 
 const views = {
+  place_info(p) {
+    const d = p.place;
+    drawMap({ targets: [{ name: d.name, lat: d.lat, lon: d.lon }] });
+    return [el("h2", { class: "section-title" }, d.name), el("p", { class: "section-sub" }, d.country),
+      el("article", { class: "card" }, el("h3", {}, "Место найдено"),
+        el("p", {}, "В демонстрационном каталоге пока нет предложений для этого места. Данные о ценах и наличии не выдумываем."),
+        sayBtn("Другие направления", "покажи ещё", "btn ghost"))];
+  },
+  ideas(p) {
+    drawMap({ targets: p.items.map((d) => ({ name: d.name, lat: d.lat, lon: d.lon })) });
+    return [el("h2", { class: "section-title" }, "Идеи для поездки"),
+      el("p", { class: "section-sub" }, "Пока без расчёта дат и цены. Выберите направление, чтобы продолжить."),
+      el("div", { class: "cards" }, p.items.map((d, i) => el("article", { class: "card" },
+        el("div", { class: "kicker" }, `${i + 1} · ${d.country}`), el("h3", {}, d.name),
+        el("div", { class: "tags" }, d.highlights.slice(0, 3).map((h) => el("span", { class: "tag" }, h))),
+        el("div", { class: "actions" }, sayBtn("Хочу сюда", `давай ${d.name}`, "btn accent")))))];
+  },
+  tent_transport(p) {
+    drawMap(tripRoute(p.trip));
+    return [el("h2", { class: "section-title" }, "Дорога и своя палатка"),
+      el("p", { class: "section-sub" }, "Расписание и цены демонстрационные. Отель не включён; место стоянки, питание и трансфер нужно проверить отдельно."),
+      el("div", { class: "cards" }, p.items.map((item, i) => el("article", { class: "card" },
+        el("div", { class: "kicker" }, `Вариант ${i + 1} · дорога туда и обратно`),
+        el("div", { class: "price num" }, item.total, el("small", {}, p.trip.people)),
+        el("dl", { class: "facts" }, el("dt", {}, "Туда"), el("dd", {}, legLine(item.out)),
+          el("dt", {}, "Обратно"), el("dd", {}, legLine(item.back))),
+        el("div", { class: "actions" }, sayBtn("Выбрать дорогу", `беру ${i + 1} вариант`, "btn accent")))))];
+  },
+  tent_cart(p) {
+    drawMap(tripRoute(p.trip));
+    return [el("h2", { class: "section-title" }, "Корзина · дорога"),
+      el("p", { class: "section-sub" }, "Демонстрация. Стоянка, питание и трансфер в сумму не входят."),
+      el("article", { class: "card" }, el("dl", { class: "facts" }, el("dt", {}, "Туда"), el("dd", {}, legLine(p.out)),
+        el("dt", {}, "Обратно"), el("dd", {}, legLine(p.back))),
+        el("div", { class: "price num" }, p.total, el("small", {}, "Только дорога · модельные цены")),
+        el("div", { class: "actions" }, sayBtn("Выбрать способ оплаты", "да, оформляй", "btn accent"),
+          sayBtn("К вариантам", "нет")))];
+  },
+  tent_order(p) {
+    const o = p.order;
+    return [el("h2", { class: "section-title" }, "Демонстрация завершена"),
+      el("p", { class: "section-sub" }, "Денег не списано, билеты не куплены, место стоянки не забронировано."),
+      el("article", { class: "card" }, el("h3", {}, `${o.origin} — ${o.dest}`),
+        el("p", {}, `Условный заказ ${o.number}`), el("p", {}, `Туда: ${o.out}`), el("p", {}, `Обратно: ${o.back}`))];
+  },
   destinations(p) {
     drawMap({ origin: p.origin, targets: p.items.map((d) => ({ name: d.name, lat: d.lat, lon: d.lon })) });
     return [el("h2", { class: "section-title" }, "Куда можно поехать"),
-      el("p", { class: "section-sub" }, `Цена «от» — за всю поездку на всех: дорога, отель, трансферы, ${p.nights_label || p.nights + " ночей"}. Номера совпадают с точками на карте.`),
+      el("p", { class: "section-sub" }, `Демо-цены за поездку на всех: дорога, отель, трансферы, ${p.nights_label || p.nights + " ночей"}. Наличие не проверялось.`),
       el("div", { class: "cards" }, p.items.map((d, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
         gallery(d.gallery || [d.image], { alt: d.name }),
         el("div", { class: "kicker" }, el("span", {}, `${i + 1} · ${d.country}`), i === 0 ? el("b", {}, "Лучше всего подходит") : null),
         el("h3", {}, d.name),
-        el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, d.visa ? `виза: ${d.visa}` : "виза не нужна")),
+        el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, d.visa ? `виза (демо): ${d.visa}` : "по России")),
         el("dl", { class: "facts" }, el("dt", {}, "Погода"), el("dd", {}, d.weather || "—"),
           el("dt", {}, "Дорога"), el("dd", {}, `${d.mode === "train" ? "поезд" : d.stops ? "с пересадкой" : "прямой рейс"}, ${d.travel}`)),
         marks("why", d.reasons.filter((r) => !/^(перелёт|поезд)/.test(r))),
@@ -448,7 +550,7 @@ const views = {
           el("span", {}, d.label)))));
     }
     out.push(el("h2", { class: "section-title" }, p.items.length > 1 ? `${p.items.length} способа поехать` : "Ваша поездка"),
-      el("p", { class: "section-sub" }, `${p.trip.weather ? "Погода: " + p.trip.weather + ". " : ""}Цена — за всё: дорога туда и обратно, отель, трансферы.`),
+      el("p", { class: "section-sub" }, `${p.trip.weather ? "Погода: " + p.trip.weather + ". " : ""}Демо-цены и расписание смоделированы; наличие не проверялось.`),
       el("div", { class: "cards" }, p.items.map((k, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
         photo(k.hotel.image, { alt: k.hotel.name, badge: "иллюстрация отеля" }),
         el("div", { class: "kicker" }, el("span", {}, `Вариант ${i + 1}`), i === 0 ? el("b", {}, "Рекомендую") : null),
@@ -495,18 +597,29 @@ const views = {
         el("article", { class: "card" },
           el("table", { class: "receipt" }, rows.map(([a, b, c]) => el("tr", {}, el("td", {}, el("div", {}, a), el("small", {}, b)), el("td", {}, c))),
             el("tr", { class: "total" }, el("td", {}, "Итого"), el("td", {}, p.total))),
-          el("div", { class: "actions" }, el("button", { type: "button", class: "btn accent", onclick: () => send("да, оформляй") }, "Оформить и оплатить"),
+          el("div", { class: "actions" }, el("button", { type: "button", class: "btn accent", onclick: () => send("да, оформляй") }, "Выбрать способ оплаты"),
             sayBtn("К вариантам", "нет, вернуться к вариантам"))),
         el("article", { class: "card" }, photo(k.hotel.image, { alt: k.hotel.name, badge: "иллюстрация отеля" }),
           el("h4", {}, "Поездка по часам"), timelineEl(k.timeline),
           el("h4", {}, "Состыковки"), marks("", k.checks)))];
   },
+  payment(p) {
+    drawMap(tripRoute(p.trip));
+    return [el("h2", { class: "section-title" }, "Способ оплаты"),
+      el("p", { class: "section-sub" }, "Демонстрационный сценарий: денег не спишем, реальную бронь не создадим."),
+      el("article", { class: "card" }, el("h3", {}, `Итого ${p.total}`),
+        el("p", {}, p.method_name ? `Выбрано: ${p.method_name}` : "Выберите способ оплаты. Вводить данные карты не нужно."),
+        el("div", { class: "actions" }, sayBtn("Демо-карта", "оплата картой", p.method === "card" ? "btn accent" : "btn ghost"),
+          sayBtn("Демо-СБП", "оплата СБП", p.method === "sbp" ? "btn accent" : "btn ghost")),
+        p.method ? el("div", { class: "actions" }, sayBtn("Подтвердить демонстрацию", "да, подтверждаю", "btn accent"),
+          sayBtn("Вернуться в корзину", "нет")) : sayBtn("Вернуться в корзину", "нет"))];
+  },
   order(p) {
     const o = p.order;
     $("map").replaceChildren();
     const cancel = o.cancel_until ? `бесплатно до ${o.cancel_until.split("-").reverse().join(".")}` : "невозвратный тариф";
-    return [el("h2", { class: "section-title" }, "Поездка оформлена"),
-      el("p", { class: "section-sub" }, "Оплата имитирована. Билеты и ваучер в демо не отправляются."),
+    return [el("h2", { class: "section-title" }, "Демонстрация завершена"),
+      el("p", { class: "section-sub" }, "Денег не списано, реальная бронь не создана. Билеты и ваучер не отправляются."),
       el("article", { class: "pass" },
         el("div", { class: "main" },
           photo(o.image, { alt: o.dest }),
@@ -518,7 +631,7 @@ const views = {
             sayBtn("Перенести на 2 дня", "перенеси на 2 дня позже"), sayBtn("Отменить", "отмени бронь"))),
         el("div", { class: "stub" },
           el("div", { class: "label" }, "Номер заказа"), el("div", { class: "big num" }, o.number),
-          el("div", { class: "label" }, "Оплачено"), el("div", { class: "big num" }, new Intl.NumberFormat("ru-RU").format(o.total) + " ₽"),
+          el("div", { class: "label" }, "Демо-сумма"), el("div", { class: "big num" }, new Intl.NumberFormat("ru-RU").format(o.total) + " ₽"),
           el("div", { class: "label" }, "Путешественники"), el("div", {}, o.people || "")))];
   },
 };
@@ -532,7 +645,9 @@ function shortReply(text, kind) {
   if (!["destinations", "packages", "cart", "hotels"].includes(kind)) return text;
   const blocks = text.split("\n\n");
   const head = blocks[0].split("\n").filter((l) => !/^\s*(\d+\.|•)\s/.test(l));
-  return [head.slice(0, kind === "cart" ? 1 : 3).join("\n"), blocks[blocks.length - 1]].join("\n");
+  const assumptions = blocks.find((b) => b.startsWith("Я предположил:"));
+  return [head.slice(0, kind === "cart" ? 1 : 3).join("\n"), assumptions, blocks[blocks.length - 1]]
+    .filter((part, index, all) => part && all.indexOf(part) === index).join("\n\n");
 }
 function renderStages(stage) {
   const list = info ? info.stages : [];
@@ -543,6 +658,30 @@ function renderSuggest(stage) {
   const items = stage === "start" ? (info ? info.examples : []) : (QUICK[stage] || []);
   $("suggest").replaceChildren(...items.map((q) => el("button", { type: "button", onclick: () => send(q) }, q)));
 }
+function locationChoice() {
+  const result = el("div", { class: "src", role: "status" });
+  const button = el("button", { type: "button", class: "btn ghost", onclick: () => {
+    if (!navigator.geolocation) { result.textContent = "Браузер не поддерживает определение местоположения."; return; }
+    result.textContent = "Запрашиваю разрешение браузера…";
+    navigator.geolocation.getCurrentPosition(({ coords }) => {
+      const rad = (n) => n * Math.PI / 180;
+      const distance = (p) => {
+        const a = Math.sin(rad(p.lat - coords.latitude) / 2) ** 2 + Math.cos(rad(coords.latitude)) * Math.cos(rad(p.lat)) *
+          Math.sin(rad(p.lon - coords.longitude) / 2) ** 2;
+        return 12742 * Math.asin(Math.sqrt(Math.min(1, a)));
+      };
+      const nearest = (info.origins || []).map((p) => ({ ...p, km: distance(p) })).sort((a, b) => a.km - b.km)[0];
+      if (!nearest || nearest.km > 80) {
+        result.textContent = "Рядом нет доступного города отправления в демо. Напишите город вручную."; return;
+      }
+      result.replaceChildren(el("p", {}, `Похоже, вы рядом с городом ${nearest.name}. Использовать его?`),
+        sayBtn("Да, использовать", `из ${nearest.name}`, "btn accent"));
+    }, () => { result.textContent = "Не удалось определить местоположение. Город можно написать вручную."; },
+    { timeout: 8000, maximumAge: 300000, enableHighAccuracy: false });
+  } }, "Определить город");
+  return el("div", { class: "actions" }, button,
+    el("p", { class: "src" }, "Только с разрешения браузера. Координаты остаются в браузере; город нужно подтвердить."), result);
+}
 function render(data) {
   sessionId = data.session_id;
   renderStages(data.stage); renderHead(data); renderSuggest(data.stage);
@@ -552,7 +691,8 @@ function render(data) {
   if (views[p.kind]) $("view").replaceChildren(...[notice, ...views[p.kind](p)].filter(Boolean));
   else if (p.kind === "greeting") { $("view").replaceChildren(); drawMap({}); }
   else if (p.kind === "question") {
-    $("view").replaceChildren(...[notice, el("div", { class: "ask-card" }, data.reply.split("\n\n").pop())].filter(Boolean));
+    $("view").replaceChildren(...[notice, el("div", { class: "ask-card" }, data.reply.split("\n\n").pop()),
+      p.field === "origin" ? locationChoice() : null].filter(Boolean));
     if (data.stage !== "destination") drawMap({});
   }
 }
@@ -569,8 +709,7 @@ async function send(text) {
   try {
     const data = await post("/api/chat", { text, session_id: sessionId });
     typing.remove();
-    const checked = (data.checked || []).length ? ` · сверка: отброшено ${data.checked.length}` : "";
-    addMessage("bot", shortReply(data.reply, (data.payload || {}).kind), `${data.nlu || "—"} · ${data.ms} мс${checked}`);
+    addMessage("bot", shortReply(data.reply, (data.payload || {}).kind));
     render(data);
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     $("say").textContent = mobile ? shortReply(data.reply, (data.payload || {}).kind) : "";
@@ -581,8 +720,7 @@ async function send(text) {
   } finally { busy = false; $("send").disabled = false; $("text").focus(); }
 }
 function greet() {
-  addMessage("bot", "Привет! Опишите поездку одной фразой: куда или какой отдых хотите, когда, кто едет и бюджет. Не знаете, куда, — подскажу.",
-    info && info.llm ? `модель: ${info.llm}` : "без LLM — понимаю запросы по правилам");
+  addMessage("bot", "Привет! Расскажите, какой поездки хочется. Если пока не знаете куда или когда, вместе найдём идеи.");
 }
 function start() { renderStages("start"); renderHead(null); renderSuggest("start"); drawMap({}); greet(); }
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; send(t); });
@@ -590,7 +728,7 @@ $("reset").addEventListener("click", async () => {
   if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
   sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); $("say").textContent = ""; start();
 });
-Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/landdots.json").then((r) => r.json())])
+Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/land.geojson").then((r) => r.json())])
   .then(([i, l]) => { info = i; land = l; start(); })
   .catch(() => addMessage("bot", "Сервер недоступен."));
 </script>
