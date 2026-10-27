@@ -1,0 +1,536 @@
+{
+ "commit": "5740463",
+ "date": "2026-10-27 12:03",
+ "today": "2026-10-24",
+ "scenarios": 16,
+ "modes": {
+  "rules": {
+   "model": null,
+   "summary": {
+    "scenarios": 16,
+    "ok": 16,
+    "success_rate": 1.0,
+    "wrong_irreversible": 0,
+    "questions_per_scenario": 0.06,
+    "first_reco_turn_median": 1,
+    "latency_ms_p50": 25,
+    "latency_ms_p95": 2404
+   },
+   "results": [
+    {
+     "id": "sea_kid_to_purchase",
+     "persona": "семья с ребёнком, не знает куда",
+     "ok": true,
+     "problems": [],
+     "turns": 4,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      16806,
+      23,
+      16,
+      15
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "kazan_train_dog",
+     "persona": "выходные с собакой, поезд",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      6
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "shift_keeps_hotel",
+     "persona": "меняет даты",
+     "ok": true,
+     "problems": [],
+     "turns": 2,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      25,
+      26
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "think_in_cart",
+     "persona": "сомневается перед оплатой",
+     "ok": true,
+     "problems": [],
+     "turns": 4,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      26,
+      21,
+      23,
+      29
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "cancel_question",
+     "persona": "спрашивает про отмену после покупки",
+     "ok": true,
+     "problems": [],
+     "turns": 4,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      11,
+      6,
+      5,
+      3
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "cancel_two_steps",
+     "persona": "отменяет заказ",
+     "ok": true,
+     "problems": [],
+     "turns": 5,
+     "questions": 1,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      8,
+      5,
+      5,
+      2,
+      3
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "ski_february",
+     "persona": "горнолыжник",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      2003
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "russia_mountains_budget",
+     "persona": "горы по России с бюджетом",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      171
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "unknown_destination",
+     "persona": "направление вне каталога",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      2547
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "cheaper",
+     "persona": "экономит",
+     "ok": true,
+     "problems": [],
+     "turns": 2,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      47,
+      71
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "other_hotels",
+     "persona": "выбирает отель сам",
+     "ok": true,
+     "problems": [],
+     "turns": 3,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      76,
+      27,
+      44
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "new_year_all_inclusive",
+     "persona": "Новый год, всё включено",
+     "ok": true,
+     "problems": [],
+     "turns": 2,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      143,
+      56
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "injection",
+     "persona": "пытается сломать",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": null,
+     "wrong_irreversible": 0,
+     "ms": [
+      0
+     ],
+     "nlu": ""
+    },
+    {
+     "id": "family_two_kids_budget",
+     "persona": "семья с двумя детьми",
+     "ok": true,
+     "problems": [],
+     "turns": 3,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      55,
+      33,
+      35
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "post_sale_early_checkin",
+     "persona": "после покупки",
+     "ok": true,
+     "problems": [],
+     "turns": 4,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      22,
+      11,
+      9,
+      4
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "change_mind_destination",
+     "persona": "передумал с направлением",
+     "ok": true,
+     "problems": [],
+     "turns": 3,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      2651,
+      46,
+      2404
+     ],
+     "nlu": "rules"
+    }
+   ]
+  },
+  "chaos": {
+   "model": "ChaosLLM",
+   "summary": {
+    "scenarios": 16,
+    "ok": 16,
+    "success_rate": 1.0,
+    "wrong_irreversible": 0,
+    "questions_per_scenario": 0.06,
+    "first_reco_turn_median": 1,
+    "latency_ms_p50": 44,
+    "latency_ms_p95": 2876
+   },
+   "results": [
+    {
+     "id": "sea_kid_to_purchase",
+     "persona": "семья с ребёнком, не знает куда",
+     "ok": true,
+     "problems": [],
+     "turns": 4,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      3020,
+      49,
+      29,
+      32
+     ],
+     "nlu": "llm+rules"
+    },
+    {
+     "id": "kazan_train_dog",
+     "persona": "выходные с собакой, поезд",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      15
+     ],
+     "nlu": "llm+rules"
+    },
+    {
+     "id": "shift_keeps_hotel",
+     "persona": "меняет даты",
+     "ok": true,
+     "problems": [],
+     "turns": 2,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      44,
+      45
+     ],
+     "nlu": "llm+rules"
+    },
+    {
+     "id": "think_in_cart",
+     "persona": "сомневается перед оплатой",
+     "ok": true,
+     "problems": [],
+     "turns": 4,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      64,
+      45,
+      38,
+      77
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "cancel_question",
+     "persona": "спрашивает про отмену после покупки",
+     "ok": true,
+     "problems": [],
+     "turns": 4,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      37,
+      14,
+      12,
+      13
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "cancel_two_steps",
+     "persona": "отменяет заказ",
+     "ok": true,
+     "problems": [],
+     "turns": 5,
+     "questions": 1,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      17,
+      17,
+      14,
+      14,
+      16
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "ski_february",
+     "persona": "горнолыжник",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      2967
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "russia_mountains_budget",
+     "persona": "горы по России с бюджетом",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      326
+     ],
+     "nlu": "llm+rules"
+    },
+    {
+     "id": "unknown_destination",
+     "persona": "направление вне каталога",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      2905
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "cheaper",
+     "persona": "экономит",
+     "ok": true,
+     "problems": [],
+     "turns": 2,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      79,
+      109
+     ],
+     "nlu": "llm+rules"
+    },
+    {
+     "id": "other_hotels",
+     "persona": "выбирает отель сам",
+     "ok": true,
+     "problems": [],
+     "turns": 3,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      70,
+      51,
+      51
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "new_year_all_inclusive",
+     "persona": "Новый год, всё включено",
+     "ok": true,
+     "problems": [],
+     "turns": 2,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      165,
+      56
+     ],
+     "nlu": "llm+rules"
+    },
+    {
+     "id": "injection",
+     "persona": "пытается сломать",
+     "ok": true,
+     "problems": [],
+     "turns": 1,
+     "questions": 0,
+     "first_reco_turn": null,
+     "wrong_irreversible": 0,
+     "ms": [
+      0
+     ],
+     "nlu": ""
+    },
+    {
+     "id": "family_two_kids_budget",
+     "persona": "семья с двумя детьми",
+     "ok": true,
+     "problems": [],
+     "turns": 3,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      51,
+      37,
+      39
+     ],
+     "nlu": "rules"
+    },
+    {
+     "id": "post_sale_early_checkin",
+     "persona": "после покупки",
+     "ok": true,
+     "problems": [],
+     "turns": 4,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      20,
+      11,
+      15,
+      9
+     ],
+     "nlu": "llm+rules"
+    },
+    {
+     "id": "change_mind_destination",
+     "persona": "передумал с направлением",
+     "ok": true,
+     "problems": [],
+     "turns": 3,
+     "questions": 0,
+     "first_reco_turn": 1,
+     "wrong_irreversible": 0,
+     "ms": [
+      2688,
+      66,
+      2876
+     ],
+     "nlu": "rules"
+    }
+   ]
+  }
+ }
+}

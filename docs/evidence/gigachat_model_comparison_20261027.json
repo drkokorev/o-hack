@@ -1,0 +1,338 @@
+{
+  "fixed_today": "2026-10-27",
+  "results": [
+    {
+      "model": "GigaChat-2-Pro",
+      "passed": 20,
+      "total": 20,
+      "turns": 33,
+      "model_turns": 33,
+      "median_seconds": 1.667,
+      "p95_seconds": 12.08,
+      "cases": [
+        {
+          "id": "train_pet",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "month_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "child_total",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "unsupported_transport",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "exclude_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "short_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "update_budget_nights",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "replace_destination",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "numeric_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "cross_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "past_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "backwards_dates",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "not_yet_confirmed",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "mock_purchase",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "no_cancel_without_consent",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "meal_cancel",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "direct_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "remove_children",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "pet_list",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "no_implicit_booking",
+          "pass": true,
+          "failures": []
+        }
+      ]
+    },
+    {
+      "model": "GigaChat-2-Max",
+      "passed": 20,
+      "total": 20,
+      "turns": 33,
+      "model_turns": 33,
+      "median_seconds": 1.138,
+      "p95_seconds": 9.707,
+      "cases": [
+        {
+          "id": "train_pet",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "month_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "child_total",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "unsupported_transport",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "exclude_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "short_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "update_budget_nights",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "replace_destination",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "numeric_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "cross_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "past_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "backwards_dates",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "not_yet_confirmed",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "mock_purchase",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "no_cancel_without_consent",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "meal_cancel",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "direct_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "remove_children",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "pet_list",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "no_implicit_booking",
+          "pass": true,
+          "failures": []
+        }
+      ]
+    },
+    {
+      "model": "GigaChat-3-Ultra",
+      "passed": 20,
+      "total": 20,
+      "turns": 33,
+      "model_turns": 33,
+      "median_seconds": 0.819,
+      "p95_seconds": 1.821,
+      "cases": [
+        {
+          "id": "train_pet",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "month_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "child_total",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "unsupported_transport",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "exclude_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "short_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "update_budget_nights",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "replace_destination",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "numeric_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "cross_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "past_year",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "backwards_dates",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "not_yet_confirmed",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "mock_purchase",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "no_cancel_without_consent",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "meal_cancel",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "direct_flight",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "remove_children",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "pet_list",
+          "pass": true,
+          "failures": []
+        },
+        {
+          "id": "no_implicit_booking",
+          "pass": true,
+          "failures": []
+        }
+      ]
+    }
+  ]
+}

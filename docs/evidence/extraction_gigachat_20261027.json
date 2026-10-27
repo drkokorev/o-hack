@@ -1,0 +1,157 @@
+{
+  "fixed_today": "2026-10-27",
+  "results": [
+    {
+      "model": "GigaChat-2-Max",
+      "passed": 19,
+      "total": 20,
+      "median_seconds": 0.532,
+      "max_seconds": 2.494,
+      "empty_responses": 0,
+      "cases": [
+        {
+          "id": "family_and_pet",
+          "pass": false,
+          "failures": [
+            "adults: модель добавила неуказанное значение"
+          ],
+          "seconds": 1.822,
+          "empty": false
+        },
+        {
+          "id": "transport_train",
+          "pass": true,
+          "failures": [],
+          "seconds": 1.269,
+          "empty": false
+        },
+        {
+          "id": "refuse_flight",
+          "pass": true,
+          "failures": [],
+          "seconds": 2.494,
+          "empty": false
+        },
+        {
+          "id": "exact_budget",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.794,
+          "empty": false
+        },
+        {
+          "id": "words_budget",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.353,
+          "empty": false
+        },
+        {
+          "id": "per_night",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.544,
+          "empty": false
+        },
+        {
+          "id": "no_hallucinated_day",
+          "pass": true,
+          "failures": [],
+          "seconds": 2.212,
+          "empty": false
+        },
+        {
+          "id": "hotel_wishes",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.514,
+          "empty": false
+        },
+        {
+          "id": "change_city",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.52,
+          "empty": false
+        },
+        {
+          "id": "adult_child",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.481,
+          "empty": false
+        },
+        {
+          "id": "three_children",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.454,
+          "empty": false
+        },
+        {
+          "id": "no_children",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.419,
+          "empty": false
+        },
+        {
+          "id": "friends_pet",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.379,
+          "empty": false
+        },
+        {
+          "id": "range_year",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.944,
+          "empty": false
+        },
+        {
+          "id": "cross_year",
+          "pass": true,
+          "failures": [],
+          "seconds": 1.267,
+          "empty": false
+        },
+        {
+          "id": "no_confirm",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.627,
+          "empty": false
+        },
+        {
+          "id": "explicit_confirm",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.441,
+          "empty": false
+        },
+        {
+          "id": "change_duration",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.439,
+          "empty": false
+        },
+        {
+          "id": "move_dates",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.287,
+          "empty": false
+        },
+        {
+          "id": "mountains_not_sea",
+          "pass": true,
+          "failures": [],
+          "seconds": 0.605,
+          "empty": false
+        }
+      ]
+    }
+  ]
+}
