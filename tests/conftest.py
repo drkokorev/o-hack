@@ -24,3 +24,19 @@ class FakeLLM:
 @pytest.fixture
 def today():
     return TODAY
+
+
+@pytest.fixture(autouse=True)
+def no_local_env(monkeypatch):
+    """Тесты не зависят от личного .env разработчика: только значения по умолчанию и то, что задал сам тест."""
+    import os
+
+    from core import config
+
+    for name in list(os.environ):
+        if name.startswith(("LLM_", "GIGACHAT_")):
+            monkeypatch.delenv(name)
+    monkeypatch.setattr(config, "load_dotenv", lambda *a, **k: False)
+    config.get_settings.cache_clear()
+    yield
+    config.get_settings.cache_clear()

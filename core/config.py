@@ -3,8 +3,13 @@
 import os
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 
 from dotenv import load_dotenv
+
+
+# Корневой сертификат Минцифры (публичный): им подписан API GigaChat, в системных хранилищах его нет
+GIGACHAT_CA = Path(__file__).resolve().parent / "certs" / "russian_trusted_root_ca.pem"
 
 
 @dataclass(frozen=True)
@@ -50,5 +55,5 @@ def get_settings() -> Settings:
         gigachat_auth_key=os.getenv("GIGACHAT_AUTH_KEY", ""),
         gigachat_scope=os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS"),
         gigachat_oauth_url=os.getenv("GIGACHAT_OAUTH_URL", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"),
-        gigachat_verify_ssl=os.getenv("GIGACHAT_VERIFY_SSL", "1"),
+        gigachat_verify_ssl=os.getenv("GIGACHAT_VERIFY_SSL", str(GIGACHAT_CA)),
     )
