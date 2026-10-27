@@ -1,5 +1,5 @@
 [
-  {"id":"family_and_pet", "text":"В Сочи на неделю в ноябре, едем я, муж, ребёнок и собака", "expect":{"destination":"sochi", "children":1, "pets":true, "adults":2, "nights":7, "month":11}, "empty":["date_from", "date_to"]},
+  {"id":"family_and_pet", "text":"В Сочи на неделю в ноябре, едем я, муж, ребёнок и собака", "expect":{"destination":"sochi", "children":1, "pets":true, "nights":7, "month":11}, "empty":["adults", "date_from", "date_to"]},
   {"id":"transport_train", "text":"Из Москвы в Казань с 10 по 14 ноября 2027 года, только поездом", "expect":{"origin":"Москва", "destination":"kazan", "transport":"train", "date_from":"2027-11-10", "date_to":"2027-11-14"}},
   {"id":"refuse_flight", "text":"Хочу в Сочи на неделю в ноябре, боюсь самолётов, лететь не буду", "expect":{"destination":"sochi", "nights":7, "month":11}, "forbid":{"transport":"plane"}},
   {"id":"exact_budget", "text":"Казань на выходные, бюджет на всю поездку не больше 85 тысяч рублей", "expect":{"destination":"kazan", "budget_total":85000}},
@@ -11,7 +11,7 @@
   {"id":"adult_child", "text":"Едем на двоих: один взрослый и один ребёнок", "expect":{"adults":1, "children":1}},
   {"id":"three_children", "text":"Нас двое взрослых и трое детей", "expect":{"adults":2, "children":3}},
   {"id":"no_children", "text":"Без детей, но со щенком", "expect":{"children":0, "pets":true}},
-  {"id":"friends_pet", "text":"Еду я и два друга, с кошкой", "expect":{"adults":3, "pets":true}},
+  {"id":"friends_pet", "text":"Еду я и два друга, с кошкой", "expect":{"party_size":3, "pets":true}, "empty":["adults"]},
   {"id":"range_year", "text":"Казань с 5 по 12 декабря 2028 года", "expect":{"destination":"kazan", "date_from":"2028-12-05", "date_to":"2028-12-12"}},
   {"id":"cross_year", "text":"Сочи с 29 декабря 2027 по 3 января 2028", "expect":{"destination":"sochi", "date_from":"2027-12-29", "date_to":"2028-01-03"}},
   {"id":"no_confirm", "text":"Не оформляй, я ещё подумаю", "forbid":{"confirm":true, "after_sale":"cancel"}},

@@ -39,6 +39,8 @@ def assess(case: dict, session, step) -> list[str]:
         failures.append("выбранные приложением даты не обозначены как предположение")
     if case.get("types_include") and not set(case["types_include"]).issubset(set(state.trip_types or [])):
         failures.append("не сохранены нужные типы отдыха")
+    if case.get("types_exclude") and set(case["types_exclude"]).intersection(state.trip_types or []):
+        failures.append("сохранён исключённый тип отдыха")
     payload = step.payload or {}
     if case.get("payload") and payload.get("kind") != case["payload"]:
         failures.append(f"экран: ожидался {case['payload']!r}, получен {payload.get('kind')!r}")

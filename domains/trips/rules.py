@@ -46,8 +46,9 @@ ORDINALS = {"перв": 1, "втор": 2, "трет": 3, "четв": 4, "пят"
 _OFFSET_WORDS = {"день": 1, "дня": 1, "дней": 1, "сутки": 1, "неделю": 7, "недели": 7}
 
 
-_NEG_BEFORE = re.compile(r"(\bне|\bбез|\bвместо|\bкроме)\s+(\w+\s+)?$")
-_NEG_AFTER = re.compile(r"^\W*\w*\W+(не надо|не хочу|не нужн\w*|не подходит|отпадает|не вариант)")
+_NEG_BEFORE = re.compile(r"(\bне|\bбез|\bвместо|\bкроме|\bпередумал(?:а|и)?\s+(?:насчет|про)|"
+                         r"\bотказал(?:ся|ась)\s+от)\s+(\w+\s+)?$")
+_NEG_AFTER = re.compile(r"^\W*(?:\w+\W+)?(не надо|не хочу|не интересует|не нужн\w*|не подходит|отпадает|не вариант)")
 # Слова с заглавной буквы после «в», которые не города
 _NOT_PLACES = {"январе", "феврале", "марте", "апреле", "мае", "июне", "июле", "августе", "сентябре", "октябре",
                "ноябре", "декабре", "россии", "европу", "европе", "азию", "азии", "горы", "море", "отпуск", "субботу",
@@ -353,6 +354,9 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["party_size"] = 3
     elif re.search(r"\bвчетвером\b|на четверых", t):
         data["party_size"] = 4
+    elif (friends := re.search(rf"\bя\s+и\s+{NUM}\s+(?:друг|друз|подруг)\w*", t)):
+        if (count := num_word(friends.group(1))) is not None:
+            data["party_size"] = count + 1
     elif re.search(r"с другом|с подругой", t) and not re.search(r"\bдет(?:и|ей|ям|ьми)|реб[её]н|компан|друзьями", t):
         data["party_size"] = 2
     if re.search(r"добав\w* (ещ[её] )?(одного )?взросл|ещ[её] (один|одна|одного) (взросл|человек)|\+\s*1", t):
@@ -361,7 +365,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     if kids:
         word = kids.group(1) or ""
         data["children"] = {"двумя": 2, "тремя": 3}.get(word, num_word(word) if word else 2)
-    elif re.search(r"с реб[её]нк|с дочк|с сыном|с малыш|с ребенк|и реб[её]н|и дочк|и сын\b|и сыном", t):
+    elif re.search(r"с реб[её]нк|с дочк|с сыном|с малыш|с ребенк|и реб[её]н|и дочк|и сын\b|и сыном|"
+                   r"[,;]\s*(?:и\s+)?(?:ребенок|дочка|сын|малыш)\b", t):
         data["children"] = 1
     elif re.search(r"с детьми|и дети\b", t):
         data["children_unknown"] = True
@@ -376,7 +381,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["party_size"] = 1
     if re.search(r"(мы|я) с (мужем|женой) и (реб|дет|сын|доч)", t):
         data["adults"] = 2
-    if re.search(r"с собак|с кош|с питомц|с животн|с собачк|с котом|с псом|\bи (?:с\s+)?(?:собак|кошк|питомец|кот\b|пес\b)", t):
+    if re.search(r"с собак|с кош|с питомц|с животн|с собачк|с котом|с псом|со щенк|"
+                 r"\bи (?:с\s+)?(?:собак|кошк|питомец|кот\b|пес\b|щен)", t):
         data["pets"] = True
     elif re.search(r"без (собак|животн|питомц)", t):
         data["pets"] = False
@@ -402,7 +408,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     elif re.search(r"без долг\w+ (перел[её]т|дорог)|недалеко|не очень далеко|близко лететь|недолго лететь", t):
         data["max_travel_hours"] = 5.0
     no_plane = re.search(r"\bбез\s+(?:самол[её]т|перел[её]т|авиаперел[её]т)|"
-                         r"\bне\s+(?:(?:хочу|буду|готов\w*)\s+)?(?:лететь|летать|полететь|самол[её]том)", t)
+                         r"\bне\s+(?:(?:хочу|буду|готов\w*)\s+)?(?:лететь|летать|полететь|самол[её]том)|"
+                         r"\b(?:лететь|летать|полететь)\s+не\s+(?:буду|будем|хочу|хотим|могу|можем)", t)
     no_train = re.search(r"\bбез\s+поезд|\bне\s+поезд", t)
     other_transport = re.search(r"\bна\s+(?:машин|авто|автомобил|автобус)", t)
     train = re.search(r"поезд|\bж/?д\b|по железной|сапсан|ласточк", t) and not no_train

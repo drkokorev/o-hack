@@ -116,7 +116,9 @@ make simulate       # LLM играет 8 путешественников
 | `domains/trips/arbiter.py` | Сверка ответа LLM с текстом и правилами |
 | `domains/trips/domain.py` | Этапы диалога, пересборка плана, корзина, заказ |
 | `core/` | Цикл агента, клиент LLM, извлечение с ремонтом JSON, защита от инъекций |
-| `apps/web.py`, `apps/static/` | Веб-приложение |
+| `apps/web.py` | HTTP API и хранение сессий в памяти |
+| `apps/static/index.html`, `app.css`, `app.js` | Разметка, стили и поведение полного сайта |
+| `apps/static/widget.html`, `widget.css`, `widget.js`, `embed.js` | Встраиваемый чат и его подключение к странице |
 
 ## Разработка
 

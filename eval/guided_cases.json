@@ -29,5 +29,11 @@
   {"id": "no_invented_budget_and_family", "turns": ["хочу недорого отдохнуть с семьей"], "state": {"budget_total": null, "nights": null, "adults": null, "children": null}, "payload": "question"},
   {"id": "children_count", "turns": ["в Сочи из Москвы с 5 по 12 декабря двое взрослых с детьми", "3"], "state": {"children": 3, "children_unknown": false}, "payload": "packages"},
   {"id": "short_slot_answers", "turns": ["хочу в Сочи", "ноябрь", "3", "Москва", "2"], "state": {"dest_id": "sochi", "origin": "Москва", "nights": 3, "adults": 2}, "payload": "packages"},
-  {"id": "party_age_unknown", "turns": ["В Сочи из Москвы с 5 по 12 декабря вдвоём", "2"], "state": {"party_size": 2, "adults": 2, "children": 0}, "payload": "packages"}
+  {"id": "party_age_unknown", "turns": ["В Сочи из Москвы с 5 по 12 декабря вдвоём", "2"], "state": {"party_size": 2, "adults": 2, "children": 0}, "payload": "packages"},
+  {"id": "refuse_after_airplane", "turns": ["Из Москвы в Казань с 10 по 14 ноября 2027, двое взрослых, боюсь самолётов, лететь не буду"], "state": {"dest_id": "kazan", "transport": "train"}, "payload": "packages", "all_legs": "train"},
+  {"id": "changed_mind_about_city", "turns": ["Сочи из Москвы с 5 по 12 декабря, двое взрослых", "Я передумал насчёт Сочи, поеду в Казань"], "state": {"dest_id": "kazan"}, "payload": "packages"},
+  {"id": "written_budget", "turns": ["Бюджет на всё путешествие — не дороже ста пятидесяти тысяч рублей"], "state": {"budget_total": 150000, "adults": null}},
+  {"id": "postposed_negation", "turns": ["Мне нужны горы и природа в июле, море не интересует"], "types_include": ["mountains", "nature"], "types_exclude": ["sea"]},
+  {"id": "friends_with_cat", "turns": ["Еду я и два друга, с кошкой"], "state": {"party_size": 3, "adults": null, "pets": true}, "payload": "question"},
+  {"id": "family_list", "turns": ["В Сочи на неделю в ноябре, едем я, муж, ребёнок и собака"], "state": {"children": 1, "adults": null, "pets": true}, "payload": "question"}
 ]
