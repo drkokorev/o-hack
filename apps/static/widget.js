@@ -47,7 +47,7 @@
         reply = reply.split("\n").slice(0, 2).join("\n") + "\nВыберите вариант ниже.";
       }
       message(reply); render(data.payload);
-    } catch (_) { message("Не удалось связаться с помощником. Попробуйте ещё раз."); }
+    } catch (_) { if (!input.value) input.value = text; message("Не удалось отправить. Текст сохранён — попробуйте ещё раз."); }
     finally { busy = false; form.querySelector("button").disabled = false; input.focus(); }
   }
   form.addEventListener("submit", (event) => { event.preventDefault(); send(input.value); });

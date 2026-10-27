@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-10-28",
+  "note": "Подборка добавлена вручную; билеты и актуальность программы не проверяются автоматически.",
+  "events": [
+    {
+      "id": "f2-abu-dhabi-2026", "name": "Формула-2", "city": "Абу-Даби",
+      "country": "ОАЭ", "lat": 24.45118, "lon": 54.39696,
+      "start": "2026-12-04", "end": "2026-12-06", "dates": "4–6 декабря 2026",
+      "category": "Спорт", "source": "FIA Formula 2",
+      "url": "https://www.fiaformula2.com/en/racing/2026"
+    },
+    {
+      "id": "venice-street-show-2027", "name": "Карнавал: уличная программа", "city": "Венеция",
+      "country": "Италия", "lat": 45.43713, "lon": 12.33265,
+      "start": "2027-01-23", "end": "2027-02-09",
+      "dates": "23–24 и 30–31 января; 4–9 февраля 2027",
+      "category": "Культура", "source": "Организаторы карнавала",
+      "url": "https://carnevale.venezia.it/en/news/2026/carnevale-di-venezia-2027-aperte-le-candidature-per-artisti-e-performer/"
+    },
+    {
+      "id": "hockey-dusseldorf-2027", "name": "Чемпионат мира по хоккею", "city": "Дюссельдорф",
+      "country": "Германия", "lat": 51.22172, "lon": 6.77616,
+      "start": "2027-05-14", "end": "2027-05-30", "dates": "14–30 мая 2027",
+      "category": "Спорт", "source": "IIHF",
+      "url": "https://www.iihf.com/en/events/2027/wm/news/75647/schedule_ticket_sales_and_anticipation_the_iihf_wo"
+    },
+    {
+      "id": "formula1-monaco-2027", "name": "Гран-при Формулы-1", "city": "Монако",
+      "country": "Монако", "lat": 43.73718, "lon": 7.42145,
+      "start": "2027-06-04", "end": "2027-06-06", "dates": "4–6 июня 2027",
+      "category": "Спорт", "source": "Formula 1",
+      "url": "https://www.formula1.com/en/racing/2027/monaco"
+    }
+  ]
+}

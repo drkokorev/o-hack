@@ -11,7 +11,8 @@ COPY --from=build /install /usr/local
 COPY core ./core
 COPY domains ./domains
 COPY apps ./apps
-RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app && chown -R app /app
+RUN python -m apps.map_snapshot && \
+    useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app && chown -R app /app
 USER app
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=10s --start-period=60s --retries=5 \

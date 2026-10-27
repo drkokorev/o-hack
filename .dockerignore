@@ -3,8 +3,11 @@
 .env
 **/__pycache__
 .pytest_cache
+.playwright-cli
 tests
 eval
 tools
 docs
 *.md
+domains/trips/data/map_catalog.sqlite3
+domains/trips/data/map_catalog.building.sqlite3

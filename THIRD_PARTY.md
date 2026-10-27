@@ -8,6 +8,8 @@
 | python-dotenv | 1.2.4 | BSD-3-Clause | Настройки из `.env` |
 | fastapi | 0.142.4 | MIT | Веб-приложение и API |
 | uvicorn | 0.54.0 | BSD-3-Clause | Сервер |
+| maxminddb | 3.2.0 | Apache-2.0 | Чтение локального снимка DB-IP без передачи IP стороннему сервису |
+| MapLibre GL JS | 6.16.0 | BSD-3-Clause | Глобус и слои карты, локальная копия; лицензия `apps/static/vendor/maplibre/LICENSE.txt` |
 | Pillow | 13.0.0 | MIT-CMU | Ужатие фото при сборке (`tools/build_images.py`, только для разработки) |
 | DuckDB | 1.4.1 | MIT | Чтение Overture Maps из S3 при сборке (`tools/build_hotels.py`, только для разработки) |
 | pytest | 9.1.1 | MIT | Тесты (только для разработки) |
@@ -19,6 +21,10 @@
 | Overture Maps Places, релиз 2026-10-21.0 | `domains/trips/data/hotels.json` (собрано `tools/build_hotels.py`): отели, апартаменты, гостевые дома, пляжи | CDLA Permissive 2.0 / Apache 2.0 — по источникам Overture; указываем источник в интерфейсе |
 | OurAirports | Координаты аэропортов в `domains/trips/data/hotels.json` | Public domain |
 | Natural Earth 110m land | `apps/static/land.geojson`, [источник](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson) | Public domain |
+| Natural Earth 110m countries | `apps/static/countries.geojson`, контуры и точки подписи стран, [исходные данные](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson); преобразованы и сохранены только нужные поля | Public domain |
+| DB-IP Country Lite | `domains/trips/data/dbip-country-lite-2026-10.mmdb.gz`, снимок за октябрь 2026; [DB-IP](https://db-ip.com/) | CC BY 4.0; указание источника в интерфейсе |
+| ЦБ РФ | Снимок курсов за 28.10.2026 в `apps/static/exchange-rates.json`; [сервис XML](https://www.cbr.ru/development/sxml/) | Только приблизительный пересчёт демонстрационных сумм, не актуальный курс оплаты |
+| Источники событий | Ссылки организаторов и дата ручной проверки в `apps/static/events.json` | Программа и билеты не обновляются автоматически |
 | GeoNames через geonamescache 3.0.1 | `domains/trips/data/world_cities.sqlite3`, 161 662 географических записи, извлечённые из `cities1000.json`; код сборки `tools/build_gazetteer.py`. Географические данные © [GeoNames](https://www.geonames.org/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); данные отобраны и преобразованы. SHA-256 исходного wheel: `959d9d850d822f3c16eb7272d476415e42074aa33f1ea85bc2b7cb43b6751c84`. | Данные CC BY 4.0, лицензия библиотеки MIT: `licenses/geonamescache.txt` |
 | umpirsky/country-list | `domains/trips/data/countries_ru.json` и русские названия стран в индексе городов; [источник](https://github.com/umpirsky/country-list) | MIT: `licenses/umpirsky-country-list.txt` |
 | Шрифты Golos Text, Unbounded (Google Fonts) | `apps/static/fonts/`; локальные копии для работы без обращения к CDN | SIL Open Font License 1.1: `licenses/golos-OFL.txt`, `licenses/unbounded-OFL.txt` |

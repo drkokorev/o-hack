@@ -1,5 +1,11 @@
 const $ = (id) => document.getElementById(id);
 let sessionId = null, busy = false, info = null;
+let preferenceData = { saved: {}, hidden: [] };
+try {
+  const stored = JSON.parse(localStorage.getItem("odin.places") || "null");
+  if (stored && stored.saved && Array.isArray(stored.hidden)) preferenceData = stored;
+} catch (_) {}
+const persistPlaces = () => { try { localStorage.setItem("odin.places", JSON.stringify(preferenceData)); } catch (_) {} };
 const QUICK = {
   destination: ["покажи другие направления", "только по России", "а за границу?"],
   plan: ["а если на два дня позже?", "подешевле", "покажи другие отели", "только без пересадок", "другое направление"],
@@ -24,27 +30,82 @@ const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button"
 
 const tripMap = createTripMap({ container: $("map"), onChoose: (place) => send(`хочу в ${place.name}`) });
 const drawMap = (options = {}) => tripMap.draw(options);
+const preferences = createPreferences(tripMap);
 
 function renderHead(data) {
   const p = (data && data.payload) || {};
   const trip = p.trip || (p.order && { origin_code: p.order.origin_code, dest_code: p.order.dest_code, origin: p.order.origin, dest: p.order.dest });
-  const understood = data ? data.understood : [], assumed = data ? data.assumptions || [] : [];
-  const chips = understood.map((c) => el("span", { class: "chip" }, c))
-    .concat(assumed.map((a) => el("span", { class: "chip assumed", title: "Агент предположил сам — поправьте, если не так" }, a)));
   if (p.kind === "order") { $("head").replaceChildren(); return; }
   if (trip && trip.dest_code) {
     $("head").replaceChildren(el("div", { class: "route" },
       el("div", { class: "codes" }, trip.origin_code, el("i", {}, "→"), trip.dest_code),
-      el("div", { class: "names" }, [trip.origin + " — " + trip.dest, trip.dates, trip.people].filter(Boolean).join(" · "))),
-      chips.length ? el("div", { class: "chips" }, chips) : null);
-  } else if (chips.length) {
+      el("div", { class: "names" }, [trip.origin + " — " + trip.dest, trip.dates, trip.people].filter(Boolean).join(" · "))));
+  } else if (data && (data.understood || []).length) {
     const title = data.stage === "destination" ? "Подбираю направление" : "Уточняю поездку";
-    $("head").replaceChildren(el("div", { class: "hero" }, el("h1", {}, title)), el("div", { class: "chips" }, chips));
+    $("head").replaceChildren(el("div", { class: "hero" }, el("h1", {}, title)));
   } else {
     $("head").replaceChildren(el("div", { class: "hero" },
-      el("h1", {}, "Расскажите о поездке. Остальное соберёт агент."),
-      el("p", {}, "Направление, перелёт или поезд, отель и трансфер — с объяснением выбора, проверкой состыковок и оформлением.")));
+      el("h1", {}, "Поездка начинается здесь."),
+      el("p", {}, "Расскажите о планах или выберите место на глобусе.")));
   }
+}
+
+function renderConditions(data) {
+  const understood = data?.understood || [], assumed = data?.assumptions || [];
+  $("conditions-count").textContent = understood.length ? `${understood.length}` : "";
+  $("conditions").replaceChildren(...understood.map((c) => el("span", { class: "chip" }, c)),
+    ...assumed.map((a) => el("span", { class: "chip assumed", title: "Предположение — можно уточнить в чате" }, a)));
+  if (!understood.length && !assumed.length) $("conditions").append(el("p", { class: "conditions-empty" }, "Здесь появятся детали из разговора."));
+  const fields = [["Откуда", "Я выезжаю из "], ["Куда", "Хочу в "], ["Даты", "Даты поездки: "],
+    ["Гости", "Путешественники: "], ["Бюджет", "Бюджет в рублях: "], ["Транспорт", "Транспорт: "]];
+  $("condition-actions").replaceChildren(...fields.map(([label, prefix]) => el("button", { type: "button", onclick: () => {
+    if (!$("text").value.trim()) $("text").value = prefix;
+    $("text").focus();
+  } }, label)));
+}
+
+function renderSaved() {
+  const entries = Object.entries(preferenceData.saved);
+  $("saved-places").hidden = !entries.length;
+  $("saved-count").textContent = entries.length ? String(entries.length) : "";
+  $("saved-list").replaceChildren(...entries.map(([id, name]) => el("div", { class: "saved-row" },
+    el("button", { type: "button", onclick: () => send(`хочу в ${name}`) }, name),
+    el("button", { type: "button", class: "saved-remove", "aria-label": `Убрать ${name} из избранного`, onclick: () => {
+      delete preferenceData.saved[id]; persistPlaces(); renderSaved();
+      const button = document.querySelector(`[data-save-key="${CSS.escape(id)}"]`);
+      if (button) { button.setAttribute("aria-pressed", "false"); button.textContent = "♡"; }
+    } }, "×"))));
+}
+function decorateDestinations(payload) {
+  if (!["ideas", "destinations"].includes(payload.kind)) return;
+  const cards = [...$("view").querySelectorAll(".cards > .card")];
+  const section = $("view").querySelector(".cards");
+  if (!section) return;
+  const restore = el("p", { class: "src" }, "Некоторые направления скрыты на этом устройстве. ",
+    el("button", { type: "button", class: "restore-hidden", onclick: () => {
+      preferenceData.hidden = []; persistPlaces(); cards.forEach((card) => { card.hidden = false; }); restore.remove();
+    } }, "Показать скрытые"));
+  let hasHidden = false;
+  (payload.items || []).forEach((place, index) => {
+    const card = cards[index]; if (!card || !place.name) return;
+    const key = String(place.id || place.name);
+    card.hidden = preferenceData.hidden.includes(key); hasHidden ||= card.hidden;
+    const actions = card.querySelector(".actions"); if (!actions) return;
+    const saved = el("button", { type: "button", class: "feedback-button", "data-save-key": key,
+      "aria-label": `В избранное: ${place.name}`, "aria-pressed": String(Boolean(preferenceData.saved[key])),
+      title: "Сохранить на этом устройстве", onclick: () => {
+        if (preferenceData.saved[key]) delete preferenceData.saved[key]; else preferenceData.saved[key] = place.name;
+        saved.setAttribute("aria-pressed", String(Boolean(preferenceData.saved[key])));
+        saved.textContent = preferenceData.saved[key] ? "♥" : "♡"; persistPlaces(); renderSaved();
+      } }, preferenceData.saved[key] ? "♥" : "♡");
+    const hide = el("button", { type: "button", class: "feedback-button", "aria-label": `Скрыть: ${place.name}`,
+      title: "Скрыть на этом устройстве", onclick: () => {
+        if (!preferenceData.hidden.includes(key)) preferenceData.hidden.push(key);
+        persistPlaces(); card.hidden = true; if (!restore.isConnected) section.before(restore);
+      } }, "×");
+    actions.append(saved, hide);
+  });
+  if (hasHidden) section.before(restore);
 }
 
 function photo(img, opts = {}) {
@@ -169,7 +230,7 @@ const views = {
           onclick: () => d.chosen || send(`с ${d.day} ${d.month}`) },
           el("span", {}, d.wd), el("b", {}, String(d.day)),
           el("span", { class: "bar", style: `height:${(6 + 22 * (d.price - lo) / Math.max(hi - lo, 1)).toFixed(0)}px` }),
-          el("span", {}, d.label)))));
+          el("span", { "data-rub-price": d.price }, d.label)))));
     }
     out.push(el("h2", { class: "section-title" }, p.items.length > 1 ? `${p.items.length} способа поехать` : "Ваша поездка"),
       el("p", { class: "section-sub" }, `${p.trip.weather ? "Климат — средние за 2022–2025 годы, не прогноз: " + p.trip.weather + ". " : ""}Демо-цены и расписание смоделированы; наличие не проверялось.`),
@@ -194,12 +255,11 @@ const views = {
       el("p", { class: "section-sub" }, "Выберите — пересоберу поездку с ним, дорогу оставлю. Отзывы, оценки и цены — демо."),
       el("div", { class: "cards" }, p.items.map((h, i) => el("article", { class: "card" },
         photo(h.image, { alt: h.name, badge: "иллюстрация" }),
-        el("div", { class: "kicker" }, el("span", {}, `${h.stars}★ · ${h.area}`), el("span", {}, `${h.rating} · ${h.reviews} отзывов`)),
+        el("div", { class: "kicker" }, el("span", {}, `${h.stars}★ · ${h.area} · демо`), el("span", {}, `${h.rating} · ${h.reviews} отзывов · демо`)),
         el("h3", {}, h.name), hotelSource(h),
         el("div", { class: "price num" }, h.price, el("small", {}, `${h.per_night} за ночь · ${h.meal}`)),
         el("div", { class: "tags" }, h.amenities.map((a) => el("span", { class: "tag" }, a))),
-        el("div", {}, el("h4", {}, "Хвалят"), marks("why", h.praise)),
-        el("div", {}, el("h4", {}, "Жалуются"), marks("trade", h.complaints)),
+        el("div", {}, el("h4", {}, "Примеры отзывов · не реальные"), marks("why", h.praise), marks("trade", h.complaints)),
         el("div", { class: "actions" }, sayBtn("Взять этот отель", `${i + 1}`)))))];
   },
   cart(p) {
@@ -238,7 +298,6 @@ const views = {
   },
   order(p) {
     const o = p.order;
-    $("map").replaceChildren();
     const cancel = o.cancel_until ? `бесплатно до ${o.cancel_until.split("-").reverse().join(".")}` : "невозвратный тариф";
     return [el("h2", { class: "section-title" }, "Демонстрация завершена"),
       el("p", { class: "section-sub" }, "Денег не списано, реальная бронь не создана. Билеты и ваучер не отправляются."),
@@ -260,7 +319,7 @@ const views = {
 
 function addMessage(role, content, meta) {
   const m = el("div", { class: `msg ${role}` }, content, meta ? el("span", { class: "meta" }, meta) : null);
-  $("log").append(m); $("log").scrollTop = $("log").scrollHeight; return m;
+  $("log").append(m); preferences.apply(); $("log").scrollTop = $("log").scrollHeight; return m;
 }
 function shortReply(text, kind) {
   if (kind === "order") { const lines = text.split("\n"); return [lines[0], lines[lines.length - 1]].join("\n"); }
@@ -282,8 +341,9 @@ function renderStages(stage) {
   $("stages").replaceChildren(...list.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : null }, s.title)));
 }
 function renderSuggest(stage) {
-  const items = stage === "start" ? (info ? info.examples : []) : (QUICK[stage] || []);
-  $("suggest").replaceChildren(...items.map((q) => el("button", { type: "button", onclick: () => send(q) }, q)));
+  const items = stage === "start" ? [["Море", "Хочу к морю"], ["Горы", "Хочу в горы"], ["Город", "Хочу в город"]] :
+    (QUICK[stage] || []).map((q) => [q, q]);
+  $("suggest").replaceChildren(...items.map(([label, text]) => el("button", { type: "button", onclick: () => send(text) }, label)));
 }
 function locationChoice() {
   const result = el("div", { class: "src", role: "status" });
@@ -311,17 +371,19 @@ function locationChoice() {
 }
 function render(data) {
   sessionId = data.session_id;
-  renderStages(data.stage); renderHead(data); renderSuggest(data.stage);
+  renderStages(data.stage); renderHead(data); renderConditions(data); renderSuggest(data.stage);
   document.querySelector(".board").classList.toggle("compact", ["plan", "cart", "booked"].includes(data.stage));
   const p = data.payload || {};
+  $("map").hidden = p.kind === "order";
   const notice = p.notice && p.kind !== "packages" ? el("p", { class: "notice" }, p.notice) : null;
   if (views[p.kind]) $("view").replaceChildren(...[notice, ...views[p.kind](p)].filter(Boolean));
   else if (p.kind === "greeting") { $("view").replaceChildren(); drawMap({}); }
   else if (p.kind === "question") {
-    $("view").replaceChildren(...[notice, el("div", { class: "ask-card" }, data.reply.split("\n\n").pop()),
-      p.field === "origin" ? locationChoice() : null].filter(Boolean));
+    $("view").replaceChildren(...[notice, p.field === "origin" ? locationChoice() : null].filter(Boolean));
     if (data.stage !== "destination") drawMap({});
   }
+  decorateDestinations(p);
+  preferences.apply();
 }
 async function post(path, body) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -343,13 +405,15 @@ async function send(text) {
     if (data.payload) window.scrollTo({ top: 0, behavior: mobile ? "auto" : "smooth" });
   } catch (e) {
     typing.remove();
-    addMessage("bot", "Сервер не ответил. Проверьте, что приложение запущено, и отправьте сообщение ещё раз.");
+    if (!$("text").value) $("text").value = text;
+    const error = "Не удалось отправить. Текст сохранён — попробуйте ещё раз.";
+    addMessage("bot", error); $("say").textContent = error;
   } finally { busy = false; $("send").disabled = false; $("text").focus(); }
 }
 function greet() {
   addMessage("bot", "Привет! Расскажите, какой поездки хочется. Если пока не знаете куда или когда, вместе найдём идеи.");
 }
-function start() { renderStages("start"); renderHead(null); renderSuggest("start"); drawMap({}); greet(); }
+function start() { $("map").hidden = false; renderStages("start"); renderHead(null); renderConditions(null); renderSaved(); renderSuggest("start"); drawMap({}); greet(); }
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; send(t); });
 $("reset").addEventListener("click", async () => {
   if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
