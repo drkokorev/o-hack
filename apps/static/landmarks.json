@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-10-28",
+  "note": "Стилизованные модели у центров городов; масштаб увеличен, положение достопримечательности приблизительное.",
+  "landmarks": [
+    {"city":"Париж","name":"Эйфелева башня","lat":48.8566,"lon":2.3522,"icon":"tower","url":"https://www.toureiffel.paris/en/access-map"},
+    {"city":"Москва","name":"Московский Кремль","lat":55.7558,"lon":37.6173,"icon":"kremlin","url":"https://kreml.ru/ru"},
+    {"city":"Дубай","name":"Бурдж-Халифа","lat":25.2048,"lon":55.2708,"icon":"spire","url":"https://www.burjkhalifa.ae/contact-us/"},
+    {"city":"Лондон","name":"Биг-Бен","lat":51.5072,"lon":-0.1276,"icon":"clocktower","url":"https://www.parliament.uk/visiting/visiting-and-tours/big-ben-tour/"},
+    {"city":"Рим","name":"Колизей","lat":41.9028,"lon":12.4964,"icon":"colosseum","url":"https://colosseo.it/en/"},
+    {"city":"Токио","name":"Ворота Каминаримон","lat":35.6762,"lon":139.6503,"icon":"gate","url":"https://www.gotokyo.org/en/spot/14/"},
+    {"city":"Каир","name":"Пирамиды Гизы","lat":30.0444,"lon":31.2357,"icon":"pyramids","url":"https://egymonuments.gov.eg/monuments/the-great-pyramid/"},
+    {"city":"Нью-Йорк","name":"Статуя Свободы","lat":40.7128,"lon":-74.006,"icon":"liberty","url":"https://www.nps.gov/stli/index.htm"}
+  ]
+}

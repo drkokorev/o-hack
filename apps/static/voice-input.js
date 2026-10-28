@@ -1,4 +1,4 @@
-/* Optional browser recognition: long-press send to dictate; review before sending. */
+/* Local or browser voice recognition; dictation is always reviewed before sending. */
 (() => {
   "use strict";
 
@@ -80,67 +80,75 @@
     abort() { this.cancelled = true; this.stopped = true; this.controller?.abort(); this.cleanup(); this.chunks = []; this.onend?.(); }
   }
 
-  window.attachVoiceInput = ({ input, button, status, form }) => {
+  // One control starts/stops dictation when the field is empty and sends edited text otherwise.
+  window.createVoiceInput = ({ input, button, status }) => {
     const BrowserRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let backend = null;
-    let press = null, timer = null, current = null, suppressClick = false;
-
-    const updateHint = () => {
+    const icons = {
+      mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-3 0h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+      arrow: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      stop: '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg>',
+    };
+    let backend = null, current = null, phase = "idle", limit = null;
+    const message = (text) => { status.textContent = text; status.hidden = !text; };
+    function update() {
+      const hasText = Boolean(input.value.trim());
+      button.innerHTML = current ? icons.stop : hasText ? icons.arrow : icons.mic;
+      const label = current ? (phase === "processing" ? "Распознаю речь" : "Остановить запись") :
+        hasText ? "Отправить" : "Голосовой ввод";
+      button.setAttribute("aria-label", label);
+      button.title = label;
+      button.classList.toggle("recording", Boolean(current) && phase !== "processing");
+      button.dataset.listening = String(Boolean(current) && phase !== "processing");
+    }
+    function hint() {
       if (current) return;
       if (backend?.backend === "gigaam") {
-        status.textContent = backend.status === "ready"
-          ? "Удерживайте кнопку отправки для голоса (до 20 секунд). Звук распознаётся на сервере приложения."
-          : "Локальная модель голоса загружается или недоступна; текстовый ввод работает.";
+        message(backend.status === "ready" ? "Голос распознаётся на сервере приложения (до 20 секунд)." :
+          "Модель голоса загружается или недоступна; текстовый ввод работает.");
       } else {
-        status.textContent = BrowserRecognition && window.isSecureContext
-          ? "Удерживайте кнопку отправки для голоса. Аудио может отправляться сервису браузера."
-          : "Голосовой ввод недоступен; можно написать сообщение.";
+        message(BrowserRecognition && window.isSecureContext ?
+          "Аудио может отправляться сервису распознавания браузера." : "Голосовой ввод недоступен; можно написать сообщение.");
       }
-    };
-    const checkBackend = async () => {
+    }
+    async function checkBackend() {
       try {
         const response = await fetch("/api/voice", { cache: "no-store" });
         backend = response.ok ? await response.json() : { backend: "browser" };
       } catch (_) { backend = { backend: "browser" }; }
-      updateHint();
+      hint();
       if (backend.backend === "gigaam" && backend.status === "loading") setTimeout(checkBackend, 4000);
-    };
-    checkBackend();
-
-    const setListening = (active) => {
-      button.dataset.listening = String(active);
-      if (active) status.textContent = "Слушаю. Отпустите кнопку, чтобы закончить.";
-    };
-    const cancel = () => {
-      clearTimeout(timer); timer = null; press = null;
+    }
+    function cancel() {
+      clearTimeout(limit); limit = null;
+      const recognition = current; current = null; phase = "idle";
+      if (recognition) { try { recognition.abort(); } catch (_) { /* already stopped */ } }
+      update(); hint();
+    }
+    function toggle() {
       if (current) {
-        const recognition = current; current = null;
-        try { recognition.abort(); } catch (_) { /* already stopped */ }
+        if (phase !== "processing") current.requestStop();
+        return;
       }
-      setListening(false); status.textContent = "";
-    };
-    const start = () => {
-      if (!backend) { status.textContent = "Проверяю доступность голосового ввода; удерживайте кнопку ещё раз."; return; }
+      if (!backend) { message("Проверяю доступность голосового ввода. Попробуйте ещё раз."); return; }
       const useLocal = backend.backend === "gigaam";
       const Recognition = useLocal ? LocalRecognition : BrowserRecognition;
       const available = window.isSecureContext && Recognition && (!useLocal ||
         (backend.status === "ready" && navigator.mediaDevices?.getUserMedia && (window.AudioContext || window.webkitAudioContext)));
       if (!available) {
-        status.textContent = "Голосовой ввод недоступен в этом браузере или соединении; можно написать сообщение.";
+        message("Голосовой ввод недоступен в этом браузере или соединении; можно написать сообщение.");
         return;
       }
       const recognition = new Recognition();
-      current = recognition;
-      recognition.lang = "ru-RU";
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+      current = recognition; phase = "starting"; update();
+      recognition.lang = "ru-RU"; recognition.continuous = false;
+      recognition.interimResults = false; recognition.maxAlternatives = 1;
       let lastFinal = -1, failed = false, stopRequested = false;
       recognition.onstart = () => {
         if (current !== recognition) return;
-        if (stopRequested) {
-          try { recognition.stop(); } catch (_) { /* already stopped */ }
-        } else setListening(true);
+        if (stopRequested) { try { recognition.stop(); } catch (_) {} return; }
+        phase = "listening"; update();
+        message(useLocal ? "Слушаю. Нажмите ещё раз, чтобы остановить запись; звук распознаётся на сервере приложения." :
+          "Слушаю. Аудио может отправляться сервису распознавания браузера.");
       };
       recognition.onresult = (event) => {
         if (current !== recognition) return;
@@ -152,70 +160,37 @@
           lastFinal = i;
         }
         input.dispatchEvent(new Event("input", { bubbles: true }));
-        status.textContent = (recognition.limited ? "Достигнут лимит 20 секунд. " : "") +
-          "Текст добавлен. Проверьте его и нажмите «Отправить».";
+        message((recognition.limited ? "Достигнут лимит 20 секунд. " : "") +
+          "Текст добавлен. Проверьте его и нажмите «Отправить».");
       };
       recognition.onerror = (event) => {
         if (current !== recognition) return;
-        failed = true; setListening(false);
-        status.textContent = event.error === "not-allowed" || event.error === "service-not-allowed"
-          ? "Нет разрешения на микрофон или сервис распознавания. Можно написать сообщение."
-          : "Не удалось распознать речь. Попробуйте ещё раз или напишите сообщение.";
+        failed = true;
+        message(event.error === "not-allowed" || event.error === "service-not-allowed" ?
+          "Нет разрешения на микрофон или сервис распознавания. Можно написать сообщение." :
+          "Не удалось распознать речь. Попробуйте ещё раз или напишите сообщение.");
       };
       recognition.onend = () => {
         if (current !== recognition) return;
-        current = null; setListening(false);
-        if (!failed && lastFinal < 0) status.textContent = "Речь не распознана. Попробуйте ещё раз или напишите сообщение.";
+        clearTimeout(limit); limit = null; current = null; phase = "idle"; update();
+        if (!failed && lastFinal < 0) message("Речь не распознана. Попробуйте ещё раз или напишите сообщение.");
       };
       recognition.requestStop = () => {
-        stopRequested = true; setListening(false);
-        status.textContent = "Распознаю речь…";
+        if (stopRequested) return;
+        stopRequested = true; phase = "processing"; update(); message("Распознаю речь…");
         try { recognition.stop(); } catch (_) { /* onstart will stop it once ready */ }
       };
-      try { status.textContent = "Включаю микрофон…"; recognition.start(); }
-      catch (_) { current = null; setListening(false); status.textContent = "Не удалось начать запись. Можно написать сообщение."; }
-    };
-    const arm = (kind, id) => {
-      if (button.disabled || press || current) return;
-      press = { kind, id, held: false };
-      timer = setTimeout(() => {
-        if (!press) return;
-        press.held = true;
-        start();
-      }, 500);
-    };
-    const finish = (kind, id, cancelled = false) => {
-      if (!press || press.kind !== kind || press.id !== id) return;
-      clearTimeout(timer); timer = null;
-      const held = press.held; press = null;
-      if (!held) return;
-      if (cancelled) { cancel(); return; }
-      suppressClick = true;
-      // A pointer/keyboard release normally generates a click immediately after this handler.
-      setTimeout(() => { suppressClick = false; }, 1000);
-      if (current) current.requestStop();
-    };
-
-    button.addEventListener("pointerdown", (event) => {
-      if (!event.isPrimary || event.button !== 0) return;
-      arm("pointer", event.pointerId);
-      try { button.setPointerCapture(event.pointerId); } catch (_) { /* optional */ }
-    });
-    button.addEventListener("pointerup", (event) => finish("pointer", event.pointerId));
-    button.addEventListener("pointercancel", (event) => finish("pointer", event.pointerId, true));
-    button.addEventListener("keydown", (event) => {
-      if (event.code === "Space" && !event.repeat) arm("keyboard", "Space");
-    });
-    button.addEventListener("keyup", (event) => {
-      if (event.code === "Space") finish("keyboard", "Space");
-    });
-    button.addEventListener("contextmenu", (event) => { if (press?.held) event.preventDefault(); });
-    button.addEventListener("click", (event) => {
-      if (!suppressClick) return;
-      suppressClick = false; event.preventDefault(); event.stopImmediatePropagation();
-    }, true);
-    form.addEventListener("submit", cancel, true);
-    status.textContent = "Проверяю доступность голосового ввода…";
-    return { cancel };
+      try {
+        message(useLocal ? "Включаю микрофон. Звук распознаётся на сервере приложения." :
+          "Включаю микрофон. Аудио может отправляться сервису браузера.");
+        recognition.start();
+        limit = setTimeout(() => { if (current === recognition) { recognition.limited = true; recognition.requestStop(); } }, 20000);
+      } catch (_) {
+        current = null; phase = "idle"; update(); message("Не удалось начать запись. Можно написать сообщение.");
+      }
+    }
+    input.addEventListener("input", update);
+    update(); message("Проверяю доступность голосового ввода…"); checkBackend();
+    return { toggle, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };
   };
 })();

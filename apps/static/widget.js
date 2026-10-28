@@ -1,6 +1,5 @@
   const log = document.getElementById("log"), input = document.getElementById("text"), form = document.getElementById("form");
-  const sendButton = form.querySelector('button[type="submit"]');
-  const voice = window.attachVoiceInput({ input, button: sendButton, status: document.getElementById("voice-status"), form });
+  const voice = createVoiceInput({input, button:form.querySelector("button"), status:document.getElementById("voice-status")});
   window.addEventListener("message", (event) => {
     if (event.source === window.parent && event.data?.type === "odin-widget-hidden") voice.cancel();
   });
@@ -9,8 +8,10 @@
     const node = document.createElement(tag); if (className) node.className = className;
     if (text != null) node.textContent = text; return node;
   }
-  function message(text, user = false) {
-    log.append(element("div", `message${user ? " user" : ""}`, text)); log.scrollTop = log.scrollHeight;
+  function message(text, user = false, kind = null) {
+    const node = element("div", `message${user ? " user" : ""}`);
+    if (user) node.textContent = text; else renderTravelReply(node, text, kind);
+    log.append(node); log.scrollTop = log.scrollHeight;
   }
   function action(label, text) {
     const button = element("button", "action", label); button.type = "button";
@@ -41,18 +42,18 @@
   }
   async function send(text) {
     text = String(text || "").trim(); if (!text || busy) return;
-    busy = true; sendButton.disabled = true; input.value = ""; message(text, true);
+    if (voice.isActive()) voice.cancel();
+    busy = true; form.querySelector("button").disabled = true; input.value = ""; voice.update(); message(text, true);
     try {
       const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, session_id: session }) });
       if (!response.ok) throw new Error("unavailable");
       const data = await response.json(); session = data.session_id;
-      let reply = data.reply || "";
-      if (["destinations", "packages"].includes(data.payload?.kind)) {
-        reply = reply.split("\n").slice(0, 2).join("\n") + "\nВыберите вариант ниже.";
-      }
-      message(reply); render(data.payload);
-    } catch (_) { message("Не удалось связаться с помощником. Попробуйте ещё раз."); }
-    finally { busy = false; sendButton.disabled = false; input.focus(); }
+      message(data.reply || "", false, data.payload?.kind); render(data.payload);
+    } catch (_) { if (!input.value) input.value = text; message("Не удалось отправить. Текст сохранён — попробуйте ещё раз."); }
+    finally { busy = false; form.querySelector("button").disabled = false; voice.update(); input.focus(); }
   }
-  form.addEventListener("submit", (event) => { event.preventDefault(); send(input.value); });
+  form.addEventListener("submit", (event) => { event.preventDefault();
+    if (voice.isActive() || !input.value.trim()) voice.toggle(); else { voice.clearStatus(); send(input.value); }
+  });
+  input.disabled = false; form.querySelector("button").disabled = false; voice.update();

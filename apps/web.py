@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
@@ -25,6 +25,7 @@ from core.agent import Agent, Session
 from core.config import get_settings
 from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
+from apps.location import visitor_country
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count
@@ -128,6 +129,8 @@ def understood(state: TripState) -> list[str]:
         days = (str(state.trip_days_min) if state.trip_days_min == state.trip_days_max else
                 f"{state.trip_days_min}–{state.trip_days_max}")
         chips.append(f"поездка: {days} дней")
+    if state.nights:
+        chips.append(f"{state.nights} {plural(state.nights, 'ночь', 'ночи', 'ночей')}")
     if state.adults:
         chips.append(f"{state.adults} {plural(state.adults, 'взрослый', 'взрослых', 'взрослых')}")
     elif state.party_size:
@@ -321,6 +324,68 @@ def build_app(agent: Agent | None = None) -> FastAPI:
     def health() -> dict:
         return {"status": "ok"}
 
+    @app.get("/api/visitor-country")
+    def country_from_ip(request: Request) -> JSONResponse:
+        return JSONResponse(visitor_country(request.client.host if request.client else None),
+                            headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/map/catalog")
+    def map_info() -> dict:
+        try:
+            return map_catalog.catalogue()
+        except (FileNotFoundError, OSError) as exc:
+            raise HTTPException(status_code=503, detail="Каталог карты недоступен") from exc
+
+    @app.get("/api/map/countries")
+    def map_countries() -> dict:
+        try:
+            return map_catalog.countries()
+        except (FileNotFoundError, OSError) as exc:
+            raise HTTPException(status_code=503, detail="Каталог карты недоступен") from exc
+
+    @app.get("/api/map/destinations")
+    def map_destinations() -> dict:
+        try:
+            return map_catalog.destinations()
+        except (FileNotFoundError, OSError) as exc:
+            raise HTTPException(status_code=503, detail="Каталог карты недоступен") from exc
+
+    @app.get("/api/map/points")
+    def map_points(kind: Literal["hotel", "airport", "beach", "city", "camping", "all"] = "hotel",
+                   west: float = -180, south: float = -90, east: float = 180, north: float = 90,
+                   cursor: int = Query(0, ge=0), limit: int = Query(500, ge=1, le=1000),
+                   country_code: str | None = None, destination_id: str | None = None) -> dict:
+        try:
+            return map_catalog.points(kind, west, south, east, north, cursor, limit,
+                                      country_code=country_code, destination_id=destination_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except (FileNotFoundError, OSError) as exc:
+            raise HTTPException(status_code=503, detail="Каталог карты недоступен") from exc
+
+    @app.get("/api/map/point/{point_id}")
+    def map_point(point_id: str) -> dict:
+        try:
+            point = map_catalog.lookup(point_id)
+        except (FileNotFoundError, OSError) as exc:
+            raise HTTPException(status_code=503, detail="Каталог карты недоступен") from exc
+        if point is None:
+            raise HTTPException(status_code=404, detail="Точка отсутствует в каталоге")
+        return point
+
+    @app.get("/api/map/clusters")
+    def map_clusters(kind: Literal["hotel", "airport", "beach", "city", "camping", "all"] = "hotel",
+                     west: float = -180, south: float = -90, east: float = 180, north: float = 90,
+                     zoom: int = Query(3, ge=0, le=8), country_code: str | None = None,
+                     destination_id: str | None = None) -> dict:
+        try:
+            return map_catalog.clusters(kind, west, south, east, north, zoom,
+                                        country_code=country_code, destination_id=destination_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except (FileNotFoundError, OSError) as exc:
+            raise HTTPException(status_code=503, detail="Каталог карты недоступен") from exc
+
     @app.get("/api/info")
     def info() -> dict:
         breaker = getattr(agent.llm, "breaker", None)
@@ -357,63 +422,6 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             raise HTTPException(status_code=503, detail="Распознавание не удалось") from exc
         return {"text": transcript, "backend": "gigaam"}
 
-    @app.get("/api/map/catalog")
-    def map_info() -> dict:
-        try:
-            return map_catalog.catalogue()
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @app.get("/api/map/countries")
-    def map_countries() -> dict:
-        try:
-            return map_catalog.countries()
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @app.get("/api/map/destinations")
-    def map_destinations() -> dict:
-        try:
-            return map_catalog.destinations()
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @app.get("/api/map/points")
-    def map_points(kind: Literal["hotel", "airport", "beach", "city", "camping", "all"] = "hotel",
-                   west: float = -180, south: float = -90, east: float = 180, north: float = 90,
-                   cursor: int = Query(0, ge=0), limit: int = Query(500, ge=1, le=1000),
-                   country_code: str | None = None, destination_id: str | None = None) -> dict:
-        try:
-            return map_catalog.points(kind, west, south, east, north, cursor, limit,
-                                      country_code=country_code, destination_id=destination_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @app.get("/api/map/point/{point_id}")
-    def map_point(point_id: str) -> dict:
-        try:
-            record = map_catalog.lookup(point_id)
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-        if record is None:
-            raise HTTPException(status_code=404, detail="Точка отсутствует в каталоге")
-        return record
-
-    @app.get("/api/map/clusters")
-    def map_clusters(kind: Literal["hotel", "airport", "beach", "city", "camping", "all"] = "hotel",
-                     west: float = -180, south: float = -90, east: float = 180, north: float = 90,
-                     zoom: int = Query(3, ge=0, le=8), country_code: str | None = None,
-                     destination_id: str | None = None) -> dict:
-        try:
-            return map_catalog.clusters(kind, west, south, east, north, zoom,
-                                        country_code=country_code, destination_id=destination_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
     @app.post("/api/chat")
     def chat(body: ChatIn, response: Response) -> dict:
         started = time.perf_counter()
@@ -426,6 +434,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                 "session_id": session_id, "reply": step.reply, "payload": images.decorate(step.payload), "stage": state.stage,
                 "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
                 "suggestions": contextual_suggestions(state, step),
+                "trip_summary": {"destination": BY_ID[state.dest_id].name if state.dest_id else state.destination},
                 # Never return rejected, untrusted model text to the client.
                 "checked": ["Неподтверждённый параметр отклонён или исправлен."] * len(session.last_notes),
                 "ms": round((time.perf_counter() - started) * 1000),

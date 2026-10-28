@@ -1,0 +1,4 @@
+# Preserve the verified upstream MapLibre bundles byte for byte on checkout.
+apps/static/vendor/maplibre/*.mjs -text
+apps/static/vendor/maplibre/*.css -text
+apps/static/vendor/three/*.js -text whitespace=-blank-at-eol,-space-before-tab

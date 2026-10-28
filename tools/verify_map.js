@@ -1,42 +1,40 @@
-// Run with playwright-cli against a running local application.
+// Run with playwright-cli after opening the app; no LLM key is required.
 async (page) => {
+  const base = new URL(page.url()).origin;
   const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('http://127.0.0.1:8080/');
-  await page.locator('#map svg').waitFor({ timeout: 30000 });
-  await page.getByRole('button', { name: 'Весь мир', exact: true }).click();
-  await page.getByRole('button', { name: 'Выбрать Нью-Йорк', exact: true }).waitFor();
-  if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth))
-    throw new Error('The main page overflows on a mobile viewport');
+  page.on('pageerror', e => errors.push(e.message));
+  async function standalone() {
+    await page.goto(base + '/health');
+    await page.setContent('<!doctype html><html lang="ru"><head><link rel="stylesheet" href="/static/trip-map.css"></head><body><div id="external-map"></div></body></html>');
+    await page.addScriptTag({url:base + '/static/trip-map.js'});
+    await page.evaluate(async () => {
+      const [info, land] = await Promise.all([fetch('/api/info').then(r => r.json()), fetch('/static/land.geojson').then(r => r.json())]);
+      window.testMap = createTripMap({container:document.getElementById('external-map'), onChoose:place => {window.chosenPlace=place;}});
+      window.testMap.setData(info, land); window.testMap.draw();
+    });
+  }
+  await page.setViewportSize({width:375,height:812});
+  await standalone();
+  await page.locator('.maplibregl-canvas').waitFor({timeout:30000});
+  await page.getByLabel('Выбрать направление из списка').selectOption({label:'Токио'});
+  await page.getByRole('button', {name:'Хочу сюда',exact:true}).click();
+  if (await page.evaluate(() => window.chosenPlace?.id) !== 'tokyo') throw new Error('Selection lost its catalog identity');
+  if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('Standalone map overflows');
 
-  // A host page loads only the map assets and receives a structured selection.
-  await page.goto('http://127.0.0.1:8080/health');
-  await page.setContent('<!doctype html><html lang="ru"><head><link rel="stylesheet" href="/static/trip-map.css"></head><body><div id="external-map"></div></body></html>');
-  await page.addScriptTag({ url: '/static/trip-map.js' });
-  await page.evaluate(async () => {
-    const [catalog, geography] = await Promise.all([
-      fetch('/api/info').then(r => r.json()), fetch('/static/land.geojson').then(r => r.json()),
-    ]);
-    const map = window.createTripMap({ container: document.getElementById('external-map'),
-      onChoose: place => { window.chosenPlace = place; } });
-    window.testMap = map;
-    map.setData(catalog, geography);
-    map.draw();
-  });
-  await page.getByLabel('Выбрать направление из списка').selectOption({ label: 'Токио' });
-  await page.getByRole('button', { name: 'Хочу сюда', exact: true }).click();
-  const selected = await page.evaluate(() => window.chosenPlace);
-  if (!selected || selected.id !== 'tokyo') throw new Error('Standalone map did not return the catalog place');
-  await page.evaluate(() => {
-    const { name, lat, lon } = window.chosenPlace;
-    window.chosenPlace = null;
-    window.testMap.draw({ targets: [{ name, lat, lon }] });
-  });
-  await page.getByRole('button', { name: 'Выбрать Токио', exact: true }).click();
-  await page.getByRole('button', { name: 'Хочу сюда', exact: true }).click();
-  if (await page.evaluate(() => window.chosenPlace?.id) !== 'tokyo')
-    throw new Error('The route marker lost the catalog identity');
-  if (errors.length) throw new Error('Browser exceptions: ' + errors.join('; '));
-  return { world: 'passed', mobile: 'passed', standalone: 'passed', selection: 'passed' };
+  await page.route('**/api/map/catalog', route => route.fulfill({status:503,body:'unavailable'}));
+  await standalone();
+  await page.getByText('Подробный каталог карты недоступен. Показаны направления приложения.').waitFor({timeout:30000});
+  await page.evaluate(() => window.testMap.draw({targets:[]}));
+  if (!await page.getByText('Подробный каталог карты недоступен. Показаны направления приложения.').isVisible())
+    throw new Error('Fallback status disappeared when redrawn');
+  await page.unroute('**/api/map/catalog');
+  await page.route('**/events.json', route => route.fulfill({status:503,body:'unavailable'}));
+  await page.route('**/landmarks.json', route => route.fulfill({status:503,body:'unavailable'}));
+  await page.route('**/event-icons.mjs', route => route.fulfill({status:503,body:'unavailable'}));
+  await page.route('**/map-settings.json', route => route.fulfill({status:503,body:'unavailable'}));
+  await standalone();
+  await page.getByText(/записей в области/).waitFor({timeout:30000});
+  if (!await page.locator('.maplibregl-canvas').isVisible()) throw new Error('Optional artwork broke the map');
+  if (errors.length) throw new Error('JavaScript errors: ' + errors.join('; '));
+  return {standalone:'pass', selection:'pass', fallback:'pass', optionalArtworkFailure:'pass', mobile:'pass'};
 }
