@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from functools import lru_cache
-from datetime import date, timedelta
+from datetime import date
 from difflib import get_close_matches
 
 from .geo import BY_ID, DESTINATIONS, ORIGINS

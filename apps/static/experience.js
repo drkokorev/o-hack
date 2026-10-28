@@ -102,7 +102,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   byId("reset-confirm").onclick=async()=> { if(isBusy()) return; byId("reset-dialog").close(); await reset(); setMood("neutral"); };
   byId("undo").onclick=()=>undo();
   byId("edit-cancel").onclick=()=>edit(null);
-  byId("dictate-menu").onclick=()=>{closeMenu(); voice.begin?.("toggle");};
+  byId("dictate-menu").onclick=()=>{closeMenu(); voice.begin?.();};
   byId("voice-cancel").onclick=()=>voice.cancel();
   byId("mobile-map").onclick=()=> {
     const visible=document.body.classList.toggle("show-map"); byId("mobile-map").textContent=visible ? "В чат" : boardLabel;

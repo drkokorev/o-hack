@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import re
 import zlib
-from calendar import monthrange
 from dataclasses import replace
 from datetime import date, timedelta
 from typing import Callable
@@ -23,7 +22,7 @@ from . import guides, landmarks
 from .geo import BY_ID, DESTINATIONS, ORIGIN_BY_NAME, TAG_NAMES, Destination, destination_has_tag
 from .dialogue import QUESTION_INPUT_FIELDS, idea_places, ideas, missing_for_trip
 from .inspire import Suggestion, suggest
-from .offers import AMENITIES, MEALS, hotel_price, hotels_for, transport_options
+from .offers import AMENITIES, MEALS, hotels_for, transport_options
 from .planner import VIA_PREP, Package, Trip, _leg_ok, cheapest_start, hm, leg_text, make_packages, month_window, timeline
 from .arbiter import arbitrate
 from .rules import find_destination, match_origin, rule_extract, time_expression_not_place

@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from statistics import median
 
 from .climate import MonthClimate, climate
 from .geo import DESTINATIONS, TAG_NAMES, Destination, Origin, destination_has_tag
-from .offers import hotel_price, hotels_for, transport_options
+from .offers import hotels_for, transport_options
 from .temperature import matches_history
 
 

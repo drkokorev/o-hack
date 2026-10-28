@@ -202,16 +202,6 @@ def looks_like_injection(text: str) -> bool:
     return bool(_INJECTION.search(text))
 
 
-def contains_sensitive_data(text: str) -> bool:
-    """Эвристика для явно лишних данных, не полное распознавание ПДн."""
-    # Remove invisible formatting characters only for inspection; otherwise a
-    # zero-width character can hide a phone or e-mail from the filter.
-    inspected = "".join(ch for ch in unicodedata.normalize("NFKC", text)
-                        if unicodedata.category(ch) != "Cf")
-    return (bool(_FOOD_ALLERGY.search(inspected) or _FOOD_INTOLERANCE.search(inspected))
-            or any(pattern.search(inspected) for pattern, _ in _SENSITIVE_PATTERNS))
-
-
 _NAME_INTRO = re.compile(r"(?is)^(.*?\b(?:зовут|фио|фамилия|имя\s+гостя|имя|я|my name is|traveler|traveller|guest)"
                          r"\s*[:—-]?\s*)(\S.*)$")
 

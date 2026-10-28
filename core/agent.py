@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from .guard import (MAX_INPUT_CHARS, contains_unresolved_sensitive_data, looks_like_injection,
                     mask_basic_data, mask_sensitive_data, sanitize)
 from .answer import compose
-from .llm import LLM, Message, extract, strip_think
+from .llm import LLM, Message, extract
 from .privacy import PrivacyFilteredLLM, Vault
 
 log = logging.getLogger(__name__)
@@ -70,12 +70,6 @@ class Session:
     last_answer_by: str = ""  # кто написал последний ответ: llm (прошёл проверку) | template
     lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
 
-
-NLG_SYSTEM = (
-    "Перефразируй черновик ответа ассистента дружелюбно и кратко, на русском языке. "
-    "Используй только факты из черновика и блока фактов: ничего не добавляй, "
-    "не меняй цифры, даты, время и названия, сохрани нумерацию вариантов."
-)
 
 PRIVACY_NOTICE = "Обнаруженные личные данные не использую для подбора. "
 _PRIVACY_PLACEHOLDER = re.compile(r"\[(?:имя|почта|телефон|контакт|номер карты|счёт|паспорт|документ|дата рождения|секрет|адрес|адрес сети|номер клиента|номер брони|сведения о здоровье)(?:_\d+)?\]")
@@ -237,15 +231,3 @@ class Agent:
         cites = list(dict.fromkeys(s["cite"] for s in step.sources if s.get("cite")))
         reply = result.text + ("\n\nИсточник: " + "; ".join(cites) + " (CC BY-SA)" if cites else "")
         return replace(step, reply=reply)
-
-    def _rephrase(self, step: Step) -> str:
-        if self.llm is None:
-            return step.reply
-        messages = [
-            {"role": "system", "content": NLG_SYSTEM},
-            {"role": "user", "content": f"Факты:\n{step.facts}\n\nЧерновик ответа:\n{step.reply}"},
-        ]
-        try:
-            return strip_think(self.llm.complete(messages)) or step.reply
-        except Exception:
-            return step.reply

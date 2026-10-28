@@ -5,6 +5,10 @@
 - повтор действий и параметров из контекста («на два дня позже» второй раз) → действие без опоры в тексте отбрасываем;
 - галлюцинация параметра («с собакой», бюджет), которого в реплике нет → поле без опоры в тексте отбрасываем;
 - неточные числа и даты → там, где правила нашли значение, верим правилам (они не додумывают).
+
+Где правила ничего не поняли («11 дн», «из пинзы», «2 взр + реб»), главная — модель (ADR 028): значение
+принимаем, если её дословная ссылка на реплику (`evidence`) есть в тексте и подтверждает значение (`_backed`);
+без ссылки — если число стоит в реплике со своей единицей (`_grounded`). Действия — только с правилами.
 """
 
 from __future__ import annotations
@@ -88,33 +92,6 @@ def _value(raw: str, unit: str) -> set[int]:
     return {int(number), int(number * scale)}
 
 
-def _grounded(field: str, value, t: str, state: TripState, rules: TripUpdate) -> bool:
-    """Число модели принимаем, если в реплике оно стоит со своей единицей или это короткий ответ
-    на только что заданный вопрос. Ночи — и как «дней минус один». «Вдвоём» состав не задаёт —
-    агент уточняет, есть ли дети (решение команды)."""
-    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-        return False
-    if field == "nights" and rules.trip_days_min:
-        return False  # «11 дней» правила уже поняли как дни
-    numbers: set[int] = set()
-    for m in re.finditer(rf"(?<![а-яё\d]){_NUMBER}({_UNITS[field]})", t):
-        if not re.search(r"(?:через|спустя|за)\s+$", t[:m.start()]):  # «через 3 дня» — дата, а не длительность
-            numbers |= _value(m.group(1), m.group(2).strip())
-    if field == "nights":
-        for m in re.finditer(r"(?:(\d|две|два|три|пару)\s*)?\bнед(?:ел\w*|\b)", t):
-            numbers.add(7 * ({"две": 2, "два": 2, "три": 3, "пару": 2}.get(m.group(1) or "") or int(m.group(1) or 1)))
-        if re.search(r"полтор\w* недел", t):
-            numbers |= {10, 11}
-    short = len(t.split()) <= 3 and not re.search(r"через|позже|раньше", t)
-    if short and _PENDING.get(state.pending_question or "") == field:
-        numbers |= {n for m in re.finditer(rf"(?<![а-яё\d]){_NUMBER}(?![а-яё\d])", t) for n in _value(m.group(1), "")}
-    if field == "nights":
-        return value in numbers or value + 1 in numbers
-    if field == "adults" and value == 2 and re.search(r"^\s*(?:я|мы)\s+(?:и|с)\s+(?:мо\w+\s+)?(?:жен|муж|девушк|парн|подруг|друг)", t):
-        return True
-    return value in numbers
-
-
 # ---------- значения модели со ссылкой на реплику (evidence) ----------
 # Модель главная в понимании: значение принимаем, если её дословная ссылка есть в реплике (с опечатками)
 # и подтверждает значение. Действия (оформить, оплатить, отменить, выбрать) — по-прежнему только с правилами.
@@ -136,13 +113,18 @@ def _quote_in(quote: str, t: str) -> bool:
     return any(SequenceMatcher(None, q, t[i:i + len(q)]).ratio() >= 0.85 for i in range(0, max(1, len(t) - len(q) + 1)))
 
 
+_WEEKS = r"(?:(\d|две|два|три|пару)\s*)?\bнед(?:ел\w*|\b)"
+_PARTNER = r"(?:\bс|\bи)\s+(?:мо\w+\s+)?(?:жен|муж|супруг|девушк|парн|подруг|друг)"
+
+
 def _quote_numbers(q: str) -> set[int]:
+    """Числа во фрагменте: цифры («150к» = 150 000), слова, «вдвоём», недели («полторы недели» — 10–11 ночей)."""
     found: set[int] = set()
     for m in re.finditer(rf"(?<![а-яё\d]){_NUMBER}\s*(тыс\w*|т\.?р\.?|к\b|k\b|млн|миллион\w*)?", q):
         found |= _value(m.group(1), (m.group(2) or "").strip())
     found |= {n for stem, n in (("вдво", 2), ("двоих", 2), ("втро", 3), ("троих", 3), ("вчетв", 4), ("четверых", 4),
                                 ("впят", 5)) if stem in q}
-    for m in re.finditer(r"(?:(\d|две|два|три|пару)\s*)?\bнед(?:ел\w*|\b)", q):
+    for m in re.finditer(_WEEKS, q):
         found.add(7 * ({"две": 2, "два": 2, "три": 3, "пару": 2}.get(m.group(1) or "") or int(m.group(1) or 1)))
     if re.search(r"полтор\w* недел", q):
         found |= {10, 11}
@@ -169,12 +151,29 @@ def _backed(field: str, value, quote: str | None, t: str) -> bool:
         numbers = _quote_numbers(q)
         if field == "nights":
             return value in numbers or value + 1 in numbers  # «11 дней» — 10 ночей
-        if field == "adults":  # «втроём» возраст не подтверждает — решение команды
-            return value in numbers and bool(re.search(_ADULT_WORDS, q))
+        if field == "adults":  # «втроём» возраст не подтверждает — решение команды; «я и жена» — двое взрослых
+            return (value in numbers and bool(re.search(_ADULT_WORDS, q))) or (value == 2 and bool(re.search(_PARTNER, q)))
         if field == "children":
             return value in numbers or (value == 1 and bool(re.search(r"реб|сын|доч|малыш", q)))
         return value in numbers
     return True  # тип отдыха, транспорт, питание, удобства — смысл понимает модель, ссылка подтверждена
+
+
+def _grounded(field: str, value, t: str, state: TripState, rules: TripUpdate) -> bool:
+    """Модель не дала ссылку: ищем в реплике сами куски, где число стоит со своей единицей («11 дн», «2 взр»,
+    «150к»), и проверяем их как ссылку. Голое число засчитываем только коротким ответом на заданный вопрос."""
+    if not isinstance(value, int) or isinstance(value, bool) or (field == "nights" and rules.trip_days_min):
+        return False  # «11 дней» правила уже поняли как дни
+    if (_PENDING.get(state.pending_question or "") == field and len(t.split()) <= 3
+            and not re.search(r"через|позже|раньше", t) and value in _quote_numbers(t)):
+        return True
+    spans = [m.group(0) for m in re.finditer(rf"(?<![а-яё\d]){_NUMBER}{_UNITS[field]}", t)
+             if not re.search(r"(?:через|спустя|за)\s+$", t[:m.start()])]  # «через 3 дня» — дата, а не длительность
+    if field == "nights":
+        spans += [m.group(0) for m in re.finditer(_WEEKS + r"|полтор\w* недел\w*", t)]
+    if field == "adults":
+        spans += [m.group(0) for m in re.finditer(r"^\s*(?:я|мы)\s+" + _PARTNER, t)]
+    return any(_backed(field, value, span, t) for span in spans)
 
 
 def _same(a, b) -> bool:

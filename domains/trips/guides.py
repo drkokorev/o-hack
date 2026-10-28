@@ -26,7 +26,6 @@ from pathlib import Path
 PATH = Path(__file__).parent / "data" / "guides.json"
 VECTORS = Path(__file__).parent / "data" / "guides_vectors.npy"
 SOURCE = "Wikivoyage"
-LICENSE = "CC BY-SA 4.0"
 
 # Тема вопроса → разделы статьи, где ответ вероятнее всего
 TOPIC_TAGS = {
