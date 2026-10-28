@@ -52,17 +52,17 @@
   .trip-map .map-frame .map-scope, .trip-map .map-kind { position: static; min-height: 44px; border: 1px solid var(--line, #d9e2e0);
     border-radius: 12px; background: var(--surface, #fff); color: var(--ink, #0d1b22); font: 500 12px var(--body, system-ui); padding: 0 12px; cursor: pointer; }
   .trip-map .map-surface { position: relative; height: clamp(460px, 63vh, 680px); overflow: hidden; background: #081d26; }
-  /* Вид «Карта»: чёрный космос со звёздами, подписи континентов и океанов */
-  .trip-map .map-surface.map-scheme { background:
+  /* Глобус на чёрном космосе со звёздами (оба вида); у «Карты» — ещё подписи континентов и океанов */
+  .trip-map .map-surface.map-space { background:
     radial-gradient(1px 1px at 12% 18%, #fff8 50%, transparent 51%), radial-gradient(1px 1px at 78% 12%, #fff9 50%, transparent 51%),
     radial-gradient(1px 1px at 33% 72%, #fff6 50%, transparent 51%), radial-gradient(1.5px 1.5px at 88% 64%, #fffa 50%, transparent 51%),
     radial-gradient(1px 1px at 55% 30%, #fff5 50%, transparent 51%), radial-gradient(1px 1px at 7% 86%, #fff7 50%, transparent 51%),
     radial-gradient(1px 1px at 64% 90%, #fff6 50%, transparent 51%), radial-gradient(1.5px 1.5px at 23% 44%, #fff8 50%, transparent 51%),
     radial-gradient(1px 1px at 93% 35%, #fff6 50%, transparent 51%), radial-gradient(1px 1px at 45% 8%, #fff7 50%, transparent 51%),
     #000; }
-  .trip-map .map-surface.map-scheme .map-canvas { background: transparent; }
-  .trip-map .map-surface.map-scheme:not(.map-detailed) .globe-hint { color: #f2f7f5; }
-  .trip-map .map-surface.map-scheme:not(.map-detailed) .globe-hint small { color: #b9c9c4; }
+  .trip-map .map-surface.map-space .map-canvas { background: transparent; }
+  .trip-map .map-surface.map-space:not(.map-detailed) .globe-hint { color: #f2f7f5; }
+  .trip-map .map-surface.map-space:not(.map-detailed) .globe-hint small { color: #b9c9c4; }
   .trip-map .continent-label, .trip-map .ocean-label { pointer-events: none; white-space: nowrap; text-align: center;
     text-shadow: 0 0 3px #ffffffb0; }
   .trip-map .continent-label { font: 600 11px/1 var(--body, system-ui); letter-spacing: .32em; color: #7a3f7f; }

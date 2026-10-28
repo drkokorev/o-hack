@@ -103,11 +103,8 @@
       surface.classList.toggle("map-scheme", next === "map");
       if (!map || !earth) return;
       earth.setStyle(next);
-      map.setSky(next === "map"
-        ? {"sky-color":"#000000", "horizon-color":"#9fd4ff", "fog-color":"#000000",
-           "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.9,5,0.5,7,0]}
-        : {"sky-color":"#071b25", "horizon-color":"#396b70", "fog-color":"#0a2530",
-           "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.75,5,0.6,7,0]});
+      map.setSky({"sky-color":"#000000", "horizon-color": next === "map" ? "#9fd4ff" : "#7fb8e0", "fog-color":"#000000",
+        "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.9,5,0.5,7,0]});
       renderContinents();
     }
     // Подписи континентов и океанов в духе Apple Maps — только на виде «Карта» и только на общем плане
@@ -165,7 +162,7 @@
     list.insertBefore(node("label", {class:"map-destination-picker"}, "Направления", legacySelect), search);
     list.insertBefore(node("p", {class:"map-empty"}, "Места в видимой области"), search);
     const hintTitle=node("span", {}, "Вращайте глобус"),hintDetail=node("small", {}, "Нажмите на место или событие");
-    const surface = node("div", { class: "map-surface" }, holder, controls,
+    const surface = node("div", { class: "map-surface map-space" }, holder, controls,
       node("div", {class:"globe-hint", "aria-hidden":"true"},
         node("span", {class:"globe-hint-symbol"}, "✦"),node("span", {},hintTitle,hintDetail)));
     function updateHint() {

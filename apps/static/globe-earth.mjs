@@ -63,11 +63,14 @@ export async function addEarthSurface(map, imageOrUrl) {
         float rim=pow(1.0-facing,2.1);
         vec3 color;
         if (u_map < .5) {
-          vec3 water=vec3(.035,.205,.275)+source*.12;
-          vec3 land=source*vec3(.88,.99,.88)+vec3(.045,.055,.035);
-          float illumination=.54+.46*max(0.0,dot(normal,u_light));
+          // Снимок ярче и сочнее, чем исходный NASA: на чёрном космосе тёмная Земля теряется
+          vec3 water=vec3(.05,.27,.42)+source*.35;
+          vec3 land=pow(source,vec3(.78))*vec3(1.12,1.2,1.05)+vec3(.04,.05,.03);
+          float illumination=.72+.38*max(0.0,dot(normal,u_light));
           color=mix(water,land,continent)*illumination;
-          color=mix(color,vec3(.18,.48,.51),rim*.33);
+          vec3 halfway=normalize(u_light+u_view);
+          color+=vec3(1.0)*pow(max(0.0,dot(normal,halfway)),40.0)*.12;
+          color=mix(color,vec3(.55,.80,1.0),rim*.38);
         } else {
           // Схематичная карта в духе Apple Maps: природные зоны снимка перекрашены в чистые цвета
           float lum=dot(source,vec3(.3,.59,.11));
