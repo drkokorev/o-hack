@@ -1,0 +1,314 @@
+{
+  "runtime_commit": "2d3891f45d86360b9c3bcb31855d2bfabac7e9df",
+  "functional_commit": "fe76222",
+  "checks": [
+    {
+      "script": "tools/verify_interface.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "passed": 39,
+        "checks": [
+          "desktop: six stages on the right",
+          "inspiration hidden until requested",
+          "sound defaults off",
+          "send arrow remains the default",
+          "full example is editable in composer",
+          "choosing an example does not send it",
+          "summary reflects server destination",
+          "editing replaces server origin",
+          "editing replaces message instead of appending",
+          "undo restores conditions",
+          "undo returns text to composer",
+          "condition dialog applies budget",
+          "reset cancellation preserves conversation",
+          "confirmed new trip clears conditions",
+          "sea: inspiration opens on request",
+          "sea: atmosphere selected",
+          "alpine: inspiration opens on request",
+          "alpine: atmosphere selected",
+          "city: inspiration opens on request",
+          "city: atmosphere selected",
+          "forest: inspiration opens on request",
+          "forest: atmosphere selected",
+          "sunset: inspiration opens on request",
+          "sunset: atmosphere selected",
+          "mobile opens chat",
+          "mobile composer visible",
+          "mobile timeline expands",
+          "mobile globe accessible",
+          "no mobile horizontal overflow",
+          "reduced motion respected",
+          "first hold explains voice processing",
+          "permission does not start hidden recording",
+          "release transcribes without sending",
+          "arrow restored after transcription",
+          "dictation preserves typed draft",
+          "Escape cancels recording",
+          "cancel does not submit",
+          "empty Enter does not start or send",
+          "menu dictation works without holding"
+        ]
+      }
+    },
+    {
+      "script": "tools/verify_voice_edges.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "passed": 6,
+        "checks": [
+          "20 second limit transcribes without sending",
+          "release after automatic stop does not submit",
+          "short pointer click sends exactly once",
+          "successful short click clears composer",
+          "pointer cancellation preserves draft",
+          "pointer cancellation never sends"
+        ]
+      }
+    },
+    {
+      "script": "tools/verify_unified_experience.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "passed": 13,
+        "checks": [
+          "exact map hotel reaches server",
+          "map choice creates a new turn while editing",
+          "map choice exits editing mode",
+          "summary shows selected map hotel",
+          "undo removes selected map hotel",
+          "undo retains previous destination",
+          "model and image sources are accessible",
+          "layout 1440x940",
+          "layout 390x844",
+          "layout 320x700",
+          "layout 844x390",
+          "widget uses unified dialogue",
+          "no JavaScript errors"
+        ]
+      }
+    },
+    {
+      "script": "tools/verify_globe_stability.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "stableMarker": "pass",
+        "groupedPlaces": "pass",
+        "focus": "pass",
+        "sizes": [
+          {
+            "zoom": 4.999999999999999,
+            "count": 444,
+            "height": 47,
+            "width": 23
+          },
+          {
+            "zoom": 7.799999999999999,
+            "count": 446,
+            "height": 46,
+            "width": 23
+          },
+          {
+            "zoom": 10.599999999999996,
+            "count": 416,
+            "height": 45,
+            "width": 22
+          }
+        ],
+        "popupInsideMap": "pass",
+        "errors": []
+      }
+    },
+    {
+      "script": "tools/verify_globe_assets.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "localAssets": "pass",
+        "loadedModels": [
+          "tower",
+          "sport",
+          "spire"
+        ],
+        "desktop": "pass",
+        "rotateAndSelect": "pass",
+        "mexico": "pass",
+        "mobile": "pass",
+        "offlineArtworkFallback": "pass",
+        "externalRequests": [],
+        "errors": []
+      }
+    },
+    {
+      "script": "tools/verify_country.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "country": "Россия",
+        "status": "pass"
+      }
+    },
+    {
+      "script": "tools/verify_startup_recovery.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "initialFailure": "shown",
+        "retry": "recovered",
+        "map": "loaded",
+        "javascriptErrors": []
+      }
+    },
+    {
+      "script": "tools/verify_event_overlap.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "overlap": "pass",
+        "correctCard": "pass",
+        "errors": []
+      }
+    },
+    {
+      "script": "tools/verify_event_models.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "models": [
+          "film",
+          "art",
+          "music",
+          "sport"
+        ],
+        "cards": "pass",
+        "errors": []
+      }
+    },
+    {
+      "script": "tools/verify_globe_theme.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "light": 7.188445256149268,
+        "dark": 7.188445256149268,
+        "widget": 6.948428974714799
+      }
+    },
+    {
+      "script": "tools/verify_map.js",
+      "status": "PASS",
+      "mode": "rules + browser; voice/location mocks where noted",
+      "result": {
+        "standalone": "pass",
+        "selection": "pass",
+        "fallback": "pass",
+        "optionalArtworkFailure": "pass",
+        "mobile": "pass"
+      }
+    },
+    {
+      "script": "eval/browser_live_model_20261028.js",
+      "status": "PASS",
+      "mode": "live GigaChat + local GigaAM",
+      "result": {
+        "model": "GigaChat-2-Max",
+        "voice": "gigaam",
+        "turns": 4,
+        "nlu": [
+          "llm+rules",
+          "llm+rules",
+          "llm+rules",
+          "llm+rules"
+        ],
+        "summary": "pass",
+        "interruption": "pass"
+      }
+    },
+    {
+      "script": "python -m pytest -q --tb=short",
+      "status": "PASS",
+      "passed": 571,
+      "seconds": 155.92,
+      "mode": "offline; Python 3.14.6"
+    },
+    {
+      "script": "powershell -File eval/asr_synthetic_windows_20261028.ps1 -Url <preview>",
+      "status": "PASS",
+      "result": {
+        "input": "Windows Russian TTS",
+        "status": "PASS",
+        "expected_travel_details": true,
+        "backend": "gigaam",
+        "real_microphone": false
+      }
+    },
+    {
+      "script": "node --check apps/static/*.{js,mjs}; python -m compileall apps core domains; git diff --check",
+      "status": "PASS"
+    },
+    {
+      "script": "Docker fresh rebuild, Python 3.12 container",
+      "status": "SKIP",
+      "reason": "Reused installed Python dependencies and voice weights; no fresh Docker build in this integration"
+    },
+    {
+      "script": "real microphone / physical mobile device",
+      "status": "SKIP",
+      "reason": "Browser voice mocks and synthetic speech; desktop viewport emulation"
+    }
+  ],
+  "initial_attempts": [
+    {
+      "check": "system Python import pytest",
+      "result": "SKIP",
+      "resolution": "Used existing isolated Python runtime and installed extras"
+    },
+    {
+      "check": "first full server suite",
+      "result": "PASS",
+      "passed": 567,
+      "seconds": 83.43
+    },
+    {
+      "check": "initial interface edit test",
+      "result": "FAIL",
+      "reason": "merge expression returned Boolean instead of previous turn object",
+      "resolution": "fixed; 39 interface checks pass"
+    },
+    {
+      "check": "initial cross-branch tests",
+      "result": "FAIL",
+      "passed": 3,
+      "failed": 1,
+      "reason": "same-city map action suppressed as empty NLU update",
+      "resolution": "server-validated map action is applied; exact source record is synchronized; 4/4 pass"
+    },
+    {
+      "check": "initial globe assets test",
+      "result": "TIMEOUT",
+      "reason": "old test waited for models while mobile map was hidden",
+      "resolution": "opens mobile map and mocks separate IP lookup; passed"
+    },
+    {
+      "check": "eval/asr_http_smoke_20261028 public sample",
+      "result": "FAIL",
+      "reason": "remote connection reset, WinError 10054 before transcription",
+      "resolution": "used local synthetic Russian audio"
+    },
+    {
+      "check": "synthetic ASR initial expectation",
+      "result": "FAIL",
+      "reason": "recognizer returns digit 7 instead of word seven",
+      "resolution": "accepts equivalent number forms"
+    },
+    {
+      "check": "Windows PowerShell ASR response decoding",
+      "result": "FAIL",
+      "reason": "UTF-8 JSON decoded incorrectly by legacy REST helper",
+      "resolution": "explicit UTF-8 response decoding; synthetic speech passed"
+    }
+  ]
+}

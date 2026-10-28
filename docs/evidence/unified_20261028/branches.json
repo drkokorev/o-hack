@@ -1,0 +1,63 @@
+[
+  {
+    "branch": "codex/chat-interface-20261028",
+    "sha": "b0c275e80a29f7aed87d34f44044955efc8fbf35",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/chat-interface-20261028"
+  },
+  {
+    "branch": "codex/dialogue-privacy-20261028",
+    "sha": "c91abb128fa8d8865a8bad1b62833919a13cc87e",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/dialogue-privacy-20261028"
+  },
+  {
+    "branch": "codex/fix-stay-dates-20261027",
+    "sha": "807cdfe69fd5e942b6da3ca831676724229f0cfc",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/fix-stay-dates-20261027"
+  },
+  {
+    "branch": "codex/frontend-design-20261027",
+    "sha": "46da450ee2448fd4492ed7c4ea7b575a9b1629c6",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/frontend-design-20261027"
+  },
+  {
+    "branch": "codex/integrated-experience-20261028",
+    "sha": "c585ca196e63a544a4cf5ac980b978ff6c2128e1",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/integrated-experience-20261028"
+  },
+  {
+    "branch": "codex/ml-dialogue-evaluation-20261027",
+    "sha": "0fb65da2580ff795e3bb77cfa4b84c683c9bd246",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/ml-dialogue-evaluation-20261027"
+  },
+  {
+    "branch": "codex/privacy-boundary-20261028",
+    "sha": "dfd9ef1edc25bfe43240e94ed4e68a86f2379019",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/privacy-boundary-20261028"
+  },
+  {
+    "branch": "codex/travel-dialogue-qa-20261028",
+    "sha": "cd7eb772ec55c83b9ac815ce5d26d2ff09cb5d70",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/travel-dialogue-qa-20261028"
+  },
+  {
+    "branch": "main",
+    "sha": "57404630e44da2616b4f0bc65a0717394daec403",
+    "included": true,
+    "archive_tag": "archive/2026-10-28/main-before-unification"
+  },
+  {
+    "branch": "codex/globe-design-20261028",
+    "sha": "fec4e5b6dde081526f151518a5f90d1af6362264",
+    "included": true,
+    "source": "local branch, not previously published",
+    "archive_tag": "archive/2026-10-28/globe-design-20261028"
+  }
+]
