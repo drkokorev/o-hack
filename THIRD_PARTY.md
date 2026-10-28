@@ -9,7 +9,9 @@
 | fastapi | 0.142.4 | MIT | Веб-приложение и API |
 | uvicorn | 0.54.0 | BSD-3-Clause | Сервер |
 | maxminddb | 3.2.0 | Apache-2.0 | Чтение локального снимка DB-IP без передачи IP стороннему сервису |
-| Natasha | 1.6.0 | MIT | Локальное обнаружение имён; содержит модели Navec и Slovnet |
+| Natasha | 1.6.0 | MIT | Локальное обнаружение имён; содержит модели Navec и Slovnet (Navec — запасные векторы слов для поиска) |
+| onnxruntime | 1.31.1 | MIT | Запуск модели эмбеддингов e5 на процессоре |
+| tokenizers | 0.23.3 | Apache-2.0 | Токенизатор модели e5 |
 | Navec / Slovnet | 0.10.0 / 0.6.0 | MIT | Векторные представления и локальное распознавание имён |
 | NumPy | 2.5.4 | BSD-3-Clause и лицензии включённых библиотек | Вычисления для локального распознавания имён и голоса |
 | onnx-asr | 0.12.0 | MIT | Локальное распознавание речи GigaAM |
@@ -25,6 +27,8 @@
 | Open-Meteo Historical Weather и Marine API | `domains/trips/data/climate.json` (собрано `tools/build_climate.py`) | CC BY 4.0, указываем источник в интерфейсе |
 | Фотографии Wikimedia Commons | `apps/static/img/` (собрано `tools/build_images.py`), авторы и лицензии — `apps/static/img/credits.json` и подписи на снимках | CC BY, CC BY-SA, CC0, public domain — по каждому файлу |
 | Overture Maps Places, релиз 2026-10-21.0 | `domains/trips/data/hotels.json` (`tools/build_hotels.py`; шесть городов — `tools/expand_cities_20261027.py`): записи объектов размещения и пляжей | [Источники и лицензии Overture](https://docs.overturemaps.org/attribution/#places): CDLA Permissive 2.0, Apache 2.0 для Foursquare и CC0 для AllThePlaces. Foursquare: Copyright 2024 Foursquare Labs, Inc., [NOTICE](https://opensource.foursquare.com/os-places/NOTICE.txt). Не все старые записи сохраняют исходный ID или точного первичного поставщика. |
+| Путеводители Wikivoyage (ru, en) | `domains/trips/data/guides.json` — база знаний RAG по 75 направлениям (собрано `tools/build_guides.py`) | CC BY-SA 4.0, источник и раздел подписываются в ответе |
+| Модель multilingual-e5-small (intfloat, ONNX int8 — Xenova) | `domains/trips/models/e5_small` и векторы фрагментов `guides_vectors.npy` — смысловой поиск RAG | MIT |
 | OurAirports | Координаты аэропортов в `domains/trips/data/hotels.json`; снимок 48 101 аэродрома в `domains/trips/data/ourairports.json` (`tools/fetch_airports.py`) | [Public domain](https://ourairports.com/data/), источник не гарантирует точность. Это не расписания и не подтверждение наличия билетов. |
 | Natural Earth 110m land | `apps/static/land.geojson`, [источник](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson) | Public domain |
 | Natural Earth 110m countries | `apps/static/countries.geojson`, контуры и точки подписи стран, [исходные данные](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson); преобразованы и сохранены только нужные поля | Public domain |

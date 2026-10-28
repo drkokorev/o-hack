@@ -49,6 +49,8 @@ def _load_once():
             hashlib.sha256(tokenizer_path.read_bytes()).hexdigest() != manifest["tokenizer_sha256"]):
         log.warning("Модель эмбеддингов повреждена (контрольная сумма), поиск идёт без неё")
         return None
+    if hasattr(ort, "disable_telemetry_events"):
+        ort.disable_telemetry_events()  # никаких событий наружу и шума в логах
     options = ort.SessionOptions()
     options.intra_op_num_threads = 2
     session = ort.InferenceSession(model, sess_options=options, providers=["CPUExecutionProvider"])
