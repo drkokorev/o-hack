@@ -8,6 +8,8 @@ from __future__ import annotations
 import re
 from calendar import monthrange
 from datetime import date, timedelta
+from difflib import get_close_matches
+from functools import lru_cache
 
 MONTHS = {
     "январ": 1, "феврал": 2, "март": 3, "апрел": 4, "ма": 5, "июн": 6,
@@ -44,10 +46,25 @@ _MONEY_WORDS = {
 _NEGATION = r"(без|не нужн\w*|не надо|не обязательно|необязательно|не хочу|не хотим|не будем|не стоит|не требуется|не интересует)\s+(\w+\s+){0,2}$"
 
 
+_MONTH_FORMS = tuple(stem + end for stem in ("январ", "феврал", "апрел", "сентябр", "октябр", "ноябр", "декабр")
+                     for end in "ьяе") + ("август", "августа", "августе")
+
+
+@lru_cache(maxsize=4096)
+def _month_typo(word: str) -> str:
+    """«нояюрь» → «ноябрь»: одна-две ошибки в длинном названии месяца. Короткие (май, июнь) не трогаем —
+    слишком много похожих слов; места тоже не угадываем."""
+    if (not 5 <= len(word) <= 9 or re.fullmatch(MONTH_RE, word) or word.startswith("янтар") or
+            any(word.startswith(stem) for stem in MONTHS if len(stem) > 2)):  # «октябрьский», «январская»
+        return word
+    close = get_close_matches(word, _MONTH_FORMS, n=1, cutoff=0.8 if len(word) > 5 else 0.85)
+    return close[0] if close and close[0][:2] == word[:2] else word
+
+
 def norm(text: str) -> str:
     text = text.lower().replace("ё", "е")
-    # Narrow, common month misspellings; do not guess arbitrary place names.
-    return re.sub(r"\b(?:дикабр|декобр)(?=[ьяе]\b)", "декабр", text)
+    text = re.sub(r"\b(?:дикабр|декобр)(?=[ьяе]\b)", "декабр", text)
+    return re.sub(r"\b[а-я]{5,9}\b", lambda m: _month_typo(m.group(0)), text)
 
 
 def num_word(word: str) -> int | None:
@@ -104,7 +121,8 @@ def _date_with_year(day: int, month: int, year: str | int | None, today: date) -
         return None
 
 
-def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[date | None, date | None]:
+def parse_dates(text: str, today: date, known_in: date | None = None,
+                month_hint: int | None = None) -> tuple[date | None, date | None]:
     t = norm(text)
     check_in = check_out = None
 
@@ -162,6 +180,19 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
         m = re.search(rf"(?:с|со|на|заезд\w*)?\s*(\d{{1,2}})(?:-?го)?\s+{MONTH_RE}(?:\s+(20\d{{2}}))?", t)
         if m:
             check_in = _date_with_year(int(m.group(1)), month_of(m.group(2)), m.group(3), today)
+    if check_in is None and not dots:
+        # «с 7 по 13» без месяца: ближайший месяц, в котором первый день ещё впереди (или названный ранее)
+        m = re.search(r"\bс\s+(\d{1,2})(?:-?го)?\s+(?:по|до)\s+(\d{1,2})(?:-?е|-?го)?\b"
+                      r"(?!\s*(?:ноч|сут|дн|руб|тыс|человек|гост|звезд|час|лет|\d|[.,]\d))", t)
+        if m and 1 <= int(m.group(1)) < int(m.group(2)) <= 31:
+            day_in, day_out = int(m.group(1)), int(m.group(2))
+            month = month_hint or (today.month if day_in >= today.day else today.month % 12 + 1)
+            check_in = future_date(day_in, month, today)
+            if check_in:
+                try:
+                    return check_in, check_in.replace(day=day_out)
+                except ValueError:
+                    return check_in, None
     if check_in is None:
         m = re.search(r"\bс (\d{1,2})(?:-?го)?\b(?!\s*(?:до|ноч|звезд|человек|гост|\d))", t)
         if m:

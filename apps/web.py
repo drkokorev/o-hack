@@ -327,6 +327,15 @@ class Images:
         return payload
 
 
+class RevalidatedStatic(StaticFiles):
+    """Браузер сверяет файл с сервером (ETag, ответ 304), а не берёт устаревший скрипт из кэша после обновления."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def build_app(agent: Agent | None = None) -> FastAPI:
     settings = get_settings()
     mode = (os.getenv("ODIN_MODE") or "models").lower()
@@ -368,7 +377,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             worker.join(timeout=1)
 
     app = FastAPI(title="О!дин запрос — агент поездки", docs_url="/api/docs", lifespan=lifespan)
-    app.mount("/static", StaticFiles(directory=STATIC), name="static")
+    app.mount("/static", RevalidatedStatic(directory=STATIC), name="static")
 
     @app.get("/")
     def index() -> FileResponse:

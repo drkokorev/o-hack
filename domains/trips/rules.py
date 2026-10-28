@@ -375,7 +375,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     shift = _shift(t)
     overridden_shift = False
     known_in = None if data.get("new_search") else state.date_from
-    d_in, d_out = parse_dates(text, today, known_in)
+    d_in, d_out = parse_dates(text, today, known_in, None if data.get("new_search") else state.month)
     if shift is not None and not (d_in and d_out):
         d_in, d_out = None, None
     elif shift is not None:

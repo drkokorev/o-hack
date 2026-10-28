@@ -39,7 +39,12 @@
         this.source = this.context.createMediaStreamSource(stream);
         this.processor = this.context.createScriptProcessor(4096, 1, 1);
         this.processor.onaudioprocess = (event) => {
-          if (!this.stopped) this.chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+          const data = event.inputBuffer.getChannelData(0);
+          if (!this.stopped) {
+            this.chunks.push(new Float32Array(data));
+            let sum = 0; for (let i = 0; i < data.length; i += 4) sum += data[i] * data[i];
+            this.onlevel?.(Math.sqrt(sum / (data.length / 4)));
+          }
           event.outputBuffer.getChannelData(0).fill(0);
         };
         this.source.connect(this.processor); this.processor.connect(this.context.destination);
@@ -93,6 +98,19 @@
     let backend = null, current = null, phase = "idle", limit = null, ticker = null;
     let pressed = false, held = false, pointerId = null, holdTimer = null, suppressUntil = 0, mode = "toggle", startedAt = 0;
     let disclosedBackend = null, after = null;
+    // Полоска уровня звука во время записи (как в Claude): последние значения громкости столбиками
+    const wave = dedicated ? document.getElementById("voice-wave") : null, BARS = 28;
+    if (wave) wave.replaceChildren(...Array.from({ length: BARS }, () => document.createElement("i")));
+    let levels = [];
+    const showLevel = (value) => {
+      if (!wave) return;
+      levels = [...levels, Math.min(1, value * 9)].slice(-BARS);
+      [...wave.children].forEach((bar, i) => {
+        const v = levels[i - (BARS - levels.length)];
+        bar.style.height = v === undefined ? "" : `${Math.max(3, Math.round(v * 22))}px`;
+      });
+    };
+    const setWave = (on) => { if (wave) { wave.hidden = !on; input.classList.toggle("dictating", on); if (!on) { levels = []; showLevel(0); levels = []; } } };
     const cancelButton = holdToTalk ? document.getElementById("voice-cancel") : null;
     const notifyAudio = (recording) => document.dispatchEvent(new CustomEvent("odin:recording", {detail:{recording}}));
     const message = (text) => { status.textContent = text; status.hidden = !text; };
@@ -107,6 +125,8 @@
       button.setAttribute("aria-label", label);
       button.title = label;
       button.classList.toggle("recording", Boolean(current) && phase !== "processing");
+      setWave(Boolean(current));
+      if (wave) wave.classList.toggle("processing", phase === "processing");
       button.dataset.listening = String(Boolean(current) && phase === "listening");
       if (cancelButton) cancelButton.hidden = !current;
     }
@@ -150,6 +170,7 @@
         return;
       }
       const recognition = new Recognition();
+      recognition.onlevel = showLevel;
       current = recognition; phase = "starting"; update();
       recognition.lang = "ru-RU"; recognition.continuous = false;
       recognition.interimResults = false; recognition.maxAlternatives = 1;

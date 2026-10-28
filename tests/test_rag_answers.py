@@ -140,3 +140,9 @@ def test_place_question_without_question_mark_is_answered_during_clarification()
     a.handle(session, "Хочу в Казань на выходные вдвоём из Москвы")
     reply = a.handle(session, "а что там посмотреть").reply
     assert reply.startswith("По путеводителю Wikivoyage («Казань»)") and " ," not in reply
+
+
+def test_verify_rejects_numbers_only_from_user_text():
+    facts = "Учёл начало поездки: 7 ноября 2026. Какое направление интересно?"
+    problems = verify("Учёл даты: с 7 по 13 ноября 2026. Какое направление интересно?", facts, "с 7 по 13", set(), facts)
+    assert any("числа" in p for p in problems)

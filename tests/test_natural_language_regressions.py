@@ -8,7 +8,8 @@ from domains.trips.arbiter import arbitrate
 from domains.trips.domain import TripsDomain
 from domains.trips.rules import rule_extract
 from domains.trips.state import TripState, TripUpdate
-from domains.trips.textparse import future_date, parse_dates
+from domains.trips.geo import BY_ID
+from domains.trips.textparse import future_date, norm, parse_dates
 from tools.llm_check import ok
 
 
@@ -156,3 +157,26 @@ def test_cart_accepts_booking_after_approval_words():
     assert session.state.stage == "cart"
     agent.handle(session, "Всё отлично, бронируй этот вариант")
     assert session.state.stage == "payment"
+
+
+# ---------- ручная проверка 28.10: «пляж → нояюрь → с 7 по 13 → грузия» ----------
+
+def test_month_typo_and_day_range_without_month_are_understood():
+    state = TripState()
+    assert rule_extract(state, "нояюрь", TODAY).month == 11
+    update = rule_extract(state.model_copy(update={"month": 11}), "с 7 по 13", TODAY)
+    assert (update.date_from, update.date_to) == (date(2026, 11, 7), date(2026, 11, 13))
+    assert norm("янтаря") == "янтаря" and norm("октябрьский") == "октябрьский"
+
+
+def test_beach_ideas_respect_season_and_single_country_place_is_chosen():
+    agent = Agent(TripsDomain(), None, today=lambda: TODAY)
+    session = agent.new_session()
+    agent.handle(session, "хочу на пляж с белым песком")
+    agent.handle(session, "нояюрь")
+    ideas_shown = {BY_ID[d].name for d in session.state.suggested}
+    assert ideas_shown and not ideas_shown & {"Батуми", "Сочи", "Будва", "Барселона"}  # в ноябре не купальный сезон
+    agent.handle(session, "с 7 по 13")
+    reply = agent.handle(session, "грузия").reply
+    assert session.state.dest_id == "batumi" and "не купальный сезон" in reply
+    assert (session.state.date_from, session.state.date_to) == (date(2026, 11, 7), date(2026, 11, 13))

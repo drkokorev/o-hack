@@ -78,12 +78,22 @@ form.composer { flex:none; padding:14px 18px 14px; border-top:0; background:var(
 .field #send { flex:none; width:44px; height:44px; min-width:44px; border:0; border-radius:15px; display:grid; place-items:center; background:var(--accent); color:#fff; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; box-shadow:0 3px 9px color-mix(in srgb,var(--accent) 18%,transparent); transition:filter .18s; }
 .field #send:hover { filter:brightness(1.12); }
 .field #send.recording { background:#b3261e; box-shadow:0 0 0 4px #b3261e12; }
-.field #mic { flex:none; width:44px; height:44px; min-width:44px; border:0; border-radius:15px; display:grid; place-items:center; background:transparent; color:var(--muted); cursor:pointer; transition:background .15s,color .15s; }
+.field #mic { flex:none; width:44px; height:44px; min-width:44px; border:0; border-radius:15px; display:grid; place-items:center; background:var(--accent-soft); color:var(--accent); cursor:pointer; transition:background .15s,color .15s; }
 .field #mic:hover { background:var(--accent-soft); color:var(--ink); }
 .field #mic.recording { background:#b3261e; color:#fff; box-shadow:0 0 0 4px #b3261e1f; animation:mic-pulse 1.4s ease-in-out infinite; }
 .field #mic[aria-label="Распознаю речь"] { color:var(--accent); animation:mic-pulse 0.9s ease-in-out infinite; }
 @keyframes mic-pulse { 50% { box-shadow:0 0 0 8px #b3261e10; } }
 @media (prefers-reduced-motion: reduce) { .field #mic { animation:none !important; } }
+.voice-wave[hidden] { display:none; }
+.voice-wave { flex:none; display:flex; align-items:center; gap:3px; height:44px; padding:0 6px; }
+.voice-wave i { display:block; width:3px; height:3px; border-radius:2px; background:var(--muted); opacity:.75; transition:height .08s linear; }
+.voice-wave.processing i { animation:wave-wait 1s ease-in-out infinite; }
+.voice-wave.processing i:nth-child(odd) { animation-delay:.25s; }
+@keyframes wave-wait { 50% { height:9px; } }
+.field textarea.dictating { flex:1 1 0; min-width:40px; }
+.field textarea.dictating::placeholder { color:transparent; }
+@media (max-width: 520px) { .voice-wave { gap:2px; } .voice-wave i:nth-child(-n+10) { display:none; } }
+@media (prefers-reduced-motion: reduce) { .voice-wave.processing i { animation:none; } }
 .composer-hint { margin:8px 0 0; font-size:11px; color:var(--muted); text-align:center; line-height:1.6; }
 .voice-feedback { display:flex; align-items:center; gap:8px; }
 .voice-status { margin:0 0 8px; color:var(--muted); font-size:12px; }

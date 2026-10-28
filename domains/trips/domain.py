@@ -21,7 +21,7 @@ from .climate import SOURCE as CLIMATE_SOURCE
 from .climate import climate
 from . import guides
 from .geo import BY_ID, DESTINATIONS, ORIGIN_BY_NAME, TAG_NAMES, Destination, destination_has_tag
-from .dialogue import QUESTION_INPUT_FIELDS, ideas, missing_for_trip
+from .dialogue import QUESTION_INPUT_FIELDS, idea_places, ideas, missing_for_trip
 from .inspire import Suggestion, suggest
 from .offers import AMENITIES, MEALS, hotel_price, hotels_for, transport_options
 from .planner import Package, Trip, _leg_ok, cheapest_start, hm, leg_text, make_packages, month_window, timeline
@@ -704,6 +704,18 @@ class TripsDomain:
                                      "Не буду подменять это место другим: можно уточнить название или выбрать другое направление.",
                                      payload={"kind": "question"}), notes)
 
+        if not state.dest_id and state.country and not act.get("more"):
+            # «Грузия» при запросе пляжа — в каталоге одно подходящее место (Батуми): выбираем его, а не спрашиваем снова
+            candidates, in_season = idea_places(state), True
+            if not candidates:
+                candidates, in_season = idea_places(state, season=False), False
+            if len(candidates) == 1:
+                place = candidates[0]
+                state.dest_id, state.destination = place.id, place.name
+                notes.append(f"В стране {state.country} под ваши пожелания в каталоге одно направление — {place.name}.")
+                month = state.date_from.month if state.date_from else state.month
+                if not in_season and month and (weather := climate(place.id, month)):
+                    notes.append(f"Учтите: в это время там не купальный сезон по историческим средним ({weather.describe()}).")
         if not state.dest_id:
             if state.showing == "destinations" and state.suggested:
                 chosen = self._choose(act, [BY_ID[d].name for d in state.suggested])

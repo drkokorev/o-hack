@@ -57,8 +57,17 @@ def missing_for_trip(state: TripState) -> tuple[str, str] | None:
     return None
 
 
-def ideas(state: TripState, *, exclude_shown: bool = False) -> Step:
-    """Ideas never pretend to know dates, departure city, price or journey time."""
+def _season_fits(dest_id: str, requested: set[str], month: int | None) -> bool:
+    """Пляж и море — только в купальный сезон по историческим средним; без данных не отсеиваем."""
+    weather = climate(dest_id, month) if month else None
+    if weather is None:
+        return True
+    if requested & {"beach", "sea"}:
+        return weather.beach_ok or (weather.sea is not None and weather.sea >= 21 and weather.t_day >= 22)
+    return "warm" not in requested or weather.warm
+
+
+def idea_places(state: TripState, *, exclude_shown: bool = False, season: bool = True) -> list:
     excluded = set(state.rejected) | (set(state.seen) if exclude_shown else set())
     requested = set(state.trip_types or [])
     places = [d for d in DESTINATIONS if d.id not in excluded and
@@ -76,7 +85,24 @@ def ideas(state: TripState, *, exclude_shown: bool = False) -> Step:
     month = state.date_from.month if state.date_from else state.month
     if thresholds and month:
         places = [d for d in places if matches_history(climate(d.id, month), **thresholds) is True]
-    places = places[:3]
+    if season and month and requested & {"beach", "sea", "warm"}:
+        places = [d for d in places if _season_fits(d.id, requested, month)]
+        # сначала сухие и тёплые: в ноябре Хургада раньше Бали с дождями 19 дней
+        places.sort(key=lambda d: (-sum(destination_has_tag(d, tag) for tag in requested),
+                                   (climate(d.id, month).rain_days if climate(d.id, month) else 0) >= 12, d.name))
+    return places
+
+
+def ideas(state: TripState, *, exclude_shown: bool = False) -> Step:
+    """Ideas never pretend to know dates, departure city, price or journey time."""
+    places = idea_places(state, exclude_shown=exclude_shown)[:3]
+    requested = set(state.trip_types or [])
+    thresholds = {key: getattr(state, key) for key in TEMP_FIELDS if getattr(state, key) is not None}
+    month = state.date_from.month if state.date_from else state.month
+    off_season = False
+    if not places and state.country and not thresholds:
+        # «Грузия» в ноябре для пляжа: честно говорим про сезон, а не «ничего не нашёл»
+        places, off_season = idea_places(state, exclude_shown=exclude_shown, season=False)[:3], True
     if not places:
         if thresholds and month:
             return Step("По указанным условиям и имеющимся историческим средним температуры подходящих "
@@ -92,6 +118,9 @@ def ideas(state: TripState, *, exclude_shown: bool = False) -> Step:
     payload = {"kind": "ideas", "items": items}
     state.last_view = payload
     lines = ["Вот несколько идей. Это направления для вдохновения: даты, стоимость и время в пути пока не рассчитывал."]
+    if off_season:
+        lines.append(f"В стране {state.country} в это время не купальный сезон по историческим средним: "
+                     + "; ".join(f"{d.name} — {climate(d.id, month).describe()}" for d in places if climate(d.id, month)) + ".")
     if state.visa_free_requested:
         lines.append("Безвизовый въезд зависит от гражданства и других условий; актуальные требования я не проверял и по визам эти идеи не фильтровал.")
     if state.flight_concern:
