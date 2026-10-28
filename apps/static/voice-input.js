@@ -181,7 +181,7 @@
         phase = "listening"; update();
         startedAt = performance.now(); notifyAudio(true);
         const finishHint = mode === "hold" ? "отпустите, чтобы закончить" :
-          dedicated ? "■ — вставить текст, ↑ — сразу отправить" : "нажмите стрелку, чтобы закончить";
+          dedicated ? "■ — вставить текст, ↵ — сразу отправить" : "нажмите стрелку, чтобы закончить";
         const tick = () => message(`Запись ${Math.min(20,Math.floor((performance.now()-startedAt)/1000))} / 20 с · ${finishHint}`);
         tick(); ticker = setInterval(tick, 250);
       };
