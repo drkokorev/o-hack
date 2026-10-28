@@ -275,6 +275,10 @@ class TripsDomain:
         if update.unknown_place and "destination" not in data:
             data["destination"] = update.unknown_place
         changes: dict = {"group_conflict": group_conflict}
+        if ((update.destination is not None and update.destination not in {state.destination, state.dest_id})
+                or (update.country is not None and update.country != state.country)
+                or update.unknown_place is not None):
+            changes["selected_event"] = None
         if update.destination is not None or update.unknown_place is not None:
             changes["map_place"] = None
         if update.place_country:

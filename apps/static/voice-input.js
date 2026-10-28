@@ -91,15 +91,15 @@
     let backend = null, current = null, phase = "idle", limit = null, ticker = null;
     let pressed = false, held = false, pointerId = null, holdTimer = null, suppressUntil = 0, mode = "toggle", startedAt = 0;
     let disclosedBackend = null;
-    const cancelButton = holdToTalk ? document.getElementById("voice-cancel") : null;
+    const cancelButton = holdToTalk || microphone ? document.getElementById("voice-cancel") : null;
     const notifyAudio = (recording) => document.dispatchEvent(new CustomEvent("odin:recording", {detail:{recording}}));
     const message = (text) => { status.textContent = text; status.hidden = !text; };
     function update() {
       const hasText = Boolean(input.value.trim());
       button.innerHTML = current ? (phase === "listening" && mode === "hold" ? icons.mic : icons.stop) :
-        (holdToTalk || hasText ? icons.arrow : icons.mic);
+        (holdToTalk || microphone || hasText ? icons.arrow : icons.mic);
       const label = current ? (phase === "processing" ? "Распознаю речь" : "Остановить запись") :
-        holdToTalk ? "Отправить сообщение. Удерживайте для диктовки" : hasText ? "Отправить" : "Голосовой ввод";
+        holdToTalk ? "Отправить сообщение. Удерживайте для диктовки" : microphone ? "Отправить сообщение" : hasText ? "Отправить" : "Голосовой ввод";
       button.setAttribute("aria-label", label);
       button.title = label;
       button.classList.toggle("recording", Boolean(current) && phase !== "processing");
@@ -112,7 +112,7 @@
       }
     }
     function hint() {
-      if (current || holdToTalk) return;
+      if (current || holdToTalk || microphone) return;
       if (backend?.backend === "gigaam") {
         message(backend.status === "ready" ? "Голос распознаётся на сервере приложения (до 20 секунд)." :
           "Модель голоса загружается или недоступна; текстовый ввод работает.");
@@ -207,7 +207,7 @@
       if (button.disabled || current) return;
       mode = requestedMode;
       if (!backend) { message("Голос ещё загружается. Попробуйте через секунду."); return; }
-      if (holdToTalk && disclosedBackend !== backend.backend) {
+      if ((holdToTalk || microphone) && disclosedBackend !== backend.backend) {
         const dialog = document.getElementById("voice-dialog");
         document.getElementById("voice-disclosure").textContent = backend.backend === "gigaam"
           ? "Аудио будет отправлено на сервер приложения для распознавания."
@@ -259,7 +259,12 @@
     }
     if (microphone) microphone.addEventListener("click", () => current ? toggle() : begin("toggle"));
     input.addEventListener("input", update);
-    update(); if(!holdToTalk)message("Проверяю доступность голосового ввода…"); checkBackend();
+    if (microphone && !holdToTalk) {
+      document.addEventListener("keydown",event=>{if(event.key==="Escape"&&current){event.preventDefault();cancel();}});
+      document.addEventListener("visibilitychange",()=>{if(document.hidden&&current)cancel();});
+      window.addEventListener("pagehide",cancel);
+    }
+    update(); if(!holdToTalk&&!microphone)message("Проверяю доступность голосового ввода…"); checkBackend();
     return { toggle, begin, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };
   };
 })();

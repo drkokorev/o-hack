@@ -619,7 +619,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             data["payment_method"] = "sbp"
         elif re.search(r"карт", t):
             data["payment_method"] = "card"
-    if re.search(r"не знаю|не определил|пока не решил|без понятия|пока не выбрал", t):
+    if re.search(r"не знаю|не определил|пока не решил|без понятия|пока не выбрал|предложи сам(?:а|и)?\b", t):
         data["unsure"] = True
     if re.search(r"не (?:говорил|указывал|называл|писал).{0,35}(?:ноч|дн|срок|длитель)", t):
         data["duration_not_given"] = True

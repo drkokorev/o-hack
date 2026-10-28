@@ -16,3 +16,5 @@ eval/guided_report.json
 # Воспроизводимый пространственный индекс; исходные открытые снимки остаются в Git.
 domains/trips/data/map_catalog.sqlite3
 domains/trips/data/map_catalog.building.sqlite3
+
+.superdesign/

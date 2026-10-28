@@ -38,7 +38,7 @@ const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
   if (place.kind === "country") return send(`Хочу поехать: ${place.name}`, {map_country_code:place.code});
   if (place.kind === "city") return send(`Хочу поехать: ${place.name}${place.country_name ? `, ${place.country_name}` : ""}`,
     {map_city_id:place.id});
-  if (place.event) return send(`Хочу поехать на ${place.event} в ${place.name}`);
+  if (place.event) return send(`Хочу поехать на ${place.event} в ${place.name}`, {event_id:place.id});
   if (place.landmark) return send(`Хочу посетить ${place.landmark}, ${place.name}`);
   return send(`Хочу поехать в ${place.name}${place.country_name ? `, ${place.country_name}` : ""}`);
 },
@@ -50,7 +50,7 @@ const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
   } });
 const drawMap = (options = {}) => tripMap.draw(options);
 const preferences = createPreferences(tripMap);
-const voice = createVoiceInput({input:$("text"), button:$("send"), microphone:$("mic-button"), status:$("voice-status"), holdToTalk:true});
+const voice = createVoiceInput({input:$("text"), button:$("send"), microphone:$("mic-button"), status:$("voice-status"), holdToTalk:false});
 let lastData = null, latestTurn = null, editing = false;
 const experience = createExperience({send, reset:resetConversation, undo:undoTurn, edit:editTurn,
   isBusy:()=>busy, voice, ideas:renderWelcome});
@@ -72,7 +72,7 @@ function renderHead(data) {
     $("head").replaceChildren(el("div", { class: "hero" }, el("h1", {}, title)));
   } else {
     $("head").replaceChildren(el("div", { class: "hero" },
-      el("h1", {}, "Соберём вашу поездку"),
+      el("h1", {}, "Соооберём вашу поездку"),
       el("p", {}, "Отель, дорога и трансферы — по вашим пожеланиям.")));
   }
 }
@@ -91,7 +91,8 @@ function renderConditions(data) {
   lastDestination = destination;
   const summary=data?.trip_summary || {};
   const dates=summary.date_from && summary.date_to ? `${summary.date_from.slice(8)}.${summary.date_from.slice(5,7)}–${summary.date_to.slice(8)}.${summary.date_to.slice(5,7)}` : null;
-  $("trip-summary-line").textContent=[destination,dates,summary.nights ? `${summary.nights} ночей` : null,
+  const n=summary.nights, nightWord=n%10===1&&n%100!==11 ? "ночь" : n%10>=2&&n%10<=4&&(n%100<12||n%100>14) ? "ночи" : "ночей";
+  $("trip-summary-line").textContent=[summary.origin ? `Откуда: ${summary.origin}${summary.origin_inferred ? " (по IP)" : ""}` : null,destination,dates,n ? `${n} ${nightWord}` : null,
     summary.adults ? `${summary.adults} взр.${summary.children ? ` + ${summary.children} дет.` : ""}` : null,
     summary.budget_total ? `до ${new Intl.NumberFormat("ru-RU").format(summary.budget_total)} ₽` : null].filter(Boolean).join(" · ") || "Уточняем условия";
   $("conditions").replaceChildren(...understood.map((c) => el("span", { class: "chip" }, c)),
@@ -118,8 +119,8 @@ function renderSaved() {
     el("button", { type: "button", class: "saved-remove", "aria-label": `Убрать ${item.name} из избранного`, onclick: () => {
       delete preferenceData.saved[id]; persistPlaces(); renderSaved();
       const button = document.querySelector(`[data-save-key="${CSS.escape(id)}"]`);
-      if (button) { button.setAttribute("aria-pressed", "false"); button.textContent = "♡"; }
-    } }, "×"));
+      if (button) { button.setAttribute("aria-pressed", "false"); button.replaceChildren(odinIcon("heart")); }
+    } }, odinIcon("close")));
   }).filter(Boolean));
 }
 function decorateOptions(payload) {
@@ -146,8 +147,8 @@ function decorateOptions(payload) {
         if (preferenceData.saved[key]) delete preferenceData.saved[key];
         else preferenceData.saved[key] = {name:place.name, kind:isHotel ? "hotel" : "city", url:isHotel ? place.map_url || null : null};
         saved.setAttribute("aria-pressed", String(Boolean(preferenceData.saved[key])));
-        saved.textContent = preferenceData.saved[key] ? "♥" : "♡"; persistPlaces(); renderSaved();
-      } }, preferenceData.saved[key] ? "♥" : "♡");
+        saved.replaceChildren(odinIcon("heart",Boolean(preferenceData.saved[key]))); persistPlaces(); renderSaved();
+      } }, odinIcon("heart",Boolean(preferenceData.saved[key])));
     const hide = el("button", { type: "button", class: "feedback-button", "aria-label": `Скрыть: ${place.name}`,
       title: "Не показывать на этом устройстве", onclick: () => {
         if (!preferenceData.hidden.includes(key)) preferenceData.hidden.push(key);
@@ -479,7 +480,7 @@ const views = {
             el("dt", {}, "Отель"), el("dd", {}, `${o.hotel} · ${o.hotel_dates || ""}`), el("dt", {}, "Отмена"), el("dd", {}, cancel)),
           p.requests && p.requests.length ? el("div", {}, el("h4", {}, "Запросы в отель"), marks("why", p.requests)) : null,
           el("div", { class: "actions" }, sayBtn("Ранний заезд", "запроси ранний заезд"), sayBtn("Поздний выезд", "поздний выезд"),
-            sayBtn("Перенести на 2 дня", "перенеси на 2 дня позже"), sayBtn("Отменить", "отмени бронь"))),
+            el("button", {type:"button",class:"btn ghost",onclick:()=>experience.openCondition("dates")},"Изменить даты"), sayBtn("Отменить", "отмени бронь"))),
         el("div", { class: "stub" },
           el("div", { class: "label" }, "Номер заказа"), el("div", { class: "big num" }, o.number),
           el("div", { class: "label" }, "Демо-сумма"), el("div", { class: "big num" }, new Intl.NumberFormat("ru-RU").format(o.total) + " ₽"),
@@ -497,7 +498,7 @@ function addMessage(role, content, meta) {
 function renderStages(stage) {
   const list = info ? info.stages : [];
   const idx = list.findIndex((s) => s.key === stage);
-  $("stages").replaceChildren(...list.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : null }, s.title)));
+  $("stages").replaceChildren(...list.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : null }, {start:"Запрос",destination:"Куда",plan:"Выбор",cart:"План",payment:"Оплата",booked:"Готово"}[s.key] || s.title)));
 }
 function dateControls() {
   const today = new Date(); today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
@@ -522,9 +523,9 @@ function renderSuggest(data) {
   const stage = typeof data === "string" ? data : data.stage;
   if (!conversationStarted) {
     const starters = [
-      ["К морю", "Хочу к морю, пока не знаю куда. Предложи идеи без дат.", "sea"],
-      ["В горы", "Хочу в горы, пока не знаю куда. Предложи идеи без дат.", "alpine"],
-      ["Помоги выбрать", null, null]
+      ["К морю на неделю", "Хочу к морю на неделю: отдохнуть и жить рядом с пляжем. Предложи направления.", "sea"],
+      ["В горы за тишиной", "Хочу в горы, красивый вид и спокойные прогулки. Предложи направления.", "alpine"],
+      ["Предложи сам", "Предложи сам несколько разных идей для отдыха, пока без дат.", null]
     ];
     $("suggest").replaceChildren(...starters.map(([label,text,mood]) => el("button", {type:"button",onclick:()=>{
       if(text){experience.setMood(mood);send(text);}else{experience.showIdeas();}
@@ -540,22 +541,22 @@ function renderSuggest(data) {
   const question = typeof data === "object" ? String(data.reply || "").split("?")[0].toLowerCase() : "";
   if (payload.kind === "question" && (["when", "dates", "date_from", "date_to"].includes(payload.field) ||
       (!payload.field && String(data.reply || "").includes("?") && /когда|дат[ыу]|месяц|время года/.test(question)))) {
-    $("suggest").replaceChildren(dateControls(), el("button", {type:"button", onclick:() => send("пока не знаю")}, "Пока не знаю"));
+    $("suggest").replaceChildren(dateControls(), el("button", {type:"button", onclick:() => send("предложи сам")}, "Предложи сам"));
     return;
   }
   if (payload.kind === "question" && (payload.field === "origin" ||
       (!payload.field && String(data.reply || "").includes("?") && /откуда|город отправления|город вылета/.test(question)))) {
-    $("suggest").replaceChildren(locationChoice()); return;
+    $("suggest").replaceChildren(el("button", {type:"button", onclick:()=>experience.openCondition("origin")}, "Указать город")); return;
   }
   if (payload.kind === "question" && payload.field === "duration") {
     const nights = /ноч/i.test(String(data.reply || ""));
     const choices = nights ? [["3 ночи", "на 3 ночи"], ["7 ночей", "на 7 ночей"]] : [["3 дня", "на 3 дня"], ["7 дней", "на 7 дней"]];
-    $("suggest").replaceChildren(...[...choices, ["Пока не знаю", "пока не знаю"]]
+    $("suggest").replaceChildren(...[...choices, ["Предложи сам", "предложи сам"]]
       .map(([label, text]) => el("button", {type:"button", onclick:() => send(text)}, label)));
     return;
   }
   if (payload.kind === "question" && payload.field === "people") {
-    $("suggest").replaceChildren(...[["1 взрослый", "1 взрослый"], ["2 взрослых", "2 взрослых"], ["Пока не знаю", "пока не знаю"]]
+    $("suggest").replaceChildren(...[["1 взрослый", "1 взрослый"], ["2 взрослых", "2 взрослых"], ["Предложи сам", "предложи сам"]]
       .map(([label, text]) => el("button", {type:"button", onclick:() => send(text)}, label)));
     return;
   }
@@ -565,30 +566,9 @@ function renderSuggest(data) {
   const options = (typeof data === "object" && Array.isArray(data.suggestions) ? supplied : (inspiration.quick?.[stage] || [])).filter((text) =>
     !(understood.includes("по России") && /только по России/i.test(text)) &&
     !(understood.includes("за границу") && /за границу/i.test(text)));
-  $("suggest").replaceChildren(...options.map((text) => el("button", {type:"button", onclick:() => send(text)}, text)));
-}
-function locationChoice() {
-  const result = el("div", { class: "src", role: "status" });
-  const button = el("button", { type: "button", class: "btn ghost", onclick: () => {
-    if (!navigator.geolocation) { result.textContent = "Браузер не поддерживает определение местоположения."; return; }
-    result.textContent = "Запрашиваю разрешение браузера…";
-    navigator.geolocation.getCurrentPosition(({ coords }) => {
-      const rad = (n) => n * Math.PI / 180;
-      const distance = (p) => {
-        const a = Math.sin(rad(p.lat - coords.latitude) / 2) ** 2 + Math.cos(rad(coords.latitude)) * Math.cos(rad(p.lat)) *
-          Math.sin(rad(p.lon - coords.longitude) / 2) ** 2;
-        return 12742 * Math.asin(Math.sqrt(Math.min(1, a)));
-      };
-      const nearest = (info.origins || []).map((p) => ({ ...p, km: distance(p) })).sort((a, b) => a.km - b.km)[0];
-      if (!nearest || nearest.km > 80) {
-        result.textContent = "Рядом нет доступного города отправления в демо. Напишите город вручную."; return;
-      }
-      result.replaceChildren(el("p", {}, `Похоже, вы рядом с городом ${nearest.name}. Использовать его?`),
-        sayBtn("Да, использовать", `из ${nearest.name}`, "btn accent"));
-    }, () => { result.textContent = "Не удалось определить местоположение. Город можно написать вручную."; },
-    { timeout: 8000, maximumAge: 300000, enableHighAccuracy: false });
-  } }, "Определить город");
-  return el("div", { class: "actions" }, button, result);
+  const useful = options.filter(text => !/два дня|2 дня|бюджет меньше|с нами собака|к морю|в горы/i.test(text));
+  const isQuestion = payload.kind === "question";
+  $("suggest").replaceChildren(...(isQuestion ? useful.slice(0, 3) : []).map((text) => el("button", {type:"button", onclick:() => send(text)}, /не знаю/i.test(text) ? "Предложи сам" : text)));
 }
 function render(data) {
   sessionId = data.session_id; lastData = data;
@@ -624,7 +604,7 @@ function showMoodChoices() {
   }},label))),el("button",{type:"button",class:"example-link",onclick:()=>experience.openExamples()},"Или взять готовый пример ↗"));
 }
 function setBusy(value) {
-  busy=value; $("send").disabled=value; $("undo").disabled=value || !lastData?.can_undo;
+  busy=value; $("send").disabled=value;
   $("mic-button").disabled=value;
   $("reset").disabled=value; $("conditions-edit").disabled=value;
 }
@@ -646,8 +626,8 @@ function saveTrip() {
     .map(node=>({role:node.dataset.role,text:node.dataset.text||"",kind:node.dataset.kind||""}));
   const saved=tripStorage.write({session_id:sessionId,revision:lastData.revision,messages,
     draft:$("text").value,editing,panel:journeyUI.panel()});
-  $("save-status").hidden=false;
-  $("save-status").textContent=saved ? "Поездка сохранена в этой вкладке" : "Браузер не разрешил сохранить поездку";
+  $("save-status").hidden=saved;
+  $("save-status").textContent=saved ? "" : "Не удалось сохранить поездку в браузере";
 }
 async function restoreTrip() {
   const saved=tripStorage.read();if(!saved)return false;
@@ -747,8 +727,9 @@ async function undoTurn() {
 }
 function greet(){addMessage("bot","Расскажите, какой отдых хочется. Подберём отель, дорогу и трансферы — можно начать с пары слов.");}
 function start(){conversationStarted=false;lastDestination=null;lastData=null;latestTurn=null;editing=false;
+  document.querySelector('.board').classList.remove('compact');
   $("map").hidden=false;renderStages("start");renderHead(null);renderConditions(null);renderSaved();renderSuggest("start");
-  $("view").replaceChildren();drawMap({});experience.reset();journeyUI.update(null);journeyUI.show("chat",false);greet();}
+  $("view").replaceChildren();drawMap({});tripMap.reset();experience.reset();journeyUI.update(null);journeyUI.show("chat",false);greet();}
 $("ask").addEventListener("submit",(event)=>{
   event.preventDefault();if(busy)return;
   if(voice.isActive()){voice.toggle();return;}

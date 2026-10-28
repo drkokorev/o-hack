@@ -1,0 +1,180 @@
+{
+  "task": "Approved globe and interface changes in Artemiy version",
+  "base_commit": "5d1a32d645c5eb8920c48d0064f99f7fbb63b8be",
+  "target_branch": "artemiy",
+  "checks": [
+    {
+      "id": "python-full",
+      "result": "PASS",
+      "count": 576,
+      "seconds": 241.4,
+      "command": "ODIN_MODE=rules python -m pytest -q --tb=short",
+      "scope": "Intermediate implementation before final event, inferred-origin and unsure-command adjustments"
+    },
+    {
+      "id": "python-targeted-early",
+      "result": "PASS",
+      "count": 26,
+      "seconds": 37.19,
+      "scope": "First event/IP/navigation/review regressions; superseded by final targeted run"
+    },
+    {
+      "id": "python-targeted-final",
+      "result": "PASS",
+      "count": 74,
+      "seconds": 77.84,
+      "command": "ODIN_MODE=rules python -m pytest -q tests/test_globe_event_selection.py tests/test_design_review_flow.py tests/test_ip_city_20261028.py tests/test_trips.py tests/test_freeform_regressions.py tests/test_checkout_and_dialogue.py",
+      "scope": "Final backend changes including atomic rejected event selection"
+    },
+    {
+      "id": "browser-journey",
+      "result": "PASS",
+      "count": 58,
+      "script": "tools/verify_design_review.js",
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "before_transfer_rub": 118140,
+      "after_transfer_rub": 117080,
+      "package_card_heights_px": [
+        671,
+        671,
+        671
+      ]
+    },
+    {
+      "id": "browser-recovery",
+      "result": "PASS",
+      "count": 18,
+      "script": "tools/verify_design_recovery.js",
+      "microphone": "Explicit browser recognition/media test double; no real audio recorded"
+    },
+    {
+      "id": "browser-globe",
+      "result": "PASS",
+      "count": 19,
+      "script": "tools/verify_globe_design.js",
+      "visible_labels": [
+        "Азия",
+        "Африка"
+      ],
+      "cluster_count": 12710,
+      "street_responses": 9,
+      "errors": []
+    },
+    {
+      "id": "browser-final-polish",
+      "result": "PASS",
+      "count": 17,
+      "script": "tools/verify_design_polish.js",
+      "event": "Венецианская биеннале искусства",
+      "scope": "Calendar EUR/USD/RUB roundtrip, SVG favorite, saved places after reset, actual event card and server selection",
+      "errors": []
+    },
+    {
+      "id": "models-cold",
+      "result": "FAIL",
+      "evidence": "models-cold.json",
+      "reason": "First chat exceeded 60-second client timeout after server startup; no response received by check"
+    },
+    {
+      "id": "models-warm",
+      "result": "PASS",
+      "count": 4,
+      "evidence": "models.json",
+      "voice_audio_tested": false
+    },
+    {
+      "id": "static",
+      "result": "PASS",
+      "scope": "node --check on modified JS/modules; git diff --check"
+    },
+    {
+      "id": "main-color-contrast",
+      "result": "PASS",
+      "ratios": {
+        "light body": 14.98,
+        "light muted": 5.34,
+        "light primary": 7.76,
+        "dark body": 13.9,
+        "dark muted": 8.74,
+        "dark primary": 8.82,
+        "drawn toggle": 7.84
+      },
+      "scope": "Solid text/control token pairs only; not every image/map pixel"
+    }
+  ],
+  "attempts_requiring_correction": [
+    {
+      "result": "FAIL",
+      "check": "Browser code via inline shell string",
+      "reason": "Shell quoting produced SyntaxError",
+      "resolution": "Use --filename for saved JS scripts"
+    },
+    {
+      "result": "FAIL",
+      "check": "Initial full UI check",
+      "reason": "Cold server reply exceeded 30-second wait",
+      "resolution": "Wait for UI ready up to 90 seconds; 58-check run passed"
+    },
+    {
+      "result": "FAIL",
+      "check": "Initial globe cluster check",
+      "reason": "Fixed 1.8-second sleep was shorter than point response",
+      "resolution": "Wait for actual visible markers"
+    },
+    {
+      "result": "FAIL",
+      "check": "IP conditions check",
+      "reason": "innerText excludes closed details content",
+      "resolution": "Check textContent and then open/edit the actual condition"
+    },
+    {
+      "result": "FAIL",
+      "check": "Cluster expansion assertion",
+      "reason": "Browser inherited reduced-motion from previous test",
+      "resolution": "Explicit no-preference for animation test; implementation preserves reduced-motion behavior"
+    },
+    {
+      "result": "EXPECTED_404",
+      "check": "Diagnostic map point",
+      "reason": "Temporary nonexistent ID",
+      "resolution": "Use real GeoNames Paris ID geonames:2988507"
+    },
+    {
+      "result": "INVALID_CAPTURE",
+      "check": "Initial mobile globe screenshot",
+      "reason": "Taken before globe loaded",
+      "resolution": "Wait for actual Earth and landmark readiness; recaptured"
+    },
+    {
+      "result": "FAIL",
+      "check": "First final-polish run with models",
+      "reason": "Two buttons named Select Antalya: map marker and result card",
+      "resolution": "Scope action to result container; rerun passed"
+    },
+    {
+      "result": "FAIL",
+      "check": "Repeated favorite toggle assertion",
+      "reason": "Isolated browser retained favorite from previous successful run",
+      "resolution": "Clear test-profile favorite data before the scenario; rerun passed"
+    },
+    {
+      "result": "VISUAL_DEFECT_FIXED",
+      "check": "Reset after results",
+      "reason": "Compact board class and previous camera remained after new trip",
+      "resolution": "Reset layout, discovery filter and camera; desktop and mobile regressions passed"
+    }
+  ],
+  "limitations": [
+    "Counts from overlapping Python runs are not additive unique tests",
+    "Live model result is recorded separately in models.json",
+    "IP city is mocked in deterministic browser checks; actual service may be unavailable",
+    "No actual microphone recording, physical mobile-device test or cross-device FPS benchmark",
+    "Commercial offers, dates of inventory availability and checkout are demo data",
+    "Four optional task statuses are partial/partial/incomplete/mobile implemented; see report"
+  ]
+}

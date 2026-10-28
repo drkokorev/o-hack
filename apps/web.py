@@ -27,6 +27,7 @@ from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
 from apps.location import city_hint, visitor_city, visitor_country
 from apps import chat_navigation
+from apps.event_selection import choose_event
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
@@ -58,6 +59,7 @@ class ChatIn(BaseModel):
     map_country_code: str | None = Field(default=None, min_length=2, max_length=2)
     map_city_id: str | None = Field(default=None, max_length=200)
     destination_id: str | None = Field(default=None, max_length=100)
+    event_id: str | None = Field(default=None, max_length=160)
     detected_city: str | None = None  # untrusted browser hint; never an exact location
 
 
@@ -495,8 +497,8 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         reply = step.reply
         if session.last_nlu in {"rules", "none"} and breaker and breaker.state in {"degraded", "down"}:
             reply += "\n\nЯзыковая модель временно недоступна; ответ подготовлен по правилам."
-        summary = state.model_dump(mode="json", include={"origin", "date_from", "date_to", "nights",
-            "adults", "children", "children_ages", "budget_total", "transport", "trip_types"})
+        summary = state.model_dump(mode="json", include={"origin", "origin_inferred", "date_from", "date_to", "nights",
+            "adults", "children", "children_ages", "budget_total", "transport", "trip_types", "selected_event"})
         summary["destination"] = BY_ID[state.dest_id].name if state.dest_id else state.destination or state.country
         return {"session_id": session_id, "reply": reply, "payload": images.decorate(step.payload),
             "stage": state.stage, "understood": understood(state), "assumptions": state.assumptions,
@@ -585,9 +587,11 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                     session.state.ip_city_hint = location["city_name"]
             previous = chat_navigation.snapshot(session)
             selected = None
-            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id, body.destination_id)) > 1:
+            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id, body.destination_id, body.event_id)) > 1:
                 raise HTTPException(status_code=422, detail="Выберите один объект карты")
-            if body.destination_id:
+            if body.event_id:
+                step, selected = choose_event(agent, session, body.event_id)
+            elif body.destination_id:
                 dest = BY_ID.get(body.destination_id)
                 if dest is None:
                     raise HTTPException(status_code=422, detail="Направление отсутствует в каталоге")
@@ -707,8 +711,8 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                         step.reply = "Не удалось выбрать страну. Попробуйте ещё раз.\n\n" + step.reply
             else:
                 step = agent.handle(session, body.text)
-            if guessed_origin and session.state.origin_inferred and session.state.origin == guessed_origin:
-                step.reply = f"Город отправления предположительно {guessed_origin} по IP. Если это не так, напишите другой город.\n\n" + step.reply
+            # The approximate origin is already exposed as an editable chip.
+            # Avoid repeating the geolocation notice in the conversation.
             chat_navigation.complete_turn(session, previous)
             result = present(session_id, session, step, started)
             result["map_selection"] = selected

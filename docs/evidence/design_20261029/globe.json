@@ -1,0 +1,45 @@
+{
+  "checks": [
+    "separate send arrow remains send control",
+    "voice disclosure does not clutter the composer",
+    "no Control+scroll overlay",
+    "long catalogs and credits are outside the globe",
+    "drawn mode keeps real globe projection",
+    "geographic labels fit visible globe",
+    "dark theme displays a sun icon",
+    "city groups are visible and interactive",
+    "group expansion connects real child coordinates",
+    "expansion decoration clears automatically",
+    "real street tiles load at city scale",
+    "mobile globe fits 390",
+    "mobile globe fits 320",
+    "mobile globe fits 768",
+    "IP origin appears as editable assumption",
+    "IP hint is not repeated in chat",
+    "IP city chip opens origin editor",
+    "manual origin replaces IP assumption",
+    "no JavaScript exceptions"
+  ],
+  "labels": [
+    "Азия",
+    "Африка"
+  ],
+  "before": {
+    "center": [
+      33.69243400000005,
+      35.216071
+    ],
+    "zoom": 1.8875252707415875,
+    "projection": "globe",
+    "earth": true,
+    "mode": "earth",
+    "detail": "idle",
+    "theme": "light",
+    "models": [
+      "tower"
+    ]
+  },
+  "groupLabel": "Мест в группе: 12 710. Приблизить",
+  "tiles": 9,
+  "errors": []
+}

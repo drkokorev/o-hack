@@ -3,7 +3,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   const byId = (id) => document.getElementById(id);
   let summary = {}, selectedMood = "neutral", boardLabel = "Карта";
   const moodNames = {neutral:"Мир открыт",sea:"Ближе к морю",alpine:"Выше облаков",city:"В ритме города",forest:"Наедине с природой",sunset:"Навстречу закату"};
-  const closeMenu = () => { byId("chat-menu").open = false; };
+  const closeMenu = () => {};
   const show = (id) => { closeMenu(); const dialog = byId(id); if (!dialog.open) dialog.showModal(); };
   const fill = (text) => { byId("text").value = text; byId("text").dispatchEvent(new Event("input", {bubbles:true})); byId("text").focus(); };
   const setMood = (mood) => {
@@ -49,11 +49,14 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   }
   function update(data) {
     summary = data?.trip_summary || {};
+    let eventLine=byId('selected-event');
+    if(!eventLine){eventLine=document.createElement('p');eventLine.id='selected-event';eventLine.className='selected-event';byId('trip-context').append(eventLine);}
+    eventLine.hidden=!summary.selected_event;
+    eventLine.textContent=summary.selected_event ? `${summary.selected_event.name} · ${summary.selected_event.dates}` : '';
     const stage = data?.stage || "start";
     boardLabel = ["plan","cart","payment","booked"].includes(stage) ? "Поездка" : "Карта";
-    const titles = {start:"Начнём с желания",destination:"Выбираем направление",plan:"Выбираем лучшее",cart:"Всё складывается",payment:"Последний шаг",booked:"Поездка собрана"};
+    const titles = {start:"Куда хочется?",destination:"Туда, где вам хорошо",plan:"Выбираем то самое",cart:"Всё складывается",payment:"Почти поехали",booked:"Можно предвкушать"};
     byId("chat-title").textContent = stage === "start" && data?.understood?.length ? "Уточняем вашу поездку" : titles[stage] || titles.start;
-    byId("undo").disabled = !data?.can_undo || isBusy();
     const types = summary.trip_types || [];
     let mood = types.some(t=>["sea","beach"].includes(t)) ? "sea" : types.some(t=>["ski","mountains"].includes(t)) ? "alpine" : types.some(t=>["city","culture"].includes(t)) ? "city" : types.includes("nature") ? "forest" : null;
     if (selectedMood === "alpine" && mood === "forest") mood = "alpine";
@@ -69,7 +72,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     });
     const items = Array.from(byId("stages").children), idx = Math.max(0, items.findIndex((n) => n.classList.contains("now")));
     items.forEach((item, i) => { if (i === idx) item.setAttribute("aria-current","step"); });
-    byId("stage-toggle").textContent = `${items[idx]?.textContent || "Запрос"} · шаг ${idx + 1} из ${items.length || 6}`;
+    byId("journey").setAttribute("aria-label", `Этапы поездки: ${items[idx]?.textContent || "Запрос"}, шаг ${idx + 1} из ${items.length || 6}`);
     document.body.classList.toggle("has-conversation", Boolean(data));
   }
   function configureExamples(info) {
@@ -88,8 +91,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   byId("text").addEventListener("keydown", (event) => {
     if(event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); byId("ask").requestSubmit(); }
   });
-  byId("about-open").onclick=byId("about-menu").onclick=()=>show("about-dialog");
-  byId("examples-open").onclick=()=>show("examples-dialog");
+  byId("about-open").onclick=()=>show("about-dialog");
   byId("conditions-edit").onclick=()=>openCondition("destination");
   byId("condition-field").onchange=fillCondition;
   byId("condition-form").onsubmit=(event)=> {
@@ -100,21 +102,12 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   byId("reset").onclick=()=>{ if (!isBusy()) show("reset-dialog"); };
   byId("reset-cancel").onclick=()=>byId("reset-dialog").close();
   byId("reset-confirm").onclick=async()=> { if(isBusy()) return; byId("reset-dialog").close(); await reset(); setMood("neutral"); };
-  byId("undo").onclick=()=>undo();
   byId("edit-cancel").onclick=()=>edit(null);
-  byId("dictate-menu").onclick=()=>{closeMenu(); voice.begin?.("toggle");};
   byId("voice-cancel").onclick=()=>voice.cancel();
   byId("mobile-map").onclick=()=> {
     const visible=document.body.classList.toggle("show-map"); byId("mobile-map").textContent=visible ? "В чат" : boardLabel;
     byId("mobile-map").setAttribute("aria-expanded",String(visible)); window.dispatchEvent(new Event("resize"));
   };
-  byId("stage-toggle").onclick=()=>{
-    const panel=byId("journey"), trigger=byId("stage-toggle");
-    const open=panel.classList.toggle("open");trigger.setAttribute("aria-expanded",String(open));
-    if(open){panel.style.top=(trigger.getBoundingClientRect().bottom+8)+"px";panel.style.maxHeight="calc(100dvh - "+(trigger.getBoundingClientRect().bottom+24)+"px)";panel.style.overflowY="auto";}
-  };
-  document.addEventListener("click",(event)=>{if(!event.target.closest(".chat-menu"))closeMenu();if(!event.target.closest("#journey,#stage-toggle")){byId("journey").classList.remove("open");byId("stage-toggle").setAttribute("aria-expanded","false");}});
-  document.addEventListener("keydown",(event)=>{if(event.key==="Escape"){closeMenu();byId("journey").classList.remove("open");byId("stage-toggle").setAttribute("aria-expanded","false");}});
   document.querySelectorAll("dialog").forEach((dialog)=>dialog.addEventListener("click",(event)=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}}));
   return {update, setMood, fill, configureExamples, openCondition, openExamples:()=>show("examples-dialog"),
     showChat:()=>{document.body.classList.remove("show-map");byId("mobile-map").textContent=boardLabel;byId("mobile-map").setAttribute("aria-expanded","false");},

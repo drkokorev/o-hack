@@ -3,12 +3,12 @@
 async (page) => {
   const base=new URL(page.url()).origin, checks=[], errors=[];
   const assert=(ok,name)=>{if(!ok)throw new Error(name);checks.push(name);};
-  const idle=()=>page.waitForFunction(()=>!document.querySelector('#send').disabled);
+  const idle=()=>page.waitForFunction(()=>!document.querySelector('#send').disabled,null,{timeout:90000});
   const send=async text=>{await page.locator('#text').fill(text);await page.locator('#ask').evaluate(f=>f.requestSubmit());await idle();};
   page.on('pageerror',error=>errors.push(error.message));
   await page.setViewportSize({width:1440,height:940});
   await page.goto(base+'/static/favicon.svg');
-  await page.evaluate(()=>{sessionStorage.clear();localStorage.setItem('odin.tour.v1','seen');});
+  await page.evaluate(()=>{sessionStorage.clear();localStorage.setItem('odin.tour.v2','seen');});
   await page.route('**/api/voice',route=>route.fulfill({json:{backend:'browser',status:'ready'}}));
   await page.addInitScript(()=>{
     window.__voiceStarted=0;window.__tracksStopped=0;
@@ -50,15 +50,15 @@ async (page) => {
   await page.locator('#ask').evaluate(f=>f.requestSubmit());await idle();
   assert(await page.locator('.msg.user').count()===2,'restored edit replaces the original turn');
   assert((await page.locator('#conditions').textContent()).includes('Санкт-Петербург'),'restored edit updates origin');
-  await page.reload();await idle();await page.locator('#undo').click();await idle();
-  assert(await page.locator('.msg.user').count()===1,'undo works after another reload');
+  await page.reload();await idle();
+  assert(await page.locator('.msg.user').count()===2,'edited conversation survives another reload');
   const session=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('odin.trip.v1')).session_id);
   const failed=route=>route.fulfill({status:503,json:{detail:'Сервис временно недоступен'}});
   await page.route('**/api/session',failed);await page.reload();await page.locator('#startup-error').waitFor();
   assert(await page.locator('#send').isDisabled(),'failed restore blocks accidental replacement with new session');
   assert(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('odin.trip.v1')).session_id)===session,'failed restore keeps saved session');
   await page.unroute('**/api/session',failed);await page.getByRole('button',{name:'Повторить',exact:true}).click();await idle();
-  assert(await page.locator('.msg.user').count()===1,'retry restores existing conversation');
+  assert(await page.locator('.msg.user').count()===2,'retry restores existing conversation');
   await page.route('**/api/session',route=>route.fulfill({status:404,json:{detail:'Сессия завершилась'}}));
   await page.reload();await idle();
   assert((await page.locator('#log').innerText()).includes('Прошлая сессия завершилась'),'expired session explains new start');

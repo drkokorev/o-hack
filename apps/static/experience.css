@@ -1,10 +1,5 @@
 /* Page shell only. Globe rendering and camera remain owned by trip-map.js. */
 :root { color-scheme:light; --bg:#f7f5ee; --surface:#fffefa; --ink:#183d38; --muted:#53665e; --faint:#53665e; --line:#dbdfd6; --accent:#1c6253; --accent-ink:#fff; --accent-soft:#e3eee7; --atmosphere:#bdd9cb; --display:"Unbounded","Golos Text",sans-serif; --body:"Golos Text",system-ui,sans-serif; --sun:#f3ca45; }
-body[data-mood="sea"] { --bg:#eff7f7; --ink:#173e4c; --muted:#4a6570; --faint:#4a6570; --line:#d2e1e4; --accent:#086987; --accent-soft:#dceef2; --atmosphere:#a8d7e2; }
-body[data-mood="alpine"] { --bg:#f1f4fa; --ink:#283c60; --muted:#58667e; --faint:#58667e; --line:#d7dfea; --accent:#3f5fa4; --accent-soft:#e1e8f7; --atmosphere:#bbcde9; }
-body[data-mood="city"] { --bg:#f5f1f8; --ink:#3e2c51; --muted:#6c5d77; --faint:#6c5d77; --line:#e1d8e8; --accent:#754797; --accent-soft:#ece0f4; --atmosphere:#d5bce4; }
-body[data-mood="forest"] { --bg:#f1f5ed; --ink:#294331; --muted:#56664f; --faint:#56664f; --line:#d8e0d2; --accent:#3c683c; --accent-soft:#e1ecd9; --atmosphere:#c2d6af; }
-body[data-mood="sunset"] { --bg:#fbf2eb; --ink:#55362e; --muted:#796153; --faint:#796153; --line:#ebdace; --accent:#a84b32; --accent-soft:#f8e2d6; --atmosphere:#efbca1; }
 body { min-width:320px; -webkit-font-smoothing:antialiased; transition:background-color .6s ease; }
 button,a,select,summary { -webkit-tap-highlight-color:transparent; }
 button { touch-action:manipulation; }

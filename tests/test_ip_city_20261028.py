@@ -35,7 +35,7 @@ def test_city_is_a_visible_assumption_and_explicit_correction_wins(monkeypatch):
     agent = Agent(TripsDomain(today=lambda: date(2026, 10, 28)), None, today=lambda: date(2026, 10, 28))
     with TestClient(web.build_app(agent)) as client:
         first = client.post("/api/chat", json={"text": "хочу в Париж"}).json()
-        assert "предположительно" in first["reply"].lower()
+        assert "по IP" not in first["reply"]
         assert "из: Москва (примерно по IP)" in first["understood"]
         second = client.post("/api/chat", json={"text": "из Казани", "session_id": first["session_id"]}).json()
         assert "из: Казань" in second["understood"]

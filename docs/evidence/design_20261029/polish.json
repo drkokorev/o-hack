@@ -1,0 +1,23 @@
+{
+  "checks": [
+    "date alternatives have sourced ruble values",
+    "calendar converts EUR",
+    "calendar converts USD",
+    "calendar converts EUR",
+    "calendar currency roundtrip is lossless",
+    "favorites use outline SVG",
+    "favorite icon updates state",
+    "new trip preserves saved places",
+    "new trip restores full globe height",
+    "new trip leaves compact route layout",
+    "event opens an editorial card",
+    "event card fits globe width",
+    "event selection preserves exact event context",
+    "event admission is not sold as travel package",
+    "mobile reset restores globe surface",
+    "new trip resets discovery filter",
+    "no JavaScript exceptions"
+  ],
+  "eventName": "Венецианская биеннале искусства",
+  "errors": []
+}

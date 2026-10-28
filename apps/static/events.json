@@ -30,7 +30,9 @@
       "category": "Культура",
       "source": "Организаторы карнавала",
       "url": "https://carnevale.venezia.it/en/news/2026/carnevale-di-venezia-2027-aperte-le-candidature-per-artisti-e-performer/",
-      "icon": "culture"
+      "icon": "culture",
+      "short_name": "Венецианский карнавал",
+      "description": "Маски, прогулки по каналам и город как сцена. Выберите несколько дней из программы карнавала."
     },
     {
       "id": "hockey-dusseldorf-2027",
@@ -105,7 +107,9 @@
       "category": "Музыка",
       "source": "VIVACELLO",
       "url": "https://vivacello.com/",
-      "icon": "music"
+      "icon": "music",
+      "short_name": "VIVACELLO",
+      "description": "Поездка ради живой музыки: совместите вечер на фестивале с прогулками по Москве."
     },
     {
       "id": "ces-las-vegas-2027",
@@ -180,7 +184,9 @@
       "category": "Культура",
       "source": "Туристическое бюро Вены",
       "url": "https://www.wien.info/en/now-on/christmas/christmas-markets-342664",
-      "icon": "festive"
+      "icon": "festive",
+      "short_name": "Рождественская Вена",
+      "description": "Зимний повод увидеть город: ярмарка, вечерние прогулки и уютные кафе."
     },
     {
       "id": "sundance-film-2027",
