@@ -32,6 +32,8 @@ ANSWER_SYSTEM = """Ты — консультант сервиса поездок
 8. Если ответа нет ни в фактах, ни в источниках — так и скажи и предложи следующий шаг.
 9. Условия поездки (даты, город, состав) считай принятыми, только если они есть в фактах. Если пользователь назвал что-то, чего в фактах нет, не подтверждай это.
 10. О себе пиши в мужском роде, как в фактах («учёл», «подобрал»), без восторгов и комплиментов выбору пользователя.
+11. Если в фактах сказано, что данные демонстрационные или смоделированные, сохрани эту пометку: не выдавай их за реальные рейсы, цены и наличие.
+12. Пиши обычным текстом без разметки: без звёздочек, решёток и таблиц. Списки — строками «1. …».
 Объём — не длиннее фактов плюс пара фраз. Без приветствий и подписи."""
 
 _NUMBER = re.compile(r"\d+(?:[   ]\d{3})*(?:[.,:]\d+)?")
@@ -78,6 +80,9 @@ def verify(answer: str, context: str, user_text: str, known_tokens: set[str], fa
         problems.append("потеряны варианты")
     if facts.rstrip().endswith("?") and "?" not in answer:
         problems.append("потерян вопрос к пользователю")
+    if (re.search(r"демонстрац|смоделир", facts, re.IGNORECASE)
+            and not re.search(r"демо|смоделир|модельн|условн", answer, re.IGNORECASE)):
+        problems.append("потеряна пометка, что данные демонстрационные")
     allowed = _numbers(context)  # число только из реплики пользователя система могла не принять («с 7 по 13»)
     extra = sorted(n for n in _numbers(answer) if n not in allowed and not (n.isdigit() and int(n) <= 3))
     if extra:
@@ -99,6 +104,14 @@ def verify(answer: str, context: str, user_text: str, known_tokens: set[str], fa
     elif len(answer) > max(900, 2 * len(context)):
         problems.append("слишком длинно")
     return problems
+
+
+def plain(text: str) -> str:
+    """Чат показывает обычный текст: «**Перелёты**» → «Перелёты», «### Итог» → «Итог»."""
+    text = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda m: m.group(1) or m.group(2), text)
+    text = re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", text)
+    text = re.sub(r"(?m)^(\s*)[*•]\s+", r"\1— ", text)
+    return text.replace("`", "")
 
 
 def messages(user_text: str, facts: str, sources: list[dict]) -> list[Message]:
@@ -126,6 +139,7 @@ def compose(llm: LLM | None, user_text: str, facts: str, draft: str, sources: li
         except Exception as err:  # недоступна, таймаут, предохранитель — показываем черновик
             log.info("Генерация ответа недоступна (%s), показан шаблон", type(err).__name__)
             return Composed(draft, "template", [type(err).__name__])
+        answer = plain(answer)
         problems = verify(answer, context, user_text, known_tokens, facts)
         if not problems:
             return Composed(answer, "llm")

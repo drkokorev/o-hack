@@ -61,9 +61,26 @@ def _month_typo(word: str) -> str:
     return close[0] if close and close[0][:2] == word[:2] else word
 
 
+_MONTH_SHORT = {"янв": "январ", "фев": "феврал", "февр": "феврал", "мар": "март", "апр": "апрел", "июн": "июн",
+                "июл": "июл", "авг": "август", "сен": "сентябр", "сент": "сентябр", "окт": "октябр", "ноя": "ноябр",
+                "нояб": "ноябр", "дек": "декабр"}
+
+
+def _month_short(m: re.Match) -> str:
+    """«в янв» → «в январе», «7-13 дек» → «7-13 декабря», «сентябр» → «сентябрь»."""
+    prep, word = m.group(1), m.group(2)
+    stem = _MONTH_SHORT.get(word, word)
+    if stem == "март":
+        return f"{prep}марте" if prep else "марта"
+    return f"{prep}{stem}е" if prep else f"{stem}я"
+
+
 def norm(text: str) -> str:
     text = text.lower().replace("ё", "е")
     text = re.sub(r"\b(?:дикабр|декобр)(?=[ьяе]\b)", "декабр", text)
+    text = re.sub(r"\b(во? )?(янв|февр?|мар|апр|июн|июл|авг|сент?|окт|нояб?|дек|январ|феврал|апрел|сентябр|октябр|"
+                  r"ноябр|декабр)\b\.?", _month_short, text)
+    text = re.sub(r"\bслед\b\.?", "следующем", text)
     return re.sub(r"\b[а-я]{5,9}\b", lambda m: _month_typo(m.group(0)), text)
 
 

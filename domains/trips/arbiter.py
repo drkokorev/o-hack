@@ -63,6 +63,57 @@ CUES = {
 }
 
 
+_WORD_NUMBERS = {"один": 1, "одна": 1, "одного": 1, "одну": 1, "два": 2, "две": 2, "двое": 2, "двоих": 2, "пару": 2,
+                 "три": 3, "трое": 3, "троих": 3, "четыре": 4, "четверо": 4, "пять": 5, "пятеро": 5, "шесть": 6,
+                 "семь": 7, "восемь": 8, "девять": 9, "десять": 10, "одиннадцать": 11, "двенадцать": 12,
+                 "четырнадцать": 14, "пятнадцать": 15, "двадцать": 20}
+_NUMBER = r"(\d+(?:[.,]\d+)?|" + "|".join(_WORD_NUMBERS) + r")"
+# Число засчитывается только рядом со своей единицей: «11 дн», «2 взр», «150к», «5 часов»
+_UNITS = {
+    "nights": r"\s*(?:ноч\w*|н\b|сут\w*|дн\w*|д\b|день|дня)",
+    "adults": r"\s*(?:взр\w*|чел\w*)",
+    "children": r"\s*(?:дет\w*|реб\w*|малыш\w*)",
+    "budget_total": r"\s*(?:тыс\w*|т\.?р\.?|к\b|k\b|млн|миллион\w*|руб\w*|₽|р\b)",
+    "budget_night": r"\s*(?:тыс\w*|т\.?р\.?|к\b|k\b|руб\w*|₽|р\b)",
+    "max_travel_hours": r"\s*(?:час\w*|ч\b)",
+}
+# Поле, о котором агент только что спросил: голое число в коротком ответе — ответ на вопрос
+_PENDING = {"duration": "nights", "people": "adults", "children": "children", "budget": "budget_total"}
+
+
+def _value(raw: str, unit: str) -> set[int]:
+    number = float(raw.replace(",", ".")) if raw[0].isdigit() else _WORD_NUMBERS[raw]
+    scale = 1_000_000 if unit.startswith(("млн", "миллион")) else 1000 if re.match(r"тыс|т\.?р|к|k", unit) else 1
+    return {int(number), int(number * scale)}
+
+
+def _grounded(field: str, value, t: str, state: TripState, rules: TripUpdate) -> bool:
+    """Число модели принимаем, если в реплике оно стоит со своей единицей или это короткий ответ
+    на только что заданный вопрос. Ночи — и как «дней минус один». «Вдвоём» состав не задаёт —
+    агент уточняет, есть ли дети (решение команды)."""
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        return False
+    if field == "nights" and rules.trip_days_min:
+        return False  # «11 дней» правила уже поняли как дни
+    numbers: set[int] = set()
+    for m in re.finditer(rf"(?<![а-яё\d]){_NUMBER}({_UNITS[field]})", t):
+        if not re.search(r"(?:через|спустя|за)\s+$", t[:m.start()]):  # «через 3 дня» — дата, а не длительность
+            numbers |= _value(m.group(1), m.group(2).strip())
+    if field == "nights":
+        for m in re.finditer(r"(?:(\d|две|два|три|пару)\s*)?\bнед(?:ел\w*|\b)", t):
+            numbers.add(7 * ({"две": 2, "два": 2, "три": 3, "пару": 2}.get(m.group(1) or "") or int(m.group(1) or 1)))
+        if re.search(r"полтор\w* недел", t):
+            numbers |= {10, 11}
+    short = len(t.split()) <= 3 and not re.search(r"через|позже|раньше", t)
+    if short and _PENDING.get(state.pending_question or "") == field:
+        numbers |= {n for m in re.finditer(rf"(?<![а-яё\d]){_NUMBER}(?![а-яё\d])", t) for n in _value(m.group(1), "")}
+    if field == "nights":
+        return value in numbers or value + 1 in numbers
+    if field == "adults" and value == 2 and re.search(r"^\s*(?:я|мы)\s+(?:и|с)\s+(?:мо\w+\s+)?(?:жен|муж|девушк|парн|подруг|друг)", t):
+        return True
+    return value in numbers
+
+
 def _same(a, b) -> bool:
     if isinstance(a, list) and isinstance(b, list):
         return sorted(map(str, a)) == sorted(map(str, b))
@@ -149,6 +200,8 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
 
     for field in ("budget_total", "budget_night", "adults", "children", "nights", "max_travel_hours", "hotel_wishes"):
         if data.get(field) is not None and rule_data.get(field) is None:
+            if field != "hotel_wishes" and _grounded(field, data[field], t, state, rules):
+                continue  # «11 дн», «полторы недели», «бюджет 150к» — правила не разобрали, а число в реплике есть
             notes.append(f"{field}: точное значение в реплике не подтверждено")
             data[field] = None
 

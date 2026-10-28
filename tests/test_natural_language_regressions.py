@@ -180,3 +180,36 @@ def test_beach_ideas_respect_season_and_single_country_place_is_chosen():
     reply = agent.handle(session, "грузия").reply
     assert session.state.dest_id == "batumi" and "не купальный сезон" in reply
     assert (session.state.date_from, session.state.date_to) == (date(2026, 11, 7), date(2026, 11, 13))
+
+
+# ---------- короткие ответы на вопросы агента (eval/short_answers_live.py) ----------
+
+def test_short_answers_to_agent_questions_are_understood_without_model():
+    from eval.short_answers_live import CASES, TODAY as CASE_DAY, _ok
+
+    agent = Agent(TripsDomain(today=lambda: CASE_DAY), None, today=lambda: CASE_DAY, nlg=False)
+    failures = []
+    for question, (opening, answers) in CASES.items():
+        for answer, expected in answers:
+            session = agent.new_session()
+            agent.handle(session, opening)
+            assert session.state.pending_question == question, opening
+            agent.handle(session, answer)
+            failures += [f"«{answer}»: {problem}" for problem in _ok(session.state, expected)]
+    assert not failures
+
+
+def test_question_about_direct_flights_answers_and_keeps_conditions():
+    agent = Agent(TripsDomain(), None, today=lambda: TODAY)
+    session = agent.new_session()
+    agent.handle(session, "Гоа из Кирова с 16 по 27 декабря 2026 двое взрослых")
+    reply = agent.handle(session, "из кирова прямые рейсы летают на гоа?").reply
+    assert session.state.direct_only is None and "пересадка в Москве" in reply and "демонстрац" in reply
+
+
+def test_model_numbers_are_accepted_only_next_to_their_unit():
+    state = TripState(pending_question="duration")
+    for text, nights, accepted in (("11 дн", 10, True), ("полторы недели", 10, True), ("через 3 дня", 3, False),
+                                   ("хочу недорого", 7, False)):
+        result, _ = arbitrate(state, text, TripUpdate(nights=nights), rule_extract(state, text, TODAY))
+        assert (result.nights is not None or bool(result.trip_days_min)) == accepted, text

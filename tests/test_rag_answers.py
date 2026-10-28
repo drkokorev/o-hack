@@ -146,3 +146,11 @@ def test_verify_rejects_numbers_only_from_user_text():
     facts = "Учёл начало поездки: 7 ноября 2026. Какое направление интересно?"
     problems = verify("Учёл даты: с 7 по 13 ноября 2026. Какое направление интересно?", facts, "с 7 по 13", set(), facts)
     assert any("числа" in p for p in problems)
+
+
+def test_markdown_is_removed_and_demo_marker_is_required():
+    from core.answer import plain
+
+    assert plain("**Перелёты**\n### Итог\n* пункт") == "Перелёты\nИтог\n— пункт"
+    facts = "Это демонстрационные предложения. Прямых рейсов в демо нет. Какой вариант берём?"
+    assert any("демонстрац" in p for p in verify("Прямых рейсов нет. Какой вариант берём?", facts, "", set(), facts))

@@ -24,7 +24,7 @@ from .geo import BY_ID, DESTINATIONS, ORIGIN_BY_NAME, TAG_NAMES, Destination, de
 from .dialogue import QUESTION_INPUT_FIELDS, idea_places, ideas, missing_for_trip
 from .inspire import Suggestion, suggest
 from .offers import AMENITIES, MEALS, hotel_price, hotels_for, transport_options
-from .planner import Package, Trip, _leg_ok, cheapest_start, hm, leg_text, make_packages, month_window, timeline
+from .planner import VIA_PREP, Package, Trip, _leg_ok, cheapest_start, hm, leg_text, make_packages, month_window, timeline
 from .arbiter import arbitrate
 from .rules import find_destination, match_origin, rule_extract, time_expression_not_place
 from .state import PARAM_FIELDS, TripState, TripUpdate
@@ -1474,7 +1474,12 @@ class TripsDomain:
             requested = [code for code in topic.partition(":")[2].split(",") if code in AMENITIES]
             def describe(option: Package) -> str:
                 if topic == "travel":
-                    return f"в пути туда {hm(option.out.minutes)}, обратно {hm(option.back.minutes)}"
+                    def route(leg) -> str:
+                        if leg.mode == "train":
+                            return "поезд"
+                        return f"пересадка в {VIA_PREP.get(leg.via or '', leg.via)}" if leg.stops else "без пересадок"
+                    return (f"в пути туда {hm(option.out.minutes)} ({route(option.out)}), "
+                            f"обратно {hm(option.back.minutes)} ({route(option.back)})")
                 if topic == "cancellation":
                     days = option.hotel.free_cancel_days
                     return (f"{option.hotel.name}: бесплатная отмена не позднее чем за {days} дн. до заезда" if days is not None else

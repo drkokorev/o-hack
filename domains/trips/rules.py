@@ -193,7 +193,8 @@ def _excluded_countries(t: str) -> set[str]:
 
 _ORIGIN_ALIASES = {"питер": "Санкт-Петербург", "спб": "Санкт-Петербург", "мск": "Москва", "екб": "Екатеринбург",
                    "нижн": "Нижний Новгород", "новосиб": "Новосибирск", "челяб": "Челябинск", "орла": "Орёл",
-                   "ростова": "Ростов-на-Дону", "ростов": "Ростов-на-Дону", "краснодара": "Краснодар"}
+                   "ростова": "Ростов-на-Дону", "ростов": "Ростов-на-Дону", "краснодара": "Краснодар",
+                   "владик": "Владивосток", "калик": "Калининград", "новосиба": "Новосибирск"}
 
 
 def _stem(word: str) -> str:
@@ -209,6 +210,8 @@ def match_origin(fragment: str) -> str | None:
     """Город отправления в начале фрагмента в любом падеже: «пензы», «нижнего тагила», «ростова-на-дону».
     Из нескольких совпадений — самое длинное («Нижний Тагил», а не «Нижний Новгород» по слову «нижний»)."""
     words = [w for w in re.split(r"[ \-]", norm(fragment).strip(" .,!?")) if w]
+    while words and words[0] in ("из", "с", "со", "я", "мы", "от"):  # «с владика», «я из екб»
+        words = words[1:]
     best, best_len = None, 0
     for name, stems in _origin_stems():
         if len(stems) <= len(words) and all(w.startswith(st) for w, st in zip(words, stems)):
@@ -450,6 +453,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     if part and not d_in:
         word = part.group(2)
         data["month_part"] = "early" if word.startswith(("начал", "перв")) else "mid" if word.startswith("середин") else "late"
+    if not d_in and "month" not in data and re.search(r"\bнов\w* год|новогодн", t):
+        data["month"], data["month_part"] = 12, "late"  # «на новый год» — конец декабря
     if not d_in and re.search(r"\b(?:следующ(?:ем|ий|его|им)|будущ(?:ем|ий|его))\s+месяц(?:е|а|у|ем)?\b", t):
         data["month"] = today.month % 12 + 1
         data["year"] = today.year + (today.month == 12)
@@ -475,10 +480,12 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["wants_ideas"] = True
     if re.search(r"майски", t) and not d_in:
         data["month"] = 5  # праздники указывают месяц, но не конкретные даты или длительность
-    m = re.search(rf"на\s+{NUM}\s+(ноч|сут)", t) or re.search(rf"\b{NUM}\s+ноч", t) or re.search(rf"ноч\w*\s+на\s+{NUM}", t)
-    weeks = re.search(r"(?:на\s+)?(\d|две|два|три|четыре|пару)\s+недел", t)
+    m = (re.search(rf"на\s+{NUM}\s+(ноч|сут)", t) or re.search(rf"\b{NUM}\s*(?:ноч|сут|н\b)", t)
+         or re.search(rf"ноч\w*\s+на\s+{NUM}", t))
+    weeks = re.search(r"(?:на\s+)?(\d|две|два|три|четыре|пару)\s*нед", t)
     day_range = re.search(r"(?<!\d)(\d{1,3})\s*(?:-|–|—|до|по)\s*(\d{1,3})\s*(?:дней|дня|день|дей)\b", t)
-    days = re.search(rf"(?:\bна\s+|^){NUM}\s+(?:дней|дня|день|дей)\b", t)
+    days = (re.search(rf"(?:\bна\s+|^\s*){NUM}\s*(?:дней|дня|день|дей|дн|д)\b", t)
+            or re.search(rf"^\s*(?:дней|дня)\s+(?:на\s+)?{NUM}\b", t))
     short_refused = re.search(r"\bне\s+(?:хочу\s+)?(?:пару|два|две|2)\s+(?:дней|дня|день|дей|ночи|ночей)\b", t)
     if shift is not None:
         pass
@@ -487,7 +494,9 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     elif weeks and not re.search(r"через", t[: weeks.start() + 1][-8:]):
         n = {"две": 2, "два": 2, "три": 3, "четыре": 4, "пару": 2}.get(weeks.group(1)) or int(weeks.group(1))
         data["nights"] = 7 * n
-    elif re.search(r"на неделю|неделю отдыха|на недельку", t):
+    elif re.search(r"полтор\w* недел", t):
+        data["nights"] = 10
+    elif re.search(r"на неделю|неделю отдыха|на недельку|^\s*(?:около |примерно |где-то |ну )?(?:недел[юяи]|нед|недельку)\s*[.!]?\s*$", t):
         data["nights"] = 7
     elif day_range and not _negated_at(t, day_range.start(), day_range.end()):
         low, high = int(day_range.group(1)), int(day_range.group(2))
@@ -568,6 +577,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             data["adults"] = remaining
     if "adults" not in data and not data.get("party_size") and re.search(r"\b(одна|один|одному|одной)\b(?!\s*(ноч|день|раз|номер|комнат|отел))|в одиночку", t):
         data["party_size"] = 1
+        if not re.search(r"реб|дет|сын|доч|школьн|подрост", t):
+            data["adults"] = 1  # «я один» — один взрослый; не спрашиваем «сколько из 1 взрослые»
     if re.search(r"(мы|я) с (мужем|женой) и (реб|дет|сын|доч)", t):
         data["adults"] = 2
     pet_mention = re.search(r"с собак|с кош|с питомц|с животн|с собачк|с котом|с псом|со щенк|"
@@ -644,7 +655,11 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     elif re.search(r"самол[её]т|перел[её]т|лететь|полет", t) and not re.search(r"без (долг|перел)|не лететь", t):
         if re.search(r"самол[её]т|перел[её]т|полет", t):
             data["transport"] = "plane"
-    if re.search(r"без пересад|\bпрям(ой|ые|ым|ыми|ого)\b", t):
+    direct_asked = "?" in text and re.search(r"\b(?:есть|летают|летает|бывают|бывает|ли|можно|какие|будут)\b", t)
+    if re.search(r"без пересад|\bпрям(ой|ые|ым|ыми|ого|ых)\b", t) and direct_asked:
+        # «прямые рейсы летают?» — вопрос о вариантах, а не новое условие поиска
+        data["question"] = "|".join(dict.fromkeys(filter(None, [*(data.get("question") or "").split("|"), "travel"])))
+    elif re.search(r"без пересад|\bпрям(ой|ые|ым|ыми|ого)\b", t):
         data["direct_only"] = True
     elif re.search(r"можно\s+с\s+пересад|пересадк\w*\s+(?:подходят|допускаются|нормально)", t):
         data["direct_only"] = False
@@ -759,11 +774,20 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["after_sale"] = "transfer"
     elif state.stage == "booked" and (shift is not None or d_in or re.search(r"перенес|перенест|сдвин|помен\w* дат", t)):
         data["after_sale"] = "change_dates"
+    if (plus := re.fullmatch(r"\s*(\d)\s*\+\s*(\d)\s*", t)) and "adults" not in data:
+        data["adults"], data["children"] = int(plus.group(1)), int(plus.group(2))  # «2+1» — двое взрослых и ребёнок
+        data.pop("add_adults", None)
+    elif (re.search(r"^\s*(?:я|мы)\s+(?:и|с)\s+(?:моя\s+|мой\s+|моей\s+|моим\s+)?(?:жен\w*|муж\w*|девушк\w*|парн\w*|"
+                    r"подруг\w*|друг\w*|сестр\w*|брат\w*|мам\w*|пап\w*)\s*[.!]?\s*$", t)
+          and "adults" not in data and "party_size" not in data):
+        data["adults"] = 2
     if state.pending_question in ("duration", "people", "children"):
         answer = re.fullmatch(r"\s*(\d+|один|одна|двое|два|две|трое|три|четверо|четыре|пятеро|пять)"
-                              r"(?:\s+(?:ноч(?:ей|и|ь)?|взросл\w*|дет(?:ей|и)|реб[её]н\w*))?\s*[.!]?\s*", t)
+                              r"\s*(?:(ноч\w*|н|сут\w*|дн\w*|д|день|дня)|взр\w*|чел\w*|дет(?:ей|и)|реб[её]н\w*)?\s*[.!]?\s*", t)
         if answer and (number := num_word(answer.group(1))) is not None:
-            if state.pending_question == "duration" and number > 0:
+            if state.pending_question == "duration" and number > 0 and answer.group(2) and answer.group(2)[0] == "д":
+                data["trip_days_min"] = data["trip_days_max"] = number  # «11 дн» — дни, а не ночи
+            elif state.pending_question == "duration" and number > 0:
                 data["nights"] = number
             elif state.pending_question == "people" and number > 0:
                 data["adults"] = number
