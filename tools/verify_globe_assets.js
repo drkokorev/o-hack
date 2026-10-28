@@ -5,6 +5,8 @@ async (page) => {
   page.on('pageerror',e=>failures.push(e.message));
   await page.route('**/*',route=>{
     const url=route.request().url();
+    // City detection is a separate optional service, not a globe asset.
+    if (url.startsWith('https://ipinfo.io/')) return route.fulfill({json:{}});
     if (/^https?:/.test(url) && !url.startsWith(base+'/')) {external.push(url);return route.abort();}
     return route.continue();
   });
@@ -34,6 +36,7 @@ async (page) => {
   if (!await page.getByText('Формула-1',{exact:true}).count()) throw Error('Race label is not visible in Mexico');
   await page.setViewportSize({width:390,height:844});
   await page.goto(base+'/');
+  await page.locator('#mobile-map').click();
   await page.waitForFunction(()=>tripMap.getView()?.models?.includes('tower'),null,{timeout:30000});
   await page.waitForTimeout(800);
   if (await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('Mobile layout overflows');

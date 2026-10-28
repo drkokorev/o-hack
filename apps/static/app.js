@@ -569,7 +569,7 @@ function attachEdit(turn,data) {
 async function send(text, selection = {}) {
   if(busy || !text.trim()) return;
   if(voice.isActive()) voice.cancel();
-  const replacing=editing && latestTurn && !Object.keys(selection).length;
+  const replacing=editing && !Object.keys(selection).length ? latestTurn : null;
   const previousStarted=conversationStarted;
   if(!conversationStarted) $("view").replaceChildren();
   conversationStarted=true; $("suggest").replaceChildren(); setBusy(true);

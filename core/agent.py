@@ -147,7 +147,7 @@ class Agent:
                 log.warning("Не удалось проверить контекст для защиты данных (%s)", type(err).__name__)
                 privacy_unavailable = True
         update, session.last_nlu = self._understand(session, text, use_llm=not (privacy_unavailable or unresolved))
-        if not update.model_dump(exclude_none=True) and session.last is not None:
+        if not update.model_dump(exclude_none=True) and session.last is not None and after_merge is None:
             # A message with no understood action must not advance the
             # conversation, skip a pending question, or modify an order.
             previous = session.last
@@ -158,6 +158,8 @@ class Agent:
             step = Step("Не понял сообщение. " + (previous_reply if question else
                         "Расскажите о поездке или уточните, что хотите изменить."), payload=previous.payload)
         else:
+            # An exact, server-validated map selection is an action even when
+            # the already selected city adds no new natural-language fields.
             session.state = self.domain.merge(session.state, update)
             if after_merge is not None:
                 after_merge(session.state)

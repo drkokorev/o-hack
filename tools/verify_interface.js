@@ -1,12 +1,14 @@
 /* Run with playwright-cli run-code, on the local rules-mode preview.
    No microphone is used: voice recognition and permission are explicit doubles. */
 async (page) => {
+  const base = new URL(page.url()).origin;
+  await page.route('https://ipinfo.io/**', route => route.fulfill({json:{}}));
   const checks=[];
   const assert=(ok,name)=>{if(!ok)throw new Error(name);checks.push(name);console.log('PASS '+name);};
   const ready=async()=>{await page.locator('#head h1').waitFor({state:'attached'});await page.locator('#suggest button').first().waitFor();};
   const send=async(text)=>{await page.locator('#text').fill(text);await page.locator('#ask').evaluate(form=>form.requestSubmit());await page.waitForFunction(()=>!document.querySelector('#send').disabled);await page.locator('.msg.user').last().waitFor();};
   await page.setViewportSize({width:1440,height:940});
-  await page.goto('http://127.0.0.1:8091/');await ready();
+  await page.goto(base+'/');await ready();
   assert(await page.locator('.journey .stages li:visible').count()===6,'desktop: six stages on the right');
   assert(await page.locator('.inspiration').count()===0,'inspiration hidden until requested');
   assert(await page.locator('#sound-toggle').getAttribute('aria-pressed')==='false','sound defaults off');
@@ -39,7 +41,7 @@ async (page) => {
   await page.waitForFunction(()=>document.querySelectorAll('.msg.user').length===0);
   assert(await page.locator('#trip-context').isHidden(),'confirmed new trip clears conditions');
   for(const [label,mood] of [['Море','sea'],['Снежные горы','alpine'],['Город','city'],['Лес и тишина','forest'],['Закаты вдвоём','sunset']]){
-    await page.goto('http://127.0.0.1:8091/');await ready();
+    await page.goto(base+'/');await ready();
     await page.getByRole('button',{name:'Пока не знаю',exact:true}).click();
     assert(await page.locator('.inspiration').isVisible(),`${mood}: inspiration opens on request`);
     await page.locator('.mood-choices').getByRole('button',{name:label,exact:true}).click();
@@ -47,7 +49,7 @@ async (page) => {
     assert(await page.locator('body').getAttribute('data-mood')===mood,`${mood}: atmosphere selected`);
   }
   await page.setViewportSize({width:390,height:844});
-  await page.goto('http://127.0.0.1:8091/');await ready();
+  await page.goto(base+'/');await ready();
   assert(await page.locator('#board').isHidden(),'mobile opens chat');
   assert(await page.locator('#text').isVisible(),'mobile composer visible');
   await page.locator('#stage-toggle').click();
@@ -71,7 +73,7 @@ async (page) => {
     }
     window.SpeechRecognition=FakeRecognition;window.webkitSpeechRecognition=FakeRecognition;
   });
-  await page.goto('http://127.0.0.1:8091/');await ready();
+  await page.goto(base+'/');await ready();
   const hold=async()=>{const b=await page.locator('#send').boundingBox();await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.waitForTimeout(550);await page.mouse.up();};
   await hold();
   assert(await page.locator('#voice-dialog').isVisible(),'first hold explains voice processing');

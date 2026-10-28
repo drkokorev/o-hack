@@ -4,8 +4,8 @@ async (page)=>{
  const results={};
  for (const scheme of ['light','dark']) {
   await page.emulateMedia({colorScheme:scheme,reducedMotion:'reduce'});await page.goto(base+'/');
-  await page.locator('.composer button').first().waitFor();
-  const colors=await page.locator('.composer button').first().evaluate(e=>{const s=getComputedStyle(e);return [s.backgroundColor,s.color]});
+  await page.locator('#send').waitFor();
+  const colors=await page.locator('#send').evaluate(e=>{const s=getComputedStyle(e);return [s.backgroundColor,s.color]});
   results[scheme]=ratio(...colors);if(results[scheme]<4.5)throw Error('Composer contrast is too low in '+scheme);
  }
  await page.emulateMedia({colorScheme:'light'});await page.goto(base+'/static/widget.html');

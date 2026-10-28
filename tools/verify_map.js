@@ -16,6 +16,7 @@ async (page) => {
   await page.setViewportSize({width:375,height:812});
   await standalone();
   await page.locator('.maplibregl-canvas').waitFor({timeout:30000});
+  await page.locator('.map-list summary').click();
   await page.getByLabel('Выбрать направление из списка').selectOption({label:'Токио'});
   await page.getByRole('button', {name:'Хочу сюда',exact:true}).click();
   if (await page.evaluate(() => window.chosenPlace?.id) !== 'tokyo') throw new Error('Selection lost its catalog identity');

@@ -573,6 +573,12 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                     def pin_hotel(merged: BaseModel) -> None:
                         if merged.dest_id == dest_id and not merged.act.get("ask_trip_choice"):
                             merged.hotel_id = f"{dest_id}-h{record_id}"
+                            merged.selected_real_hotel = {
+                                "id": point["id"], "name": point["name"],
+                                "address": point.get("address"), "destination_id": dest_id,
+                                "lat": point["lat"], "lon": point["lon"],
+                            }
+                            merged.showing, merged.real_hotels_shown = None, []
                             merged.lodging = "hotel"
                             merged.package = None
                             merged.params_changed = True
@@ -614,6 +620,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                     def choose_city(merged: BaseModel) -> None:
                         if not merged.act.get("ask_trip_choice"):
                             merged.dest_id = merged.hotel_id = merged.package = None
+                            merged.selected_real_hotel, merged.real_hotels_shown = None, []
                             merged.destination = point["name"]
                             merged.country = point["country_name"]
                             merged.place_country = point["country_name"]

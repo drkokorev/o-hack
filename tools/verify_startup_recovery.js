@@ -9,7 +9,7 @@ async (page) => {
   await page.getByText("Не удалось загрузить карту. Повторите подключение.").waitFor();
   await page.unroute("**/api/info");
   await page.getByRole("button", {name:"Повторить", exact:true}).click();
-  await page.getByText("Расскажите, что важно в поездке.", {exact:false}).waitFor();
+  await page.getByText("Расскажите о поездке — можно начать с желания или описать всё сразу.", {exact:false}).waitFor();
   await page.locator(".maplibregl-canvas").waitFor({timeout:30000});
   if (await page.locator("#startup-error").count()) throw new Error("Startup error remained after recovery");
   if (errors.length) throw new Error(errors.join("; "));

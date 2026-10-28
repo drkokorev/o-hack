@@ -1,5 +1,6 @@
 /* Explicit voice doubles: no microphone recording or transcription service. */
 async (page) => {
+  const base = new URL(page.url()).origin;
   const checks=[];
   const check=(value,name)=>{if(!value)throw new Error(name);checks.push(name);};
   await page.addInitScript(()=>{
@@ -12,7 +13,7 @@ async (page) => {
     window.SpeechRecognition=VoiceDouble;
   });
   await page.setViewportSize({width:1440,height:940});
-  await page.goto('http://127.0.0.1:8091/');await page.locator('#suggest button').first().waitFor();
+  await page.goto(base+'/');await page.locator('#suggest button').first().waitFor();
   const b=await page.locator('#send').boundingBox();
   const press=async()=>{await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();};
   await press();await page.waitForTimeout(450);await page.mouse.up();
