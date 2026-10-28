@@ -55,7 +55,8 @@ def test_model_history_is_bounded_to_needed_context():
     session = agent.new_session()
     for _ in range(5):
         agent.handle(session, "привет")
-    assert len(session.history) == 4
+    # Travel extraction uses structured state, so raw turns need not be kept.
+    assert session.history == []
 
 
 def test_different_sessions_do_not_receive_each_others_history_or_state():

@@ -52,7 +52,7 @@ class TripParams(BaseModel):
     free_cancellation: bool | None = Field(None, description="Нужна бесплатная отмена")
     stars_min: int | None = Field(None, description="Минимальная звёздность отеля")
     hotel_wishes: list[str] | None = Field(None, description="Коды удобств: pool, kids_club, spa, gym, parking, "
-                                           "pets, beach_line, kitchen")
+                                           "pets, beach_line, kitchen, wifi")
     abroad: bool | None = Field(None, description="true — за границу, false — только по России")
     baggage: bool | None = Field(None, description="true, если нужен багаж в самолёте")
     economy: bool | None = Field(None, description="true, если важна низкая цена («недорого», «бюджетно»)")
@@ -126,7 +126,7 @@ class TripUpdate(TripParams):
     payment_method: str | None = Field(None, description="Демонстрационный способ оплаты: card | sbp")
     add_adults: int | None = Field(None, description="Сколько взрослых добавить («ещё один взрослый» → 1)")
     hesitate: bool | None = Field(None, description="true, если сомневается и хочет подумать («давай подумаем», «подожди»)")
-    question: str | None = Field(None, description="О чём спрашивает: location | visa | cancellation | baggage | weather | "
-                                 "transfer | pets — если задаёт вопрос, а не меняет условия")
+    question: str | None = Field(None, description="О чём спрашивает: location | visa | cancellation | meal | baggage | weather | "
+                                 "travel | transfer | pets | amenities:<коды> — если спрашивает, а не меняет условия")
     after_sale: str | None = Field(None, description="После покупки: early_checkin | late_checkout | change_dates | "
                                    "cancel (просит отменить) | cancel_info (спрашивает об условиях) | reminder | transfer")

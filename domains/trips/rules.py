@@ -30,6 +30,7 @@ WISH_WORDS = {
     "pool": r"бассейн", "kids_club": r"детск\w* клуб|аниматор|детская комната", "spa": r"\bспа\b|spa|сауна",
     "gym": r"фитнес|спортзал|тренаж", "parking": r"парковк|на машине|на авто", "beach_line": r"перв\w* линия|перв\w* линии",
     "kitchen": r"кухн\w* в номере|с кухней|апартамент",
+    "wifi": r"\bwi[- ]?fi\b|вай[- ]?фай|вайфай",
 }
 MEAL_WORDS = [("all_inclusive", r"вс[её] включено|all inclusive|олл? инклюзив|ультра"),
               ("half_board", r"полупансион"), ("breakfast", r"завтрак"),
@@ -40,6 +41,7 @@ HESITATE = r"подума|подожд|погоди|не уверен|не го�
 QUESTION_TOPICS = [("travel", r"время (?:в )?пути|сколько (?:ехать|лететь|в пути)|долго ли (?:ехать|лететь)"),
                    ("location", r"адрес|где (?:находится|расположен)|местоположен"),
                    ("visa", r"виз|паспорт|границ"), ("cancellation", r"отмен|вернуть деньги|возврат"),
+                   ("meal", r"завтрак|питан|полупансион|все включено|all inclusive"),
                    ("baggage", r"багаж|чемодан|ручн\w* клад"), ("weather", r"погод|температур|тепло ли|холодно|дожд|мор[еяю] .*тепл|вода"),
                    ("transfer", r"трансфер|как добрат|до отеля|такси"), ("pets", r"собак|кошк|животн|питом")]
 CONFIRM_STRONG = (r"^(да\b(?!\s*нет)|оформля|оформи|бронир|оплачива|оплати|покупа|купи|куплю|подтвержда|согласн|верно|"
@@ -61,6 +63,23 @@ _NOT_PLACES = {"январе", "феврале", "марте", "апреле", "
 _COUNTRY_STEMS = [(country, re.sub(r"[аия]$", "", norm(country))) for country in COUNTRY_NAMES | {d.country for d in DESTINATIONS}]
 _COUNTRY_PATTERNS = [(country, stem, re.compile(rf"(?<![а-яё]){re.escape(stem)}[а-яё]{{0,3}}(?![а-яё])"))
                      for country, stem in _COUNTRY_STEMS]
+
+
+def _question_clause(text: str, start: int, end: int) -> bool:
+    """A question about a feature is not, by itself, a request to require it."""
+    left = max((text.rfind(mark, 0, start) for mark in ".!?;,"), default=-1) + 1
+    stops = [pos for mark in ".!?;," if (pos := text.find(mark, end)) >= 0]
+    right = min(stops) if stops else len(text)
+    clause = text[left:right]
+    if re.fullmatch(r"\s*(?:отель\s+)?все включено\s*", clause) and not (right < len(text) and text[right] == "?"):
+        return False
+    explicit_wish = re.search(r"\b(?:хочу|нуж(?:ен|на|но|ны)|ищу|важ(?:ен|на|но|ны))\b", clause)
+    if explicit_wish and not (right < len(text) and text[right] == "?") and not re.search(
+            r"\b(?:можно ли|есть ли|нуж(?:ен|на|но|ны) ли)\b", clause):
+        return False
+    return ((right < len(text) and text[right] == "?") or
+            bool(re.search(r"\b(?:можно ли|есть ли|нуж(?:ен|на|но|ны) ли|какой|какая|какое|какие|где|сколько)\b", clause)) or
+            bool(re.search(r"\b(?:есть|включен[ао]?|входит)\s*$", clause)))
 
 
 def _negated_at(t: str, start: int, end: int) -> bool:
@@ -417,11 +436,11 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["party_size"] = 2
     if re.search(r"добав\w* (ещ[её] )?(одного )?взросл|ещ[её] (один|одна|одного) (взросл|человек)|\+\s*1", t):
         data["add_adults"] = 1
-    kids = (re.search(rf"(?:с|и)\s+(?:{NUM}|двумя|тремя)\s+(?:детьми|дет|реб[её]н)", t) or
+    kids = (re.search(rf"(?:с|и)\s+(?:{NUM}|(одним|одной|двумя|тремя))\s+(?:детьми|дет|реб[её]н)", t) or
             re.search(rf"\b{NUM}\s+(?:детей|ребенка|ребенок|дети)\b", t))
     if kids:
-        word = kids.group(1) or ""
-        data["children"] = {"двумя": 2, "тремя": 3}.get(word, num_word(word) if word else 2)
+        word = kids.group(1) or (kids.group(2) if kids.lastindex and kids.lastindex >= 2 else "")
+        data["children"] = {"двумя": 2, "тремя": 3}.get(word, num_word(word))
     elif re.search(r"с реб[её]нк|с дочк|с сыном|с малыш|с ребенк|и реб[её]н|и дочк|и сын\b|и сыном|"
                    r"[,;]\s*(?:и\s+)?(?:ребенок|дочка|сын|малыш)\b", t):
         data["children"] = 1
@@ -530,13 +549,16 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["direct_only"] = True
     elif re.search(r"можно\s+с\s+пересад|пересадк\w*\s+(?:подходят|допускаются|нормально)", t):
         data["direct_only"] = False
-    if (mm := re.search(r"с багаж|багаж нуж|нужен багаж|чемодан", t)) and not negated(t, mm.start()):
+    if ((mm := re.search(r"(?:с|и) багаж|багаж нуж|нужен багаж|чемодан", t)) and
+            not negated(t, mm.start()) and not _question_clause(t, mm.start(), mm.end())):
         data["baggage"] = True
+    elif re.search(r"без багаж|багаж\w*\s+не\s+(?:нужен|нужен будет|нужен мне|нужен нам)", t):
+        data["baggage"] = False
 
     # Отель
     for code, pattern in MEAL_WORDS:
         mm = re.search(pattern, t)
-        if mm and not _negated_at(t, mm.start(), mm.end()):
+        if mm and not _negated_at(t, mm.start(), mm.end()) and not _question_clause(t, mm.start(), mm.end()):
             data["meal"] = code
             break
     if state.meal and not data.get("meal"):
@@ -545,16 +567,19 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             if code == state.meal and mm and _negated_at(t, mm.start(), mm.end()):
                 data.setdefault("clear", []).append("meal")
                 break
-    if re.search(r"бесплатн\w* отмен|можно отменить|без предоплат|с возвратом", t):
+    if ((mm := re.search(r"бесплатн\w* отмен|можно отменить|без предоплат|с возвратом", t)) and
+            not _question_clause(t, mm.start(), mm.end()) and not _negated_at(t, mm.start(), mm.end())):
         data["free_cancellation"] = True
     if (stars := parse_stars(text)) is not None:
         data["stars_min"] = stars
     wishes = [code for code, pattern in WISH_WORDS.items()
-              if (mm := re.search(pattern, t)) and not _negated_at(t, mm.start(), mm.end())]
+              if (mm := re.search(pattern, t)) and not _negated_at(t, mm.start(), mm.end())
+              and not _question_clause(t, mm.start(), mm.end())]
     if wishes:
         data["hotel_wishes"] = wishes
     removed_wishes = [code for code, pattern in WISH_WORDS.items()
-                      if (mm := re.search(pattern, t)) and _negated_at(t, mm.start(), mm.end())]
+                      if (mm := re.search(pattern, t)) and _negated_at(t, mm.start(), mm.end())
+                      and not _question_clause(t, mm.start(), mm.end())]
     if removed_wishes:
         data["remove_hotel_wishes"] = removed_wishes
     if re.search(r"за границ|за рубеж|заграниц", t):
@@ -595,11 +620,19 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["show_real_hotels"] = True
     asking = "?" in text or re.search(r"\b(можно ли|если|а что если|какие условия|условия отмены)\b", t)
     if "?" in text or re.search(r"\bможно ли\b|\bадрес\b|где (?:находится|расположен)|"
-                                r"^(а |какая |какие |какой |какое |нужн\w+ ли|есть ли|сколько )", t):
+                                r"^(а |какая |какие |какой |какое |нуж(?:ен|на|но|ны) ли|есть ли|сколько )|"
+                                r"\b(?:есть|включен[ао]?|входит)\s*$", t):
+        questions = []
         for topic, pattern in QUESTION_TOPICS:
-            if re.search(pattern, t) and not (topic == "pets" and data.get("pets")):
-                data["question"] = topic
-                break
+            if (topic == "location" and re.search(r"\bадрес\b", t) or
+                    any(_question_clause(t, mm.start(), mm.end()) for mm in re.finditer(pattern, t))):
+                questions.append(topic)
+        asked_wishes = [code for code, pattern in WISH_WORDS.items()
+                        if (mm := re.search(pattern, t)) and _question_clause(t, mm.start(), mm.end())]
+        if asked_wishes:
+            questions.append("amenities:" + ",".join(asked_wishes))
+        if questions:
+            data["question"] = "|".join(questions)
     if (mm := re.search(r"ранн\w* заезд|заселит\w* раньше|заселиться пораньше", t)) and not negated(t, mm.start()):
         data["after_sale"] = "early_checkin"
     elif (mm := re.search(r"поздн\w* выезд|выехать позже", t)) and not negated(t, mm.start()):

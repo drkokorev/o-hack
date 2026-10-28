@@ -17,6 +17,7 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Protocol, TypeVar, get_args, get_origin
 
 from pydantic import BaseModel
@@ -215,6 +216,7 @@ def _type_name(annotation: Any) -> str:
     return {int: "целое", float: "число", bool: "true/false", str: "строка"}.get(inner, "дата YYYY-MM-DD")
 
 
+@lru_cache(maxsize=32)
 def schema_hint(schema: type[BaseModel]) -> str:
     """Шаблон ответа: поля с типами и описаниями плюс пример из null — так модели реже копируют саму схему."""
     lines = [f"- {name} ({_type_name(f.annotation)}): {f.description or ''}" for name, f in schema.model_fields.items()]

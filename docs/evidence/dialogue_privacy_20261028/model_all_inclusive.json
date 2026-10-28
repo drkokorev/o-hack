@@ -1,0 +1,27 @@
+{
+  "mode": "model+rules",
+  "provider": "gigachat",
+  "model": "GigaChat-2-Max",
+  "cases": [
+    {
+      "id": "all_inclusive",
+      "pass": true,
+      "turns": [
+        {
+          "text": "Новый год на море, всё включено, 4 звезды",
+          "reply": "Когда примерно хотите поехать? Можно назвать месяц или время года. Если пока не знаете — так и скажите, предложу идеи без дат и цен.",
+          "nlu": "llm+rules",
+          "model_calls": 1,
+          "milliseconds": 1618,
+          "pass": true
+        }
+      ]
+    }
+  ],
+  "passed": 1,
+  "total": 1,
+  "turns": 1,
+  "model_turns": 1,
+  "model_calls": 1,
+  "model_errors": 0
+}

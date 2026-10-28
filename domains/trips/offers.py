@@ -43,6 +43,11 @@ def season_factor(dest: Destination, day: date) -> float:
     return 1.0 if day.month in neighbours else 0.82
 
 
+def hotel_day_factors(dest: Destination, day: date) -> tuple[float, float]:
+    weekend = 1.1 if day.weekday() in (4, 5) and "city" in dest.tags else 1.0
+    return season_factor(dest, day), weekend
+
+
 # ---------- Отели ----------
 
 class Hotel(BaseModel):
@@ -238,8 +243,8 @@ def hotel_price(hotel: Hotel, check_in: date, nights: int, adults: int, children
     total = 0.0
     for i in range(nights):
         day = check_in + timedelta(days=i)
-        weekend = 1.1 if day.weekday() in (4, 5) and "city" in dest.tags else 1.0
-        total += hotel.base_price * season_factor(dest, day) * weekend
+        season, weekend = hotel_day_factors(dest, day)
+        total += hotel.base_price * season * weekend
     guests = 1 + 0.3 * max(0, adults - 2) + 0.15 * children - (0.15 if adults == 1 and not children else 0)
     if hotel.meal == "all_inclusive":
         guests += 0.35 * max(0, adults + children - 2)

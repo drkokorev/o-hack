@@ -8,7 +8,7 @@ from core.agent import Step
 from core.ru import fmt_money
 
 from .offers import Leg, transport_options
-from .planner import Trip, leg_text
+from .planner import Trip, _leg_ok, leg_text
 from .state import TripState
 
 
@@ -20,12 +20,8 @@ def tent_order(state: TripState) -> Step:
 def tent_step(state: TripState, trip: Trip, act: dict, changed: bool,
               trip_card: Callable[[Trip], dict], leg_card: Callable[[Leg, int], dict]) -> Step:
     """Show transport alone and never create a fictitious campsite or hotel."""
-    def acceptable(leg: Leg) -> bool:
-        return not ((trip.direct_only and leg.stops) or (trip.pets and not leg.pets_ok) or
-                    (trip.max_hours and leg.minutes > trip.max_hours * 60))
-
-    outs = [leg for leg in transport_options(trip.origin, trip.dest, trip.date_in, trip.mode) if acceptable(leg)]
-    backs = [leg for leg in transport_options(trip.origin, trip.dest, trip.date_out, trip.mode) if acceptable(leg)]
+    outs = [leg for leg in transport_options(trip.origin, trip.dest, trip.date_in, trip.mode) if _leg_ok(leg, trip)]
+    backs = [leg for leg in transport_options(trip.origin, trip.dest, trip.date_out, trip.mode) if _leg_ok(leg, trip)]
     if not outs or not backs:
         return Step("В демонстрационных данных нет подходящей дороги на эти даты. "
                     "Попробуйте изменить даты или транспорт.", payload={"kind": "question"})
@@ -72,7 +68,9 @@ def tent_step(state: TripState, trip: Trip, act: dict, changed: bool,
     state.stage, state.showing = "plan", "tent_transport"
     items = [{"out": leg_card(o, trip.people), "back": leg_card(b, trip.people),
               "total": fmt_money((o.price_per_person + b.price_per_person) * trip.people)} for o, b in pairs]
+    warning = ("Нормы багажа поездов не проверены; уточните их у перевозчика. " if trip.baggage_required and
+               any(leg.mode == "train" for pair in pairs for leg in pair) else "")
     return Step("Учёл вашу палатку и не добавляю отель. Ниже — примерные варианты дороги; расписание и цены "
                 "демонстрационные. Стоянка, питание и трансфер не рассчитаны — их нужно проверить отдельно. "
-                "Какой вариант дороги посмотреть?",
+                + warning + "Какой вариант дороги посмотреть?",
                 payload={"kind": "tent_transport", "trip": trip_data, "items": items})

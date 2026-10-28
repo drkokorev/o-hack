@@ -1,0 +1,11 @@
+{
+  "description": "Warm rules-only synthetic checks; three measurements per case, sequential processes, median milliseconds. Not a statistical or hardware-independent comparison.",
+  "scenario": "python -m eval.benchmark_nightly_20261028",
+  "machine": "Windows, Intel i5-1135G7, 16 GB RAM, Python 3.14",
+  "stages": [
+    {"source": "0fb65da baseline; old less strict nightly filter", "selected_destination_ms": 19, "priced_ideas_ms": 3781},
+    {"source": "intermediate; checked every night separately for every hotel", "selected_destination_ms": 112, "priced_ideas_ms": 3321},
+    {"source": "final candidate; shared peak night per destination", "selected_destination_ms": 23, "priced_ideas_ms": 3072}
+  ],
+  "limitations": "Runs were not interleaved, system load and caches were uncontrolled. Inputs are synthetic; the baseline and final filter have different correctness, so these numbers do not prove a general speedup."
+}

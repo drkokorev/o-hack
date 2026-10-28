@@ -28,16 +28,20 @@ class Suggestion:
 
 def estimate(origin: Origin, dest: Destination, start: date, nights: int, adults: int, children: int,
              mode: str | None = None, pets: bool = False, meal: str | None = None,
-             stars_min: int | None = None) -> tuple[int, int, str, int] | None:
+             stars_min: int | None = None, baggage_required: bool = False, *, direct_only: bool = False,
+             max_hours: float | None = None, free_cancellation: bool = False, budget_night: int | None = None,
+             wishes: list[str] | None = None) -> tuple[int, int, str, int] | None:
     """Оценка поездки тем же планировщиком, что соберёт варианты: (цена «от», минут в пути, транспорт, пересадок)."""
     from datetime import timedelta
 
     from .planner import Trip, make_packages
 
     trip = Trip(origin, dest, start, start + timedelta(days=nights), adults, children, pets=pets, mode=mode,
-                meal=meal, stars_min=stars_min)
-    packages, _ = make_packages(trip)
-    if not packages:
+                meal=meal, stars_min=stars_min, baggage_required=baggage_required, direct_only=direct_only,
+                max_hours=max_hours, free_cancellation=free_cancellation, budget_night=budget_night,
+                wishes=wishes or [])
+    packages, relaxed = make_packages(trip)
+    if not packages or relaxed:
         return None
     cheapest = min(p.total(trip.people) for p in packages)
     best = packages[0].out
@@ -53,6 +57,8 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             budget: int | None, max_hours: float | None, abroad: bool | None, pets: bool, mode: str | None,
             exclude: set[str] | None = None, limit: int = 3, economy: bool = False, meal: str | None = None,
             stars_min: int | None = None, window: tuple[date, date] | None = None, short_travel: bool = False,
+            baggage_required: bool = False, direct_only: bool = False, free_cancellation: bool = False,
+            budget_night: int | None = None, wishes: list[str] | None = None,
             air_min_temp: float | None = None, air_max_temp: float | None = None,
             sea_min_temp: float | None = None, sea_max_temp: float | None = None) -> list[Suggestion]:
     from .planner import MEAL_RANK, cheapest_start
@@ -75,7 +81,9 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
         other_core = core - {"surf"}
         if other_core and not other_core & set(dest.tags):
             continue
-        day = (cheapest_start(origin, dest, window[0], window[1], nights, mode) if window else start) or start
+        day = (cheapest_start(origin, dest, window[0], window[1], nights, mode,
+                              baggage_required=baggage_required, direct_only=direct_only, pets=pets,
+                              max_hours=max_hours) if window else start) or start
         weather = climate(dest.id, day.month)
         thresholds = {"air_min_temp": air_min_temp, "air_max_temp": air_max_temp,
                       "sea_min_temp": sea_min_temp, "sea_max_temp": sea_max_temp}
@@ -96,7 +104,9 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             continue  # просили «всё включено» — туда, где его нет, не зовём
         if stars_min and not any(h.stars >= stars_min for h in hotels):
             continue
-        est = estimate(origin, dest, day, nights, adults, children, mode, pets, meal, stars_min)
+        est = estimate(origin, dest, day, nights, adults, children, mode, pets, meal, stars_min, baggage_required,
+                       direct_only=direct_only, max_hours=max_hours, free_cancellation=free_cancellation,
+                       budget_night=budget_night, wishes=wishes)
         if est is None:
             continue
         total, minutes, leg_mode, stops = est

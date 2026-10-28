@@ -10,6 +10,20 @@ from .climate import climate
 from .temperature import TEMP_FIELDS, matches_history
 
 
+# Fields that can answer each outstanding question. Shared by state updates and
+# the question policy so a side comment is not mistaken for an answer.
+QUESTION_INPUT_FIELDS = {
+    "when": {"month", "season", "date_from"},
+    "duration": {"nights", "date_to", "trip_days_min", "trip_days_max"},
+    "origin": {"origin"},
+    "destination": {"destination"},
+    "people": {"adults", "party_size"},
+    "children": {"children"},
+    "lodging": {"lodging"},
+    "transport": {"transport"},
+}
+
+
 def missing_for_trip(state: TripState) -> tuple[str, str] | None:
     if state.trip_days_min and not state.date_from:
         period = (f"{state.trip_days_min} дней" if state.trip_days_min == state.trip_days_max else

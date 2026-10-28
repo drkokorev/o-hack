@@ -122,9 +122,14 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         notes.append("meal: конкретный тип питания пользователь не назвал")
         data["meal"] = None
 
-    if rules.question == "pets" and rules.pets is None and data.get("pets") is not None:
+    question_topics = set((rules.question or "").split("|"))
+    if "pets" in question_topics and rules.pets is None and data.get("pets") is not None:
         notes.append("pets: вопрос об условиях для животных не подтверждает их участие в поездке")
         data["pets"] = None
+    for topic, field in (("baggage", "baggage"), ("cancellation", "free_cancellation")):
+        if topic in question_topics and rule_data.get(field) is None and data.get(field) is not None:
+            notes.append(f"{field}: вопрос об условиях не задаёт требование")
+            data[field] = None
     if rules.remove_hotel_wishes and data.get("clear") and "hotel_wishes" in data["clear"]:
         data["clear"] = [field for field in data["clear"] if field != "hotel_wishes"] or None
     if rules.clear:
@@ -158,7 +163,7 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
                  (dest_id and BY_ID[dest_id].country in excluded))):
             notes.append("destination: страна была исключена, а не выбрана")
             data["destination"] = None
-        elif rules.question == "travel" and not rules.destination and not rules.unknown_place:
+        elif "travel" in question_topics and not rules.destination and not rules.unknown_place:
             notes.append("destination: вопрос о времени пути не называет направление")
             data["destination"] = None
         elif rule_data.get("country") and not rule_data.get("destination"):

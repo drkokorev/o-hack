@@ -10,7 +10,7 @@ from typing import Any, Callable, Protocol
 
 from pydantic import BaseModel
 
-from .guard import contains_sensitive_data, looks_like_injection, sanitize
+from .guard import MAX_INPUT_CHARS, contains_sensitive_data, looks_like_injection, sanitize
 from .llm import LLM, Message, extract, strip_think
 
 log = logging.getLogger(__name__)
@@ -88,37 +88,43 @@ class Agent:
         return Session(state=self.domain.state_model())
 
     def handle(self, session: Session, text: str) -> Step:
+        # Reject instead of truncating: a document/card number cut at the limit
+        # could otherwise evade inspection and be sent partially to the model.
+        if len(text) > MAX_INPUT_CHARS:
+            session.last_nlu, session.last_notes = "none", []
+            return Step(f"Сообщение слишком длинное. Сократите его до {MAX_INPUT_CHARS} символов и отправьте снова.")
+        if contains_sensitive_data(text):
+            session.last_nlu, session.last_notes = "none", []
+            return Step("Для демонстрации не отправляйте личные и платёжные данные, пароли и ключи. "
+                        "Удалите их из сообщения и повторите запрос.")
         text = sanitize(text)
         if not text:
             session.last_nlu, session.last_notes = "none", []
-            step = Step("Напишите, пожалуйста, ваш запрос.")
-        elif contains_sensitive_data(text):
-            text = "[личные данные скрыты]"
+            return Step("Напишите, пожалуйста, ваш запрос.")
+        if looks_like_injection(text):
             session.last_nlu, session.last_notes = "none", []
-            step = Step("Для демонстрации не вводите личные и платёжные данные. Удалите их из сообщения и повторите запрос.")
-        elif looks_like_injection(text):
-            text = "[сообщение не обработано]"
-            session.last_nlu, session.last_notes = "none", []
-            step = Step(self.domain.off_topic_reply)
+            return Step(self.domain.off_topic_reply)
+        update, session.last_nlu = self._understand(session, text)
+        if not update.model_dump(exclude_none=True) and session.last is not None:
+            # A message with no understood action must not advance the
+            # conversation, skip a pending question, or modify an order.
+            previous = session.last
+            question = isinstance(previous.payload, dict) and previous.payload.get("kind") == "question"
+            step = Step("Не понял сообщение. " + (previous.reply if question else
+                        "Расскажите о поездке или уточните, что хотите изменить."), payload=previous.payload)
         else:
-            update, session.last_nlu = self._understand(session, text)
-            if not update.model_dump(exclude_none=True) and session.last is not None:
-                # A message with no understood action must not advance the
-                # conversation, skip a pending question, or modify an order.
-                previous = session.last
-                question = isinstance(previous.payload, dict) and previous.payload.get("kind") == "question"
-                step = Step("Не понял сообщение. " + (previous.reply if question else
-                            "Расскажите о поездке или уточните, что хотите изменить."), payload=previous.payload)
-            else:
-                session.state = self.domain.merge(session.state, update)
-                step = self.domain.step(session.state)
-                if self.nlg and step.facts and getattr(self.domain, "allow_nlg", True):
-                    step.reply = self._rephrase(step)
-        session.history += [
-            {"role": "user", "content": text},
-            {"role": "assistant", "content": step.reply},
-        ]
-        session.history = session.history[-self.history_messages:] if self.history_messages > 0 else []
+            session.state = self.domain.merge(session.state, update)
+            step = self.domain.step(session.state)
+            if self.nlg and step.facts and getattr(self.domain, "allow_nlg", True):
+                step.reply = self._rephrase(step)
+        if self.history_messages > 0 and getattr(self.domain, "retain_history", True):
+            session.history += [
+                {"role": "user", "content": text},
+                {"role": "assistant", "content": step.reply},
+            ]
+            session.history = session.history[-self.history_messages:]
+        else:
+            session.history = []
         session.last = step
         return step
 
