@@ -120,6 +120,8 @@ def understood(state: TripState) -> list[str]:
                      f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]} {state.date_to.year}")
     elif state.month:
         chips.append(MONTHS_NOM[state.month - 1] + (f" {state.year}" if state.year else ""))
+    if state.nights:
+        chips.append(f"{state.nights} {plural(state.nights, 'ночь', 'ночи', 'ночей')}")
     if state.adults:
         chips.append(f"{state.adults} {plural(state.adults, 'взрослый', 'взрослых', 'взрослых')}")
     elif state.party_size:
@@ -341,6 +343,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         return {
             "session_id": session_id, "reply": step.reply, "payload": images.decorate(step.payload), "stage": state.stage,
             "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
+            "trip_summary": {"destination": BY_ID[state.dest_id].name if state.dest_id else state.destination},
             "checked": session.last_notes,
             "ms": round((time.perf_counter() - started) * 1000),
         }

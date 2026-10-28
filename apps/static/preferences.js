@@ -1,6 +1,5 @@
 /* Presentation preferences only; these do not change the agent's trip state. */
 window.createPreferences = function createPreferences(map) {
-  const country = document.getElementById("country");
   const currency = document.getElementById("currency");
   const note = document.getElementById("exchange-note");
   const original = new WeakMap();
@@ -10,7 +9,6 @@ window.createPreferences = function createPreferences(map) {
   const save = (key, value) => { try { localStorage.setItem(key, value); } catch (_) {} };
   const currencyFor = (code) => euro.has(code) ? "EUR" : code === "US" ? "USD" : "RUB";
   let manualCurrency = read("odin.currency");
-  const manualCountry = read("odin.country");
 
   function convert(value) {
     if (currency.value === "RUB" || !rates || !rates.rub_per_unit[currency.value]) return null;
@@ -37,38 +35,28 @@ window.createPreferences = function createPreferences(map) {
     });
     currency.title = currency.value === "RUB" ? "Валюта демонстрационных цен" :
       "Примерный пересчёт демо-цен по курсу ЦБ РФ на 28.10.2026; бюджет в диалоге указывайте в рублях";
+    note.hidden = currency.value === "RUB" || !rates;
   }
   currency.addEventListener("change", () => { manualCurrency = currency.value; save("odin.currency", manualCurrency); apply(); });
-  country.addEventListener("change", () => {
-    if (!country.value) return;
-    save("odin.country", country.value); map.setCountry(country.value, true);
-    if (!manualCurrency) { currency.value = currencyFor(country.value); apply(); }
-  });
   if (["RUB", "EUR", "USD"].includes(manualCurrency)) currency.value = manualCurrency;
   Promise.all([
-    fetch("/static/country-options.json").then((r) => r.json()),
     fetch("/api/visitor-country", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).catch(() => null),
     fetch("/static/exchange-rates.json").then((r) => r.json()).catch(() => null),
-  ]).then(([names, location, exchange]) => {
+  ]).then(([location, exchange]) => {
     rates = exchange;
-    Object.entries(names).sort((a, b) => a[1].localeCompare(b[1], "ru")).forEach(([code, name]) => {
-      const option = document.createElement("option"); option.value = code; option.textContent = name; country.append(option);
-    });
-    const selected = manualCountry || location?.country_code;
-    if (selected && names[selected]) {
-      country.value = selected; map.setCountry(selected, !!manualCountry);
-      if (!manualCountry) country.title = "Страна определена приблизительно по IP; можно изменить";
+    const selected = location?.country_code;
+    if (selected) {
+      map.setCountry(selected, false);
       if (!manualCurrency) currency.value = currencyFor(selected);
     }
     if (rates) {
-      note.append("Пересчёт демо-сумм приблизительный: ", Object.assign(document.createElement("a"),
-        { href: rates.url, target: "_blank", rel: "noopener", textContent: "курс ЦБ РФ на 28.10.2026" }),
-        ". Бюджет в разговоре пока указывается в рублях.");
+      note.append("≈ ", Object.assign(document.createElement("a"),
+        { href: rates.url, target: "_blank", rel: "noopener", textContent: "курс ЦБ на 28.10.2026" }), " · бюджет в ₽");
     } else {
       currency.value = "RUB"; currency.disabled = true;
       note.textContent = "Курс недоступен; суммы показаны в рублях.";
     }
     apply();
-  }).catch(() => { country.disabled = true; currency.value = "RUB"; currency.disabled = true; });
+  }).catch(() => { currency.value = "RUB"; currency.disabled = true; });
   return { apply, currency: () => currency.value };
 };

@@ -27,6 +27,14 @@ async (page) => {
   await page.evaluate(() => window.testMap.draw({targets:[]}));
   if (!await page.getByText('Подробный каталог карты недоступен. Показаны направления приложения.').isVisible())
     throw new Error('Fallback status disappeared when redrawn');
+  await page.unroute('**/api/map/catalog');
+  await page.route('**/events.json', route => route.fulfill({status:503,body:'unavailable'}));
+  await page.route('**/landmarks.json', route => route.fulfill({status:503,body:'unavailable'}));
+  await page.route('**/event-icons.mjs', route => route.fulfill({status:503,body:'unavailable'}));
+  await page.route('**/map-settings.json', route => route.fulfill({status:503,body:'unavailable'}));
+  await standalone();
+  await page.getByText(/записей в области/).waitFor({timeout:30000});
+  if (!await page.locator('.maplibregl-canvas').isVisible()) throw new Error('Optional artwork broke the map');
   if (errors.length) throw new Error('JavaScript errors: ' + errors.join('; '));
-  return {standalone:'pass', selection:'pass', fallback:'pass', mobile:'pass'};
+  return {standalone:'pass', selection:'pass', fallback:'pass', optionalArtworkFailure:'pass', mobile:'pass'};
 }

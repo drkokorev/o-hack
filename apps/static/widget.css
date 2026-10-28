@@ -1,6 +1,6 @@
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
-  body { font: 15px/1.45 system-ui, sans-serif; color: #12252d; background: #fff; display: flex; flex-direction: column; }
+  body { font: 15px/1.5 "Golos Text", system-ui, sans-serif; color: #102832; background: #fff; display: flex; flex-direction: column; }
   header { padding: 16px 18px; border-bottom: 1px solid #e0e9e6; font-weight: 700; }
   header span { color: #2346d8; }
   main { flex: 1; min-height: 0; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
@@ -13,8 +13,10 @@
   .action { border: 1px solid #bccde0; border-radius: 999px; background: #fff; padding: 8px 13px; min-height: 40px; cursor: pointer; color: #183cb8; }
   .action:focus-visible, input:focus-visible { outline: 2px solid #2346d8; outline-offset: 2px; }
   form { border-top: 1px solid #e0e9e6; padding: 10px 14px 14px; }
-  .privacy { margin: 0 0 8px; color: #657980; font-size: 11px; }
+  [hidden] { display:none !important; }
+  .voice-status { margin: 0 0 8px; color:#40565c; font-size:12px; }
+  .send.recording { background:#a92c2c; }
   .entry { display: flex; border: 1px solid #cbd9d6; border-radius: 22px; padding: 3px 4px 3px 12px; }
   input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; outline: none; }
-  .send { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #2346d8; color: #fff; font-size: 20px; cursor: pointer; }
+  .send { width: 44px; height: 44px; border: 0; border-radius: 50%; background: #2346d8; color: #fff; font-size: 20px; cursor: pointer; }
   button:disabled { opacity: .5; cursor: wait; }

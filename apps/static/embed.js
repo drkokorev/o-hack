@@ -11,6 +11,7 @@
   frame.title = "Помощник в планировании поездки";
   frame.src = `${service}/static/widget.html`;
   frame.referrerPolicy = "no-referrer";
+  frame.allow = "microphone";
   frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
   frame.hidden = true;
   Object.assign(frame.style, { width: "min(390px, calc(100vw - 32px))", height: "min(620px, calc(100dvh - 100px))",

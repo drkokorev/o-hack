@@ -1,4 +1,5 @@
   const log = document.getElementById("log"), input = document.getElementById("text"), form = document.getElementById("form");
+  const voice = createVoiceInput({input, button:form.querySelector("button"), status:document.getElementById("voice-status")});
   let session = null, busy = false;
   function element(tag, className, text) {
     const node = document.createElement(tag); if (className) node.className = className;
@@ -36,7 +37,7 @@
   }
   async function send(text) {
     text = String(text || "").trim(); if (!text || busy) return;
-    busy = true; form.querySelector("button").disabled = true; input.value = ""; message(text, true);
+    busy = true; form.querySelector("button").disabled = true; input.value = ""; voice.update(); message(text, true);
     try {
       const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, session_id: session }) });
@@ -48,6 +49,9 @@
       }
       message(reply); render(data.payload);
     } catch (_) { if (!input.value) input.value = text; message("Не удалось отправить. Текст сохранён — попробуйте ещё раз."); }
-    finally { busy = false; form.querySelector("button").disabled = false; input.focus(); }
+    finally { busy = false; form.querySelector("button").disabled = false; voice.update(); input.focus(); }
   }
-  form.addEventListener("submit", (event) => { event.preventDefault(); send(input.value); });
+  form.addEventListener("submit", (event) => { event.preventDefault();
+    if (voice.isActive() || !input.value.trim()) voice.toggle(); else { voice.clearStatus(); send(input.value); }
+  });
+  input.disabled = false; form.querySelector("button").disabled = false; voice.update();

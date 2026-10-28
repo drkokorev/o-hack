@@ -1,19 +1,13 @@
 const $ = (id) => document.getElementById(id);
-let sessionId = null, busy = false, info = null;
+let sessionId = null, busy = false, info = null, conversationStarted = false, imageCredits = {};
+let inspiration = {starters:[], places:[], quick:{}};
+let lastDestination = null;
 let preferenceData = { saved: {}, hidden: [] };
 try {
   const stored = JSON.parse(localStorage.getItem("odin.places") || "null");
   if (stored && stored.saved && Array.isArray(stored.hidden)) preferenceData = stored;
 } catch (_) {}
 const persistPlaces = () => { try { localStorage.setItem("odin.places", JSON.stringify(preferenceData)); } catch (_) {} };
-const QUICK = {
-  destination: ["покажи другие направления", "только по России", "а за границу?"],
-  plan: ["а если на два дня позже?", "подешевле", "покажи другие отели", "только без пересадок", "другое направление"],
-  cart: ["да, оформляй", "нет, вернуться к вариантам", "а если на день раньше?"],
-  payment: ["оплата картой", "оплата СБП", "нет"],
-  booked: ["запроси ранний заезд", "поздний выезд", "перенеси на 2 дня позже", "отмени бронь"],
-};
-
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -28,9 +22,16 @@ function el(tag, attrs = {}, ...children) {
 const marks = (cls, items) => el("ul", { class: "marks " + cls }, items.map((t) => typeof t === "string" ? el("li", {}, t) : el("li", { class: t.level }, t.text)));
 const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button", class: cls, onclick: () => send(text || label) }, label);
 
-const tripMap = createTripMap({ container: $("map"), onChoose: (place) => send(`хочу в ${place.name}`) });
+const tripMap = createTripMap({ container: $("map"), onChoose: (place) => send(`хочу в ${place.name}`),
+  isFavorite: (point) => Boolean(preferenceData.saved[`point:${point.id}`]), onFavorite: (point) => {
+    const key = `point:${point.id}`;
+    if (preferenceData.saved[key]) delete preferenceData.saved[key];
+    else preferenceData.saved[key] = {kind:"point",name:point.name || "Место",id:point.id,lat:point.lat,lon:point.lon};
+    persistPlaces(); renderSaved(); return Boolean(preferenceData.saved[key]);
+  } });
 const drawMap = (options = {}) => tripMap.draw(options);
 const preferences = createPreferences(tripMap);
+const voice = createVoiceInput({input:$("text"), button:$("send"), status:$("voice-status")});
 
 function renderHead(data) {
   const p = (data && data.payload) || {};
@@ -45,21 +46,31 @@ function renderHead(data) {
     $("head").replaceChildren(el("div", { class: "hero" }, el("h1", {}, title)));
   } else {
     $("head").replaceChildren(el("div", { class: "hero" },
-      el("h1", {}, "Поездка начинается здесь."),
-      el("p", {}, "Расскажите о планах или выберите место на глобусе.")));
+      el("h1", {}, "Путешествие начинается с идеи"),
+      el("p", {}, "Выберите место на глобусе или расскажите, чего хочется.")));
   }
 }
 
 function renderConditions(data) {
   const understood = data?.understood || [], assumed = data?.assumptions || [];
-  $("conditions-count").textContent = understood.length ? `${understood.length}` : "";
+  $("trip-context").hidden = !understood.length && !assumed.length;
+  // The optional structured field is authoritative. Older services only expose
+  // a list, so recognise a destination there only when it matches their catalog.
+  const knownPlaces = new Map((info?.places || []).map((p) => [p.name.toLocaleLowerCase("ru"), p.name]));
+  const destination = data?.trip_summary?.destination || understood.map((value) =>
+    knownPlaces.get(String(value).trim().toLocaleLowerCase("ru"))).find(Boolean) || null;
+  const changed = destination && lastDestination && destination !== lastDestination;
+  $("condition-change").hidden = !changed;
+  $("condition-change").textContent = changed ? `${lastDestination} → ${destination}` : "";
+  lastDestination = destination;
   $("conditions").replaceChildren(...understood.map((c) => el("span", { class: "chip" }, c)),
     ...assumed.map((a) => el("span", { class: "chip assumed", title: "Предположение — можно уточнить в чате" }, a)));
-  if (!understood.length && !assumed.length) $("conditions").append(el("p", { class: "conditions-empty" }, "Здесь появятся детали из разговора."));
   const fields = [["Откуда", "Я выезжаю из "], ["Куда", "Хочу в "], ["Даты", "Даты поездки: "],
-    ["Гости", "Путешественники: "], ["Бюджет", "Бюджет в рублях: "], ["Транспорт", "Транспорт: "]];
+    ["Длительность", "Длительность поездки: "], ["Гости", "Путешественники: "], ["Бюджет", "Бюджет в рублях: "], ["Транспорт", "Транспорт: "]];
   $("condition-actions").replaceChildren(...fields.map(([label, prefix]) => el("button", { type: "button", onclick: () => {
     if (!$("text").value.trim()) $("text").value = prefix;
+    document.querySelector(".condition-edit").open = false;
+    voice.update();
     $("text").focus();
   } }, label)));
 }
@@ -68,44 +79,82 @@ function renderSaved() {
   const entries = Object.entries(preferenceData.saved);
   $("saved-places").hidden = !entries.length;
   $("saved-count").textContent = entries.length ? String(entries.length) : "";
-  $("saved-list").replaceChildren(...entries.map(([id, name]) => el("div", { class: "saved-row" },
-    el("button", { type: "button", onclick: () => send(`хочу в ${name}`) }, name),
-    el("button", { type: "button", class: "saved-remove", "aria-label": `Убрать ${name} из избранного`, onclick: () => {
+  $("saved-list").replaceChildren(...entries.map(([id, saved]) => {
+    const item = typeof saved === "string" ? {name:saved,kind:"city"} : saved;
+    if (!item?.name) return null;
+    let target = item.kind === "hotel" ? el("span", {}, item.name, el("small", {}, " · размещение")) : item.kind === "point" ?
+      el("button", {type:"button", onclick:() => tripMap.showPoint(item)}, item.name, el("small", {}, " · на глобусе")) :
+      el("button", { type: "button", onclick: () => send(`хочу в ${item.name}`) }, item.name);
+    if (item.kind === "hotel" && item.url) {
+      try { const u = new URL(item.url); if (["http:", "https:"].includes(u.protocol))
+        target = el("a", {href:u.href, target:"_blank", rel:"noopener noreferrer"}, item.name, el("small", {}, " · на карте ↗"));
+      } catch (_) {}
+    }
+    return el("div", { class: "saved-row" }, target,
+    el("button", { type: "button", class: "saved-remove", "aria-label": `Убрать ${item.name} из избранного`, onclick: () => {
       delete preferenceData.saved[id]; persistPlaces(); renderSaved();
       const button = document.querySelector(`[data-save-key="${CSS.escape(id)}"]`);
       if (button) { button.setAttribute("aria-pressed", "false"); button.textContent = "♡"; }
-    } }, "×"))));
+    } }, "×"));
+  }).filter(Boolean));
 }
-function decorateDestinations(payload) {
-  if (!["ideas", "destinations"].includes(payload.kind)) return;
+function decorateOptions(payload) {
+  if (!["ideas", "destinations", "hotels", "packages"].includes(payload.kind)) return;
   const cards = [...$("view").querySelectorAll(".cards > .card")];
   const section = $("view").querySelector(".cards");
   if (!section) return;
-  const restore = el("p", { class: "src" }, "Некоторые направления скрыты на этом устройстве. ",
+  const restore = el("p", { class: "src" }, "Некоторые варианты скрыты. ",
     el("button", { type: "button", class: "restore-hidden", onclick: () => {
-      preferenceData.hidden = []; persistPlaces(); cards.forEach((card) => { card.hidden = false; }); restore.remove();
+      preferenceData.hidden = []; persistPlaces(); cards.forEach((card) => { card.hidden = false; });
+      $("view").querySelectorAll("[data-option-key]").forEach((cell) => {cell.hidden=false;}); restore.remove();
     } }, "Показать скрытые"));
   let hasHidden = false;
-  (payload.items || []).forEach((place, index) => {
-    const card = cards[index]; if (!card || !place.name) return;
-    const key = String(place.id || place.name);
+  (payload.items || []).forEach((entry, index) => {
+    const isHotel = ["hotels", "packages"].includes(payload.kind);
+    const place = payload.kind === "packages" ? entry.hotel : entry;
+    const card = cards[index]; if (!card || !place || !place.name) return;
+    const key = (isHotel ? "hotel:" : "") + String(place.id || place.name);
     card.hidden = preferenceData.hidden.includes(key); hasHidden ||= card.hidden;
     const actions = card.querySelector(".actions"); if (!actions) return;
     const saved = el("button", { type: "button", class: "feedback-button", "data-save-key": key,
       "aria-label": `В избранное: ${place.name}`, "aria-pressed": String(Boolean(preferenceData.saved[key])),
       title: "Сохранить на этом устройстве", onclick: () => {
-        if (preferenceData.saved[key]) delete preferenceData.saved[key]; else preferenceData.saved[key] = place.name;
+        if (preferenceData.saved[key]) delete preferenceData.saved[key];
+        else preferenceData.saved[key] = {name:place.name, kind:isHotel ? "hotel" : "city", url:isHotel ? place.map_url || null : null};
         saved.setAttribute("aria-pressed", String(Boolean(preferenceData.saved[key])));
         saved.textContent = preferenceData.saved[key] ? "♥" : "♡"; persistPlaces(); renderSaved();
       } }, preferenceData.saved[key] ? "♥" : "♡");
     const hide = el("button", { type: "button", class: "feedback-button", "aria-label": `Скрыть: ${place.name}`,
-      title: "Скрыть на этом устройстве", onclick: () => {
+      title: "Не показывать на этом устройстве", onclick: () => {
         if (!preferenceData.hidden.includes(key)) preferenceData.hidden.push(key);
-        persistPlaces(); card.hidden = true; if (!restore.isConnected) section.before(restore);
-      } }, "×");
+        persistPlaces(); card.hidden = true;
+        $("view").querySelectorAll(`[data-option-key="${CSS.escape(key)}"]`).forEach((cell) => {cell.hidden=true;});
+        if (!restore.isConnected) section.before(restore);
+      } });
+    hide.innerHTML = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10v9H4v-9h3Zm2 0 3-6c.4-.7 1-1 1.6-.7l.3.1c.7.3.9 1 .7 1.7L14 8h4.2c1.2 0 2 1.1 1.7 2.2l-1.4 5c-.2.8-.9 1.3-1.7 1.3H11a2 2 0 0 1-2-2V10Z" transform="rotate(180 12 12)" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
     actions.append(saved, hide);
   });
   if (hasHidden) section.before(restore);
+}
+
+function savedDestinationPhotos(id) {
+  if (!id) return [];
+  const keys = [`dest/${id}.jpg`, ...Object.keys(imageCredits).filter((key) => key.startsWith(`gallery/${id}-`)).sort()];
+  return keys.filter((key) => imageCredits[key]).map((key) => ({src:`/static/img/${key}`,
+    credit:`${imageCredits[key].author}, ${imageCredits[key].license}`, page:imageCredits[key].page}));
+}
+function renderWelcome() {
+  const cards = (inspiration.places || []).map(({id, label, sound}) => {
+    const place = (info?.places || []).find((item) => item.id === id);
+    const picture = savedDestinationPhotos(id)[0];
+    if (!place || !picture) return null;
+    return el("article", {class:"inspire-card"}, photo(picture, {alt:place.name}),
+      el("button", {type:"button", class:"inspire-select", "data-sound":sound, "aria-label":`Выбрать ${place.name}`,
+        onclick:() => send(`хочу в ${place.name}`)}, el("span", {}, label), el("strong", {}, place.name), el("i", {"aria-hidden":"true"}, "↗")));
+  }).filter(Boolean);
+  if (!cards.length) { $("view").replaceChildren(); return; }
+  $("view").replaceChildren(el("section", {class:"inspiration"}, el("div", {class:"inspiration-head"},
+    el("h2", {}, "Для вдохновения"), el("span", {}, "С чего начнём?")), el("div", {class:"inspiration-grid"}, cards)));
 }
 
 function photo(img, opts = {}) {
@@ -150,6 +199,29 @@ const legLine = (leg) => {
 };
 const timelineEl = (items) => el("ol", { class: "timeline" }, items.map((t) => el("li", { class: t.level }, el("time", {}, t.t), el("span", {}, t.label))));
 const tripRoute = (t) => ({ origin: { name: t.origin, lat: t.origin_lat, lon: t.origin_lon }, targets: [{ name: t.dest, lat: t.lat, lon: t.lon }] });
+function comparePackages(cards, items) {
+  if (items.length < 2) return cards;
+  const optionAttrs = (item) => { const key = "hotel:" + String(item.hotel.id || item.hotel.name);
+    return {"data-option-key":key, hidden:preferenceData.hidden.includes(key)}; };
+  const table = el("div", {class:"compare-scroll", hidden:true, tabindex:"0", role:"region", "aria-label":"Сравнение вариантов"},
+    el("table", {class:"compare-table"},
+      el("thead", {}, el("tr", {}, el("th", {scope:"col"}, "Параметр"),
+        ...items.map((item, i) => el("th", {scope:"col", ...optionAttrs(item)}, item.title || `Вариант ${i+1}`)))),
+      el("tbody", {}, ...[["Демо-стоимость", (x) => x.total], ["Размещение", (x) => x.hotel.name],
+        ["Питание", (x) => x.hotel.meal], ["Туда", (x) => legLine(x.out)], ["Обратно", (x) => legLine(x.back)],
+        ["Компромиссы", (x) => (x.tradeoffs || []).join("; ") || "—"]].map(([label, get]) =>
+          el("tr", {}, el("th", {scope:"row"}, label), ...items.map((item) => el("td", optionAttrs(item), get(item))))),
+        el("tr", {}, el("th", {scope:"row"}, "Выбор"), ...items.map((item, i) =>
+          el("td", optionAttrs(item), sayBtn("Выбрать", `беру ${i+1} вариант`, "btn ghost")))))));
+  const cardButton = el("button", {type:"button", "aria-pressed":"true"}, "Карточки");
+  const tableButton = el("button", {type:"button", "aria-pressed":"false"}, "Сравнить");
+  function show(compact) {
+    cards.hidden=compact; table.hidden=!compact;
+    cardButton.setAttribute("aria-pressed",String(!compact)); tableButton.setAttribute("aria-pressed",String(compact));
+  }
+  cardButton.addEventListener("click",() => show(false)); tableButton.addEventListener("click",() => show(true));
+  return el("div", {}, el("div", {class:"compare-toggle", role:"group", "aria-label":"Вид вариантов"}, cardButton, tableButton), cards, table);
+}
 
 const views = {
   place_info(p) {
@@ -161,10 +233,11 @@ const views = {
         sayBtn("Другие направления", "покажи ещё", "btn ghost"))];
   },
   ideas(p) {
-    drawMap({ targets: p.items.map((d) => ({ name: d.name, lat: d.lat, lon: d.lon })) });
+    drawMap({ targets: p.items.map((d) => ({ name: d.name, country: d.country, lat: d.lat, lon: d.lon })) });
     return [el("h2", { class: "section-title" }, "Идеи для поездки"),
       el("p", { class: "section-sub" }, "Пока без расчёта дат и цены. Выберите направление, чтобы продолжить."),
       el("div", { class: "cards" }, p.items.map((d, i) => el("article", { class: "card" },
+        gallery(d.gallery?.length ? d.gallery : savedDestinationPhotos(d.id), { alt: d.name }),
         el("div", { class: "kicker" }, `${i + 1} · ${d.country}`), el("h3", {}, d.name),
         el("div", { class: "tags" }, d.highlights.slice(0, 3).map((h) => el("span", { class: "tag" }, h))),
         el("div", { class: "actions" }, sayBtn("Хочу сюда", `давай ${d.name}`, "btn accent")))))];
@@ -198,7 +271,7 @@ const views = {
         el("p", {}, `Условный заказ ${o.number}`), el("p", {}, `Туда: ${o.out}`), el("p", {}, `Обратно: ${o.back}`))];
   },
   destinations(p) {
-    drawMap({ origin: p.origin, targets: p.items.map((d) => ({ name: d.name, lat: d.lat, lon: d.lon })) });
+    drawMap({ origin: p.origin, targets: p.items.map((d) => ({ name: d.name, country: d.country, lat: d.lat, lon: d.lon })) });
     return [el("h2", { class: "section-title" }, "Куда можно поехать"),
       el("p", { class: "section-sub" }, `Демо-цены за поездку на всех: дорога, отель, трансферы, ${p.nights_label || p.nights + " ночей"}. Наличие не проверялось.`),
       el("div", { class: "cards" }, p.items.map((d, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
@@ -225,16 +298,14 @@ const views = {
       const prices = p.calendar.map((d) => d.price), lo = Math.min(...prices), hi = Math.max(...prices);
       out.push(el("h2", { class: "section-title" }, "Когда выгоднее ехать"),
         el("p", { class: "section-sub" }, `Дорога туда и обратно на человека по дате заезда, поездка на ${p.trip.dates.match(/\((.*)\)/)?.[1] || "те же ночи"}. Зелёные — самые выгодные дни.`),
-        el("div", { class: "cal", role: "list" }, p.calendar.map((d) => el("button", {
+        el("div", { class: "cal", role: "group", "aria-label": "Демонстрационные цены по датам" }, p.calendar.map((d) => el("button", {
           type: "button", class: [d.cheap ? "cheap" : "", d.chosen ? "chosen" : ""].join(" "), title: `${d.day} ${d.month}: ${d.label}`,
           onclick: () => d.chosen || send(`с ${d.day} ${d.month}`) },
           el("span", {}, d.wd), el("b", {}, String(d.day)),
           el("span", { class: "bar", style: `height:${(6 + 22 * (d.price - lo) / Math.max(hi - lo, 1)).toFixed(0)}px` }),
           el("span", { "data-rub-price": d.price }, d.label)))));
     }
-    out.push(el("h2", { class: "section-title" }, p.items.length > 1 ? `${p.items.length} способа поехать` : "Ваша поездка"),
-      el("p", { class: "section-sub" }, `${p.trip.weather ? "Климат — средние за 2022–2025 годы, не прогноз: " + p.trip.weather + ". " : ""}Демо-цены и расписание смоделированы; наличие не проверялось.`),
-      el("div", { class: "cards" }, p.items.map((k, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
+    const packageCards = el("div", { class: "cards" }, p.items.map((k, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
         photo(k.hotel.image, { alt: k.hotel.name, badge: "иллюстрация отеля" }),
         el("div", { class: "kicker" }, el("span", {}, `Вариант ${i + 1}`), i === 0 ? el("b", {}, "Рекомендую") : null),
         el("h3", {}, k.title),
@@ -247,7 +318,10 @@ const views = {
         k.tradeoffs.length ? el("div", {}, el("h4", {}, "Чем жертвуем"), marks("trade", k.tradeoffs.slice(0, 4))) : null,
         el("div", {}, el("h4", {}, "Поездка по часам"), timelineEl(k.timeline)),
         k.checks.some((c) => c.level !== "ok") ? el("div", {}, el("h4", {}, "Обратите внимание"), marks("", k.checks.filter((c) => c.level !== "ok"))) : null,
-        el("div", { class: "actions" }, sayBtn("Выбрать вариант", `беру ${i + 1} вариант`, i === 0 ? "btn accent" : "btn ghost"))))));
+        el("div", { class: "actions" }, sayBtn("Выбрать вариант", `беру ${i + 1} вариант`, i === 0 ? "btn accent" : "btn ghost")))));
+    out.push(el("h2", { class: "section-title" }, p.items.length > 1 ? `${p.items.length} способа поехать` : "Ваша поездка"),
+      el("p", { class: "section-sub" }, `${p.trip.weather ? "Климат — средние за 2022–2025 годы, не прогноз: " + p.trip.weather + ". " : ""}Демо-цены и расписание смоделированы; наличие не проверялось.`),
+      comparePackages(packageCards, p.items));
     return out;
   },
   hotels(p) {
@@ -323,7 +397,7 @@ function addMessage(role, content, meta) {
 }
 function shortReply(text, kind) {
   if (kind === "order") { const lines = text.split("\n"); return [lines[0], lines[lines.length - 1]].join("\n"); }
-  if (!["destinations", "packages", "cart", "hotels"].includes(kind)) return text;
+  if (!["ideas", "destinations", "packages", "cart", "hotels"].includes(kind)) return text;
   const blocks = text.split("\n\n");
   const head = blocks[0].split("\n").filter((l) => !/^\s*(\d+\.|•)\s/.test(l));
   if (blocks.length === 1) {
@@ -340,10 +414,62 @@ function renderStages(stage) {
   const idx = list.findIndex((s) => s.key === stage);
   $("stages").replaceChildren(...list.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : null }, s.title)));
 }
-function renderSuggest(stage) {
-  const items = stage === "start" ? [["Море", "Хочу к морю"], ["Горы", "Хочу в горы"], ["Город", "Хочу в город"]] :
-    (QUICK[stage] || []).map((q) => [q, q]);
-  $("suggest").replaceChildren(...items.map(([label, text]) => el("button", { type: "button", onclick: () => send(text) }, label)));
+function dateControls() {
+  const today = new Date(); today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+  const min = today.toISOString().slice(0, 10);
+  const start = el("input", {type:"date", min, "aria-label":"Дата начала поездки"});
+  const end = el("input", {type:"date", min, "aria-label":"Дата окончания поездки"});
+  const note = el("span", {class:"date-status", role:"status"});
+  start.addEventListener("change", () => { end.min = start.value || min; });
+  // Use the explicit numeric range accepted by the existing dialogue parser;
+  // Intl.DateTimeFormat adds a locale-dependent "г." that can break parsing.
+  const format = (value) => value.split("-").reverse().join(".");
+  return el("details", {class:"quick-dates"}, el("summary", {}, "Выбрать даты"),
+    el("div", {class:"date-fields"}, el("label", {}, "Туда", start), el("label", {}, "Обратно", end),
+      el("button", {type:"button", onclick: () => {
+        if (!start.value || !end.value || end.value <= start.value || start.value < min) {
+          note.textContent = "Выберите даты поездки."; return;
+        }
+        send(`с ${format(start.value)} по ${format(end.value)}`);
+      }}, "Готово"), note));
+}
+function renderSuggest(data) {
+  const stage = typeof data === "string" ? data : data.stage;
+  if (!conversationStarted) {
+    $("suggest").replaceChildren(...(inspiration.starters || []).map(({label,text,sound}) =>
+      el("button", {type:"button", "data-sound":sound, onclick:() => send(text)}, label)));
+    return;
+  }
+  const payload = typeof data === "object" ? data.payload || {} : {};
+  const question = typeof data === "object" ? String(data.reply || "").split("?")[0].toLowerCase() : "";
+  if (payload.kind === "question" && (["when", "dates", "date_from", "date_to"].includes(payload.field) ||
+      (String(data.reply || "").includes("?") && /когда|дат[ыу]|месяц|время года/.test(question)))) {
+    $("suggest").replaceChildren(dateControls(), el("button", {type:"button", onclick:() => send("пока не знаю")}, "Пока не знаю"));
+    return;
+  }
+  if (payload.kind === "question" && (payload.field === "origin" ||
+      (String(data.reply || "").includes("?") && /откуда|город отправления|город вылета/.test(question)))) {
+    $("suggest").replaceChildren(locationChoice()); return;
+  }
+  if (payload.kind === "question" && payload.field === "duration") {
+    const nights = /ноч/i.test(String(data.reply || ""));
+    const choices = nights ? [["3 ночи", "на 3 ночи"], ["7 ночей", "на 7 ночей"]] : [["3 дня", "на 3 дня"], ["7 дней", "на 7 дней"]];
+    $("suggest").replaceChildren(...[...choices, ["Пока не знаю", "пока не знаю"]]
+      .map(([label, text]) => el("button", {type:"button", onclick:() => send(text)}, label)));
+    return;
+  }
+  if (payload.kind === "question" && payload.field === "people") {
+    $("suggest").replaceChildren(...[["1 взрослый", "1 взрослый"], ["2 взрослых", "2 взрослых"], ["Пока не знаю", "пока не знаю"]]
+      .map(([label, text]) => el("button", {type:"button", onclick:() => send(text)}, label)));
+    return;
+  }
+  const supplied = typeof data === "object" && Array.isArray(data.suggestions) ?
+    data.suggestions.filter((text) => typeof text === "string" && !(info?.examples || []).includes(text)) : [];
+  const understood = typeof data === "object" ? data.understood || [] : [];
+  const options = (supplied.length ? supplied : (inspiration.quick?.[stage] || [])).filter((text) =>
+    !(understood.includes("по России") && /только по России/i.test(text)) &&
+    !(understood.includes("за границу") && /за границу/i.test(text)));
+  $("suggest").replaceChildren(...options.slice(0, 3).map((text) => el("button", {type:"button", onclick:() => send(text)}, text)));
 }
 function locationChoice() {
   const result = el("div", { class: "src", role: "status" });
@@ -366,12 +492,11 @@ function locationChoice() {
     }, () => { result.textContent = "Не удалось определить местоположение. Город можно написать вручную."; },
     { timeout: 8000, maximumAge: 300000, enableHighAccuracy: false });
   } }, "Определить город");
-  return el("div", { class: "actions" }, button,
-    el("p", { class: "src" }, "Только с разрешения браузера. Координаты остаются в браузере; город нужно подтвердить."), result);
+  return el("div", { class: "actions" }, button, result);
 }
 function render(data) {
   sessionId = data.session_id;
-  renderStages(data.stage); renderHead(data); renderConditions(data); renderSuggest(data.stage);
+  renderStages(data.stage); renderHead(data); renderConditions(data); renderSuggest(data);
   document.querySelector(".board").classList.toggle("compact", ["plan", "cart", "booked"].includes(data.stage));
   const p = data.payload || {};
   $("map").hidden = p.kind === "order";
@@ -379,10 +504,10 @@ function render(data) {
   if (views[p.kind]) $("view").replaceChildren(...[notice, ...views[p.kind](p)].filter(Boolean));
   else if (p.kind === "greeting") { $("view").replaceChildren(); drawMap({}); }
   else if (p.kind === "question") {
-    $("view").replaceChildren(...[notice, p.field === "origin" ? locationChoice() : null].filter(Boolean));
+    $("view").replaceChildren(...[notice].filter(Boolean));
     if (data.stage !== "destination") drawMap({});
   }
-  decorateDestinations(p);
+  decorateOptions(p);
   preferences.apply();
 }
 async function post(path, body) {
@@ -392,7 +517,8 @@ async function post(path, body) {
 }
 async function send(text) {
   if (busy || !text.trim()) return;
-  busy = true; $("send").disabled = true;
+  if (!conversationStarted) $("view").replaceChildren();
+  conversationStarted = true; $("suggest").replaceChildren(); busy = true; $("send").disabled = true;
   addMessage("user", text);
   const typing = addMessage("bot", el("span", { class: "typing", role: "status", "aria-label": "Агент думает" }, el("i"), el("i"), el("i")));
   try {
@@ -401,24 +527,30 @@ async function send(text) {
     addMessage("bot", shortReply(data.reply, (data.payload || {}).kind));
     render(data);
     const mobile = window.matchMedia("(max-width: 900px)").matches;
-    $("say").textContent = mobile ? shortReply(data.reply, (data.payload || {}).kind) : "";
-    if (data.payload) window.scrollTo({ top: 0, behavior: mobile ? "auto" : "smooth" });
+    $("say").textContent = "";
+    if (mobile) document.querySelector(".chat").scrollIntoView({behavior:"auto", block:"start"});
+    else if (data.payload) window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (e) {
     typing.remove();
     if (!$("text").value) $("text").value = text;
     const error = "Не удалось отправить. Текст сохранён — попробуйте ещё раз.";
     addMessage("bot", error); $("say").textContent = error;
-  } finally { busy = false; $("send").disabled = false; $("text").focus(); }
+  } finally { busy = false; $("send").disabled = false; voice.update(); $("text").focus({preventScroll:true}); }
 }
 function greet() {
-  addMessage("bot", "Привет! Расскажите, какой поездки хочется. Если пока не знаете куда или когда, вместе найдём идеи.");
+  addMessage("bot", "Расскажите, что важно в поездке. Можно начать с места, настроения или бюджета.");
 }
-function start() { $("map").hidden = false; renderStages("start"); renderHead(null); renderConditions(null); renderSaved(); renderSuggest("start"); drawMap({}); greet(); }
-$("ask").addEventListener("submit", (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; send(t); });
+function start() { conversationStarted = false; lastDestination = null; $("map").hidden = false; renderStages("start"); renderHead(null); renderConditions(null); renderSaved(); renderSuggest("start"); renderWelcome(); drawMap({}); greet(); }
+$("ask").addEventListener("submit", (e) => { e.preventDefault(); if (busy) return;
+  if (voice.isActive() || !$("text").value.trim()) { voice.toggle(); return; }
+  const t = $("text").value; $("text").value = ""; voice.clearStatus(); voice.update(); send(t);
+});
 $("reset").addEventListener("click", async () => {
   if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
   sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); $("say").textContent = ""; start();
 });
-Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/land.geojson").then((r) => r.json())])
-  .then(([i, l]) => { info = i; tripMap.setData(i, l); start(); })
+Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/land.geojson").then((r) => r.json()),
+  fetch("/static/img/credits.json").then((r) => r.ok ? r.json() : {}).catch(() => ({})),
+  fetch("/static/inspiration.json").then((r) => r.ok ? r.json() : null).catch(() => null)])
+  .then(([i, l, credits, prompts]) => { info = i; imageCredits = credits; inspiration = prompts || inspiration; tripMap.setData(i, l); start(); })
   .catch(() => addMessage("bot", "Сервер недоступен."));

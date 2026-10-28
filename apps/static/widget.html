@@ -5,15 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Помощник по поездкам</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/fonts/fonts.css">
 <link rel="stylesheet" href="/static/widget.css">
 </head>
 <body>
 <header>О<span>!</span>дин запрос <small> · помощник по поездкам</small></header>
 <main id="log" aria-live="polite"><div class="message">Привет! Расскажите, куда или как хотите отдохнуть. Если пока не знаете — подскажу.</div></main>
 <form id="form">
-  <p class="privacy">Не вводите личные и платёжные данные. Текст может передаваться поставщику модели.</p>
-  <div class="entry"><input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение помощнику"><button class="send" aria-label="Отправить">↑</button></div>
+  <p id="voice-status" class="voice-status" role="status" aria-live="polite" hidden></p>
+  <div class="entry"><input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение помощнику" disabled><button class="send" aria-label="Отправить" disabled>↑</button></div>
 </form>
+<script src="/static/voice-input.js"></script>
 <script src="/static/widget.js"></script>
 </body>
 </html>

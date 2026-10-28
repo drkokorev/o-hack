@@ -15,9 +15,11 @@
     <div class="logo">О<span>!</span>дин запрос</div>
     <ol class="stages" id="stages" aria-label="Этапы поездки"></ol>
     <div class="preferences" aria-label="Настройки">
-      <select id="country" aria-label="Страна" title="Примерная страна; можно изменить"><option value="">Страна</option></select>
-      <select id="language" aria-label="Язык"><option value="ru">Русский</option></select>
+      <svg class="preference-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="currentColor" stroke-width="1.5"/></svg><select id="language" aria-label="Язык"><option value="ru">Русский</option></select>
       <select id="currency" aria-label="Валюта"><option value="RUB">₽ RUB</option><option value="EUR">€ EUR</option><option value="USD">$ USD</option></select>
+      <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true" aria-label="Выключить звуки" title="Звуки интерфейса">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><path d="M4 10v4h3l4 3V7l-4 3H4Zm10-1a4 4 0 0 1 0 6m2-9a8 8 0 0 1 0 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path class="sound-off-line" d="M4 4l16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
     </div>
     <a class="link widget-link" href="/static/widget-demo.html" target="_blank" rel="noopener">Виджет</a>
     <button class="link" id="reset" type="button"><span class="long">Начать </span>заново</button>
@@ -28,18 +30,21 @@
     <section id="head"></section>
     <div class="trip-map" id="map" aria-label="Карта направлений"></div>
     <section id="view"></section>
-    <p class="ip-attribution">Страна по IP: <a href="https://db-ip.com/" target="_blank" rel="noopener">DB-IP</a>.</p>
-    <details class="fine"><summary>Данные и источники</summary><p>Страна по IP определяется приблизительно, по локальной базе <a href="https://db-ip.com/" target="_blank" rel="noopener">DB-IP Lite</a> за октябрь 2026 года. Карта — Natural Earth и открытые снимки; источник каждой точки указан в карточке. Каталог размещения ограничен собранными направлениями. Фото отелей — иллюстрации; цены, оценки, отзывы, расписания и условия поездок — демо, наличие не проверяется. Погода — средние Open-Meteo за 2022–2025 годы. Оплата имитируется.</p><p id="exchange-note"></p></details>
+    <p id="exchange-note" class="exchange-note" hidden></p>
+    <a class="ip-attribution" href="https://db-ip.com/" target="_blank" rel="noopener" aria-label="Источник определения страны: DB-IP">© DB-IP</a>
   </main>
 
   <aside class="chat" aria-label="Разговор с агентом">
-    <div class="chat-heading"><div><strong>Ваша поездка</strong><span>Помощник рядом</span></div><span class="chat-dot" aria-hidden="true"></span></div>
-    <details class="trip-context" id="trip-context"><summary>Условия поездки <span id="conditions-count"></span></summary><div id="conditions"></div><div class="condition-actions" id="condition-actions"></div></details>
-    <details class="saved-places" id="saved-places" hidden><summary>Избранные места <span id="saved-count"></span></summary><div id="saved-list"></div></details>
+    <section class="trip-context" id="trip-context" aria-label="Текущие условия поездки" hidden>
+      <div class="trip-context-head"><strong>Поездка</strong><details class="condition-edit"><summary>Изменить</summary><div class="condition-actions" id="condition-actions"></div></details></div>
+      <p class="condition-change" id="condition-change" role="status" hidden></p>
+      <div id="conditions"></div>
+    </section>
+    <details class="saved-places" id="saved-places" hidden><summary>Избранное <span id="saved-count"></span></summary><div id="saved-list"></div></details>
     <div class="log" id="log" aria-live="polite"></div>
     <div class="suggest" id="suggest"></div>
     <form class="composer" id="ask">
-      <p class="privacy">Не вводите личные и платёжные данные. Текст может передаваться поставщику модели.</p>
+      <p id="voice-status" class="voice-status" role="status" aria-live="polite" hidden></p>
       <div class="field">
         <input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение агенту">
         <button type="submit" id="send" aria-label="Отправить">
@@ -52,6 +57,8 @@
 
 <script src="/static/trip-map.js"></script>
 <script src="/static/preferences.js"></script>
+<script src="/static/voice-input.js"></script>
+<script src="/static/sound.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>
