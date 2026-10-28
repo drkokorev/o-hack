@@ -154,6 +154,21 @@ def hotels_in_destination(dest_id: str, limit: int = 5, path: Path | None = None
     return [dict(row) for row in rows]
 
 
+def search_hotels(dest_id: str, name: str, limit: int = 5, path: Path | None = None) -> list[dict]:
+    """Search the open snapshot by name in the selected destination; no rates or availability."""
+    query = " ".join(name.casefold().split())
+    if dest_id not in {d.id for d in DESTINATIONS} or not 3 <= len(query) <= 100:
+        return []
+    with _connection(path) as db:
+        db.create_function("fold_name", 1, lambda value: " ".join(str(value or "").casefold().split()))
+        rows = db.execute("SELECT p.id,p.name,p.lat,p.lon,p.address,p.website,p.confidence,"
+                          "s.name source_name,s.release source_release FROM point p "
+                          "JOIN sources s ON s.id=p.source WHERE p.kind='hotel' AND p.destination_id=? "
+                          "AND instr(fold_name(p.name), ?) > 0 ORDER BY p.confidence DESC,p.id LIMIT ?",
+                          (dest_id, query, min(max(limit, 1), 20))).fetchall()
+    return [dict(row) for row in rows]
+
+
 def points(kind: str, west: float, south: float, east: float, north: float, cursor: int = 0,
            limit: int = 500, path: Path | None = None, country_code: str | None = None,
            destination_id: str | None = None) -> dict:

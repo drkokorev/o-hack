@@ -1,0 +1,311 @@
+{
+  "today": "2026-10-28",
+  "cases": [
+    {
+      "id": "A01",
+      "group": "Страна и уточнения",
+      "turns": [
+        "Хочу поехать в Турцию"
+      ],
+      "eq": {
+        "country": "Турция",
+        "dest_id": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A02",
+      "group": "Страна и уточнения",
+      "turns": [
+        "Ищу путешествие в Италию"
+      ],
+      "eq": {
+        "country": "Италия",
+        "dest_id": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A03",
+      "group": "Страна и уточнения",
+      "turns": [
+        "Собираюсь в Париж"
+      ],
+      "eq": {
+        "destination": "Париж",
+        "dest_id": "paris"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A04",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Сочи на 4–6 дней"
+      ],
+      "eq": {
+        "trip_days_min": 4,
+        "trip_days_max": 6
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A05",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "В Сочи воздух не выше 28 градусов"
+      ],
+      "eq": {
+        "air_max_temp": 28
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A06",
+      "group": "Бюджет",
+      "turns": [
+        "В Сочи всего 120 тысяч рублей, отель до 7 тысяч рублей за ночь"
+      ],
+      "eq": {
+        "budget_total": 120000,
+        "budget_night": 7000,
+        "budget_per_person": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A07",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "В Сочи возможно полетим самолётом"
+      ],
+      "eq": {
+        "transport": "plane"
+      },
+      "one_of": {},
+      "includes": {
+        "tentative_fields": [
+          "transport"
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A08",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Сочи с ребёнком пяти месяцев"
+      ],
+      "eq": {
+        "children": 1
+      },
+      "one_of": {
+        "children_ages": [
+          null,
+          [],
+          [
+            0
+          ]
+        ]
+      },
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": "Пять месяцев нельзя записывать как пять лет."
+    },
+    {
+      "id": "A09",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "В Казань хочу на автобусе"
+      ],
+      "eq": {
+        "transport": "none"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": "Недоступный в прототипе транспорт нельзя молча заменить самолётом или поездом."
+    },
+    {
+      "id": "A10",
+      "group": "Реальные отели",
+      "turns": [
+        "В Сочи",
+        "Найди отель Campanile Taverny"
+      ],
+      "eq": {
+        "dest_id": "sochi",
+        "selected_real_hotel": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [
+        "не наш",
+        "нет",
+        "не найден"
+      ],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A11",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Сочи недорогой отель, два отдельных номера"
+      ],
+      "eq": {
+        "destination": "Сочи",
+        "economy": true,
+        "rooms": 2
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A12",
+      "group": "Страна и уточнения",
+      "turns": [
+        "Хочу безвизовую поездку в начале марта 2027, кроме Египта"
+      ],
+      "eq": {
+        "month": 3,
+        "year": 2027,
+        "month_part": "early",
+        "visa_free_requested": true
+      },
+      "one_of": {},
+      "includes": {
+        "excluded_countries": [
+          "Египет"
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A13",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "Я боюсь летать, хотелось бы недолго добираться до Сочи"
+      ],
+      "eq": {
+        "flight_concern": true,
+        "prefer_short_travel": true
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A14",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Казань с детьми, сколько их будет, пока неизвестно"
+      ],
+      "eq": {
+        "children_unknown": true,
+        "children": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "A15",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "В Анталию, температура моря от 23 до 27 градусов"
+      ],
+      "eq": {
+        "sea_min_temp": 23,
+        "sea_max_temp": 27
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    }
+  ]
+}

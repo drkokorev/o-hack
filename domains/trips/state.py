@@ -74,6 +74,10 @@ class TripState(TripParams):
     hotel_id: str | None = None          # закреплённый пользователем отель
     showing: str | None = None           # что показано для выбора по номеру: destinations | packages | hotels
     hotel_ids_shown: list[str] = Field(default_factory=list)
+    origin_inferred: bool = False  # город по IP — предположение, которое можно изменить
+    ip_city_hint: str | None = None  # город вне списка доступных отправлений
+    real_hotels_shown: list[dict] = Field(default_factory=list)  # источник и ID именно показанных записей
+    selected_real_hotel: dict | None = None  # выбранная запись открытого каталога
     assumptions: list[str] = Field(default_factory=list)     # что агент предположил сам
     last_plan: dict | None = None        # краткая сводка прошлого плана — для «что изменилось»
     order: dict | None = None            # оформленный заказ
@@ -112,6 +116,7 @@ class TripUpdate(TripParams):
     shift_days: int | None = Field(None, description="Сдвиг дат: +2 «на два дня позже», -1 «на день раньше»")
     show_hotels: bool | None = Field(None, description="true, если просит другие отели")
     show_real_hotels: bool | None = Field(None, description="true, если просит реальные объекты без модельных цен и условий; определяется правилами")
+    search_real_hotels: str | None = Field(None, description="Название отеля для поиска в открытом каталоге; определяется правилами")
     wants_ideas: bool | None = Field(None, description="true, если хочет поехать, но не знает куда («хочу отдохнуть», "
                                      "«куда поехать?», «посоветуй»)")
     more: bool | None = Field(None, description="true, если просит другие варианты направлений («покажи ещё»)")

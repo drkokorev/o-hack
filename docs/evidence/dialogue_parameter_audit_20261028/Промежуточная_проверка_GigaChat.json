@@ -1,0 +1,444 @@
+{
+  "model": "GigaChat-2-Max",
+  "fixed_today": "2026-10-28",
+  "complete": true,
+  "passed": 21,
+  "total": 22,
+  "results": [
+    {
+      "id": "March range",
+      "text": "с 3 марта по 9 в Стамбул на двоих с бюджетом 120 тысяч",
+      "expected": {
+        "destination": "istanbul",
+        "date_from": "2027-03-03",
+        "date_to": "2027-03-09",
+        "party_size": 2,
+        "budget_total": 120000
+      },
+      "actual": {
+        "destination": "Стамбул",
+        "date_from": "2027-03-03",
+        "date_to": "2027-03-09",
+        "party_size": 2,
+        "budget_total": 120000
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 2559
+    },
+    {
+      "id": "boyfriend train",
+      "text": "в Казань с парнем на 4 ночи на поезде",
+      "expected": {
+        "destination": "kazan",
+        "party_size": 2,
+        "nights": 4,
+        "transport": "train"
+      },
+      "actual": {
+        "destination": "Казань",
+        "nights": 4,
+        "party_size": 2,
+        "transport": "train"
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1083
+    },
+    {
+      "id": "end-year",
+      "text": "в Сочи с 20 февраля по 25 2028 года",
+      "expected": {
+        "destination": "sochi",
+        "date_from": "2028-02-20",
+        "date_to": "2028-02-25"
+      },
+      "actual": {
+        "destination": "Сочи",
+        "date_from": "2028-02-20",
+        "date_to": "2028-02-25",
+        "budget_total": 252028
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1084
+    },
+    {
+      "id": "explicit range",
+      "text": "хочу с 1 по 5 апреля 2027 вдвоём в Сочи",
+      "expected": {
+        "destination": "sochi",
+        "date_from": "2027-04-01",
+        "date_to": "2027-04-05",
+        "party_size": 2
+      },
+      "actual": {
+        "destination": "Сочи",
+        "date_from": "2027-04-01",
+        "date_to": "2027-04-05",
+        "party_size": 2
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1289
+    },
+    {
+      "id": "two weeks",
+      "text": "через 2 недели в Сочи",
+      "expected": {
+        "destination": "sochi",
+        "date_from": "2026-11-11"
+      },
+      "actual": {
+        "destination": "Сочи",
+        "date_from": "2026-11-11"
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 747
+    },
+    {
+      "id": "train budget",
+      "text": "ищу в Сочи бюджет до 80 тысяч, вдвоём, без перелёта",
+      "expected": {
+        "destination": "sochi",
+        "party_size": 2,
+        "budget_total": 80000,
+        "transport": "train"
+      },
+      "actual": {
+        "destination": "Сочи",
+        "party_size": 2,
+        "budget_total": 80000,
+        "transport": "train"
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 827
+    },
+    {
+      "id": "maybe",
+      "text": "может с девушкой в Казань",
+      "expected": {
+        "destination": "kazan",
+        "party_size": 2,
+        "tentative_fields": [
+          "party_size"
+        ]
+      },
+      "actual": {
+        "destination": "Казань",
+        "party_size": 2,
+        "tentative_fields": [
+          "party_size"
+        ]
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1734
+    },
+    {
+      "id": "for two",
+      "text": "в Париж для двоих до 150 тысяч рублей",
+      "expected": {
+        "destination": "paris",
+        "party_size": 2,
+        "budget_total": 150000
+      },
+      "actual": {
+        "destination": "Париж",
+        "party_size": 2,
+        "budget_total": 150000
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1064
+    },
+    {
+      "id": "wife",
+      "text": "в Париж с женой с 1 декабря до 7, бюджет на двоих 200к",
+      "expected": {
+        "destination": "paris",
+        "party_size": 2,
+        "date_from": "2026-12-01",
+        "date_to": "2026-12-07",
+        "budget_total": 200000
+      },
+      "actual": {
+        "destination": "Париж",
+        "date_from": "2026-12-01",
+        "date_to": "2026-12-07",
+        "party_size": 2,
+        "budget_total": 200000
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1956
+    },
+    {
+      "id": "warm abroad",
+      "text": "куда-нибудь к теплому морю за границу на неделю, бюджет около 150 тысяч",
+      "expected": {
+        "trip_types": [
+          "sea",
+          "warm"
+        ],
+        "abroad": true,
+        "nights": 7,
+        "budget_total": 150000
+      },
+      "actual": {
+        "trip_types": [
+          "sea",
+          "warm"
+        ],
+        "nights": 7,
+        "budget_total": 150000,
+        "abroad": true,
+        "wants_ideas": true
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1717
+    },
+    {
+      "id": "sun and budget",
+      "text": "хочу за границу, чтобы было солнечно, но не дороже 180 тысяч на двоих",
+      "expected": {
+        "trip_types": [
+          "warm"
+        ],
+        "abroad": true,
+        "party_size": 2,
+        "budget_total": 180000
+      },
+      "actual": {
+        "trip_types": [
+          "warm"
+        ],
+        "party_size": 2,
+        "budget_total": 180000,
+        "abroad": true
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 890
+    },
+    {
+      "id": "direct flight",
+      "text": "полетим из Москвы в Париж, только прямой перелет",
+      "expected": {
+        "origin": "Москва",
+        "destination": "paris",
+        "transport": "plane",
+        "direct_only": true
+      },
+      "actual": {
+        "origin": "Москва",
+        "destination": "Париж",
+        "transport": "plane",
+        "direct_only": true
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 995
+    },
+    {
+      "id": "end month",
+      "text": "давай на море в конце ноября, недорого",
+      "expected": {
+        "trip_types": [
+          "sea"
+        ],
+        "month": 11,
+        "month_part": "late",
+        "economy": true
+      },
+      "actual": {
+        "trip_types": [
+          "sea"
+        ],
+        "month": 11,
+        "month_part": "late",
+        "economy": true
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1844
+    },
+    {
+      "id": "nightly",
+      "text": "до 9 тысяч в сутки на отель",
+      "expected": {
+        "budget_night": 9000
+      },
+      "actual": {
+        "budget_night": 9000,
+        "unknown_place": "сутки"
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 698
+    },
+    {
+      "id": "hotel",
+      "text": "нужен отель с завтраком и бассейном, двое взрослых",
+      "expected": {
+        "lodging": "hotel",
+        "meal": "breakfast",
+        "hotel_wishes": [
+          "pool"
+        ],
+        "adults": 2
+      },
+      "actual": {
+        "adults": 2,
+        "lodging": "hotel",
+        "meal": "breakfast",
+        "hotel_wishes": [
+          "pool"
+        ]
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 1152
+    },
+    {
+      "id": "negation",
+      "text": "в Париж не с девушкой",
+      "expected": {
+        "destination": "paris",
+        "party_size": null
+      },
+      "actual": {
+        "destination": "Париж"
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 542
+    },
+    {
+      "id": "user",
+      "text": "в париж с 1 декабря по 7 с евушкой за 200 тысяч рублей на самолете",
+      "expected": {
+        "destination": "paris",
+        "date_from": "2026-12-01",
+        "date_to": "2026-12-07",
+        "party_size": 2,
+        "budget_total": 200000,
+        "transport": "plane"
+      },
+      "actual": {
+        "destination": "paris",
+        "date_from": "2026-12-01",
+        "date_to": "2026-12-07",
+        "party_size": 2,
+        "budget_total": 200000,
+        "transport": "plane"
+      },
+      "differences": {},
+      "nlu": "rules",
+      "passed": false,
+      "ms": 208
+    },
+    {
+      "id": "month",
+      "text": "в Париж в декабре",
+      "expected": {
+        "destination": "paris",
+        "month": 12,
+        "date_from": null
+      },
+      "actual": {
+        "destination": "Париж",
+        "month": 12
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 759
+    },
+    {
+      "id": "relative week",
+      "text": "в Париж через неделю",
+      "expected": {
+        "destination": "paris",
+        "date_from": "2026-11-04",
+        "date_to": null
+      },
+      "actual": {
+        "destination": "Париж",
+        "date_from": "2026-11-04"
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 825
+    },
+    {
+      "id": "pet",
+      "text": "с собакой без детей в Сочи",
+      "expected": {
+        "destination": "sochi",
+        "pets": true,
+        "children": 0
+      },
+      "actual": {
+        "destination": "Сочи",
+        "children": 0,
+        "children_unknown": false,
+        "pets": true
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 713
+    },
+    {
+      "id": "nightly budget",
+      "text": "на отель до 7 тысяч за ночь",
+      "expected": {
+        "budget_night": 7000
+      },
+      "actual": {
+        "budget_night": 7000
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 8731
+    },
+    {
+      "id": "unsure",
+      "text": "не знаю куда поехать",
+      "expected": {
+        "wants_ideas": true,
+        "unsure": true
+      },
+      "actual": {
+        "wants_ideas": true,
+        "unsure": true
+      },
+      "differences": {},
+      "nlu": "llm+rules",
+      "passed": true,
+      "ms": 514
+    }
+  ]
+}

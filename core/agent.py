@@ -63,6 +63,7 @@ class Session:
     last_notes: list[str] = field(default_factory=list)  # что отброшено из ответа LLM и почему
     ui_previous: Any = field(default=None, repr=False, compare=False)
     ui_revision: int = 0
+    location_checked: bool = False  # один приблизительный результат на сессию, без хранения IP
     lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
 
 
@@ -151,7 +152,10 @@ class Agent:
             # conversation, skip a pending question, or modify an order.
             previous = session.last
             question = isinstance(previous.payload, dict) and previous.payload.get("kind") == "question"
-            step = Step("Не понял сообщение. " + (previous.reply if question else
+            previous_reply = previous.reply
+            while previous_reply.startswith("Не понял сообщение. "):
+                previous_reply = previous_reply.removeprefix("Не понял сообщение. ")
+            step = Step("Не понял сообщение. " + (previous_reply if question else
                         "Расскажите о поездке или уточните, что хотите изменить."), payload=previous.payload)
         else:
             session.state = self.domain.merge(session.state, update)
