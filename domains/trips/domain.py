@@ -19,6 +19,7 @@ from core.ru import MONTHS_GEN, WEEKDAYS, WEEKDAYS_SHORT, fmt_money, plural
 
 from .climate import SOURCE as CLIMATE_SOURCE
 from .climate import climate
+from . import guides
 from .geo import BY_ID, DESTINATIONS, ORIGIN_BY_NAME, TAG_NAMES, Destination, destination_has_tag
 from .dialogue import QUESTION_INPUT_FIELDS, ideas, missing_for_trip
 from .inspire import Suggestion, suggest
@@ -91,13 +92,39 @@ def _dates(d1: date, d2: date) -> str:
     return f"{left}–{d2.day} {MONTHS_GEN[d2.month - 1]} {d2.year} ({n} {plural(n, 'ночь', 'ночи', 'ночей')})"
 
 
+
+# Вопросы о месте отвечаем по путеводителю; остальным темам путеводитель даёт контекст для LLM
+NO_ANSWER = "Пока не могу надёжно ответить на этот вопрос."
+PLACE_TOPICS = frozenset({"sights", "areas", "food", "safety", "local_transport"})
+GUIDE_QUERY = {"sights": "достопримечательности что посмотреть музеи", "areas": "районы где жить остановиться",
+               "food": "кухня еда рестораны что попробовать", "safety": "безопасность опасность",
+               "local_transport": "транспорт передвижение метро автобус такси",
+               "visa": "въезд виза документы граница", "weather": "климат погода сезон когда ехать",
+               "transfer": "аэропорт как добраться трансфер такси", "travel": "как добраться аэропорт поезд"}
+
+
+def _source(s: "guides.Snippet") -> dict:
+    return {"text": s.text[:700], "cite": s.cite(), "url": s.url}
+
+
+def _excerpt(s: "guides.Snippet", limit: int = 360) -> str:
+    """Первые предложения фрагмента — ответ без LLM, с указанием источника."""
+    text = s.text
+    if len(text) > limit and text.find(":", 0, limit) > limit // 2:  # «…следующие районы:» — без списка смысла нет
+        limit = 640
+    if len(text) > limit:
+        cut = max(text.rfind(". ", 0, limit), text.rfind("! ", 0, limit), text.rfind("? ", 0, limit))
+        text = text[: cut + 1] if cut > 80 else text[:limit].rsplit(" ", 1)[0] + "…"
+    lang = "" if s.lang == "ru" else " (статья на английском)"
+    return f"По путеводителю {guides.SOURCE} («{s.title}»{lang}): {text}"
+
 class TripsDomain:
     name = "trips"
     state_model = TripState
     update_model = TripUpdate
-    # Free-form model output is not source-verified and may introduce facts
-    # or other people's data. Travel replies use deterministic sourced text.
-    allow_nlg = False
+    # Ответ пишет модель по фактам шага и фрагментам путеводителей; core/answer.py проверяет его
+    # по контексту (числа, ссылки, контакты, метки, обещания) и при сомнении оставляет шаблон.
+    allow_nlg = True
     retain_history = False  # extraction uses structured state and the current turn
     off_topic_reply = "Я помогаю спланировать и купить поездку. Куда и когда хотите поехать?"
 
@@ -395,9 +422,79 @@ class TripsDomain:
     # ---------- решение ----------
 
     def step(self, state: TripState) -> Step:
+        result = self._step(state)
+        if state.answered_question and state.dest_id:
+            # ответ на вопрос мог быть встроен в другой шаг — источники по теме вопроса прикладываем здесь
+            topical = self._topic_sources(state.dest_id, state.answered_question, state.asked_text)
+            result.sources = (topical + [x for x in result.sources if x not in topical])[:4]
+        if not result.sources:
+            result.sources = self._context_sources(state, result)
+        return result
+
+    # ---------- путеводители (RAG) ----------
+
+    def _answer(self, state: TripState, trip: Trip, packages: list[Package], topic: str,
+                *, followup: bool = True) -> Step:
+        return self._with_guide(self._answer_core(state, trip, packages, topic, followup=followup),
+                                trip.dest.id, topic, state.asked_text)
+
+    def _answer_incomplete(self, state: TripState, topic: str, *, followup: bool = True) -> Step:
+        return self._with_guide(self._answer_incomplete_core(state, topic, followup=followup), state.dest_id, topic,
+                                state.asked_text)
+
+    @staticmethod
+    def note_text(state: TripState, text: str) -> None:
+        state.asked_text = text[:300]
+
+    @staticmethod
+    def _topic_found(dest_id: str | None, topic: str, asked: str | None = None) -> list[tuple[str, list]]:
+        out = []
+        for item in (t for t in topic.split("|") if t in GUIDE_QUERY):
+            query = GUIDE_QUERY[item] + " " + (asked or "")
+            found = guides.search(query, dest=dest_id, topic=item, k=4) if dest_id else []
+            # Только профильные разделы: «в районе улицы…» из «Безопасности» — не ответ про районы,
+            # «про машину» для визы только запутает модель
+            wanted = set(guides.TOPIC_TAGS.get(item, ()))
+            out.append((item, [s for s in found if s.tag in wanted]))
+        return out
+
+    def _topic_sources(self, dest_id: str | None, topic: str, asked: str | None = None) -> list[dict]:
+        return [_source(s) for _, found in self._topic_found(dest_id, topic, asked) for s in found][:4]
+
+    def _with_guide(self, step: Step, dest_id: str | None, topic: str, asked: str | None = None) -> Step:
+        """Вопросы о месте («что посмотреть», «какой район») — по путеводителю; к остальным — источники для LLM."""
+        excerpts = []
+        for item, found in self._topic_found(dest_id, topic, asked):
+            if found and len(found[0].text) < 220 and len(found) > 1 and found[1].section == found[0].section:
+                # короткое «удобно выделить районы:» без следующего фрагмента бессмысленно — склеиваем
+                found[0] = replace(found[0], text=found[0].text + " " + found[1].text)
+            if item in PLACE_TOPICS:
+                excerpts.append(_excerpt(found[0]) if found else
+                                ("В путеводителе по этому направлению ответа не нашёл." if dest_id else
+                                 "Назовите направление — расскажу по путеводителю."))
+        if excerpts and NO_ANSWER in step.reply:
+            step.reply = step.reply.replace(NO_ANSWER, " ".join(excerpts), 1)
+        step.sources = (step.sources + self._topic_sources(dest_id, topic, asked))[:4]
+        return step
+
+    @staticmethod
+    def _context_sources(state: TripState, step: Step) -> list[dict]:
+        """Идеи и варианты: короткое «о месте» из путеводителя, чтобы модель могла рассказать живее."""
+        payload = step.payload if isinstance(step.payload, dict) else {}
+        if payload.get("kind") == "destinations":
+            ids = [item.get("id") for item in payload.get("items", []) if isinstance(item, dict)][:3]
+        elif payload.get("kind") == "packages" and state.dest_id:
+            ids = [state.dest_id]
+        else:
+            return []
+        return [_source(s) for s in (guides.overview(i) for i in ids if i) if s]
+
+
+    def _step(self, state: TripState) -> Step:
         act: dict = state.act or {}
         changed = state.params_changed
         state.act, state.params_changed = {}, False
+        state.answered_question = act.get("question")
         today = self.today()
         notes: list[str] = []
         if act.get("ask_trip_choice"):
@@ -1279,7 +1376,7 @@ class TripsDomain:
         return self._order_step(state, "Демо-заказ сохранён. Могу показать перенос дат и отмену; "
                                        "реальных бронирований и уведомлений нет.")
 
-    def _answer_incomplete(self, state: TripState, topic: str, *, followup: bool = True) -> Step:
+    def _answer_incomplete_core(self, state: TripState, topic: str, *, followup: bool = True) -> Step:
         """Answer an interruption with known facts and keep one useful next question."""
         dest = BY_ID.get(state.dest_id) if state.dest_id else None
         month = state.date_from.month if state.date_from else state.month
@@ -1329,7 +1426,7 @@ class TripsDomain:
             return Step(f"{text} {question}", payload={"kind": "question", "field": field})
         return Step(text)
 
-    def _answer(self, state: TripState, trip: Trip, packages: list[Package], topic: str,
+    def _answer_core(self, state: TripState, trip: Trip, packages: list[Package], topic: str,
                 *, followup: bool = True) -> Step:
         """Ответ на вопрос по выбранной поездке — без смены этапа."""
         selected = next((p for p in packages if p.key == state.package), None)

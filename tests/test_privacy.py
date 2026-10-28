@@ -102,9 +102,11 @@ def test_chat_response_must_not_be_stored_by_intermediary_cache():
 
 
 def test_travel_reply_does_not_use_unverified_free_form_model_output():
-    llm = FakeLLM({"destination": "Казань"}, "Чужой непроверенный текст")
+    # Модель пишет ответ, но текст без вариантов и цен из фактов не проходит проверку — остаётся шаблон
+    llm = FakeLLM({"destination": "Казань"}, "Чужой непроверенный текст", "Опять чужой текст")
     today = date(2026, 10, 27)
     agent = Agent(TripsDomain(today=lambda: today), llm, today=lambda: today, nlg=True)
-    response = agent.handle(agent.new_session(), "Из Москвы в Казань с 3 по 6 июня 2027 двое взрослых")
-    assert response.payload["kind"] == "packages" and len(llm.calls) == 1
-    assert "Чужой непроверенный текст" not in response.reply
+    session = agent.new_session()
+    response = agent.handle(session, "Из Москвы в Казань с 3 по 6 июня 2027 двое взрослых")
+    assert response.payload["kind"] == "packages" and len(llm.calls) == 3
+    assert "Чужой непроверенный текст" not in response.reply and session.last_answer_by == "template"

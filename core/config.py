@@ -67,7 +67,7 @@ def get_settings() -> Settings:
         llm_json_mode=env("LLM_JSON_MODE", "0" if gigachat else "1") == "1",
         llm_schema_mode=env("LLM_SCHEMA_MODE", "0") == "1",
         llm_timeout=float(env("LLM_TIMEOUT", "30")),
-        llm_nlg=env("LLM_NLG", "0") == "1",
+        llm_nlg=env("LLM_NLG", "1") == "1",  # ответы пишет LLM по фактам и RAG (с проверкой); 0 — только шаблоны
         llm_reasoning_effort=env("LLM_REASONING_EFFORT", "low"),
         gigachat_auth_key=env("GIGACHAT_AUTH_KEY", ""),
         gigachat_scope=env("GIGACHAT_SCOPE", "GIGACHAT_API_PERS"),

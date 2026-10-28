@@ -92,6 +92,8 @@ class TripState(TripParams):
     place_country: str | None = None                         # уточнённая страна для неоднозначного названия
     unavailable_origin: str | None = None                    # указанный город отправления отсутствует в демо
     pending_question: str | None = None                      # какой недостающий параметр уточняем
+    answered_question: str | None = None                     # на какой вопрос ответил последний шаг — для RAG
+    asked_text: str | None = None                            # замаскированная последняя реплика — запрос к RAG
     pending_trip_candidate: dict | None = None                # новое намерение до выбора: новая поездка или изменение
     group_conflict: bool = False                              # состав противоречит названному общему числу
     skipped_questions: list[str] = Field(default_factory=list)  # отложенные пользователем уточнения
@@ -133,6 +135,7 @@ class TripUpdate(TripParams):
     add_adults: int | None = Field(None, description="Сколько взрослых добавить («ещё один взрослый» → 1)")
     hesitate: bool | None = Field(None, description="true, если сомневается и хочет подумать («давай подумаем», «подожди»)")
     question: str | None = Field(None, description="О чём спрашивает: location | visa | cancellation | meal | baggage | weather | "
-                                 "travel | transfer | pets | amenities:<коды> — если спрашивает, а не меняет условия")
+                                 "travel | transfer | pets | sights | areas | food | safety | local_transport | "
+                                 "amenities:<коды> — если спрашивает, а не меняет условия")
     after_sale: str | None = Field(None, description="После покупки: early_checkin | late_checkout | change_dates | "
                                    "cancel (просит отменить) | cancel_info (спрашивает об условиях) | reminder | transfer")

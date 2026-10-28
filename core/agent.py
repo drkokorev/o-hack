@@ -13,8 +13,9 @@ from pydantic import BaseModel
 
 from .guard import (MAX_INPUT_CHARS, contains_unresolved_sensitive_data, looks_like_injection,
                     mask_basic_data, mask_sensitive_data, sanitize)
+from .answer import compose
 from .llm import LLM, Message, extract, strip_think
-from .privacy import PrivacyFilteredLLM
+from .privacy import PrivacyFilteredLLM, Vault
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class Step:
     facts: str = ""       # факты для NLG-перефразирования; пусто — не перефразировать
     payload: Any = None   # данные для UI (карточки отелей)
     done: bool = False    # сценарий завершён (например, запись создана)
+    sources: list[dict] = field(default_factory=list)  # фрагменты базы знаний (RAG) для ответа: text, cite, url
 
 
 class Domain(Protocol):
@@ -64,6 +66,8 @@ class Session:
     ui_previous: Any = field(default=None, repr=False, compare=False)
     ui_revision: int = 0
     location_checked: bool = False  # один приблизительный результат на сессию, без хранения IP
+    vault: Vault = field(default_factory=Vault, repr=False, compare=False)  # метки ↔ личные данные, только в памяти
+    last_answer_by: str = ""  # кто написал последний ответ: llm (прошёл проверку) | template
     lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
 
 
@@ -74,10 +78,10 @@ NLG_SYSTEM = (
 )
 
 PRIVACY_NOTICE = "Обнаруженные личные данные не использую для подбора. "
-_PRIVACY_PLACEHOLDER = re.compile(r"\[(?:имя|почта|телефон|контакт|номер карты|счёт|паспорт|документ|дата рождения|секрет|адрес|адрес сети|номер клиента|номер брони|сведения о здоровье)\]")
+_PRIVACY_PLACEHOLDER = re.compile(r"\[(?:имя|почта|телефон|контакт|номер карты|счёт|паспорт|документ|дата рождения|секрет|адрес|адрес сети|номер клиента|номер брони|сведения о здоровье)(?:_\d+)?\]")
 _PRIVACY_FILLER = re.compile(
     r"\b(?:мой|моя|моё|мое|наш|наша|телефон|номер|контакт|почта|паспорт|карта|"
-    r"адрес|сведения|отправьте|отправить|пожалуйста|мне|на|для|это|вот)\b", re.IGNORECASE
+    r"адрес|сведения|отправьте|отправить|пожалуйста|мне|на|для|это|вот|меня|зовут|я|фио|фамилия|имя)\b", re.IGNORECASE
 )
 
 
@@ -114,14 +118,14 @@ class Agent:
             return Step(f"Сообщение слишком длинное. Сократите его до {MAX_INPUT_CHARS} символов и отправьте снова.")
         privacy_unavailable = False
         try:
-            text, masked = mask_sensitive_data(text, getattr(self.domain, "preserve_place", None))
+            text, masked = mask_sensitive_data(text, getattr(self.domain, "preserve_place", None), session.vault)
         except Exception as err:
             log.warning("Не удалось обработать сообщение для защиты данных (%s)", type(err).__name__)
             # If the full local detector fails, use rules only. Never forward
             # the uninspected text to the model as a fallback.
             privacy_unavailable = True
             try:
-                text, masked = mask_basic_data(text)
+                text, masked = mask_basic_data(text, session.vault)
             except Exception:
                 session.last_nlu, session.last_notes = "none", []
                 return Step("Не удалось обработать сообщение. Попробуйте ещё раз.")
@@ -161,11 +165,15 @@ class Agent:
             # An exact, server-validated map selection is an action even when
             # the already selected city adds no new natural-language fields.
             session.state = self.domain.merge(session.state, update)
+            note_text = getattr(self.domain, "note_text", None)
+            if note_text is not None:  # домену — замаскированный текст реплики, например для поиска по базе знаний
+                note_text(session.state, text)
             if after_merge is not None:
                 after_merge(session.state)
             step = self.domain.step(session.state)
-            if not (privacy_unavailable or unresolved) and self.nlg and step.facts and getattr(self.domain, "allow_nlg", True):
-                step.reply = self._rephrase(step)
+            session.last_answer_by = "template"
+            if not (privacy_unavailable or unresolved) and self.nlg and getattr(self.domain, "allow_nlg", True):
+                step = self._compose(session, text, step)
         if self.history_messages > 0 and getattr(self.domain, "retain_history", True):
             session.history += [
                 {"role": "user", "content": text},
@@ -182,7 +190,9 @@ class Agent:
             notice += "Сейчас использую локальный разбор; могу уточнить детали поездки. "
         elif unresolved:
             notice += "Для защиты данных обработаю это сообщение локально; могу уточнить детали поездки. "
-        return replace(step, reply=notice + step.reply) if notice else step
+        # Имена возвращаются только в показ пользователю; в истории и у модели остаются метки
+        reply = session.vault.restore(notice + step.reply)
+        return step if reply == step.reply else replace(step, reply=reply)
 
     def _understand(self, session: Session, text: str, *, use_llm: bool = True) -> tuple[BaseModel, str]:
         """LLM — основной путь; домен сверяет её ответ с текстом и правилами, правила заменяют её при сбое."""
@@ -210,6 +220,21 @@ class Agent:
         if by_rules is not None and by_rules.model_dump(exclude_none=True):
             return by_rules, "rules"
         return self.domain.update_model(), "none"
+
+    def _compose(self, session: Session, text: str, step: Step) -> Step:
+        """Ответ пишет LLM по фактам шага и фрагментам RAG; не прошёл проверку — остаётся шаблон."""
+        if self.llm is None or not step.reply:
+            return step
+        known = {token for token in re.findall(r"\[[а-яё ]+_\d+\]", text) if session.vault.known(token)}
+        result = compose(self.llm, text, step.facts or step.reply, step.reply, step.sources, known)
+        session.last_answer_by = result.by
+        if result.problems:
+            session.last_notes = session.last_notes + ["ответ: " + "; ".join(result.problems)]
+        if result.by != "llm":
+            return step
+        cites = list(dict.fromkeys(s["cite"] for s in step.sources if s.get("cite")))
+        reply = result.text + ("\n\nИсточник: " + "; ".join(cites) + " (CC BY-SA)" if cites else "")
+        return replace(step, reply=reply)
 
     def _rephrase(self, step: Step) -> str:
         if self.llm is None:
