@@ -19,7 +19,7 @@ from core.ru import MONTHS_GEN, WEEKDAYS, WEEKDAYS_SHORT, fmt_money, plural
 
 from .climate import SOURCE as CLIMATE_SOURCE
 from .climate import climate
-from . import guides
+from . import guides, landmarks
 from .geo import BY_ID, DESTINATIONS, ORIGIN_BY_NAME, TAG_NAMES, Destination, destination_has_tag
 from .dialogue import QUESTION_INPUT_FIELDS, idea_places, ideas, missing_for_trip
 from .inspire import Suggestion, suggest
@@ -130,6 +130,10 @@ class TripsDomain:
 
     def __init__(self, today: Callable[[], date] = date.today):
         self.today = today
+        self.llm = None  # модель для определения достопримечательностей; подключает Agent
+
+    def attach_llm(self, llm) -> None:
+        self.llm = llm
 
     @staticmethod
     def preserve_place(text: str, start: int, end: int) -> bool:
@@ -320,6 +324,9 @@ class TripsDomain:
         elif "origin" in data:
             changes["unavailable_origin"] = None
             changes["origin_inferred"] = False
+        landmark = update.landmark
+        if landmark and not data.get("destination") and not state.dest_id:
+            data["destination"] = landmark  # «парковка Дайкоку» — определим город в step(), с проверкой
         if "destination" in data:
             dest_id = data["destination"] if data["destination"] in BY_ID else find_destination(norm(data["destination"]))
             changes["dest_id"] = dest_id
@@ -671,6 +678,14 @@ class TripsDomain:
                 state.stage, state.showing = "destination", "destinations"
                 return Step("Вернулись к направлениям. Какое смотрим?", payload=state.last_view)
 
+        if state.destination and not state.dest_id and self.llm is not None and not act.get("more"):
+            # «Эйфелева башня», «парковка Дайкоку»: где это — спрашиваем модель, проверяем по базе городов
+            if (place := landmarks.resolve(self.llm, state.destination)) is not None:
+                if place.dest is None:
+                    state.stage, state.showing, state.destination = "destination", None, None
+                    return self._prefix(Step(place.note(), payload={"kind": "question"}), notes)
+                notes.append(place.note())
+                state.dest_id, state.destination = place.dest.id, place.dest.name
         if state.destination and not state.dest_id:
             unknown = state.destination
             state.stage, state.showing = "destination", None

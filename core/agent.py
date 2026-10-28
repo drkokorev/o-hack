@@ -103,6 +103,8 @@ class Agent:
     ):
         self.domain = domain
         self.llm = PrivacyFilteredLLM(llm, getattr(domain, "preserve_place", None)) if llm else None
+        if hasattr(domain, "attach_llm"):
+            domain.attach_llm(self.llm)  # домен может спросить модель сам (например, где достопримечательность)
         self.nlg = nlg
         self.today = today
         self.history_messages = history_messages

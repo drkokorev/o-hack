@@ -167,6 +167,14 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         if not rules.date_from:
             data["date_from"] = data["date_to"] = None
 
+    if data.get("landmark"):
+        words = [w for w in re.findall(r"[а-яёa-z]{3,}", norm(data["landmark"]))]
+        if not words or not any(w[:4] in t for w in words):
+            notes.append(f"landmark={data['landmark']!r}: нет в тексте")
+            data["landmark"] = None
+        elif data.get("destination") and not rules.destination and norm(data["destination"])[:4] not in t:
+            data["destination"] = None  # город по достопримечательности определяем отдельно и с проверкой
+
     if data.get("pick_name") and norm(data["pick_name"])[:4] not in t:
         notes.append(f"pick_name={data['pick_name']!r}: нет в тексте")
         data["pick_name"] = None

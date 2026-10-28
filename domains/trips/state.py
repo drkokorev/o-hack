@@ -106,6 +106,9 @@ class TripState(TripParams):
 
 
 class TripUpdate(TripParams):
+    landmark: str | None = Field(None, description="Достопримечательность, парк, музей, улица, объект, если назван он, "
+                                 "а не город — дословно, как в реплике («Эйфелева башня», «парковка Дайкоку»). "
+                                 "Город за него не подставляй")
     new_search: bool | None = Field(None, description="true, если пользователь начинает поиск заново")
     needs_trip_choice: bool | None = Field(None, description="Новое намерение может относиться к новой поездке; определяется правилами")
     resolve_trip_choice: str | None = Field(None, description="Выбор при уточнении: new или edit; определяется правилами")

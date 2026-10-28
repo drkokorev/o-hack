@@ -154,3 +154,34 @@ def test_markdown_is_removed_and_demo_marker_is_required():
     assert plain("**Перелёты**\n### Итог\n* пункт") == "Перелёты\nИтог\n— пункт"
     facts = "Это демонстрационные предложения. Прямых рейсов в демо нет. Какой вариант берём?"
     assert any("демонстрац" in p for p in verify("Прямых рейсов нет. Какой вариант берём?", facts, "", set(), facts))
+
+
+# ---------- достопримечательности: город определяет модель, проверяет код ----------
+
+def test_landmark_is_resolved_by_model_and_checked_against_city_base():
+    from domains.trips import landmarks
+
+    paris = '{"known": true, "what": "башня", "city": "Париж", "country": "Франция"}'
+    found = landmarks._resolve(FakeLLM(paris, paris), "Эйфелева башня")
+    assert found.dest.id == "paris" and "по данным языковой модели" in found.note()
+    tokyo, moscow = ('{"known": true, "city": "Токио", "country": "Япония"}',
+                     '{"known": true, "city": "Москва", "country": "Россия"}')
+    assert landmarks._resolve(FakeLLM(tokyo, moscow), "Дайкоку") is None  # разные ответы — догадка
+    fake = '{"known": true, "city": "Нарния", "country": "Франция"}'
+    assert landmarks._resolve(FakeLLM(fake, fake), "Замок") is None  # такого города нет в базе
+    assert landmarks._resolve(FakeLLM('{"known": false}', '{"known": false}'), "ыыы") is None
+
+
+def test_landmark_in_dialogue_picks_catalog_destination_and_says_so():
+    paris = '{"known": true, "city": "Париж", "country": "Франция"}'
+    llm = FakeLLM({"landmark": "Эйфелева башня"}, paris, paris)
+    a = agent(llm, nlg=False)
+    session = a.new_session()
+    reply = a.handle(session, "хочу к эйфелевой башне").reply
+    assert session.state.dest_id == "paris" and "по данным языковой модели" in reply
+
+
+def test_verify_rejects_quoted_names_not_in_facts():
+    facts = "«фуфлыжная гора» пока нет в каталоге. Когда хотите поехать?"
+    answer = "Похоже, вы имели в виду «фундуковую гору»? Когда хотите поехать?"
+    assert any("названия" in p for p in verify(answer, facts, "хочу на фуфлыжную гору", set(), facts))

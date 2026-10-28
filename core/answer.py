@@ -39,6 +39,7 @@ ANSWER_SYSTEM = """Ты — консультант сервиса поездок
 _NUMBER = re.compile(r"\d+(?:[   ]\d{3})*(?:[.,:]\d+)?")
 _LINK = re.compile(r"https?://|www\.|\b[\w-]+\.(?:ru|com|org|net|рф)\b", re.IGNORECASE)
 _CONTACT = re.compile(r"@|\+\d|\b\d{3}[ -]\d{2}[ -]\d{2}\b")
+_GUSH = re.compile(r"^\W*(?:замечательн|отличн\w* выбор|прекрасн|великолепн|здорово|чудесн|рад[аы]?,? что)", re.IGNORECASE)
 _TOKEN = re.compile(r"\[[а-яё ]+(?:_\d+)?\]")
 _PRICE = re.compile(r"\d+(?:[ \u00a0\u202f]\d{3})*\s?₽")
 _OPTION = re.compile(r"(?m)^\s*(\d)[.)]\s")
@@ -83,6 +84,14 @@ def verify(answer: str, context: str, user_text: str, known_tokens: set[str], fa
     if (re.search(r"демонстрац|смоделир", facts, re.IGNORECASE)
             and not re.search(r"демо|смоделир|модельн|условн", answer, re.IGNORECASE)):
         problems.append("потеряна пометка, что данные демонстрационные")
+    if "по данным языковой модели" in facts and "модел" not in answer.lower():
+        problems.append("потеряна пометка, что место определила модель")
+    if _GUSH.search(answer):
+        problems.append("восторги вместо фактов")
+    source_text = (context + " " + user_text).lower()
+    invented = [q for q in re.findall(r"[«\"]([^»\"]{3,40})[»\"]", answer) if q.lower()[:6] not in source_text]
+    if invented:  # «фундуковую гору» — название, которого не было ни в фактах, ни в реплике
+        problems.append("названия не из фактов: " + ", ".join(invented[:3]))
     allowed = _numbers(context)  # число только из реплики пользователя система могла не принять («с 7 по 13»)
     extra = sorted(n for n in _numbers(answer) if n not in allowed and not (n.isdigit() and int(n) <= 3))
     if extra:
