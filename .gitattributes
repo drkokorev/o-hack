@@ -2,3 +2,5 @@
 apps/static/vendor/maplibre/*.mjs -text
 apps/static/vendor/maplibre/*.css -text
 apps/static/vendor/three/*.js -text whitespace=-blank-at-eol,-space-before-tab
+# Tokenizer is checked against the upstream byte-level SHA-256 on all platforms.
+domains/trips/models/e5_small/tokenizer.json -text

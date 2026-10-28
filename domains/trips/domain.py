@@ -23,7 +23,7 @@ from .geo import BY_ID, DESTINATIONS, ORIGIN_BY_NAME, TAG_NAMES, Destination, de
 from .dialogue import QUESTION_INPUT_FIELDS, idea_places, ideas, missing_for_trip
 from .inspire import Suggestion, suggest
 from .offers import AMENITIES, MEALS, hotels_for, transport_options
-from .planner import VIA_PREP, Package, Trip, _leg_ok, cheapest_start, hm, leg_text, make_packages, month_window, timeline
+from .planner import VIA_PREP, Package, Trip, _leg_ok, _leg_matches, cheapest_start, hm, leg_text, make_packages, month_window, timeline
 from .arbiter import arbitrate
 from .rules import find_destination, match_origin, rule_extract, time_expression_not_place
 from .state import PARAM_FIELDS, TripState, TripUpdate
@@ -464,6 +464,10 @@ class TripsDomain:
     def _topic_found(dest_id: str | None, topic: str, asked: str | None = None) -> list[tuple[str, list]]:
         out = []
         for item in (t for t in topic.split("|") if t in GUIDE_QUERY):
+            # Static travel guides are not a source of current visa rules,
+            # forecasts, timetables, transfer tariffs, or booking conditions.
+            if item not in PLACE_TOPICS:
+                continue
             query = GUIDE_QUERY[item] + " " + (asked or "")
             found = guides.search(query, dest=dest_id, topic=item, k=4) if dest_id else []
             # Только профильные разделы: «в районе улицы…» из «Безопасности» — не ответ про районы,
@@ -483,9 +487,12 @@ class TripsDomain:
                 # короткое «удобно выделить районы:» без следующего фрагмента бессмысленно — склеиваем
                 found[0] = replace(found[0], text=found[0].text + " " + found[1].text)
             if item in PLACE_TOPICS:
-                excerpts.append(_excerpt(found[0]) if found else
-                                ("В путеводителе по этому направлению ответа не нашёл." if dest_id else
-                                 "Назовите направление — расскажу по путеводителю."))
+                excerpt = (_excerpt(found[0]) if found else
+                           ("В путеводителе по этому направлению ответа не нашёл." if dest_id else
+                            "Назовите направление — расскажу по путеводителю."))
+                if item == "safety" and found:
+                    excerpt += " Сведения путеводителя могут устареть; актуальную обстановку проверьте в официальных источниках."
+                excerpts.append(excerpt)
         if excerpts and NO_ANSWER in step.reply:
             step.reply = step.reply.replace(NO_ANSWER, " ".join(excerpts), 1)
         step.sources = (step.sources + self._topic_sources(dest_id, topic, asked))[:4]
@@ -502,6 +509,76 @@ class TripsDomain:
         else:
             return []
         return [_source(s) for s in (guides.overview(i) for i in ids if i) if s]
+
+    @staticmethod
+    def allow_answer_generation(state: TripState, step: Step) -> bool:
+        """Keep computed offers, transactions and time-sensitive answers exact."""
+        topics = set((state.answered_question or "").split("|")) - {""}
+        kind = (step.payload or {}).get("kind") if isinstance(step.payload, dict) else None
+        if topics and not topics <= PLACE_TOPICS:
+            return False
+        if state.search_scope in {"flight_only", "operator_tour"}:
+            return False
+        if topics == {"safety"}:
+            return False
+        if topics and topics <= (PLACE_TOPICS - {"safety"}) and not kind:
+            return True
+        if state.stage in {"plan", "cart", "payment", "booked"} or kind in {
+            "packages", "real_hotels", "real_hotel_selected", "flight_results", "destinations"
+        }:
+            return False
+        if re.search(r"не провер|не подтвержд|демонстрац|смоделир|не прогноз|не могу", step.reply, re.I):
+            return False
+        return True
+
+    def _flight_only(self, state: TripState) -> Step:
+        """Search the synthetic flight catalogue without requiring a hotel or stay."""
+        def question(field: str, text: str) -> Step:
+            state.pending_question = field
+            return Step(text, payload={"kind": "question", "field": field})
+
+        if not state.dest_id:
+            return question("destination", "Куда нужен перелёт? Назовите город из демо-каталога.")
+        if not state.origin:
+            return question("origin", "Из какого города нужен перелёт?")
+        if not state.date_from:
+            return question("when", "На какую дату нужен вылет? Укажите день, месяц и год.")
+        if not state.flight_direction:
+            return question("flight_direction", "Билет нужен в одну сторону или туда и обратно?")
+        if state.flight_direction == "round_trip" and not state.date_to:
+            return question("when", "Укажите обе даты целиком: например, с 10 по 15 июня 2027 года.")
+        origin = ORIGIN_BY_NAME.get(state.origin)
+        if origin is None:
+            return question("origin", "Для этого города отправления нет вариантов в демо-каталоге. Назовите другой город.")
+        if state.transport in {"train", "none"}:
+            return Step("Вы попросили только перелёт, но указали другой транспорт. Уточните, что искать.",
+                        payload={"kind": "question", "field": "transport"})
+        dest = BY_ID[state.dest_id]
+        if origin.name == dest.name:
+            return question("origin", "Город вылета и назначения совпадают. Откуда планируете лететь?")
+        constraints = dict(direct_only=bool(state.direct_only), pets=bool(state.pets),
+                           baggage_required=bool(state.baggage), max_hours=state.max_travel_hours)
+        def find(day: date):
+            return sorted((leg for leg in transport_options(origin, dest, day, "plane")
+                           if _leg_matches(leg, **constraints)), key=lambda leg: (leg.price_per_person, leg.minutes))[:3]
+        out = find(state.date_from)
+        back = find(state.date_to) if state.flight_direction == "round_trip" else []
+        state.stage, state.showing, state.pending_question = "flight_search", None, None
+        if not out or (state.flight_direction == "round_trip" and not back):
+            return Step("В демонстрационном каталоге нет перелётов по этим условиям. Это не означает, "
+                        "что их нет в действительных расписаниях. Можно изменить дату или ограничения.",
+                        payload={"kind": "flight_results", "items": []})
+        lines = ["Демонстрационные перелёты: рейсы, перевозчики, время и цены вымышлены; "
+                 "наличие, реальные тарифы и покупка не проверяются.", f"Туда: {origin.name} → {dest.name}"]
+        for leg in out:
+            lines.append(f"• {leg_text(leg)} — {fmt_money(leg.price_per_person)} на человека (демо)")
+        if back:
+            lines.append(f"Обратно: {dest.name} → {origin.name}")
+            for leg in back:
+                lines.append(f"• {leg_text(leg)} — {fmt_money(leg.price_per_person)} на человека (демо)")
+        lines.append("Цена за всех и детские тарифы не рассчитаны; бюджет и стыковки с другими услугами не проверены. "
+                     "Отдельный билет здесь нельзя купить. Можете изменить дату, багаж или пересадки.")
+        return Step("\n".join(lines), payload={"kind": "flight_results"})
 
 
     def _step(self, state: TripState) -> Step:
@@ -538,6 +615,12 @@ class TripsDomain:
             return Step(f"{child_note}Указано {state.party_size} путешественников, но состав не совпадает с общим числом "
                         f"или среди них не указан взрослый. Уточните число взрослых и детей.",
                         payload={"kind": "question", "field": "people_conflict"})
+
+        if state.search_scope == "operator_tour":
+            return Step("Пакетные туры туроператоров сейчас не подключены: не могу проверить их состав, "
+                        "цену или наличие. Могу собрать самостоятельную демонстрационную поездку с отелем и дорогой "
+                        "или показать только демонстрационные перелёты. Напишите, какой вариант нужен.",
+                        payload={"kind": "question", "field": "search_scope"})
 
         if state.unavailable_origin:
             return Step(f"В прототипе пока нет отправления из {state.unavailable_origin}. "
@@ -673,6 +756,12 @@ class TripsDomain:
             return Step("В прототипе доступны только самолёт и поезд. По указанным условиям подходящего "
                         "транспорта нет. Если поезд или самолёт подойдут, скажите об этом.",
                         payload={"kind": "question"})
+
+        if state.search_scope == "flight_only":
+            if state.destination and not state.dest_id:
+                return Step(f"Направление «{state.destination}» отсутствует в демо-каталоге перелётов. "
+                            "Уточните город или выберите другое направление.", payload={"kind": "question", "field": "destination"})
+            return self._prefix(self._flight_only(state), notes)
 
         if act.get("back") and (state.dest_id or state.stage in ("plan", "cart")):
             if state.dest_id:

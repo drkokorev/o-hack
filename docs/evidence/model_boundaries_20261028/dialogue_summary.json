@@ -1,0 +1,15 @@
+{
+  "set": "final_holdout",
+  "mode": "rules",
+  "fixed_today": "2026-10-27",
+  "cases_passed": 7,
+  "cases_total": 8,
+  "failures": [
+    {
+      "id": "F05_new_search",
+      "failures": [
+        "state.origin: expected 'Москва', got None"
+      ]
+    }
+  ]
+}

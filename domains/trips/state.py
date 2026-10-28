@@ -36,6 +36,8 @@ class TripParams(BaseModel):
     rooms: int | None = Field(None, ge=1, le=20, description="Явно названное число отдельных номеров в отеле")
     pets: bool | None = Field(None, description="Едут с животным")
     lodging: str | None = Field(None, description="tent — палатка или своё размещение; hotel — нужен отель")
+    search_scope: str | None = Field(None, description="flight_only — только перелёт; operator_tour — пакетный тур туроператора; trip — самостоятельная поездка")
+    flight_direction: str | None = Field(None, description="one_way — в одну сторону; round_trip — туда и обратно")
     budget_total: int | None = Field(None, description="Бюджет на всю поездку на всех, руб.")
     budget_per_person: int | None = Field(None, description="Бюджет на одного путешественника, если явно указан")
     budget_night: int | None = Field(None, description="Лимит цены отеля за ночь, руб., если назван именно он")

@@ -527,7 +527,7 @@ function render(data) {
   $("map").hidden = p.kind === "order";
   const notice = p.notice && p.kind !== "packages" ? el("p", { class: "notice" }, p.notice) : null;
   if (views[p.kind]) $("view").replaceChildren(...[notice, ...views[p.kind](p)].filter(Boolean));
-  else if (p.kind === "greeting") { $("view").replaceChildren(); drawMap({}); }
+  else if (["greeting", "flight_results"].includes(p.kind)) { $("view").replaceChildren(); drawMap({}); }
   else if (p.kind === "question") {
     $("view").replaceChildren(...[notice].filter(Boolean));
     if (data.stage !== "destination") drawMap({});

@@ -341,6 +341,21 @@ def _shift(t: str) -> int | None:
 def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     t = norm(text)
     data: dict = {}
+    # Scope changes only on explicit requests; «только прямой перелёт» alone
+    # is a transport constraint, not a request to remove the hotel.
+    if re.search(r"(?:только|лишь)\s+(?:авиа)?(?:билет\w*|перел[её]т\w*|рейс\w*)|без\s+(?:отеля|гостиницы|проживания|жилья)", t):
+        data["search_scope"] = "flight_only"
+    elif re.search(r"(?:пакетн\w*|готов\w*|горящ\w*)\s+тур\w*|тур\w*\s+(?:от\s+)?туроператор\w*|туроператор\w*|(?:ищу|найди|подбери|хочу)\s+тур(?:ы|а|ов)?\b", t):
+        data["search_scope"] = "operator_tour"
+    elif re.search(r"(?:самостоятельн\w*|собери|покажи)\s+(?:поездк\w*|вариант\w*)|(?:с|нужен|добавь)\s+(?:отел\w*|проживани\w*)", t) and state.search_scope:
+        data["search_scope"] = "trip"
+    if re.search(r"в\s+одну\s+сторон\w*|только\s+туда|без\s+обратн\w*", t):
+        data["flight_direction"] = "one_way"
+    elif re.search(r"туда\s*(?:и|[-–])\s*обратно|в\s+обе\s+сторон\w*|обратн\w*\s+(?:билет|рейс|перел[её]т)", t):
+        data["flight_direction"] = "round_trip"
+    if state.pending_question == "flight_direction" and data.get("flight_direction") and re.fullmatch(
+            r"\s*(?:в\s+одну\s+сторон\w*|только\s+туда|без\s+обратн\w*|туда\s*(?:и|[-–])\s*обратно|в\s+обе\s+сторон\w*)\s*[.!]?\s*", t):
+        return TripUpdate(flight_direction=data["flight_direction"])
     if state.showing == "real_hotels" and state.real_hotels_shown:
         # A bare number or an exact visible name selects a record, not a new
         # destination. Do not guess when the same name is listed twice.

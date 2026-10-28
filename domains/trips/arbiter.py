@@ -146,7 +146,14 @@ def _backed(field: str, value, quote: str | None, t: str) -> bool:
     if field == "month":
         return any(month_of(m.group(0)) == value for m in re.finditer(MONTH_RE, q))
     if field in ("date_from", "date_to"):
-        return hasattr(value, "day") and re.search(rf"(?<!\d){value.day}(?!\d)", q) is not None
+        # A day number alone cannot prove the month or year supplied by the model.
+        # Rules resolve partial and relative dates against today's date instead.
+        if not hasattr(value, "day"):
+            return False
+        for match in re.finditer(r"(?<!\d)(\d{1,2})[./](\d{1,2})[./](\d{4})(?!\d)", q):
+            if (int(match.group(1)), int(match.group(2)), int(match.group(3))) == (value.day, value.month, value.year):
+                return True
+        return False
     if field in ("nights", "adults", "children", "budget_total", "budget_night", "max_travel_hours", "party_size"):
         if isinstance(value, bool) or not isinstance(value, int):
             return False
@@ -191,7 +198,7 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     backed = {field for field, value in data.items() if _backed(field, value, quotes.get(field), t)}
     data.pop("evidence", None)
 
-    service_fields = ("unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
+    service_fields = ("search_scope", "flight_direction", "unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
     if state.showing == "real_hotels":
@@ -286,12 +293,9 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
             notes.append(f"{field}: точное значение в реплике не подтверждено")
             data[field] = None
 
-    explicit_day = re.search(r"\b\d{1,2}\s*[./]\s*\d{1,2}|\b\d{1,2}\s*(?:–|-|по\b|"
-                             r"январ|феврал|март|апрел|ма[йяе]|июн|июл|август|сентябр|октябр|ноябр|декабр)|"
-                             r"\b(?:завтра|послезавтра|сегодня)\b", t)
-    if not rules.date_from and not explicit_day and "date_from" not in backed:
-        data["date_from"] = data["date_to"] = None
-    elif not rules.date_to and data.get("date_to") and "date_to" not in backed:
+    if not rules.date_from and "date_from" not in backed:
+        data["date_from"] = None
+    if not rules.date_to and data.get("date_to") and "date_to" not in backed:
         notes.append("date_to: дата окончания поездки явно не подтверждена")
         data["date_to"] = None
 

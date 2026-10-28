@@ -168,7 +168,9 @@ class Agent:
                 after_merge(session.state)
             step = self.domain.step(session.state)
             session.last_answer_by = "template"
-            if not (privacy_unavailable or unresolved) and self.nlg and getattr(self.domain, "allow_nlg", True):
+            can_compose = getattr(self.domain, "allow_answer_generation", lambda _state, _step: True)
+            if (not (privacy_unavailable or unresolved) and self.nlg and getattr(self.domain, "allow_nlg", True)
+                    and can_compose(session.state, step)):
                 step = self._compose(session, text, step)
         if self.history_messages > 0 and getattr(self.domain, "retain_history", True):
             session.history += [

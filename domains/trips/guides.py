@@ -220,6 +220,7 @@ def search(query: str, dest: str | None = None, topic: str | None = None, k: int
     n = len(index.chunks)
     candidates = [i for i, c in enumerate(index.chunks)
                   if (not dest or c["dest"] == dest)
+                  and (not wanted or c["tag"] in wanted)
                   and not (len(c["text"]) < 250 and c["text"].rstrip().endswith(":"))]
     # «удобно выделить следующие районы:» — сам список был таблицей и в базу не попал
     if not candidates:
