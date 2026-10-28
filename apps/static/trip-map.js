@@ -69,6 +69,7 @@
     let options = {}, kind = "all", controller = null;
     let sequence = 0, detailSequence = 0, timer = 0, userMoved = false, manualCountry = null, initialCountry = null;
     let clusterMarkers = [], eventMarkers = [], landmarkMarkers = [], targetMarkers = [], records = new Map(), currentItems = [], visibleEvents = [], visibleLandmarks = [], listShown = 40;
+    let earth = null;
     let popup = null, popupObserver = null, mapReady = false, earthReady = false, fallback = null, loadComplete = false, three = null, threeLoading = false;
     const holder = node("div", { class: "map-canvas", "aria-label": "Глобус с местами и событиями" });
     const worldCenter = () => Array.isArray(settings.world_center) && settings.world_center.length === 2 &&
@@ -99,10 +100,30 @@
       Object.entries(styleButtons).forEach(([id, button]) => button.setAttribute("aria-pressed", String(id === next)));
       styleButtons.satellite.disabled = !earthReady;
       styleButtons.satellite.title = earthReady ? "" : "Снимок Земли не загрузился";
-      if (!map || !map.getLayer("land")) return;
-      const satellite = next === "satellite";
-      if (map.getLayer("earth-imagery")) map.setLayoutProperty("earth-imagery", "visibility", satellite ? "visible" : "none");
-      map.setPaintProperty("land", "fill-opacity", satellite ? ["interpolate", ["linear"], ["zoom"], 0, .055, 3.5, .055, 5, 1] : 1);
+      surface.classList.toggle("map-scheme", next === "map");
+      if (!map || !earth) return;
+      earth.setStyle(next);
+      map.setSky(next === "map"
+        ? {"sky-color":"#000000", "horizon-color":"#9fd4ff", "fog-color":"#000000",
+           "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.9,5,0.5,7,0]}
+        : {"sky-color":"#071b25", "horizon-color":"#396b70", "fog-color":"#0a2530",
+           "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.75,5,0.6,7,0]});
+      renderContinents();
+    }
+    // Подписи континентов и океанов в духе Apple Maps — только на виде «Карта» и только на общем плане
+    const CONTINENTS = [["ЕВРОПА",15,52],["АЗИЯ",95,48],["АФРИКА",20,5],["СЕВЕРНАЯ АМЕРИКА",-100,47],
+      ["ЮЖНАЯ АМЕРИКА",-60,-15],["АВСТРАЛИЯ",134,-25],["АНТАРКТИДА",30,-80]];
+    const OCEANS = [["Тихий океан",-150,5],["Атлантический океан",-35,20],["Индийский океан",78,-20],
+      ["Северный Ледовитый океан",20,82]];
+    let continentMarkers = [];
+    function renderContinents() {
+      const show = map && globeStyle === "map" && map.getZoom() < 3.4;
+      if (!show) { continentMarkers.forEach((m) => m.remove()); continentMarkers = []; return; }
+      if (continentMarkers.length) return;
+      continentMarkers = [...CONTINENTS.map(([name, lon, lat]) => [name, lon, lat, "continent-label"]),
+        ...OCEANS.map(([name, lon, lat]) => [name, lon, lat, "ocean-label"])].map(([name, lon, lat, cls]) =>
+        new lib.Marker({ element: node("span", { class: cls, "aria-hidden": "true" }, name), anchor: "center",
+          opacityWhenCovered: 0 }).setLngLat([lon, lat]).addTo(map));
     }
     const zoomBy = (delta) => map && map.easeTo({zoom: Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + delta)),
       duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650, easing: (t) => 1 - Math.pow(1-t, 3)});
@@ -772,7 +793,8 @@
         map.setSky({"sky-color":"#071b25", "horizon-color":"#396b70", "fog-color":"#0a2530",
           "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.75,5,0.6,7,0]});
         earthPreparation.then(async (prepared) => {
-          if (map && prepared) earthReady = Boolean(await prepared.module.addEarthSurface(map,prepared.image));
+          if (map && prepared) earth = await prepared.module.addEarthSurface(map,prepared.image);
+          earthReady = Boolean(earth);
           setGlobeStyle(globeStyle);
         }).catch(() => setGlobeStyle("map"));  // без снимка остаётся векторный глобус
         mapReady = true;
@@ -791,7 +813,7 @@
           const longitude=Math.abs(((center.lng-base[0]+540)%360)-180);
           scope.hidden=map.getZoom()<=overviewZoom()+.05 && longitude<.5 && Math.abs(center.lat-base[1])<.5;
         };
-        map.on("moveend", () => { syncScope(); updateHint(); renderLandmarks(); renderEvents(); schedule(); });
+        map.on("moveend", () => { syncScope(); updateHint(); renderLandmarks(); renderEvents(); renderContinents(); schedule(); });
         syncScope();
         map.on("click", "catalog-points", (event) => {
           const features = map.queryRenderedFeatures(event.point, { layers: ["catalog-points"] });

@@ -40,7 +40,7 @@ export async function addEarthSurface(map, imageOrUrl) {
     indices[ix++]=top;indices[ix++]=top+1;indices[ix++]=northPoleStart+x;
     indices[ix++]=x;indices[ix++]=southPoleStart+x;indices[ix++]=x+1;
   }
-  const programs=new Map(); let buffer, indexBuffer, texture;
+  const programs=new Map(); let buffer, indexBuffer, texture, style='satellite';
   function compile(gl,type,src) {
     const shader=gl.createShader(type); gl.shaderSource(shader,src); gl.compileShader(shader);
     if (!gl.getShaderParameter(shader,gl.COMPILE_STATUS)) throw Error(gl.getShaderInfoLog(shader));
@@ -54,18 +54,37 @@ export async function addEarthSurface(map, imageOrUrl) {
       void main(){ v_uv=a_uv; v_normal=a_normal; gl_Position=projectTile(a_position,vec2(0.0,a_pole)); }`);
     const fs=compile(gl,gl.FRAGMENT_SHADER,`#version 300 es
       precision highp float; in vec2 v_uv; in vec3 v_normal; out vec4 fragColor;
-      uniform sampler2D u_earth; uniform vec3 u_view; uniform vec3 u_light; uniform float u_alpha;
+      uniform sampler2D u_earth; uniform vec3 u_view; uniform vec3 u_light; uniform float u_alpha; uniform float u_map;
       void main(){
         vec3 source=texture(u_earth,v_uv).rgb;
         float continent=smoothstep(.065,.16,max(source.r,source.g));
-        vec3 water=vec3(.035,.205,.275)+source*.12;
-        vec3 land=source*vec3(.88,.99,.88)+vec3(.045,.055,.035);
         vec3 normal=normalize(v_normal);
         float facing=clamp(dot(normal,u_view),0.0,1.0);
-        float illumination=.54+.46*max(0.0,dot(normal,u_light));
         float rim=pow(1.0-facing,2.1);
-        vec3 color=mix(water,land,continent)*illumination;
-        color=mix(color,vec3(.18,.48,.51),rim*.33);
+        vec3 color;
+        if (u_map < .5) {
+          vec3 water=vec3(.035,.205,.275)+source*.12;
+          vec3 land=source*vec3(.88,.99,.88)+vec3(.045,.055,.035);
+          float illumination=.54+.46*max(0.0,dot(normal,u_light));
+          color=mix(water,land,continent)*illumination;
+          color=mix(color,vec3(.18,.48,.51),rim*.33);
+        } else {
+          // Схематичная карта в духе Apple Maps: природные зоны снимка перекрашены в чистые цвета
+          float lum=dot(source,vec3(.3,.59,.11));
+          float ice=smoothstep(.5,.75,lum)*(1.0-smoothstep(.06,.18,source.r-source.b));
+          float desert=smoothstep(.27,.45,lum)*smoothstep(.08,.22,source.r-source.b)*(1.0-ice);
+          float forest=1.0-smoothstep(.07,.2,lum);
+          vec3 land=mix(vec3(.62,.85,.40),vec3(.36,.70,.27),forest);
+          land=mix(land,vec3(.96,.87,.80),desert);
+          land=mix(land,vec3(.97,.98,1.0),ice);
+          float shallow=smoothstep(.04,.13,source.g+source.b*.5);
+          vec3 water=mix(vec3(.10,.47,.88),vec3(.33,.72,.97),shallow);
+          float diffuse=max(0.0,dot(normal,u_light));
+          color=mix(water,land,continent)*(.80+.24*diffuse);
+          vec3 halfway=normalize(u_light+u_view);
+          color+=vec3(1.0)*pow(max(0.0,dot(normal,halfway)),36.0)*.22;   // глянцевый блик
+          color=mix(color,vec3(.80,.92,1.0),rim*.45);                     // светлый край атмосферы
+        }
         fragColor=vec4(color,u_alpha);
       }`);
     const program=gl.createProgram(); gl.attachShader(program,vs); gl.attachShader(program,fs); gl.linkProgram(program);
@@ -112,6 +131,7 @@ export async function addEarthSurface(map, imageOrUrl) {
       const light=view.map((v,i)=>v-.42*east[i]+.62*north[i]);
       const length=Math.hypot(...light); gl.uniform3f(u('u_view'),...view);
       gl.uniform3f(u('u_light'),...light.map((v)=>v/length)); gl.uniform1f(u('u_alpha'),alpha);
+      gl.uniform1f(u('u_map'),style==='map' ? 1 : 0);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture); gl.uniform1i(u('u_earth'),0);
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); gl.disable(gl.DEPTH_TEST);
       gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
@@ -129,5 +149,18 @@ export async function addEarthSurface(map, imageOrUrl) {
   map.addLayer({id:'country-outlines',type:'line',source:'countries',
     paint:{'line-color':'#d6ead7','line-opacity':['interpolate',['linear'],['zoom'],0,.28,5,.4,8,.18],
       'line-width':['interpolate',['linear'],['zoom'],0,.5,5,1,10,.6]}},'trip-route');
-  return true;
+  // Вид поверхности: «satellite» — снимок как есть, «map» — схематичная карта по тем же природным зонам
+  return {
+    setStyle(next) {
+      style=next;
+      const scheme=next==='map';
+      map.setPaintProperty('land','fill-color',scheme ? '#b5e08a' : '#b4cfae');
+      map.setPaintProperty('land','fill-outline-color',scheme ? '#c9a3cf' : '#8aaf9c');
+      map.setPaintProperty('ocean','background-color',scheme ? '#62b6ef' : '#c4dfe1');
+      map.setPaintProperty('country-outlines','line-color',scheme ? '#b07fbf' : '#d6ead7');
+      map.setPaintProperty('country-outlines','line-opacity',scheme
+        ? ['interpolate',['linear'],['zoom'],0,.18,4,.35,8,.7] : ['interpolate',['linear'],['zoom'],0,.28,5,.4,8,.18]);
+      map.triggerRepaint();
+    },
+  };
 }

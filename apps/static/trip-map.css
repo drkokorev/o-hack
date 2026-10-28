@@ -52,6 +52,22 @@
   .trip-map .map-frame .map-scope, .trip-map .map-kind { position: static; min-height: 44px; border: 1px solid var(--line, #d9e2e0);
     border-radius: 12px; background: var(--surface, #fff); color: var(--ink, #0d1b22); font: 500 12px var(--body, system-ui); padding: 0 12px; cursor: pointer; }
   .trip-map .map-surface { position: relative; height: clamp(460px, 63vh, 680px); overflow: hidden; background: #081d26; }
+  /* Вид «Карта»: чёрный космос со звёздами, подписи континентов и океанов */
+  .trip-map .map-surface.map-scheme { background:
+    radial-gradient(1px 1px at 12% 18%, #fff8 50%, transparent 51%), radial-gradient(1px 1px at 78% 12%, #fff9 50%, transparent 51%),
+    radial-gradient(1px 1px at 33% 72%, #fff6 50%, transparent 51%), radial-gradient(1.5px 1.5px at 88% 64%, #fffa 50%, transparent 51%),
+    radial-gradient(1px 1px at 55% 30%, #fff5 50%, transparent 51%), radial-gradient(1px 1px at 7% 86%, #fff7 50%, transparent 51%),
+    radial-gradient(1px 1px at 64% 90%, #fff6 50%, transparent 51%), radial-gradient(1.5px 1.5px at 23% 44%, #fff8 50%, transparent 51%),
+    radial-gradient(1px 1px at 93% 35%, #fff6 50%, transparent 51%), radial-gradient(1px 1px at 45% 8%, #fff7 50%, transparent 51%),
+    #000; }
+  .trip-map .map-surface.map-scheme .map-canvas { background: transparent; }
+  .trip-map .map-surface.map-scheme:not(.map-detailed) .globe-hint { color: #f2f7f5; }
+  .trip-map .map-surface.map-scheme:not(.map-detailed) .globe-hint small { color: #b9c9c4; }
+  .trip-map .continent-label, .trip-map .ocean-label { pointer-events: none; white-space: nowrap; text-align: center;
+    text-shadow: 0 0 3px #ffffffb0; }
+  .trip-map .continent-label { font: 600 11px/1 var(--body, system-ui); letter-spacing: .32em; color: #7a3f7f; }
+  .trip-map .ocean-label { font: italic 400 10px/1.2 var(--body, system-ui); color: #1f5f8f; max-width: 90px; white-space: normal;
+    text-shadow: none; opacity: .85; }
   .trip-map .map-canvas { width: 100%; height: 100%; background: radial-gradient(circle at 50% 42%, #143b43 0, #071b25 70%); }
   .trip-map .globe-hint { position: absolute; left: 20px; bottom: 20px; z-index: 1; display: flex; align-items: center; gap: 10px;
     color: #e3f2eb; font-size: 12px; font-weight: 600; pointer-events: none; }

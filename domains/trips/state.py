@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class TripParams(BaseModel):
@@ -109,6 +109,15 @@ class TripUpdate(TripParams):
     evidence: dict[str, str] | None = Field(None, description="Для каждого заполненного поля — дословный фрагмент "
                                             "последней реплики, на котором основано значение: {\"nights\": \"11 дн\", "
                                             "\"origin\": \"из пинзы\"}")
+    @field_validator("evidence", mode="before")
+    @classmethod
+    def _evidence_as_text(cls, value):
+        """Модель иногда даёт ссылку списком фрагментов («отель с бассейном», «завтраком») — склеиваем."""
+        if not isinstance(value, dict):
+            return None
+        return {str(k): " ".join(map(str, v)) if isinstance(v, (list, tuple)) else str(v)
+                for k, v in value.items() if v is not None}
+
     landmark: str | None = Field(None, description="Достопримечательность, парк, музей, улица, объект, если назван он, "
                                  "а не город — дословно, как в реплике («Эйфелева башня», «парковка Дайкоку»). "
                                  "Город за него не подставляй")
