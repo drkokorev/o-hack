@@ -71,6 +71,24 @@ _TRAVEL_COMMANDS = frozenset({"перенеси", "перенесите", "по�
 
 
 @lru_cache(maxsize=1)
+def _morph():
+    import pymorphy2_dicts_ru
+    from pymorphy2 import MorphAnalyzer
+
+    return MorphAnalyzer(pymorphy2_dicts_ru.get_path())  # путь явно: поиск словаря требует pkg_resources
+
+
+def _is_command(span: str) -> bool:
+    """NER принимает глагол в начале короткой фразы за имя: «Оформляй оптимальный», «Запросите ранний заезд»."""
+    word = span.casefold()
+    if word in _TRAVEL_COMMANDS:
+        return True
+    if " " in word or word in _given_names():
+        return False
+    return any(p.tag.POS == "VERB" and "impr" in p.tag for p in _morph().parse(word))
+
+
+@lru_cache(maxsize=1)
 def _given_names() -> frozenset[str]:
     data = files("natasha").joinpath("data", "dict", "first.txt").read_text(encoding="utf-8")
     return frozenset(line.strip().casefold() for line in data.splitlines() if line.strip())
@@ -105,7 +123,7 @@ def mask_names(text: str, preserve_place: PlacePredicate | None = None,
         doc.segment(segmenter)
         doc.tag_ner(tagger)
         spans = [(item.start, item.stop) for item in doc.spans if item.type == "PER"
-                 and text[item.start:item.stop].casefold() not in _TRAVEL_COMMANDS]
+                 and not _is_command(text[item.start:item.stop])]
         for match in _LOWER_NAME_PAIR.finditer(text):
             first, last = match.group(1), match.group(2)
             if _looks_like_given_name(first) and _SURNAME.search(last):

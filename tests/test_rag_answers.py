@@ -125,3 +125,10 @@ def test_hybrid_search_finds_meaning_without_shared_words():
     found = guides.search("where to eat", dest="istanbul", k=3)
     assert any(s.tag == "eat" for s in found)
     assert guides.search("is it dangerous for tourists", dest="istanbul", k=1)[0].tag == "safety"
+
+
+def test_imperative_verbs_are_not_masked_as_names():
+    for text in ("Оформляй оптимальный", "Запросите ранний заезд", "Бронируй второй"):
+        assert mask_sensitive_data(text) == (text, False)
+    assert mask_sensitive_data("Саша, оформляй")[0] == "[имя], оформляй"
+    assert mask_sensitive_data("Роман хочет в Казань")[1]
