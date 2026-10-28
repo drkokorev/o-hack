@@ -198,7 +198,7 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     backed = {field for field, value in data.items() if _backed(field, value, quotes.get(field), t)}
     data.pop("evidence", None)
 
-    service_fields = ("search_scope", "flight_direction", "unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
+    service_fields = ("split_stays", "split_choice", "room_allocations", "search_scope", "flight_direction", "transfer_from", "transfer_to", "transfer_time", "transfer_date", "transfer_direction", "seat_class", "unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
     if state.showing == "real_hotels":
@@ -273,6 +273,9 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     if "pets" in question_topics and rules.pets is None and data.get("pets") is not None:
         notes.append("pets: вопрос об условиях для животных не подтверждает их участие в поездке")
         data["pets"] = None
+    if "child_fare" in question_topics and rules.children is None and data.get("children") is not None:
+        notes.append("children: вопрос о детском тарифе не подтверждает состав поездки")
+        data["children"] = None
     for topic, field in (("baggage", "baggage"), ("cancellation", "free_cancellation")):
         if topic in question_topics and rule_data.get(field) is None and data.get(field) is not None:
             notes.append(f"{field}: вопрос об условиях не задаёт требование")
@@ -298,6 +301,9 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     if not rules.date_to and data.get("date_to") and "date_to" not in backed:
         notes.append("date_to: дата окончания поездки явно не подтверждена")
         data["date_to"] = None
+    if (rules.search_scope or state.search_scope) == "transfer_only":
+        # Transfer pickup is a separate date; an LLM must not rewrite the stay.
+        data["date_from"] = data["date_to"] = None
 
     # Направление: правила знают каталог точно; без упоминания в тексте модель часто повторяет контекст
     if data.get("destination"):

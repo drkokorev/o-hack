@@ -14,11 +14,22 @@ from .temperature import TEMP_FIELDS, matches_history
 # the question policy so a side comment is not mistaken for an answer.
 QUESTION_INPUT_FIELDS = {
     "when": {"month", "season", "date_from"},
+    "transfer_date": {"transfer_date"},
+    "flight_date": {"date_from"},
     "duration": {"nights", "date_to", "trip_days_min", "trip_days_max"},
     "origin": {"origin"},
     "destination": {"destination"},
     "people": {"adults", "party_size"},
+    "passengers": {"adults", "party_size"},
     "children": {"children"},
+    "children_ages": {"children_ages"},
+    "room_allocation": {"room_allocations", "rooms"},
+    "split_stays": {"split_stays"},
+    "split_choice": {"split_choice"},
+    "transfer_route": {"transfer_from", "transfer_to"},
+    "transfer_direction": {"transfer_direction"},
+    "transfer_time": {"transfer_time"},
+    "flight_direction": {"flight_direction"},
     "lodging": {"lodging"},
     "transport": {"transport"},
 }

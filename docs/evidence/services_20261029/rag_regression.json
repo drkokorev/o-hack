@@ -1,0 +1,9 @@
+{
+  "method": "bm25+e5",
+  "existing_cases": 44,
+  "top1_expected_section": 29,
+  "top3_expected_section": 33,
+  "top3_misses": 11,
+  "topic_filter_supplied": false,
+  "independent_holdout": false
+}

@@ -51,7 +51,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     summary = data?.trip_summary || {};
     const stage = data?.stage || "start";
     boardLabel = ["plan","cart","payment","booked"].includes(stage) ? "Поездка" : "Карта";
-    const titles = {start:"Начнём с желания",destination:"Ищем ваше место",plan:"Выбираем лучшее",cart:"Всё складывается",payment:"Последний шаг",booked:"Поездка собрана"};
+    const titles = {start:"Начнём с желания",destination:"Ищем ваше место",plan:"Выбираем лучшее",cart:"Всё складывается",payment:"Последний шаг",booked:"Поездка собрана",hotel_search:"Выбираем жильё",transfer_search:"Подбираем трансфер",flight_search:"Выбираем дорогу"};
     byId("chat-title").textContent = stage === "start" && data?.understood?.length ? "Уточняем вашу поездку" : titles[stage] || titles.start;
     byId("undo").disabled = !data?.can_undo || isBusy();
     const types = summary.trip_types || [];

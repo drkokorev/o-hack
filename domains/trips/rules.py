@@ -48,14 +48,16 @@ QUESTION_TOPICS = [("travel", r"время (?:в )?пути|сколько (?:е
                    ("baggage", r"багаж|чемодан|ручн\w* клад"), ("weather", r"погод|температур|тепло ли|холодно|дожд|мор[еяю] .*тепл|вода"),
                    ("transfer", r"трансфер|как добрат|до отеля|такси"), ("pets", r"собак|кошк|животн|питом"),
                    # вопросы о месте — отвечаем по путеводителю (RAG)
-                   ("sights", r"что (?:\w+ )?(?:посмотреть|интересного|посетить)|достопримечательн|куда (?:\w+ )?сходить|"
-                              r"чем (?:\w+ )?заняться|что (?:там )?делать"),
-                   ("areas", r"какой район|в каком районе|где (?:\w+ ){0,2}(?:жить|остановиться|поселиться)"),
-                   ("food", r"где (?:\w+ ){0,2}(?:поесть|покушать|пообедать|поужинать)|что (?:\w+ )?попробовать|местн\w* кухн|"
-                            r"ресторан|кафе"),
+                   ("sights", r"что (?:\w+ )?(?:посмотреть|интересного|посетить)|достопримечательн|достопримичательн|куда (?:\w+ )?сходить|"
+                              r"чем (?:\w+ )?заняться|что (?:там )?делать|what\s+(?:to|can i)\s+see"),
+                   ("areas", r"какой район|в каком районе|где (?:\w+ ){0,2}(?:жить|остановиться|поселиться|переночевать)|where\s+(?:to|should i)\s+stay"),
+                   ("food", r"где (?:\w+ ){0,2}(?:поесть|покушать|пожрать|перекусить|пообедать|поужинать)|что (?:\w+ )?попробовать|местн\w* кухн|"
+                            r"ресторан|кафе|where\s+(?:to|can i)\s+eat"),
                    ("safety", r"безопасн|опасно|не опасно"),
-                   ("local_transport", r"как (?:там )?передвигаться|общественн\w* транспорт|метро|автобус")]
-PLACE_QUESTIONS = frozenset({"sights", "areas", "food", "safety", "local_transport"})
+                   ("local_transport", r"как (?:там )?(?:передвигаться|ездить)|общественн\w* транспорт|метро|автобус|how\s+(?:to|do i)\s+get around"),
+                   ("shopping", r"что (?:привезти|купить)\s+(?:домой|в подарок|на память)|где (?:купить|пошопиться)|сувенир|where\s+(?:to|can i)\s+shop"),
+                   ("nightlife", r"куда (?:пойти|сходить)\s+(?:вечером|танцевать)|ночн\w* клуб|ночн\w* жизн")]
+PLACE_QUESTIONS = frozenset({"sights", "areas", "food", "safety", "local_transport", "shopping", "nightlife"})
 CONFIRM_STRONG = (r"^(да\b(?!\s*нет)|оформля|оформи|бронир|оплачива|оплати|покупа|купи|куплю|подтвержда|согласн|верно|"
                   r"всё верно|все верно|бер[уё]м?\b|давай оформ|давай брон|давай бер|давай куп|давайте оформ|"
                   r"хочу (купить|оформить|забронировать)|можно оформ)")
@@ -341,21 +343,63 @@ def _shift(t: str) -> int | None:
 def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     t = norm(text)
     data: dict = {}
+    if state.pending_question == "multi_hotel" and re.search(r"сравн|на одни даты|одинаков\w* дат", t):
+        return TripUpdate(search_scope="hotel_only")
+    if state.pending_question == "multi_hotel" and re.search(r"по очереди|поочередно|сначала|разные даты", t):
+        return TripUpdate(search_scope="split_hotel")
+    if state.pending_question == "split_stays":
+        from .service_search import parse_split_stays
+        return TripUpdate(split_stays=parse_split_stays(text, today) or [])
+    if state.pending_question == "split_choice":
+        choice = re.fullmatch(r"\s*(?:(?:беру|выбираю|вариант)\s*)?([1-3])\s*(?:вариант)?\s*[.!]?\s*", t)
+        if choice:
+            return TripUpdate(split_choice=int(choice.group(1)))
+    if state.pending_question == "room_allocation" and not re.search(r"\b(?:\d+|один|одна|два|две|три)\s+номер(?:а|ов)?\b", t):
+        from .service_search import parse_room_allocations
+        return TripUpdate(room_allocations=parse_room_allocations(text) or [])
+    if state.pending_question == "children_ages" and re.fullmatch(r"\s*\d{1,2}(?:\s*(?:,|и)\s*\d{1,2})*\s*(?:лет|года|год)?\s*[.!]?\s*", t):
+        ages = [int(n) for n in re.findall(r"\d{1,2}", t)]
+        if all(0 <= age <= 17 for age in ages) and len(ages) == (state.children or 0):
+            return TripUpdate(children_ages=ages)
     # Scope changes only on explicit requests; «только прямой перелёт» alone
     # is a transport constraint, not a request to remove the hotel.
-    if re.search(r"(?:только|лишь)\s+(?:авиа)?(?:билет\w*|перел[её]т\w*|рейс\w*)|без\s+(?:отеля|гостиницы|проживания|жилья)", t):
+    if re.search(r"\b(?:два|2|несколько)\s+(?:разных\s+)?отел(?:я|ей)\b", t):
+        data["search_scope"] = "multi_hotel"
+    elif re.search(r"(?:только|лишь)\s+трансфер|(?:ищу|найди|подбери|нужен|закажи)\s+(?:мне\s+)?трансфер", t):
+        data["search_scope"] = "transfer_only"
+    elif re.search(r"(?:только|лишь)\s+(?:отел\w*|жиль[её]|гостиниц\w*|проживани\w*)|(?:ищу|найди|подбери)\s+(?:только\s+)?(?:жиль[её]|гостиниц\w*)", t):
+        data["search_scope"] = "hotel_only"
+    elif (re.search(r"(?:только|лишь|без\s+отеля).*?(?:поезд(?!к)|\bж/?д\b|сапсан|ласточк)", t) or
+          (re.search(r"(?:поезд(?!к)|\bж/?д\b).*?без\s+(?:отеля|гостиницы|проживания|жилья)", t))):
+        data["search_scope"] = "train_only"
+    elif re.search(r"(?:только|лишь)\s+(?:авиа)?(?:билет\w*|перел[её]т\w*|рейс\w*)|без\s+(?:отеля|гостиницы|проживания|жилья)", t):
         data["search_scope"] = "flight_only"
     elif re.search(r"(?:пакетн\w*|готов\w*|горящ\w*)\s+тур\w*|тур\w*\s+(?:от\s+)?туроператор\w*|туроператор\w*|(?:ищу|найди|подбери|хочу)\s+тур(?:ы|а|ов)?\b", t):
         data["search_scope"] = "operator_tour"
     elif re.search(r"(?:самостоятельн\w*|собери|покажи)\s+(?:поездк\w*|вариант\w*)|(?:с|нужен|добавь)\s+(?:отел\w*|проживани\w*)", t) and state.search_scope:
         data["search_scope"] = "trip"
     if re.search(r"в\s+одну\s+сторон\w*|только\s+туда|без\s+обратн\w*", t):
-        data["flight_direction"] = "one_way"
+        data["transfer_direction" if (data.get("search_scope") or state.search_scope) == "transfer_only" else "flight_direction"] = "one_way"
     elif re.search(r"туда\s*(?:и|[-–])\s*обратно|в\s+обе\s+сторон\w*|обратн\w*\s+(?:билет|рейс|перел[её]т)", t):
-        data["flight_direction"] = "round_trip"
+        data["transfer_direction" if (data.get("search_scope") or state.search_scope) == "transfer_only" else "flight_direction"] = "round_trip"
     if state.pending_question == "flight_direction" and data.get("flight_direction") and re.fullmatch(
             r"\s*(?:в\s+одну\s+сторон\w*|только\s+туда|без\s+обратн\w*|туда\s*(?:и|[-–])\s*обратно|в\s+обе\s+сторон\w*)\s*[.!]?\s*", t):
         return TripUpdate(flight_direction=data["flight_direction"])
+    if (data.get("search_scope") or state.search_scope) == "transfer_only":
+        if state.pending_question == "transfer_direction" and data.get("transfer_direction") and re.fullmatch(
+                r"\s*(?:в\s+одну\s+сторон\w*|только\s+туда|туда\s*(?:и|[-–])\s*обратно|в\s+обе\s+сторон\w*)\s*[.!]?\s*", t):
+            return TripUpdate(transfer_direction=data["transfer_direction"])
+        kinds = r"(аэропорт\w*|вокзал\w*|отел\w*|гостиниц\w*)"
+        route = re.search(rf"(?:из|от|с)\s+{kinds}\s+(?:в|до|к)\s+{kinds}", t)
+        if route:
+            def point(word):
+                return "airport" if word.startswith("аэропорт") else "station" if word.startswith("вокзал") else "hotel"
+            data["transfer_from"], data["transfer_to"] = point(route.group(1)), point(route.group(2))
+        tm = re.search(r"(?:\bв\s+|^\s*)([01]?\d|2[0-3]):([0-5]\d)\b", t)
+        if tm:
+            data["transfer_time"] = f"{int(tm.group(1)):02d}:{tm.group(2)}"
+            if state.pending_question == "transfer_time" and re.fullmatch(r"\s*(?:в\s+)?(?:[01]?\d|2[0-3]):[0-5]\d\s*[.!]?\s*", t):
+                return TripUpdate(transfer_time=data["transfer_time"])
     if state.showing == "real_hotels" and state.real_hotels_shown:
         # A bare number or an exact visible name selects a record, not a new
         # destination. Do not guess when the same name is listed twice.
@@ -465,6 +509,10 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["date_from"] = d_in
     if d_out:
         data["date_to"] = d_out
+    if (data.get("search_scope") or state.search_scope) == "transfer_only" and d_in:
+        data["transfer_date"] = d_in
+        data.pop("date_from", None)
+        data.pop("date_to", None)
     m = re.search(rf"\bв\s+{MONTH_RE}|на\s+{MONTH_RE}\b(?!\s*\d)|{MONTH_RE}\s*$|"
                   rf"(?:^|[,;:]\s*|когда\s+|в течени\w+\s+|примерно\s+|только\s+){MONTH_RE}(?=\s*(?:[,;.]|$|на\s|\d|мес))|"
                   rf"(?:начал\w*|середин\w*|конц\w*|конец|первой половин\w*|второй половин\w*)\s+{MONTH_RE}", t)
@@ -479,7 +527,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["month_part"] = "early" if word.startswith(("начал", "перв")) else "mid" if word.startswith("середин") else "late"
     if not d_in and "month" not in data and re.search(r"\bнов\w* год|новогодн", t):
         data["month"], data["month_part"] = 12, "late"  # «на новый год» — конец декабря
-    if not d_in and re.search(r"\b(?:следующ(?:ем|ий|его|им)|будущ(?:ем|ий|его))\s+месяц(?:е|а|у|ем)?\b", t):
+    next_month = re.search(r"\b(?:следующ(?:ем|ий|его|им)|будущ(?:ем|ий|его))\s+месяц(?:е|а|у|ем)?\b", t)
+    if not d_in and next_month and not re.search(r"\bне\s+(?:в\s+)?$", t[max(0, next_month.start()-10):next_month.start()]):
         data["month"] = today.month % 12 + 1
         data["year"] = today.year + (today.month == 12)
     if "month" not in data and not d_in:
@@ -605,6 +654,15 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             data["adults"] = 1  # «я один» — один взрослый; не спрашиваем «сколько из 1 взрослые»
     if re.search(r"(мы|я) с (мужем|женой) и (реб|дет|сын|доч)", t):
         data["adults"] = 2
+    child_fare_question = bool(("?" in text or re.search(r"сколько|бесплатн|скидк|платить|стоимость", t)) and
+                               re.search(r"реб[её]н|ребенк|детск\w*|младен", t) and
+                               re.search(r"билет|тариф|бесплатн|скидк|оплат|платить|стоимость", t))
+    if child_fare_question:
+        data["question"] = "child_fare"
+        if not re.search(r"\b(?:едем|летим|поедем|полетим|едет|летит|везем)\b", t):
+            data.pop("children", None)
+            data.pop("children_ages", None)
+            data.pop("children_unknown", None)
     pet_mention = re.search(r"с собак|с кош|с питомц|с животн|с собачк|с котом|с псом|со щенк|"
                             r"\bи (?:с\s+)?(?:собак|кошк|питомец|кот\b|пес\b|щен)", t)
     pet_question = re.search(r"(?:можно|разреш\w*|принима\w*|пуст\w*)\s+(?:ли\s+)?"
@@ -620,7 +678,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             data["lodging"] = "hotel"
         else:
             data.setdefault("clear", []).append("lodging")
-    elif re.search(r"палатк|кемпинг|без отеля|сво[её] жиль[её]|жиль[её] не нуж", t):
+    elif re.search(r"палатк|кемпинг", t) or (data.get("search_scope") not in {"flight_only", "train_only"} and
+                                              re.search(r"без отеля|сво[её] жиль[её]|жиль[её] не нуж", t)):
         data["lodging"] = "tent"
     elif re.search(r"нужен отель|отель нужен|жить в отеле", t) or (state.pending_question == "lodging" and re.fullmatch(r"\s*отель\s*[.!]?\s*", t)):
         data["lodging"] = "hotel"
@@ -668,6 +727,21 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     elif state.flight_concern and (no_plane or re.search(r"самол[её]т|перел[её]т|лететь|летать|поезд(?!к)", t)):
         data["flight_concern"] = False
     other_transport = re.search(r"\bна\s+(?:машин|авто|автомобил|автобус)", t)
+    # A question about availability does not silently become a constraint.
+    class_question = "?" in text and re.search(r"\b(?:есть|бывает|можно|какой|какие|ли)\b", t)
+    if not class_question:
+        for pattern, label, mode in (
+            (r"\bбизнес(?:\s*[- ]?\s*класс\w*)?\b", "бизнес", "plane"),
+            (r"\bперв\w*\s+класс\w*\b", "первый", "plane"),
+            (r"\bэконом\s*[- ]?\s*класс\w*\b", "эконом", "plane"),
+            (r"\bплацкарт\w*\b", "плацкарт", "train"),
+            (r"\bкупе\b", "купе", "train"),
+            (r"\bсидяч\w*\s+(?:мест\w*|вагон\w*)\b", "сидячий", "train"),
+        ):
+            if (class_match := re.search(pattern, t)) and not _negated_at(t, class_match.start(), class_match.end()):
+                data["seat_class"] = label
+                data["transport"] = mode
+                break
     train = re.search(r"\bпоезд(?!к)|\bж/?д\b|по железной|сапсан|ласточк", t) and not no_train
     if no_plane and (no_train or (other_transport and not train)):
         data["transport"] = "none"  # другие виды транспорта прототип пока не моделирует
@@ -780,7 +854,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         if asked_wishes:
             questions.append("amenities:" + ",".join(asked_wishes))
         if questions:
-            data["question"] = "|".join(questions)
+            data["question"] = "|".join(dict.fromkeys(filter(None, [*(data.get("question") or "").split("|"), *questions])))
             if set(questions) <= PLACE_QUESTIONS:
                 # «где поесть?», «что попробовать из еды?» — вопрос о месте, а не новые условия поездки
                 data.pop("trip_types", None)
@@ -806,7 +880,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
           and "adults" not in data and "party_size" not in data):
         # ответ на «сколько взрослых?» — двое взрослых; иначе двое путешественников без подтверждённого возраста
         data["adults" if state.pending_question == "people" else "party_size"] = 2
-    if state.pending_question in ("duration", "people", "children"):
+    if state.pending_question in ("duration", "people", "passengers", "children"):
         answer = re.fullmatch(r"\s*(\d+|один|одна|двое|два|две|трое|три|четверо|четыре|пятеро|пять)"
                               r"\s*(?:(ноч\w*|н|сут\w*|дн\w*|д|день|дня)|взр\w*|чел\w*|дет(?:ей|и)|реб[её]н\w*)?\s*[.!]?\s*", t)
         if answer and (number := num_word(answer.group(1))) is not None:
@@ -816,6 +890,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
                 data["nights"] = number
             elif state.pending_question == "people" and number > 0:
                 data["adults"] = number
+            elif state.pending_question == "passengers" and number > 0:
+                data["party_size"] = number
             elif state.pending_question == "children":
                 data["children"], data["children_unknown"] = number, False
             data.pop("pick", None)

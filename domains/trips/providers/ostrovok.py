@@ -22,35 +22,56 @@ class OstrovokSearchError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class RoomGuests:
+    """One explicitly allocated room. Child ages are supplied by the user, not inferred."""
+    adults: int
+    child_ages: tuple[int, ...] = ()
+
+    def body(self) -> dict:
+        if not isinstance(self.adults, int) or isinstance(self.adults, bool) or not 1 <= self.adults <= 6:
+            raise ValueError("В каждом номере нужно от 1 до 6 взрослых")
+        if not isinstance(self.child_ages, (tuple, list)) or len(self.child_ages) > 4 or any(not isinstance(age, int) or isinstance(age, bool) or not 0 <= age <= 17
+                                            for age in self.child_ages):
+            raise ValueError("В каждом номере допустимо до 4 детей с возрастом от 0 до 17 лет")
+        return {"adults": self.adults, "children": list(self.child_ages)}
+
+
+@dataclass(frozen=True)
 class SearchQuery:
     checkin: date
     checkout: date
     latitude: float
     longitude: float
-    adults: int
+    adults: int | None = None
     child_ages: tuple[int, ...] = ()
     residency: str | None = None
     radius: int = 10000
     language: str = "ru"
     currency: str = "RUB"
+    rooms: tuple[RoomGuests, ...] = ()
 
     def body(self) -> dict:
         if self.checkout <= self.checkin or (self.checkout - self.checkin).days > 30:
             raise ValueError("Окончание проживания должно быть позже начала, не более 30 дней")
         if not (-90 <= self.latitude <= 90 and -180 <= self.longitude <= 180):
             raise ValueError("Некорректные координаты")
-        if (not isinstance(self.radius, int) or isinstance(self.radius, bool) or not 1 <= self.radius <= 70000 or
-                not isinstance(self.adults, int) or isinstance(self.adults, bool) or self.adults < 1):
-            raise ValueError("Некорректный радиус или число взрослых")
-        if any(not isinstance(age, int) or isinstance(age, bool) or not 0 <= age <= 17 for age in self.child_ages):
-            raise ValueError("Для поиска нужны точные возраста детей от 0 до 17 лет")
+        if not isinstance(self.radius, int) or isinstance(self.radius, bool) or not 1 <= self.radius <= 70000:
+            raise ValueError("Некорректный радиус")
+        if self.rooms:
+            if self.adults is not None or self.child_ages or len(self.rooms) > 9:
+                raise ValueError("Укажите только распределение по 1–9 номерам, без общего состава")
+            if any(not isinstance(room, RoomGuests) for room in self.rooms):
+                raise ValueError("Некорректное распределение гостей по номерам")
+            guests = [room.body() for room in self.rooms]
+        else:
+            guests = [RoomGuests(self.adults, self.child_ages).body()]
         if self.residency is not None and not re.fullmatch(r"[a-zA-Z]{2}", self.residency):
             raise ValueError("Гражданство должно быть двухбуквенным кодом страны")
         if not re.fullmatch(r"[A-Z]{3}", self.currency):
             raise ValueError("Валюта должна быть трёхбуквенным кодом")
         body = {"checkin": self.checkin.isoformat(), "checkout": self.checkout.isoformat(),
                 "latitude": self.latitude, "longitude": self.longitude, "radius": self.radius,
-                "guests": [{"adults": self.adults, "children": list(self.child_ages)}],
+                "guests": guests,
                 "language": self.language, "currency": self.currency}
         if self.residency:
             body["residency"] = self.residency.lower()

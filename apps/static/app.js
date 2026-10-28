@@ -428,7 +428,7 @@ function renderStages(stage) {
   const idx = list.findIndex((s) => s.key === stage);
   $("stages").replaceChildren(...list.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : null }, s.title)));
 }
-function dateControls() {
+function dateControls(single = false) {
   const today = new Date(); today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
   const min = today.toISOString().slice(0, 10);
   const start = el("input", {type:"date", min, "aria-label":"Дата начала поездки"});
@@ -438,13 +438,13 @@ function dateControls() {
   // Use the explicit numeric range accepted by the existing dialogue parser;
   // Intl.DateTimeFormat adds a locale-dependent "г." that can break parsing.
   const format = (value) => value.split("-").reverse().join(".");
-  return el("details", {class:"quick-dates"}, el("summary", {}, "Выбрать даты"),
-    el("div", {class:"date-fields"}, el("label", {}, "Туда", start), el("label", {}, "Обратно", end),
+  return el("details", {class:"quick-dates"}, el("summary", {}, single ? "Выбрать дату" : "Выбрать даты"),
+    el("div", {class:"date-fields"}, el("label", {}, single ? "Дата" : "Туда", start), single ? null : el("label", {}, "Обратно", end),
       el("button", {type:"button", onclick: () => {
-        if (!start.value || !end.value || end.value <= start.value || start.value < min) {
-          note.textContent = "Выберите даты поездки."; return;
+        if (!start.value || start.value < min || (!single && (!end.value || end.value <= start.value))) {
+          note.textContent = single ? "Выберите дату." : "Выберите даты поездки."; return;
         }
-        send(`с ${format(start.value)} по ${format(end.value)}`);
+        send(single ? `на ${format(start.value)}` : `с ${format(start.value)} по ${format(end.value)}`);
       }}, "Готово"), note));
 }
 function renderSuggest(data) {
@@ -467,9 +467,9 @@ function renderSuggest(data) {
     return;
   }
   const question = typeof data === "object" ? String(data.reply || "").split("?")[0].toLowerCase() : "";
-  if (payload.kind === "question" && (["when", "dates", "date_from", "date_to"].includes(payload.field) ||
+  if (payload.kind === "question" && (["when", "dates", "date_from", "date_to", "transfer_date", "flight_date"].includes(payload.field) ||
       (!payload.field && String(data.reply || "").includes("?") && /когда|дат[ыу]|месяц|время года/.test(question)))) {
-    $("suggest").replaceChildren(dateControls(), el("button", {type:"button", onclick:() => send("пока не знаю")}, "Пока не знаю"));
+    $("suggest").replaceChildren(dateControls(["transfer_date", "flight_date"].includes(payload.field)), el("button", {type:"button", onclick:() => send("пока не знаю")}, "Пока не знаю"));
     return;
   }
   if (payload.kind === "question" && (payload.field === "origin" ||
@@ -486,6 +486,11 @@ function renderSuggest(data) {
   if (payload.kind === "question" && payload.field === "people") {
     $("suggest").replaceChildren(...[["1 взрослый", "1 взрослый"], ["2 взрослых", "2 взрослых"], ["Пока не знаю", "пока не знаю"]]
       .map(([label, text]) => el("button", {type:"button", onclick:() => send(text)}, label)));
+    return;
+  }
+  if (payload.kind === "question" && payload.field === "passengers") {
+    $("suggest").replaceChildren(...["1 человек", "2 человека"].map((text) =>
+      el("button", {type:"button", onclick:() => send(text)}, text)));
     return;
   }
   const supplied = typeof data === "object" && Array.isArray(data.suggestions) ?
@@ -527,7 +532,7 @@ function render(data) {
   $("map").hidden = p.kind === "order";
   const notice = p.notice && p.kind !== "packages" ? el("p", { class: "notice" }, p.notice) : null;
   if (views[p.kind]) $("view").replaceChildren(...[notice, ...views[p.kind](p)].filter(Boolean));
-  else if (["greeting", "flight_results"].includes(p.kind)) { $("view").replaceChildren(); drawMap({}); }
+  else if (["greeting", "flight_results", "service_results"].includes(p.kind)) { $("view").replaceChildren(); drawMap({}); }
   else if (p.kind === "question") {
     $("view").replaceChildren(...[notice].filter(Boolean));
     if (data.stage !== "destination") drawMap({});

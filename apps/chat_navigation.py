@@ -7,7 +7,7 @@ from copy import deepcopy
 
 from core.agent import Session, Step
 
-PLANNING_STAGES = {"start", "destination", "plan"}
+PLANNING_STAGES = {"start", "destination", "plan", "hotel_search", "flight_search", "transfer_search"}
 
 
 def can_snapshot(session: Session) -> bool:

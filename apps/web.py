@@ -135,10 +135,24 @@ class Sessions:
 def understood(state: TripState) -> list[str]:
     """Что агент понял из разговора — короткими плашками."""
     chips = []
-    if state.origin:
+    scope = {"flight_only": "только перелёт", "train_only": "только поезд", "hotel_only": "только жильё", "transfer_only": "только трансфер",
+             "split_hotel": "два последовательных отеля"}.get(state.search_scope)
+    if scope:
+        chips.append(scope)
+    if state.search_scope == "transfer_only":
+        kinds = {"airport": "аэропорт", "station": "вокзал", "hotel": "отель"}
+        if state.transfer_from and state.transfer_to:
+            chips.append(f"{kinds.get(state.transfer_from, '?')} → {kinds.get(state.transfer_to, '?')}")
+        if state.transfer_time:
+            chips.append(f"подача в {state.transfer_time}")
+        if state.transfer_date:
+            chips.append(f"дата трансфера: {state.transfer_date:%d.%m.%Y}")
+    if state.origin and state.search_scope not in {"hotel_only", "transfer_only", "split_hotel"}:
         suffix = " (примерно по IP)" if state.origin_inferred else ""
         chips.append(f"из: {state.origin}{suffix}")
-    if state.dest_id:
+    if state.search_scope == "split_hotel" and state.split_stays:
+        chips.extend(f"отель {i}: {BY_ID[s.dest_id].name}" for i, s in enumerate(state.split_stays, 1) if s.dest_id in BY_ID)
+    elif state.dest_id:
         chips.append(BY_ID[state.dest_id].name)
     elif state.destination:
         chips.append(state.destination)
@@ -152,7 +166,9 @@ def understood(state: TripState) -> list[str]:
         chips.append("безвизовый въезд: не проверен")
     for t in state.trip_types or []:
         chips.append(TAG_NAMES.get(t, t))
-    if state.date_from and state.date_to:
+    if state.search_scope == "transfer_only":
+        pass  # do not display a stay's dates as a transfer booking
+    elif state.date_from and state.date_to:
         start_year = f" {state.date_from.year}" if state.date_from.year != state.date_to.year else ""
         chips.append(f"{state.date_from.day} {MONTHS_GEN[state.date_from.month - 1]}{start_year} — "
                      f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]} {state.date_to.year}")
@@ -177,6 +193,8 @@ def understood(state: TripState) -> list[str]:
         chips.append("возраст детей: " + ", ".join(map(str, state.children_ages)) + " лет")
     if state.rooms:
         chips.append(f"номеров: {state.rooms}")
+    if state.room_allocations:
+        chips.append("распределение по номерам указано")
     if state.lodging:
         prefix = "возможно: " if "lodging" in (state.tentative_fields or []) else ""
         chips.append(prefix + {"tent": "палатка", "hotel": "отель"}.get(state.lodging, state.lodging))
@@ -201,6 +219,8 @@ def understood(state: TripState) -> list[str]:
     if state.transport:
         prefix = "возможно: " if "transport" in (state.tentative_fields or []) else ""
         chips.append(prefix + {"train": "поезд", "plane": "самолёт", "none": "нет подходящего транспорта"}.get(state.transport, state.transport))
+    if state.seat_class:
+        chips.append(f"класс: {state.seat_class}")
     if state.direct_only:
         chips.append("без пересадок")
     if state.meal:
@@ -226,7 +246,13 @@ def contextual_suggestions(state: TripState, step) -> list[str]:
     if kind == "greeting":
         return EXAMPLES
     if kind == "question":
+        if payload.get("field") in ("transfer_direction", "flight_direction"):
+            return ["в одну сторону", "туда и обратно"]
+        if payload.get("field") == "multi_hotel":
+            return ["сравнить", "по очереди"]
         return ["пока не знаю"] if payload.get("field") in ("when", "duration", "origin", "people", "children") else []
+    if kind == "service_results" and state.pending_question == "split_choice":
+        return [str(i) for i in range(1, len(state.split_displayed) + 1)]
     if kind == "real_hotels":
         return [str(i) for i in range(1, len(payload.get("items") or []) + 1)]
     if kind == "real_hotel_selected":
@@ -673,6 +699,13 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                         step.reply = "Не удалось выбрать страну. Попробуйте ещё раз.\n\n" + step.reply
             else:
                 step = agent.handle(session, body.text)
+            if (guessed_origin and session.state.search_scope in {"hotel_only", "transfer_only", "multi_hotel", "split_hotel"}
+                    and session.state.origin_inferred and session.state.origin == guessed_origin):
+                # A hotel or local transfer does not need a departure city.
+                session.state.origin, session.state.origin_inferred = None, False
+                if previous and previous[0].origin_inferred and previous[0].origin == guessed_origin:
+                    previous[0].origin, previous[0].origin_inferred = None, False
+                guessed_origin = None
             if guessed_origin and session.state.origin_inferred and session.state.origin == guessed_origin:
                 step.reply = f"Город отправления предположительно {guessed_origin} по IP. Если это не так, напишите другой город.\n\n" + step.reply
             chat_navigation.complete_turn(session, previous)

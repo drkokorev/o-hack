@@ -198,6 +198,20 @@ class Agent:
         session.last_notes = []
         rules = getattr(self.domain, "rule_extract", None)
         by_rules = rules(session.state, text, today) if rules is not None else None
+        # Structured answers to an explicit pending question are already
+        # validated locally; avoid sending room allocations or retrying an LLM
+        # that cannot authoritatively change these service fields.
+        pending_fields = {
+            "room_allocation": {"room_allocations", "rooms"}, "children_ages": {"children_ages"},
+            "split_stays": {"split_stays"}, "split_choice": {"split_choice"},
+            "multi_hotel": {"search_scope"}, "flight_direction": {"flight_direction"},
+            "transfer_direction": {"transfer_direction"}, "transfer_time": {"transfer_time"},
+        }
+        pending = getattr(session.state, "pending_question", None)
+        if by_rules is not None and pending in pending_fields:
+            values = by_rules.model_dump(exclude_none=True)
+            if set(values) & pending_fields[pending]:
+                return by_rules, "rules"
         if self.llm is not None and use_llm:
             messages = self.domain.extraction_messages(
                 session.state, session.history[-self.history_messages :], text, today
