@@ -157,7 +157,11 @@ def chunks(dest_id: str, art: dict) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--vectors", action="store_true", help="только пересчитать векторы e5 для готовых фрагментов")
     args = parser.parse_args()
+    if args.vectors:
+        build_vectors()
+        return
     data = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() and not args.force else {}
     data.update({"source": "Wikivoyage (ru, en)", "license": "CC BY-SA 4.0"})
     data.setdefault("articles", {})
@@ -179,6 +183,24 @@ def main() -> None:
         OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         time.sleep(1)
     print(f"Итого: {len(data['articles'])} статей, {len(data['chunks'])} кусков, {OUT.stat().st_size // 1024} КБ")
+    build_vectors()
+
+
+def build_vectors() -> None:
+    """Векторы multilingual-e5-small для всех фрагментов: считаются один раз, в работе кодируется только вопрос."""
+    import numpy as np
+
+    from domains.trips import embedder, guides
+
+    data = json.loads(OUT.read_text(encoding="utf-8"))
+    texts = [guides.passage_text(c) for c in data["chunks"]]
+    vectors = embedder.encode(texts, "passage")
+    if vectors is None:
+        raise SystemExit("Модель эмбеддингов недоступна: нужны onnxruntime, tokenizers и domains/trips/models/e5_small")
+    np.save(guides.VECTORS, vectors.astype(np.float16))
+    data["vectors_digest"] = guides.digest(texts)
+    OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(f"Векторы: {vectors.shape[0]} × {vectors.shape[1]}, {guides.VECTORS.stat().st_size // 1024} КБ")
 
 
 if __name__ == "__main__":

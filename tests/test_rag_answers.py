@@ -107,3 +107,21 @@ def test_llm_answer_on_guide_question_cites_source():
     assert "Источник: Wikivoyage «Стамбул»" in reply.reply and "CC BY-SA" in reply.reply
     prompt = llm.calls[-1][-1]["content"]
     assert "Источники (путеводитель)" in prompt and "Еда" in prompt
+
+
+# ---------- эмбеддинги e5 ----------
+
+def test_e5_embeddings_are_local_and_cross_lingual():
+    from domains.trips import embedder
+
+    assert embedder.available() and guides.mode() == "bm25+e5"
+    q = embedder.encode(["is it dangerous for tourists"], "query")
+    p = embedder.encode(["Ночью в туристических районах безопасно, много полиции.",
+                         "Цены на пиццу начинаются от 10 евро."], "passage")
+    assert q.shape == (1, 384) and float(q[0] @ p[0]) > float(q[0] @ p[1])
+
+
+def test_hybrid_search_finds_meaning_without_shared_words():
+    found = guides.search("where to eat", dest="istanbul", k=3)
+    assert any(s.tag == "eat" for s in found)
+    assert guides.search("is it dangerous for tourists", dest="istanbul", k=1)[0].tag == "safety"

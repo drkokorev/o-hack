@@ -1,23 +1,30 @@
-"""RAG: локальный поиск по путеводителям (domains/trips/data/guides.json, собирает tools/build_guides.py).
+"""RAG: локальный гибридный поиск по путеводителям (domains/trips/data/guides.json, собирает tools/build_guides.py).
 
-Всё работает в процессе приложения, без сети и внешних моделей:
-- лексический BM25 по основам слов (лёгкий стеммер для русского, «Будве» = «Будва»);
-- смысловое сходство по векторам слов navec (входят в natasha), чтобы «где тихо и зелено» находило парки;
+Всё работает в процессе приложения, без сети и внешних сервисов:
+- по словам — BM25 по основам слов (лёгкий стеммер для русского, «Будве» = «Будва»): точные совпадения
+  вроде «симит», «метро», «виза»;
+- по смыслу — эмбеддинги предложений multilingual-e5-small (domains/trips/embedder.py): «где тихо и зелено»
+  находит абзац о парках, английский вопрос — русский абзац и наоборот. Векторы фрагментов посчитаны заранее;
+  без модели запасной вариант — средние векторы слов navec из natasha;
+- оценки обоих способов нормируются в пределах кандидатов и складываются пополам;
 - фильтр по метаданным: только выбранное направление и, если понятна тема вопроса, нужный раздел статьи.
 Возвращает несколько фрагментов с источником — их пересказывает LLM, а без LLM показывается сам фрагмент.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
+import threading
 from collections import Counter
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
 PATH = Path(__file__).parent / "data" / "guides.json"
+VECTORS = Path(__file__).parent / "data" / "guides_vectors.npy"
 SOURCE = "Wikivoyage"
 LICENSE = "CC BY-SA 4.0"
 
@@ -100,7 +107,8 @@ class _Index:
     lengths: list[int]
     df: Counter
     avg_len: float
-    vectors: list[list[float] | None]
+    vectors: list[list[float] | None]          # navec — запасной вариант
+    e5: "object | None" = None                 # np.ndarray [фрагменты × 384] или None
 
 
 @lru_cache(maxsize=1)
@@ -125,8 +133,17 @@ def _vector(words: list[str]) -> list[float] | None:
     return [x / norm for x in total]
 
 
-@lru_cache(maxsize=1)
+_BUILD = threading.Lock()
+
+
 def _index() -> _Index | None:
+    # Прогрев при старте и первый запрос могут прийти одновременно — строим базу один раз
+    with _BUILD:
+        return _build_index()
+
+
+@lru_cache(maxsize=1)
+def _build_index() -> _Index | None:
     if not PATH.exists():
         return None
     data = json.loads(PATH.read_text(encoding="utf-8"))
@@ -144,7 +161,44 @@ def _index() -> _Index | None:
         df.update(counts.keys())
         vectors.append(_vector(words))
     titles = {dest: art["title"] for dest, art in data.get("articles", {}).items()}
-    return _Index(chunks, titles, stems, lengths, df, (sum(lengths) / len(lengths)) if lengths else 1.0, vectors)
+    index = _Index(chunks, titles, stems, lengths, df, (sum(lengths) / len(lengths)) if lengths else 1.0, vectors)
+    index.e5 = _e5_matrix(data, chunks)
+    return index
+
+
+def passage_text(chunk: dict) -> str:
+    return f"{chunk['section']}. {chunk['text']}"
+
+
+def digest(texts: list[str]) -> str:
+    return hashlib.sha256("\n".join(texts).encode("utf-8")).hexdigest()
+
+
+def _e5_matrix(data: dict, chunks: list[dict]):
+    """Готовые векторы e5, если они посчитаны для этих же фрагментов и модель доступна для вопросов."""
+    from . import embedder
+
+    if not VECTORS.exists() or not embedder.available():
+        return None
+    if data.get("vectors_digest") != digest([passage_text(c) for c in chunks]):
+        return None  # база пересобрана, а векторы нет — не смешиваем
+    import numpy as np
+
+    matrix = np.load(VECTORS).astype(np.float32)
+    return matrix if matrix.shape[0] == len(chunks) else None
+
+
+def mode() -> str:
+    index = _index()
+    return "bm25+e5" if index is not None and index.e5 is not None else "bm25+navec"
+
+
+def warm() -> None:
+    """Загрузить базу, векторы и модель заранее (при старте приложения)."""
+    if _index() is not None and mode() == "bm25+e5":
+        from . import embedder
+
+        embedder.encode(["прогрев"], "query")
 
 
 def available() -> bool:
@@ -152,37 +206,54 @@ def available() -> bool:
 
 
 def search(query: str, dest: str | None = None, topic: str | None = None, k: int = 3,
-           min_score: float = 0.15) -> list[Snippet]:
-    """Фрагменты путеводителей для вопроса; dest и topic сужают поиск (метаданные важнее сходства)."""
+           min_score: float = 0.15, method: str | None = None) -> list[Snippet]:
+    """Фрагменты путеводителей для вопроса; dest и topic сужают поиск (метаданные важнее сходства).
+
+    method: None — лучшее доступное (bm25+e5, иначе bm25+navec); для замеров также «bm25», «e5», «navec».
+    """
     index = _index()
     if index is None:
         return []
+    method = method or mode()
     words = tokens(query)
-    q_stems = [stem(w) for w in words]
-    q_vec = _vector(words)
+    q_stems = set(stem(w) for w in words)
     wanted = set(TOPIC_TAGS.get(topic or "", ()))
     n = len(index.chunks)
-    scored: list[tuple[float, int]] = []
-    for i, chunk in enumerate(index.chunks):
-        if dest and chunk["dest"] != dest:
-            continue
-        if len(chunk["text"]) < 250 and chunk["text"].rstrip().endswith(":"):
-            continue  # «удобно выделить следующие районы:» — сам список был таблицей и в базу не попал
-        counts, length = index.stems[i], index.lengths[i]
-        bm25 = 0.0
-        for term in set(q_stems):
+    candidates = [i for i, c in enumerate(index.chunks)
+                  if (not dest or c["dest"] == dest)
+                  and not (len(c["text"]) < 250 and c["text"].rstrip().endswith(":"))]
+    # «удобно выделить следующие районы:» — сам список был таблицей и в базу не попал
+    if not candidates:
+        return []
+    lexical = []
+    for i in candidates:
+        counts, length, bm25 = index.stems[i], index.lengths[i], 0.0
+        for term in q_stems:
             tf = counts.get(term, 0)
             if tf:
                 idf = math.log(1 + (n - index.df[term] + 0.5) / (index.df[term] + 0.5))
                 bm25 += idf * tf * 2.2 / (tf + 1.2 * (0.25 + 0.75 * length / index.avg_len))
-        vec = index.vectors[i]
-        dense = sum(a * b for a, b in zip(q_vec, vec)) if q_vec and vec else 0.0
-        score = min(bm25 / 8.0, 1.0) * 0.6 + max(dense, 0.0) * 0.4
+        lexical.append(bm25)
+    semantic = _semantic(index, query, words, candidates, method)
+
+    def norm(values: list[float]) -> list[float]:
+        lo, hi = min(values), max(values)
+        return [(v - lo) / (hi - lo) if hi > lo else (1.0 if hi > 0 else 0.0) for v in values]
+
+    # e5 точнее средних векторов слов — ей больший вес; по словам остаются точные совпадения («симит», «виза»)
+    lex_w = {"bm25": 1.0, "e5": 0.0, "navec": 0.0, "bm25+e5": 0.3}.get(method, 0.5)
+    lex_n, sem_n = norm(lexical), norm(semantic) if semantic else [0.0] * len(candidates)
+    scored = []
+    for j, i in enumerate(candidates):
+        chunk = index.chunks[i]
+        score = lex_w * lex_n[j] + (1 - lex_w) * sem_n[j]
         if wanted and chunk["tag"] in wanted:
             score += 0.35
         if chunk.get("order") == 0:
             score += 0.08  # первый абзац раздела обычно обзорный
-        scored.append((score, i))
+        # совсем мимо: ни одного общего слова и слабое смысловое сходство
+        relevant = lexical[j] > 0 or (semantic and semantic[j] >= (0.80 if index.e5 is not None else 0.35))
+        scored.append((score if relevant else score * 0.3, i))
     scored.sort(reverse=True)
     out: list[Snippet] = []
     for score, i in scored[:k]:
@@ -192,6 +263,21 @@ def search(query: str, dest: str | None = None, topic: str | None = None, k: int
         out.append(Snippet(c["dest"], c["section"], c["text"], c["url"], index.titles.get(c["dest"], c["dest"]),
                            c.get("lang", "ru"), round(float(score), 3), c.get("tag", "other")))
     return out
+
+
+def _semantic(index: _Index, query: str, words: list[str], candidates: list[int], method: str) -> list[float]:
+    if method in ("bm25+e5", "e5") and index.e5 is not None:
+        from . import embedder
+
+        q = embedder.encode([query], "query")
+        if q is not None:
+            return [float(x) for x in index.e5[candidates] @ q[0]]
+    if method == "bm25":
+        return []
+    q_vec = _vector(words)
+    if not q_vec:
+        return []
+    return [sum(a * b for a, b in zip(q_vec, vec)) if (vec := index.vectors[i]) else 0.0 for i in candidates]
 
 
 def overview(dest: str) -> Snippet | None:

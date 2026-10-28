@@ -27,6 +27,7 @@ from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
 from apps.location import city_hint, visitor_city, visitor_country
 from apps import chat_navigation
+from domains.trips import guides
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
@@ -358,6 +359,8 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         worker.start()
         if voice.model_dir:
             threading.Thread(target=voice.load, name="local-voice-load", daemon=True).start()
+        # База путеводителей и модель эмбеддингов (~1 с) — в фоне, чтобы первый вопрос о месте не ждал
+        threading.Thread(target=guides.warm, name="guides-warm", daemon=True).start()
         try:
             yield
         finally:
