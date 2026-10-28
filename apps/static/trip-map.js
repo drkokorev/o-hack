@@ -5,7 +5,7 @@
   const staticRoot = scriptUrl ? new URL(".", scriptUrl) : new URL("/static/", location.href);
   const asset = (path) => {
     const url = new URL(path, staticRoot);
-    if (!path.startsWith("vendor/")) url.searchParams.set("v", "globe-20261028-3");
+    if (!path.startsWith("vendor/")) url.searchParams.set("v", "globe-20261028-15");
     return url.href;
   };
   const ORIGIN = staticRoot.origin;
@@ -102,7 +102,14 @@
         if (place) chooseLegacy(place);
       } });
     const footer = node("div", { class: "map-footer" },
-      node("span", {}, "Открытые данные · наличие не проверено"), legacySelect);
+      node("div", {class:"map-credits"}, node("span", {}, "Открытые данные · наличие не проверено"),
+        node("details", {}, node("summary", {}, "Источники изображения и моделей"),
+          node("p", {}, "Поверхность Земли: ", safeLink("https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-map/", "NASA Earth Observatory, октябрь 2004"), "."),
+          node("p", {}, "Эйфелева башня: ", safeLink("https://sketchfab.com/3d-models/free-la-tour-eiffel-8553f94d06e24cb4b0fde1080f281674", "SDC PERFORMANCE"),
+            "; Бурдж-Халифа: ", safeLink("https://sketchfab.com/3d-models/burj-khalifa-59e6dd74e5f647158de568b5a7f9cab7", "ManySince910"),
+            "; обе модели — ", safeLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0"), ". Модели адаптированы для карты; у башни сокращено число полигонов."),
+          node("p", {}, "Модель гоночного автомобиля: ", safeLink("https://github.com/ahacker-1/apex-formula-2026", "apex-formula-2026, Avi Hacker"),
+            ", Apache 2.0, адаптация масштаба и освещения."))), legacySelect);
     const surface = node("div", { class: "map-surface" }, holder, controls,
       node("div", {class:"globe-hint", "aria-hidden":"true"},
         node("span", {class:"globe-hint-symbol"}, "✦"),
@@ -365,7 +372,8 @@
                 `${event.city} · ${event.name} · ${event.dates}`)));
             makePopup(first.lon, first.lat, content);
           } }, three ? node("span", {class:"event-hit-area", "aria-hidden":"true"}) : eventIcon(first.icon),
-          group.length > 1 ? node("span", {class:"event-count"}, String(group.length)) : null);
+          group.length > 1 ? node("span", {class:"event-count"}, String(group.length)) : null,
+          first.icon === "race" ? node("span", {class:"event-label"}, first.name.startsWith("Формула-1") ? "Формула-1" : "Автогонки") : null);
         const marker = new lib.Marker({ element: button, anchor: three ? "bottom" : "center", opacityWhenCovered: 0 }).setLngLat([first.lon, first.lat]).addTo(map);
         eventMarkers.push(marker); placeWithoutOverlap(marker, occupied, rect);
         if (three && !button.hidden && !button.classList.contains("maplibregl-marker-covered"))
@@ -604,11 +612,11 @@
               { id: "land", type: "fill", source: "countries",
                 paint: { "fill-color": "#b4cfae", "fill-outline-color": "#8aaf9c" } },
               { id: "trip-route", type: "line", source: "trip-route",
-                paint: { "line-color": "#3152dc", "line-width": 2, "line-dasharray": [2, 2] } },
+                paint: { "line-color": "#19645d", "line-width": 2, "line-dasharray": [2, 2] } },
               { id: "catalog-points", type: "circle", source: "catalog-points",
                 paint: { "circle-radius": 5, "circle-color": [
-                  "match", ["get", "kind"], "hotel", "#3152dc", "city", "#477b68",
-                  "airport", "#a56630", "camping", "#96794c", "beach", "#dba92b", "#3152dc"],
+                  "match", ["get", "kind"], "hotel", "#19645d", "city", "#477b68",
+                  "airport", "#a56630", "camping", "#96794c", "beach", "#dba92b", "#19645d"],
                   "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } },
             ],
           },
@@ -619,9 +627,11 @@
           map.once("error", (e) => { clearTimeout(timeout); reject(e.error); });
         });
         map.setProjection({ type: "globe" });
-        map.setSky({"sky-color":"#e5f0ed", "horizon-color":"#d5eae6", "fog-color":"#e5f0ed",
-          "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.4,5,0.4,7,0]});
-        import(asset("globe-shading.mjs")).then((module) => { if (map) module.addGlobeShading(map); }).catch(() => {});
+        map.setSky({"sky-color":"#071b25", "horizon-color":"#396b70", "fog-color":"#0a2530",
+          "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.75,5,0.6,7,0]});
+        import(asset("globe-earth.mjs")).then((module) => {
+          if (map) return module.addEarthSurface(map,asset("assets/earth-blue-marble-200410.jpg"));
+        }).catch(() => { /* Existing vector globe remains available offline. */ });
         mapReady = true;
         map.on("movestart", (event) => {
           if (event.originalEvent) userMoved = true;
@@ -674,7 +684,7 @@
         map.once("moveend", () => openPoint(point.id, point.lat, point.lon));
         map.flyTo({center:[point.lon,point.lat], zoom:12, duration:matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 800});
       },
-      getView() { return map ? {center:map.getCenter().toArray(), zoom:map.getZoom(), projection:map.getProjection()?.type || null} : null; },
+      getView() { return map ? {center:map.getCenter().toArray(), zoom:map.getZoom(), projection:map.getProjection()?.type || null, models:three?.getLoadedModels() || []} : null; },
       retry() { if (map) schedule(); },
       unavailable() { showStatus("Не удалось загрузить карту. Повторите подключение.", true); },
     };
