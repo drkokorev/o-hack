@@ -1,6 +1,6 @@
 PY ?= .venv/bin/python
 
-.PHONY: install test run up down climate hotels images guides llm-check eval simulate answers
+.PHONY: install test run up down climate hotels images guides llm-check eval simulate answers live
 
 install:
 	python3 -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt -r requirements-voice.txt
@@ -40,3 +40,6 @@ answers:
 
 guides:
 	$(PY) -m tools.build_guides
+
+live:
+	sh eval/live_all.sh
