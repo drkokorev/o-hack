@@ -1,6 +1,8 @@
 # Генераторы миниатюр
 
-Исходники коллекции из 32 моделей. Генератор создаёт модели в `tools/landmarks-3d/models/`, а сцену Blender — в родительской папке `source`. Для публикации полученные GLB нужно перенести в `apps/static/models/landmarks/`.
+Исходники коллекции из 32 моделей. Генератор создаёт модели в `tools/landmarks-3d/models/`, а сцену Blender — в `tools/landmarks-3d/odin-landmarks.blend`. Для публикации полученные GLB нужно перенести в `apps/static/models/landmarks/`.
+
+Готовые модели уже находятся в `apps/static/models/landmarks/`. Для установщика Blender не нужен. Порядок объединения, состав ресурсов и проверка готовой сборки: [инструкция](../../docs/landmarks-3d-20261029/INTEGRATION.md).
 
 `blender --background --factory-startup --threads 4 --python tools/landmarks-3d/source/build_landmarks.py -- no-render`
 
