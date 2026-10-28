@@ -44,7 +44,7 @@ const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
   } });
 const drawMap = (options = {}) => tripMap.draw(options);
 const preferences = createPreferences(tripMap);
-const voice = createVoiceInput({input:$("text"), button:$("send"), status:$("voice-status"), holdToTalk:true});
+const voice = createVoiceInput({input:$("text"), button:$("mic"), status:$("voice-status"), dedicated:true});
 let lastData = null, latestTurn = null, editing = false;
 const experience = createExperience({send, reset:resetConversation, undo:undoTurn, edit:editTurn,
   isBusy:()=>busy, voice, ideas:renderWelcome});
@@ -612,10 +612,13 @@ function start(){conversationStarted=false;lastDestination=null;lastData=null;la
   $("view").replaceChildren();drawMap({});experience.reset();greet();}
 $("ask").addEventListener("submit",(event)=>{
   event.preventDefault();if(busy)return;
-  if(voice.isActive()){voice.toggle();return;}
-  const text=$("text").value.trim();
-  if(!text){$("voice-status").hidden=false;$("voice-status").textContent="Удерживайте стрелку для диктовки или напишите сообщение.";$("text").focus();return;}
-  experience.fill("");voice.clearStatus();send(text);
+  const submit=()=>{
+    const text=$("text").value.trim();
+    if(!text){$("voice-status").hidden=false;$("voice-status").textContent="Напишите сообщение или нажмите микрофон, чтобы сказать голосом.";$("text").focus();return;}
+    experience.fill("");voice.clearStatus();send(text);
+  };
+  if(voice.isActive()){voice.finish(submit);return;}  // ↑ во время записи — распознать и сразу отправить
+  submit();
 });
 async function resetConversation(){
   if(busy)return;voice.cancel();setBusy(true);

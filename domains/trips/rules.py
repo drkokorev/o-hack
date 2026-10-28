@@ -677,7 +677,9 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
                                 r"\b(?:есть|включен[ао]?|входит)\s*$", t):
         questions = []
         for topic, pattern in QUESTION_TOPICS:
+            # «что посмотреть», «где поесть» — вопрос и без знака «?»
             if (topic == "location" and re.search(r"\bадрес\b", t) or
+                    topic in _PLACE_QUESTIONS and re.search(pattern, t) or
                     any(_question_clause(t, mm.start(), mm.end()) for mm in re.finditer(pattern, t))):
                 questions.append(topic)
         asked_wishes = [code for code, pattern in WISH_WORDS.items()

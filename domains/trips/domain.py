@@ -109,7 +109,7 @@ def _source(s: "guides.Snippet") -> dict:
 
 def _excerpt(s: "guides.Snippet", limit: int = 360) -> str:
     """Первые предложения фрагмента — ответ без LLM, с указанием источника."""
-    text = s.text
+    text = re.sub(r"\s+([,.;:!?)])", r"\1", s.text)  # «музеев ,» — пробел от разметки ссылок в статье
     if len(text) > limit and text.find(":", 0, limit) > limit // 2:  # «…следующие районы:» — без списка смысла нет
         limit = 640
     if len(text) > limit:

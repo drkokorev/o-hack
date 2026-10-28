@@ -132,3 +132,11 @@ def test_imperative_verbs_are_not_masked_as_names():
         assert mask_sensitive_data(text) == (text, False)
     assert mask_sensitive_data("Саша, оформляй")[0] == "[имя], оформляй"
     assert mask_sensitive_data("Роман хочет в Казань")[1]
+
+
+def test_place_question_without_question_mark_is_answered_during_clarification():
+    a = agent(nlg=False)
+    session = a.new_session()
+    a.handle(session, "Хочу в Казань на выходные вдвоём из Москвы")
+    reply = a.handle(session, "а что там посмотреть").reply
+    assert reply.startswith("По путеводителю Wikivoyage («Казань»)") and " ," not in reply

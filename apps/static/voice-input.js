@@ -81,7 +81,9 @@
   }
 
   // One control starts/stops dictation when the field is empty and sends edited text otherwise.
-  window.createVoiceInput = ({ input, button, status, holdToTalk = false }) => {
+  // dedicated: a separate microphone button next to «Send» — click to record, click again to review the text,
+  // or press «Send» while recording to transcribe and send at once (finish()).
+  window.createVoiceInput = ({ input, button, status, holdToTalk = false, dedicated = false }) => {
     const BrowserRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const icons = {
       mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-3 0h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -90,15 +92,17 @@
     };
     let backend = null, current = null, phase = "idle", limit = null, ticker = null;
     let pressed = false, held = false, pointerId = null, holdTimer = null, suppressUntil = 0, mode = "toggle", startedAt = 0;
-    let disclosedBackend = null;
+    let disclosedBackend = null, after = null;
     const cancelButton = holdToTalk ? document.getElementById("voice-cancel") : null;
     const notifyAudio = (recording) => document.dispatchEvent(new CustomEvent("odin:recording", {detail:{recording}}));
     const message = (text) => { status.textContent = text; status.hidden = !text; };
     function update() {
       const hasText = Boolean(input.value.trim());
       button.innerHTML = current ? (phase === "listening" && mode === "hold" ? icons.mic : icons.stop) :
-        (holdToTalk || hasText ? icons.arrow : icons.mic);
-      const label = current ? (phase === "processing" ? "Распознаю речь" : "Остановить запись") :
+        (dedicated ? icons.mic : holdToTalk || hasText ? icons.arrow : icons.mic);
+      const label = current ? (phase === "processing" ? "Распознаю речь" :
+        dedicated ? "Остановить запись и вставить текст" : "Остановить запись") :
+        dedicated ? "Голосовой ввод" :
         holdToTalk ? "Отправить сообщение. Удерживайте для диктовки" : hasText ? "Отправить" : "Голосовой ввод";
       button.setAttribute("aria-label", label);
       button.title = label;
@@ -107,7 +111,7 @@
       if (cancelButton) cancelButton.hidden = !current;
     }
     function hint() {
-      if (current || holdToTalk) return;
+      if (current || holdToTalk || dedicated) return;
       if (backend?.backend === "gigaam") {
         message(backend.status === "ready" ? "Голос распознаётся на сервере приложения (до 20 секунд)." :
           "Модель голоса загружается или недоступна; текстовый ввод работает.");
@@ -126,7 +130,7 @@
     }
     function cancel() {
       clearTimeout(limit); clearInterval(ticker); clearTimeout(holdTimer); limit = null;
-      pressed = false; held = false; notifyAudio(false);
+      pressed = false; held = false; after = null; notifyAudio(false);
       const recognition = current; current = null; phase = "idle";
       if (recognition) { try { recognition.abort(); } catch (_) { /* already stopped */ } }
       update(); message(""); hint();
@@ -155,7 +159,9 @@
         if (stopRequested) { try { recognition.stop(); } catch (_) {} return; }
         phase = "listening"; update();
         startedAt = performance.now(); notifyAudio(true);
-        const tick = () => message(`Запись ${Math.min(20,Math.floor((performance.now()-startedAt)/1000))} / 20 с · ${mode === "hold" ? "отпустите, чтобы закончить" : "нажмите стрелку, чтобы закончить"}`);
+        const finishHint = mode === "hold" ? "отпустите, чтобы закончить" :
+          dedicated ? "■ — вставить текст, ↑ — сразу отправить" : "нажмите стрелку, чтобы закончить";
+        const tick = () => message(`Запись ${Math.min(20,Math.floor((performance.now()-startedAt)/1000))} / 20 с · ${finishHint}`);
         tick(); ticker = setInterval(tick, 250);
       };
       recognition.onresult = (event) => {
@@ -168,7 +174,7 @@
           lastFinal = i;
         }
         input.dispatchEvent(new Event("input", { bubbles: true }));
-        message((recognition.limited ? "Достигнут лимит 20 секунд. " : "") +
+        if (!after) message((recognition.limited ? "Достигнут лимит 20 секунд. " : "") +
           "Текст добавлен. Проверьте его и нажмите «Отправить».");
       };
       recognition.onerror = (event) => {
@@ -181,7 +187,9 @@
       recognition.onend = () => {
         if (current !== recognition) return;
         clearTimeout(limit); clearInterval(ticker); limit = null; current = null; phase = "idle"; notifyAudio(false); update();
+        const then = after; after = null;
         if (!failed && lastFinal < 0) message("Речь не распознана. Попробуйте ещё раз или напишите сообщение.");
+        else if (!failed && then) then();
       };
       recognition.requestStop = () => {
         if (stopRequested) return;
@@ -202,7 +210,7 @@
       if (button.disabled || current) return;
       mode = requestedMode;
       if (!backend) { message("Голос ещё загружается. Попробуйте через секунду."); return; }
-      if (holdToTalk && disclosedBackend !== backend.backend) {
+      if ((holdToTalk || dedicated) && disclosedBackend !== backend.backend) {
         const dialog = document.getElementById("voice-dialog");
         document.getElementById("voice-disclosure").textContent = backend.backend === "gigaam"
           ? "Аудио будет отправлено на сервер приложения для распознавания."
@@ -211,6 +219,7 @@
         document.getElementById("voice-allow").onclick = async () => {
           dialog.close(); disclosedBackend = backend.backend;
           if (!navigator.mediaDevices?.getUserMedia) { message("Микрофон недоступен. Можно написать сообщение."); return; }
+          if (dedicated) { toggle(); return; }  // разрешение спросит сама запись
           try {
             const stream = await navigator.mediaDevices.getUserMedia({audio:true});
             stream.getTracks().forEach((track)=>track.stop());
@@ -222,6 +231,14 @@
       }
       if (requestedMode === "hold" && !pressed) return;
       toggle();
+    }
+    if (dedicated) {
+      button.addEventListener("click", () => { if (current) { if (phase !== "processing") current.requestStop(); } else begin("toggle"); });
+    }
+    if (holdToTalk || dedicated) {
+      document.addEventListener("keydown",(event)=>{if(event.key==="Escape" && current){event.preventDefault();cancel();}});
+      document.addEventListener("visibilitychange",()=>{if(document.hidden){clearTimeout(holdTimer);pressed=false;if(current)cancel();}});
+      window.addEventListener("pagehide",cancel);
     }
     if (holdToTalk) {
       button.addEventListener("pointerdown", (event) => {
@@ -248,12 +265,15 @@
         if(event.detail > 0 && performance.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation();}
       },true);
       button.addEventListener("contextmenu",(event)=>event.preventDefault());
-      document.addEventListener("keydown",(event)=>{if(event.key==="Escape" && current){event.preventDefault();cancel();}});
-      document.addEventListener("visibilitychange",()=>{if(document.hidden){clearTimeout(holdTimer);pressed=false;if(current)cancel();}});
-      window.addEventListener("pagehide",cancel);
     }
     input.addEventListener("input", update);
-    update(); if(!holdToTalk)message("Проверяю доступность голосового ввода…"); checkBackend();
-    return { toggle, begin, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };
+    // Stop recording, wait for the transcript, then call done() — «Send» pressed while dictating.
+    function finish(done) {
+      if (!current) { done(); return; }
+      after = done;
+      if (phase !== "processing") current.requestStop();
+    }
+    update(); if(!holdToTalk && !dedicated)message("Проверяю доступность голосового ввода…"); checkBackend();
+    return { toggle, begin, finish, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };
   };
 })();
