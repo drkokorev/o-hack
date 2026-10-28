@@ -1,14 +1,294 @@
 {
-  "checked_at": "2026-10-28",
-  "note": "Стилизованные модели у центров городов; масштаб увеличен, положение достопримечательности приблизительное.",
+  "checked_at": "2026-10-29",
+  "note": "Стилизованные архитектурные и природные миниатюры. Масштаб увеличен; координаты приблизительные. Мальдивы, Камчатка и Каппадокия представлены собирательными образами региона.",
   "landmarks": [
-    {"city":"Париж","name":"Эйфелева башня","lat":48.8566,"lon":2.3522,"icon":"tower","url":"https://www.toureiffel.paris/en/access-map"},
-    {"city":"Москва","name":"Московский Кремль","lat":55.7558,"lon":37.6173,"icon":"kremlin","url":"https://kreml.ru/ru"},
-    {"city":"Дубай","name":"Бурдж-Халифа","lat":25.2048,"lon":55.2708,"icon":"spire","url":"https://www.burjkhalifa.ae/contact-us/"},
-    {"city":"Лондон","name":"Биг-Бен","lat":51.5072,"lon":-0.1276,"icon":"clocktower","url":"https://www.parliament.uk/visiting/visiting-and-tours/big-ben-tour/"},
-    {"city":"Рим","name":"Колизей","lat":41.9028,"lon":12.4964,"icon":"colosseum","url":"https://colosseo.it/en/"},
-    {"city":"Токио","name":"Ворота Каминаримон","lat":35.6762,"lon":139.6503,"icon":"gate","url":"https://www.gotokyo.org/en/spot/14/"},
-    {"city":"Каир","name":"Пирамиды Гизы","lat":30.0444,"lon":31.2357,"icon":"pyramids","url":"https://egymonuments.gov.eg/monuments/the-great-pyramid/"},
-    {"city":"Нью-Йорк","name":"Статуя Свободы","lat":40.7128,"lon":-74.006,"icon":"liberty","url":"https://www.nps.gov/stli/index.htm"}
+    {
+      "city": "Париж",
+      "name": "Эйфелева башня",
+      "lat": 48.8584,
+      "lon": 2.2945,
+      "icon": "tower",
+      "url": "https://www.toureiffel.paris/en/access-map",
+      "priority": 100
+    },
+    {
+      "city": "Москва",
+      "name": "Московский Кремль",
+      "lat": 55.7525,
+      "lon": 37.6215,
+      "icon": "kremlin",
+      "url": "https://kreml.ru/ru",
+      "priority": 95
+    },
+    {
+      "city": "Дубай",
+      "name": "Бурдж-Халифа",
+      "lat": 25.1972,
+      "lon": 55.2744,
+      "icon": "spire",
+      "url": "https://www.burjkhalifa.ae/contact-us/",
+      "priority": 90
+    },
+    {
+      "city": "Лондон",
+      "name": "Биг-Бен",
+      "lat": 51.5007,
+      "lon": -0.1246,
+      "icon": "clocktower",
+      "url": "https://www.parliament.uk/visiting/visiting-and-tours/big-ben-tour/",
+      "priority": 84
+    },
+    {
+      "city": "Рим",
+      "name": "Колизей",
+      "lat": 41.8902,
+      "lon": 12.4922,
+      "icon": "colosseum",
+      "url": "https://colosseo.it/en/",
+      "priority": 86
+    },
+    {
+      "city": "Токио",
+      "name": "Ворота Каминаримон",
+      "lat": 35.7111,
+      "lon": 139.7963,
+      "icon": "gate",
+      "url": "https://www.gotokyo.org/en/spot/14/",
+      "priority": 72
+    },
+    {
+      "city": "Каир",
+      "name": "Пирамиды Гизы",
+      "lat": 29.9792,
+      "lon": 31.1342,
+      "icon": "pyramids",
+      "url": "https://egymonuments.gov.eg/monuments/the-great-pyramid/",
+      "priority": 98
+    },
+    {
+      "city": "Нью-Йорк",
+      "name": "Статуя Свободы",
+      "lat": 40.6892,
+      "lon": -74.0445,
+      "icon": "liberty",
+      "url": "https://www.nps.gov/stli/index.htm",
+      "priority": 99
+    },
+    {
+      "icon": "isaac",
+      "city": "Санкт-Петербург",
+      "name": "Исаакиевский собор",
+      "lat": 59.9343,
+      "lon": 30.306,
+      "priority": 81,
+      "url": "https://visit-petersburg.ru/leisure/places/isaakievskiy-sobor/"
+    },
+    {
+      "icon": "kulsharif",
+      "city": "Казань",
+      "name": "Мечеть Кул-Шариф",
+      "lat": 55.7984,
+      "lon": 49.1053,
+      "priority": 84,
+      "url": "https://go.kzn.ru/places/mecet-kul-sarif"
+    },
+    {
+      "icon": "sochi_port",
+      "city": "Сочи",
+      "name": "Морской вокзал",
+      "lat": 43.5816,
+      "lon": 39.7195,
+      "priority": 70,
+      "url": "https://visit-sochi.org/"
+    },
+    {
+      "icon": "shamanka",
+      "city": "Байкал",
+      "name": "Скала Шаманка",
+      "lat": 53.2031,
+      "lon": 107.3397,
+      "priority": 88,
+      "url": "https://baikaltravel.ru/"
+    },
+    {
+      "icon": "kamchatka",
+      "city": "Камчатка",
+      "name": "Вулканы Камчатки",
+      "lat": 56.057,
+      "lon": 160.643,
+      "priority": 86,
+      "url": "https://visitkamchatka.ru/"
+    },
+    {
+      "icon": "russky_bridge",
+      "city": "Владивосток",
+      "name": "Русский мост",
+      "lat": 43.0636,
+      "lon": 131.9075,
+      "priority": 78,
+      "url": "https://visit-primorye.ru/"
+    },
+    {
+      "icon": "galata",
+      "city": "Стамбул",
+      "name": "Галатская башня",
+      "lat": 41.0256,
+      "lon": 28.9744,
+      "priority": 83,
+      "url": "https://istanbul.goturkiye.com/"
+    },
+    {
+      "icon": "cappadocia",
+      "city": "Каппадокия",
+      "name": "Скалы и воздушный шар",
+      "lat": 38.6431,
+      "lon": 34.828,
+      "priority": 72,
+      "url": "https://goturkiye.com/cappadocia/cappadocia-goturkiye"
+    },
+    {
+      "icon": "registan",
+      "city": "Самарканд",
+      "name": "Регистан",
+      "lat": 39.6549,
+      "lon": 66.975,
+      "priority": 86,
+      "url": "https://uzbekistan.travel/ru/"
+    },
+    {
+      "icon": "sagrada",
+      "city": "Барселона",
+      "name": "Саграда-Фамилия",
+      "lat": 41.4036,
+      "lon": 2.1744,
+      "priority": 80,
+      "url": "https://sagradafamilia.org/en/"
+    },
+    {
+      "icon": "parthenon",
+      "city": "Афины",
+      "name": "Парфенон",
+      "lat": 37.9715,
+      "lon": 23.7267,
+      "priority": 82,
+      "url": "https://www.theacropolismuseum.gr/en"
+    },
+    {
+      "icon": "belem",
+      "city": "Лиссабон",
+      "name": "Башня Белен",
+      "lat": 38.6916,
+      "lon": -9.216,
+      "priority": 76,
+      "url": "https://www.visitlisboa.com/"
+    },
+    {
+      "icon": "great_wall",
+      "city": "Китай",
+      "name": "Великая Китайская стена",
+      "lat": 40.4319,
+      "lon": 116.5704,
+      "priority": 96,
+      "url": "https://whc.unesco.org/en/list/438/"
+    },
+    {
+      "icon": "taj_mahal",
+      "city": "Агра",
+      "name": "Тадж-Махал",
+      "lat": 27.1751,
+      "lon": 78.0421,
+      "priority": 98,
+      "url": "https://tajmahal.gov.in/"
+    },
+    {
+      "icon": "marina_bay",
+      "city": "Сингапур",
+      "name": "Marina Bay Sands",
+      "lat": 1.2834,
+      "lon": 103.8607,
+      "priority": 88,
+      "url": "https://www.visitsingapore.com/"
+    },
+    {
+      "icon": "petronas",
+      "city": "Куала-Лумпур",
+      "name": "Башни Петронас",
+      "lat": 3.1578,
+      "lon": 101.7119,
+      "priority": 77,
+      "url": "https://www.petronastwintowers.com.my/"
+    },
+    {
+      "icon": "fuji",
+      "city": "Япония",
+      "name": "Гора Фудзи",
+      "lat": 35.3606,
+      "lon": 138.7274,
+      "priority": 94,
+      "url": "https://www.japan.travel/en/fuji-guide/"
+    },
+    {
+      "icon": "bali_temple",
+      "city": "Бали",
+      "name": "Храм Улун-Дану",
+      "lat": -8.275,
+      "lon": 115.1668,
+      "priority": 83,
+      "url": "https://www.indonesia.travel/"
+    },
+    {
+      "icon": "maldives",
+      "city": "Мальдивы",
+      "name": "Виллы над водой",
+      "lat": 4.3,
+      "lon": 73.49,
+      "priority": 83,
+      "url": "https://visitmaldives.com/"
+    },
+    {
+      "icon": "christ",
+      "city": "Рио-де-Жанейро",
+      "name": "Христос-Искупитель",
+      "lat": -22.9519,
+      "lon": -43.2105,
+      "priority": 99,
+      "url": "https://visit.rio/"
+    },
+    {
+      "icon": "chichen_itza",
+      "city": "Юкатан",
+      "name": "Пирамида Кукулькана",
+      "lat": 20.6843,
+      "lon": -88.5678,
+      "priority": 90,
+      "url": "https://www.inah.gob.mx/zonas/chichen-itza"
+    },
+    {
+      "icon": "golden_gate",
+      "city": "Сан-Франциско",
+      "name": "Мост Золотые Ворота",
+      "lat": 37.8199,
+      "lon": -122.4783,
+      "priority": 96,
+      "url": "https://www.goldengate.org/"
+    },
+    {
+      "icon": "opera",
+      "city": "Сидней",
+      "name": "Сиднейский оперный театр",
+      "lat": -33.8568,
+      "lon": 151.2153,
+      "priority": 99,
+      "url": "https://www.sydneyoperahouse.com/"
+    },
+    {
+      "icon": "table_mountain",
+      "city": "Кейптаун",
+      "name": "Столовая гора",
+      "lat": -33.9628,
+      "lon": 18.4098,
+      "priority": 94,
+      "url": "https://www.capetown.travel/"
+    }
   ]
 }

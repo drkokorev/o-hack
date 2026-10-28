@@ -45,7 +45,7 @@
   .trip-map .map-frame .map-scope, .trip-map .map-kind { position: static; min-height: 44px; border: 1px solid var(--line, #d9e2e0);
     border-radius: 12px; background: var(--surface, #fff); color: var(--ink, #0d1b22); font: 500 12px var(--body, system-ui); padding: 0 12px; cursor: pointer; }
   .trip-map .map-surface { position: relative; height: clamp(300px, 38vh, 380px); overflow: hidden; background: #dcebed; }
-  .trip-map .map-canvas { width: 100%; height: 100%; background: radial-gradient(circle at center, #f7faf8 0, #e5f0ed 70%); }
+  .trip-map .map-canvas { width: 100%; height: 100%; background: radial-gradient(circle at center, #19343d 0, #0e1c21 78%); }
   .trip-map .map-controls { position: absolute; right: 12px; top: 12px; z-index: 2; display: grid; gap: 6px; }
   .trip-map .map-controls button { width: 44px; height: 44px; border: 1px solid #d8e4df; border-radius: 12px; background: #ffffffed;
     color: #344e49; font: 500 21px var(--body, system-ui); cursor: pointer; }
@@ -111,3 +111,13 @@
     .trip-map .event-marker { animation: map-event-glow 3.5s ease-in-out infinite; }
     @keyframes map-event-glow { 50% { box-shadow: 0 0 0 7px #f5c54a3b, 0 5px 18px #174a432e; } }
   }
+
+/* Mineral miniatures: dark globe, no idle animation, labels on demand at overview. */
+.trip-map .landmark-marker { filter:none; padding:0; }
+.trip-map .landmark-marker canvas.landmark-model { width:var(--model-size,96px); height:var(--model-size,96px); filter:drop-shadow(0 2px 3px #071a1970); }
+.trip-map .landmark-marker span { background:#142c30ee; color:#eef4e9; border:1px solid #537267; }
+.trip-map .landmark-marker.is-overview span { position:absolute; top:100%; visibility:hidden; white-space:nowrap; }
+.trip-map .landmark-marker.is-overview:hover span,.trip-map .landmark-marker.is-overview:focus-visible span { visibility:visible; }
+
+.trip-map .map-surface { height:clamp(420px,56vh,620px); }
+@media(max-width:700px) { .trip-map .map-surface { height:360px; } }

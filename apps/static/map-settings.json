@@ -1,7 +1,20 @@
 {
-  "world_center": [10, 25],
-  "world_zoom": {"desktop": 1.1, "mobile": 0.9},
+  "world_center": [
+    10,
+    25
+  ],
+  "world_zoom": {
+    "desktop": 1.65,
+    "mobile": 0.9
+  },
   "regional_overviews": [
-    {"country": "Россия", "center": [77, 61], "zoom": 1.05}
+    {
+      "country": "Россия",
+      "center": [
+        77,
+        61
+      ],
+      "zoom": 1.05
+    }
   ]
 }

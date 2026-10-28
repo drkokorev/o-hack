@@ -65,7 +65,7 @@
     let options = {}, kind = "all", controller = null;
     let sequence = 0, detailSequence = 0, timer = 0, userMoved = false, manualCountry = null, initialCountry = null;
     let clusterMarkers = [], eventMarkers = [], landmarkMarkers = [], targetMarkers = [], records = new Map(), currentItems = [], listShown = 40;
-    let popup = null, mapReady = false, fallback = null, loadComplete = false, three = null, threeLoading = false;
+    let popup = null, mapReady = false, fallback = null, loadComplete = false, three = null, threeLoading = false, landmarkLayout = null;
     const holder = node("div", { class: "map-canvas", "aria-label": "Глобус с местами и событиями" });
     const worldCenter = () => Array.isArray(settings.world_center) && settings.world_center.length === 2 &&
       settings.world_center.every(Number.isFinite) ? settings.world_center : [0, 0];
@@ -247,30 +247,31 @@
     }
     function renderLandmarks() {
       clearMarkers(landmarkMarkers);
-      if (!map || map.getZoom() < 3 || map.getZoom() >= 10) { if (three) three.setTargets([]); return; }
+      if (!map || map.getZoom() >= 11) { if (three) three.setTargets([]); return; }
       if (!three && !threeLoading) {
         threeLoading = true;
-        import(asset("landmarks-3d.mjs")).then((module) => {
+        import(asset("landmark-layout.mjs")).then((layout) => { landmarkLayout = layout.selectLandmarks; return import(asset("landmarks-3d.mjs")); }).then((module) => {
           if (!map) return;
           three = module.createLandmarkRenderer(map); renderLandmarks(); renderEvents(); schedule();
-        }).catch(() => { /* Keep the accessible 2D marker if 3D is unavailable. */ });
+        }).catch(() => { renderLandmarks(); /* Keep accessible 2D markers if WebGL is unavailable. */ });
       }
       const models = [];
       const rect = holder.getBoundingClientRect();
-      for (const place of landmarks) {
+      const chosen = landmarkLayout ? landmarkLayout(map, landmarks, rect.width, rect.height) : [];
+      for (const place of chosen) {
         const position = map.project([place.lon, place.lat]);
         // A full model needs room above its anchor; clipped fragments at the
         // edge add noise and are not useful to click.
-        if (position.x < 50 || position.x > rect.width - 50 || position.y < 105 || position.y > rect.height) continue;
-        const visual = three ? node("canvas", {width:160, height:160, class:"landmark-model", "aria-hidden":"true"}) : landmarkIcon(place.icon);
-        const button = node("button", { class: "landmark-marker", type: "button", "data-sound":"select", "aria-label": `${place.city}: ${place.name}`,
+        if (position.x < 20 || position.x > rect.width - 20 || position.y < place.markerSize || position.y > rect.height) continue;
+        const visual = three ? node("canvas", {width:192, height:192, class:"landmark-model", "aria-hidden":"true"}) : landmarkIcon(place.icon);
+        const button = node("button", { class: "landmark-marker" + (place.overview ? " is-overview" : ""), style: `--model-size:${place.markerSize}px`, title: `${place.city}: ${place.name}`, type: "button", "data-sound":"select", "aria-label": `${place.city}: ${place.name}`,
           onclick: () => makePopup(place.lon, place.lat, node("div", { class: "map-pop" },
             node("div", { class: "map-pop-kind" }, "Идея для поездки"), node("strong", {}, place.name),
-            node("p", {}, place.city), node("p", { class: "map-note" }, "Модель у центра города; масштаб увеличен. Условия посещения уточняйте у источника."),
+            node("p", {}, place.city), node("p", { class: "map-note" }, "Стилизованная миниатюра; масштаб увеличен, положение приблизительное."),
             node("div", { class: "map-pop-links" }, safeLink(place.url, "Официальный сайт ↗")),
             node("button", { type: "button", class: "map-choose", "data-sound":"select", onclick: () => {
               closePopup(); onChoose({ name: place.city, lat: place.lat, lon: place.lon });
-            } }, "Выбрать город"))) }, visual, node("span", {}, place.city));
+            } }, "Выбрать место"))) }, visual, node("span", {}, place.city));
         if (three) models.push({canvas:visual, kind:place.icon, lon:place.lon});
         landmarkMarkers.push(new lib.Marker({ element: button, anchor: "bottom", opacityWhenCovered: 0 })
           .setLngLat([place.lon, place.lat]).addTo(map));
@@ -509,9 +510,9 @@
               "trip-route": { type: "geojson", data: { type: "FeatureCollection", features: [] } },
             },
             layers: [
-              { id: "ocean", type: "background", paint: { "background-color": "#dcebed" } },
+              { id: "ocean", type: "background", paint: { "background-color": "#19343d" } },
               { id: "land", type: "fill", source: "countries",
-                paint: { "fill-color": "#accbbb", "fill-outline-color": "#7fa895" } },
+                paint: { "fill-color": "#3c6255", "fill-outline-color": "#6d9181" } },
               { id: "trip-route", type: "line", source: "trip-route",
                 paint: { "line-color": "#3152dc", "line-width": 2, "line-dasharray": [2, 2] } },
               { id: "catalog-points", type: "circle", source: "catalog-points",

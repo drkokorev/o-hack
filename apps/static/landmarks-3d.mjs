@@ -1,144 +1,135 @@
-/* Small local Three.js models rendered as animated, geographically anchored map markers. */
+/* Original architectural miniatures. Drop-in createLandmarkRenderer(map) API.
+ * One WebGL context, lazy GLB loads, demand rendering, bounded bitmap cache.
+ */
 import * as THREE from './vendor/three/three.module.js';
+import { GLTFLoader } from './vendor/three/GLTFLoader.js';
+import { DRACOLoader } from './vendor/three/DRACOLoader.js';
 
-export function createLandmarkRenderer(map) {
+export function createLandmarkRenderer(map, options = {}) {
+  const assetBase = options.assetBase || new URL('./models/landmarks/', import.meta.url);
+  const size = options.size || 320;
   const renderer = new THREE.WebGLRenderer({alpha:true, antialias:true, preserveDrawingBuffer:true, powerPreference:'low-power'});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(160, 160, false);
-  renderer.setClearColor(0x000000, 0);
+  renderer.setPixelRatio(1);
+  renderer.setSize(size,size,false);
+  renderer.setClearColor(0,0);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.17;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-4.8,4.8,4.8,-4.8,0.1,60);
-  camera.position.set(10,8,14); camera.lookAt(0,3.2,0);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x98a8ae, 2.2));
-  const light = new THREE.DirectionalLight(0xffffff, 2); light.position.set(6,12,8); scene.add(light);
-  const iron = new THREE.MeshStandardMaterial({color:0x3153aa, roughness:0.75, metalness:0.2});
-  const lightIron = new THREE.MeshStandardMaterial({color:0x8ba0d4, roughness:0.72});
-  const red = new THREE.MeshStandardMaterial({color:0xa94742, roughness:0.82});
-  const stone = new THREE.MeshStandardMaterial({color:0xd9d4c1, roughness:0.86});
-  const gold = new THREE.MeshStandardMaterial({color:0xe3ae4c, roughness:0.65});
-  const glass = new THREE.MeshStandardMaterial({color:0x607f9b, roughness:0.5, metalness:0.35});
-  const dark = new THREE.MeshStandardMaterial({color:0x263c48, roughness:0.8});
-  const jade = new THREE.MeshStandardMaterial({color:0x6da998, roughness:0.8});
-  const unitY = new THREE.Vector3(0,1,0);
-  function box(group,w,h,d,x,y,z,material) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), material);
-    mesh.position.set(x,y,z); group.add(mesh); return mesh;
-  }
-  function beam(group, a, b, radius, material=iron) {
-    const from = new THREE.Vector3(...a), to = new THREE.Vector3(...b), delta = to.clone().sub(from);
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),6), material);
-    mesh.position.copy(from).add(to).multiplyScalar(.5); mesh.quaternion.setFromUnitVectors(unitY,delta.normalize()); group.add(mesh);
-  }
-  function eiffel() {
-    const group = new THREE.Group();
-    const width = (h) => 1.35 - Math.min(h,6.2)/6.2*1.12;
-    for (const x of [-1,1]) for (const z of [-1,1]) {
-      beam(group,[x*1.35,0,z*1.35],[x*.23,6.2,z*.23],.095);
-      for (let h=0;h<6;h+=1) {
-        const a=width(h),b=width(h+1);
-        beam(group,[x*a,h,z*a],[x*b,h+1,z*b],.035,lightIron);
-      }
+  const camera = new THREE.OrthographicCamera(-5,5,5,-5,.1,100);
+  scene.add(new THREE.HemisphereLight(0xe8f4ff,0xb2a48e,2.2));
+  const key = new THREE.DirectionalLight(0xffedcf,3.1);
+  key.position.set(-6,12,8);key.castShadow=true;
+  key.shadow.mapSize.set(1024,1024);
+  Object.assign(key.shadow.camera,{left:-6,right:6,top:10,bottom:-6,near:.1,far:40});
+  key.shadow.bias=-.0004;key.shadow.normalBias=.025;key.shadow.radius=3;
+  scene.add(key);
+  const fill=new THREE.DirectionalLight(0xd5e9ff,1.35);fill.position.set(6,7,-5);scene.add(fill);
+  const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=128;
+  const shadowContext=shadowCanvas.getContext('2d');
+  const gradient=shadowContext.createRadialGradient(64,64,12,64,64,64);
+  gradient.addColorStop(0,'rgba(28,48,35,.24)');gradient.addColorStop(.5,'rgba(28,48,35,.13)');gradient.addColorStop(1,'rgba(28,48,35,0)');
+  shadowContext.fillStyle=gradient;shadowContext.fillRect(0,0,128,128);
+  const shadowTexture=new THREE.CanvasTexture(shadowCanvas);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:shadowTexture,transparent:true,depthWrite:false}));
+  floor.rotation.x=-Math.PI/2;floor.position.y=-.018;scene.add(floor);
+  const draco=new DRACOLoader().setDecoderPath(new URL('./vendor/three/draco/',import.meta.url).href).setWorkerLimit(2);
+  const loader=new GLTFLoader();
+  loader.setDRACOLoader(draco);
+  const allowed=new Set(['tower','kremlin','spire','clocktower','colosseum','gate','pyramids','liberty','isaac','kulsharif','sochi_port','shamanka','kamchatka','russky_bridge','galata','cappadocia','registan','sagrada','parthenon','belem','great_wall','taj_mahal','marina_bay','petronas','fuji','bali_temple','maldives','christ','chichen_itza','golden_gate','opera','table_mountain']);
+  const models=new Map(),jobs=new Map(),errors=new Map(),bitmaps=new Map();
+  let targets=[],frame=0,disposed=false;
+  let activeLoads=0;
+  const queue=[];
+  function pump(){
+    while(!disposed&&activeLoads<3&&queue.length){
+      const task=queue.shift();activeLoads++;
+      loader.loadAsync(task.url).catch(()=>loader.loadAsync(task.url)).then(task.resolve,task.reject).finally(()=>{activeLoads--;pump();});
     }
-    for (let h=.8;h<=6;h+=.8) {
-      const a=width(h), n=width(Math.min(h+.8,6.2));
-      for (const side of [-1,1]) {
-        beam(group,[-a,h,side*a],[a,h,side*a],.045);
-        beam(group,[side*a,h,-a],[side*a,h,a],.045);
-        if (h<5.7) {
-          beam(group,[-a,h,side*a],[n,h+.8,side*n],.028,lightIron);
-          beam(group,[side*a,h,-a],[side*n,h+.8,n],.028,lightIron);
-        }
-      }
-    }
-    box(group,2.75,.18,2.75,0,2.35,0,iron); box(group,1.45,.16,1.45,0,4.65,0,iron);
-    box(group,.58,.16,.58,0,6.2,0,iron); beam(group,[0,6.25,0],[0,7.35,0],.06,gold);
-    return group;
   }
-  function kremlin() {
-    const group = new THREE.Group();
-    box(group,4.4,1.1,1.8,0,.55,0,red); box(group,1.45,2.9,1.4,0,1.45,0,red);
-    box(group,1.65,.2,1.6,0,2.85,0,stone);
-    const roof=new THREE.Mesh(new THREE.ConeGeometry(1.05,2.5,4),iron); roof.position.set(0,4.2,0); roof.rotation.y=Math.PI/4; group.add(roof);
-    beam(group,[0,5.5,0],[0,6.5,0],.06,gold);
-    for (const x of [-1.75,1.75]) {box(group,.65,2.3,.8,x,1.15,0,red);
-      const top=new THREE.Mesh(new THREE.ConeGeometry(.65,1.2,4),iron);top.position.set(x,2.9,0);top.rotation.y=Math.PI/4;group.add(top);}
-    return group;
+  function fetchModel(url){return new Promise((resolve,reject)=>{queue.push({url,resolve,reject});pump();});}
+  function disposeModel(root) {
+    root.traverse(o=>{if(o.isMesh){o.geometry.dispose();for(const m of [].concat(o.material))m.dispose();}});
   }
-  function spire() {
-    const group = new THREE.Group();
-    box(group,2.9,1.2,2.3,0,.6,0,glass); box(group,2.25,1.6,1.8,0,2,0,glass);
-    box(group,1.65,1.5,1.4,0,3.55,0,lightIron); box(group,1.1,1.2,1,0,4.9,0,glass);
-    box(group,.55,1.1,.55,0,6.05,0,lightIron); beam(group,[0,6.6,0],[0,7.5,0],.06,gold);
-    return group;
+  function load(kind) {
+    if(!allowed.has(kind)||models.has(kind)||jobs.has(kind)||errors.has(kind)||disposed)return;
+    const job=fetchModel(new URL(kind+'.glb',assetBase).href).then(gltf=>{
+      if(disposed){disposeModel(gltf.scene);return;}
+      const root=gltf.scene;
+      root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+      const bound=new THREE.Box3().setFromObject(root),center=bound.getCenter(new THREE.Vector3());
+      root.position.set(-center.x,-bound.min.y,-center.z);
+      const group=new THREE.Group();group.add(root);group.visible=false;scene.add(group);
+      const dimension=bound.getSize(new THREE.Vector3());
+      models.set(kind,{group,height:dimension.y,width:Math.max(dimension.x,dimension.z)});
+      schedule();
+    }).catch(error=>{errors.set(kind,error.message);schedule();}).finally(()=>jobs.delete(kind));
+    jobs.set(kind,job);
   }
-  function clocktower() {
-    const group = new THREE.Group();
-    box(group,1.8,5.2,1.8,0,2.6,0,stone); box(group,2,.25,2,0,4.2,0,gold);
-    box(group,1.9,1,1.9,0,5.65,0,stone);
-    for (const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]) {
-      const face = new THREE.Mesh(new THREE.CircleGeometry(.5,20),new THREE.MeshStandardMaterial({color:0xf6f2e5}));
-      face.position.set(Math.sin(angle)*.96,5.65,Math.cos(angle)*.96); face.rotation.y=angle; group.add(face);
-    }
-    const roof=new THREE.Mesh(new THREE.ConeGeometry(1.38,1.55,4),dark);
-    roof.position.y=6.9; roof.rotation.y=Math.PI/4; group.add(roof);
-    beam(group,[0,7.65,0],[0,8,0],.055,gold); return group;
+  function fallback(target) {
+    const ctx=target.canvas.getContext('2d');if(!ctx)return;
+    const w=target.canvas.width,h=target.canvas.height;ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#edf3f0';ctx.beginPath();ctx.roundRect(w*.34,h*.24,w*.32,h*.54,w*.06);ctx.fill();
+    ctx.fillStyle='#3358bd';ctx.beginPath();ctx.moveTo(w*.5,h*.15);ctx.lineTo(w*.28,h*.37);ctx.lineTo(w*.72,h*.37);ctx.closePath();ctx.fill();
+    for(let i=0;i<3;i++)ctx.fillRect(w*.43,h*(.43+i*.10),w*.14,h*.05);
+    target.canvas.dataset.modelState=errors.has(target.kind)?'fallback':'loading';
   }
-  function colosseum() {
-    const group = new THREE.Group();
-    const base=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.5,3.4,24),stone);
-    base.position.y=1.7; base.scale.z=.76; group.add(base);
-    for (const h of [1,2.05]) for (let i=0;i<16;i++) {
-      const a=i*Math.PI/8, arch=box(group,.34,.66,.08,Math.sin(a)*2.4,h,Math.cos(a)*1.84,dark);
-      arch.rotation.y=a;
-    }
-    return group;
+  function angleFor(target) {
+    const center=map.getCenter(),bearing=map.getBearing();
+    // Quantization caches snapshots while the globe moves; no idle animation.
+    const angle=Math.max(-40,Math.min(40,(center.lng-target.lon)*.45))-bearing;
+    return Math.round(angle/3)*3;
   }
-  function gate() {
-    const group = new THREE.Group();
-    for(const x of [-1.7,1.7]) box(group,.55,4.3,.55,x,2.15,0,red);
-    box(group,4.5,.45,1.05,0,4.3,0,dark); box(group,4.1,.38,.9,0,4.75,0,red);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(3.1,1.05,4),dark);
-    roof.scale.z=.45; roof.position.y=5.45; roof.rotation.y=Math.PI/4; group.add(roof);
-    const lantern=new THREE.Mesh(new THREE.SphereGeometry(.65,12,8),gold);
-    lantern.scale.y=1.15; lantern.position.set(0,3.25,0); group.add(lantern); return group;
-  }
-  function pyramids() {
-    const group = new THREE.Group();
-    for(const [x,z,size] of [[-.65,0,2.7],[1.6,-.5,1.35]]) {
-      const pyramid = new THREE.Mesh(new THREE.ConeGeometry(size,size*1.35,4),gold);
-      pyramid.rotation.y=Math.PI/4; pyramid.position.set(x,size*.675,z); group.add(pyramid);
-    }
-    return group;
-  }
-  function liberty() {
-    const group = new THREE.Group();
-    box(group,2.3,1.5,2.3,0,.75,0,stone); box(group,1.7,.35,1.7,0,1.65,0,gold);
-    const body=new THREE.Mesh(new THREE.ConeGeometry(.75,3.2,7),jade); body.position.y=3.35; group.add(body);
-    const head=new THREE.Mesh(new THREE.SphereGeometry(.45,10,8),jade); head.position.y=5.25; group.add(head);
-    beam(group,[.5,4.2,0],[1.2,6.3,0],.18,jade); beam(group,[1.2,6.3,0],[1.2,6.9,0],.09,gold);
-    const flame=new THREE.Mesh(new THREE.ConeGeometry(.24,.6,6),gold); flame.position.set(1.2,7.15,0); group.add(flame);
-    return group;
-  }
-  const models = {tower:eiffel(), kremlin:kremlin(), spire:spire(), clocktower:clocktower(),
-    colosseum:colosseum(), gate:gate(), pyramids:pyramids(), liberty:liberty()};
-  Object.values(models).forEach((model) => { model.visible=false; scene.add(model); });
-  let targets = [], frame = 0;
   function draw() {
-    frame = 0;
-    const center = map.getCenter(), bearing = map.getBearing();
-    for (const target of targets) {
-      if (!target.canvas.isConnected) continue;
-      const model = models[target.kind]; if (!model) continue;
-      model.visible = true;
-      model.rotation.y = THREE.MathUtils.degToRad(Math.max(-40, Math.min(40, (center.lng-target.lon)*.45)) - bearing);
-      renderer.render(scene,camera);
-      const context = target.canvas.getContext('2d'); context.clearRect(0,0,target.canvas.width,target.canvas.height);
-      context.drawImage(renderer.domElement,0,0,target.canvas.width,target.canvas.height);
-      model.visible = false;
+    frame=0;if(disposed)return;
+    for(const target of targets){
+      if(!target.canvas.isConnected)continue;
+      const model=models.get(target.kind);
+      if(!model){fallback(target);continue;}
+      const angle=angleFor(target),cacheKey=target.kind+':'+angle;
+      let bitmap=bitmaps.get(cacheKey);
+      if(!bitmap){
+        const {group,height,width}=model;
+        const scale=Math.max(height*1.19,width*1.53),mid=height*.44;
+        floor.scale.set(width*1.55,width*1.55,1);
+        camera.left=camera.bottom=-scale/2;camera.right=camera.top=scale/2;
+        camera.position.set(11,mid+(target.kind==='colosseum'?15:10),17);
+        camera.lookAt(0,mid,0);camera.updateProjectionMatrix();
+        group.rotation.y=THREE.MathUtils.degToRad(angle);group.visible=true;
+        renderer.render(scene,camera);group.visible=false;
+        bitmap=document.createElement('canvas');bitmap.width=bitmap.height=size;
+        bitmap.getContext('2d').drawImage(renderer.domElement,0,0);
+        bitmaps.set(cacheKey,bitmap);
+        while(bitmaps.size>32)bitmaps.delete(bitmaps.keys().next().value);
+      }
+      const ctx=target.canvas.getContext('2d');if(!ctx)continue;
+      ctx.clearRect(0,0,target.canvas.width,target.canvas.height);
+      ctx.drawImage(bitmap,0,0,target.canvas.width,target.canvas.height);
+      target.canvas.dataset.modelState='ready';
     }
   }
-  function schedule() { if (!frame) frame=requestAnimationFrame(draw); }
-  map.on('move',schedule);
-  map.on('remove',() => { map.off('move',schedule); if (frame) cancelAnimationFrame(frame); renderer.dispose(); });
-  return {setTargets(next) {targets=next; schedule();}};
+  function schedule(){if(!frame&&!disposed)frame=requestAnimationFrame(draw);}
+  function dispose(){
+    if(disposed)return;disposed=true;if(frame)cancelAnimationFrame(frame);
+    for(const task of queue.splice(0))task.reject(new Error('Renderer disposed'));
+    map.off('move',schedule);map.off('remove',dispose);
+    renderer.domElement.removeEventListener('webglcontextlost',onLost);
+    renderer.domElement.removeEventListener('webglcontextrestored',onRestored);
+    for(const {group} of models.values())disposeModel(group);
+    models.clear();bitmaps.clear();floor.geometry.dispose();floor.material.dispose();shadowTexture.dispose();key.shadow.map?.dispose();draco.dispose();
+    renderer.dispose();targets=[];
+  }
+  function onLost(event){event.preventDefault();for(const target of targets){errors.set(target.kind,'WebGL context lost');fallback(target);}}
+  function onRestored(){bitmaps.clear();for(const kind of models.keys())errors.delete(kind);schedule();}
+  renderer.domElement.addEventListener('webglcontextlost',onLost);
+  renderer.domElement.addEventListener('webglcontextrestored',onRestored);
+  map.on('move',schedule);map.on('remove',dispose);
+  return {
+    setTargets(next){targets=next;for(const target of next)load(target.kind);schedule();},
+    dispose,
+    async ready(){await Promise.allSettled([...jobs.values()]);draw();return {loaded:[...models.keys()],errors:Object.fromEntries(errors)};},
+    stats(){return {loaded:models.size,failed:errors.size,bitmaps:bitmaps.size,webglContexts:1};}
+  };
 }

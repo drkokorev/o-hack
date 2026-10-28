@@ -1,0 +1,1035 @@
+{
+  "collection_and_globe": {
+    "date": "2026-10-29",
+    "load": {
+      "loaded": [
+        "tower",
+        "kremlin",
+        "spire",
+        "clocktower",
+        "colosseum",
+        "gate",
+        "liberty",
+        "pyramids",
+        "kulsharif",
+        "sochi_port",
+        "isaac",
+        "shamanka",
+        "kamchatka",
+        "russky_bridge",
+        "cappadocia",
+        "galata",
+        "registan",
+        "sagrada",
+        "parthenon",
+        "belem",
+        "taj_mahal",
+        "great_wall",
+        "marina_bay",
+        "petronas",
+        "fuji",
+        "bali_temple",
+        "maldives",
+        "christ",
+        "chichen_itza",
+        "golden_gate",
+        "table_mountain",
+        "opera"
+      ],
+      "errors": {}
+    },
+    "rotationChecks": [
+      {
+        "angle": -180,
+        "models": [
+          {
+            "id": "tower",
+            "pixels": 51810,
+            "state": "ready"
+          },
+          {
+            "id": "kremlin",
+            "pixels": 66154,
+            "state": "ready"
+          },
+          {
+            "id": "spire",
+            "pixels": 34731,
+            "state": "ready"
+          },
+          {
+            "id": "clocktower",
+            "pixels": 38904,
+            "state": "ready"
+          },
+          {
+            "id": "colosseum",
+            "pixels": 80951,
+            "state": "ready"
+          },
+          {
+            "id": "gate",
+            "pixels": 91884,
+            "state": "ready"
+          },
+          {
+            "id": "pyramids",
+            "pixels": 52289,
+            "state": "ready"
+          },
+          {
+            "id": "liberty",
+            "pixels": 37073,
+            "state": "ready"
+          },
+          {
+            "id": "isaac",
+            "pixels": 91765,
+            "state": "ready"
+          },
+          {
+            "id": "kulsharif",
+            "pixels": 90602,
+            "state": "ready"
+          },
+          {
+            "id": "sochi_port",
+            "pixels": 67052,
+            "state": "ready"
+          },
+          {
+            "id": "shamanka",
+            "pixels": 61667,
+            "state": "ready"
+          },
+          {
+            "id": "kamchatka",
+            "pixels": 58465,
+            "state": "ready"
+          },
+          {
+            "id": "russky_bridge",
+            "pixels": 58908,
+            "state": "ready"
+          },
+          {
+            "id": "galata",
+            "pixels": 63576,
+            "state": "ready"
+          },
+          {
+            "id": "cappadocia",
+            "pixels": 67249,
+            "state": "ready"
+          },
+          {
+            "id": "registan",
+            "pixels": 69559,
+            "state": "ready"
+          },
+          {
+            "id": "sagrada",
+            "pixels": 73910,
+            "state": "ready"
+          },
+          {
+            "id": "parthenon",
+            "pixels": 96481,
+            "state": "ready"
+          },
+          {
+            "id": "belem",
+            "pixels": 100011,
+            "state": "ready"
+          },
+          {
+            "id": "great_wall",
+            "pixels": 59082,
+            "state": "ready"
+          },
+          {
+            "id": "taj_mahal",
+            "pixels": 78436,
+            "state": "ready"
+          },
+          {
+            "id": "marina_bay",
+            "pixels": 83182,
+            "state": "ready"
+          },
+          {
+            "id": "petronas",
+            "pixels": 69250,
+            "state": "ready"
+          },
+          {
+            "id": "fuji",
+            "pixels": 57746,
+            "state": "ready"
+          },
+          {
+            "id": "bali_temple",
+            "pixels": 81969,
+            "state": "ready"
+          },
+          {
+            "id": "maldives",
+            "pixels": 57557,
+            "state": "ready"
+          },
+          {
+            "id": "christ",
+            "pixels": 67085,
+            "state": "ready"
+          },
+          {
+            "id": "chichen_itza",
+            "pixels": 68578,
+            "state": "ready"
+          },
+          {
+            "id": "golden_gate",
+            "pixels": 58786,
+            "state": "ready"
+          },
+          {
+            "id": "opera",
+            "pixels": 64194,
+            "state": "ready"
+          },
+          {
+            "id": "table_mountain",
+            "pixels": 65593,
+            "state": "ready"
+          }
+        ]
+      },
+      {
+        "angle": -90,
+        "models": [
+          {
+            "id": "tower",
+            "pixels": 51686,
+            "state": "ready"
+          },
+          {
+            "id": "kremlin",
+            "pixels": 62619,
+            "state": "ready"
+          },
+          {
+            "id": "spire",
+            "pixels": 33244,
+            "state": "ready"
+          },
+          {
+            "id": "clocktower",
+            "pixels": 38905,
+            "state": "ready"
+          },
+          {
+            "id": "colosseum",
+            "pixels": 87096,
+            "state": "ready"
+          },
+          {
+            "id": "gate",
+            "pixels": 85171,
+            "state": "ready"
+          },
+          {
+            "id": "pyramids",
+            "pixels": 53507,
+            "state": "ready"
+          },
+          {
+            "id": "liberty",
+            "pixels": 36130,
+            "state": "ready"
+          },
+          {
+            "id": "isaac",
+            "pixels": 92512,
+            "state": "ready"
+          },
+          {
+            "id": "kulsharif",
+            "pixels": 90486,
+            "state": "ready"
+          },
+          {
+            "id": "sochi_port",
+            "pixels": 66020,
+            "state": "ready"
+          },
+          {
+            "id": "shamanka",
+            "pixels": 60156,
+            "state": "ready"
+          },
+          {
+            "id": "kamchatka",
+            "pixels": 59674,
+            "state": "ready"
+          },
+          {
+            "id": "russky_bridge",
+            "pixels": 58812,
+            "state": "ready"
+          },
+          {
+            "id": "galata",
+            "pixels": 63523,
+            "state": "ready"
+          },
+          {
+            "id": "cappadocia",
+            "pixels": 68234,
+            "state": "ready"
+          },
+          {
+            "id": "registan",
+            "pixels": 75219,
+            "state": "ready"
+          },
+          {
+            "id": "sagrada",
+            "pixels": 73328,
+            "state": "ready"
+          },
+          {
+            "id": "parthenon",
+            "pixels": 93118,
+            "state": "ready"
+          },
+          {
+            "id": "belem",
+            "pixels": 102830,
+            "state": "ready"
+          },
+          {
+            "id": "great_wall",
+            "pixels": 58510,
+            "state": "ready"
+          },
+          {
+            "id": "taj_mahal",
+            "pixels": 81415,
+            "state": "ready"
+          },
+          {
+            "id": "marina_bay",
+            "pixels": 77438,
+            "state": "ready"
+          },
+          {
+            "id": "petronas",
+            "pixels": 67780,
+            "state": "ready"
+          },
+          {
+            "id": "fuji",
+            "pixels": 58933,
+            "state": "ready"
+          },
+          {
+            "id": "bali_temple",
+            "pixels": 85419,
+            "state": "ready"
+          },
+          {
+            "id": "maldives",
+            "pixels": 58729,
+            "state": "ready"
+          },
+          {
+            "id": "christ",
+            "pixels": 64919,
+            "state": "ready"
+          },
+          {
+            "id": "chichen_itza",
+            "pixels": 68395,
+            "state": "ready"
+          },
+          {
+            "id": "golden_gate",
+            "pixels": 58276,
+            "state": "ready"
+          },
+          {
+            "id": "opera",
+            "pixels": 64498,
+            "state": "ready"
+          },
+          {
+            "id": "table_mountain",
+            "pixels": 63263,
+            "state": "ready"
+          }
+        ]
+      },
+      {
+        "angle": 0,
+        "models": [
+          {
+            "id": "tower",
+            "pixels": 51804,
+            "state": "ready"
+          },
+          {
+            "id": "kremlin",
+            "pixels": 66121,
+            "state": "ready"
+          },
+          {
+            "id": "spire",
+            "pixels": 33503,
+            "state": "ready"
+          },
+          {
+            "id": "clocktower",
+            "pixels": 38902,
+            "state": "ready"
+          },
+          {
+            "id": "colosseum",
+            "pixels": 87453,
+            "state": "ready"
+          },
+          {
+            "id": "gate",
+            "pixels": 91884,
+            "state": "ready"
+          },
+          {
+            "id": "pyramids",
+            "pixels": 54105,
+            "state": "ready"
+          },
+          {
+            "id": "liberty",
+            "pixels": 37317,
+            "state": "ready"
+          },
+          {
+            "id": "isaac",
+            "pixels": 91765,
+            "state": "ready"
+          },
+          {
+            "id": "kulsharif",
+            "pixels": 90599,
+            "state": "ready"
+          },
+          {
+            "id": "sochi_port",
+            "pixels": 68222,
+            "state": "ready"
+          },
+          {
+            "id": "shamanka",
+            "pixels": 63773,
+            "state": "ready"
+          },
+          {
+            "id": "kamchatka",
+            "pixels": 60760,
+            "state": "ready"
+          },
+          {
+            "id": "russky_bridge",
+            "pixels": 58907,
+            "state": "ready"
+          },
+          {
+            "id": "galata",
+            "pixels": 63576,
+            "state": "ready"
+          },
+          {
+            "id": "cappadocia",
+            "pixels": 68913,
+            "state": "ready"
+          },
+          {
+            "id": "registan",
+            "pixels": 79102,
+            "state": "ready"
+          },
+          {
+            "id": "sagrada",
+            "pixels": 73792,
+            "state": "ready"
+          },
+          {
+            "id": "parthenon",
+            "pixels": 96471,
+            "state": "ready"
+          },
+          {
+            "id": "belem",
+            "pixels": 103655,
+            "state": "ready"
+          },
+          {
+            "id": "great_wall",
+            "pixels": 58954,
+            "state": "ready"
+          },
+          {
+            "id": "taj_mahal",
+            "pixels": 82617,
+            "state": "ready"
+          },
+          {
+            "id": "marina_bay",
+            "pixels": 83960,
+            "state": "ready"
+          },
+          {
+            "id": "petronas",
+            "pixels": 69253,
+            "state": "ready"
+          },
+          {
+            "id": "fuji",
+            "pixels": 58797,
+            "state": "ready"
+          },
+          {
+            "id": "bali_temple",
+            "pixels": 84128,
+            "state": "ready"
+          },
+          {
+            "id": "maldives",
+            "pixels": 58830,
+            "state": "ready"
+          },
+          {
+            "id": "christ",
+            "pixels": 67418,
+            "state": "ready"
+          },
+          {
+            "id": "chichen_itza",
+            "pixels": 68578,
+            "state": "ready"
+          },
+          {
+            "id": "golden_gate",
+            "pixels": 58778,
+            "state": "ready"
+          },
+          {
+            "id": "opera",
+            "pixels": 59468,
+            "state": "ready"
+          },
+          {
+            "id": "table_mountain",
+            "pixels": 65723,
+            "state": "ready"
+          }
+        ]
+      },
+      {
+        "angle": 90,
+        "models": [
+          {
+            "id": "tower",
+            "pixels": 51664,
+            "state": "ready"
+          },
+          {
+            "id": "kremlin",
+            "pixels": 62696,
+            "state": "ready"
+          },
+          {
+            "id": "spire",
+            "pixels": 32651,
+            "state": "ready"
+          },
+          {
+            "id": "clocktower",
+            "pixels": 38905,
+            "state": "ready"
+          },
+          {
+            "id": "colosseum",
+            "pixels": 79624,
+            "state": "ready"
+          },
+          {
+            "id": "gate",
+            "pixels": 85159,
+            "state": "ready"
+          },
+          {
+            "id": "pyramids",
+            "pixels": 54421,
+            "state": "ready"
+          },
+          {
+            "id": "liberty",
+            "pixels": 36485,
+            "state": "ready"
+          },
+          {
+            "id": "isaac",
+            "pixels": 92505,
+            "state": "ready"
+          },
+          {
+            "id": "kulsharif",
+            "pixels": 90481,
+            "state": "ready"
+          },
+          {
+            "id": "sochi_port",
+            "pixels": 66108,
+            "state": "ready"
+          },
+          {
+            "id": "shamanka",
+            "pixels": 60776,
+            "state": "ready"
+          },
+          {
+            "id": "kamchatka",
+            "pixels": 59353,
+            "state": "ready"
+          },
+          {
+            "id": "russky_bridge",
+            "pixels": 58816,
+            "state": "ready"
+          },
+          {
+            "id": "galata",
+            "pixels": 63573,
+            "state": "ready"
+          },
+          {
+            "id": "cappadocia",
+            "pixels": 66892,
+            "state": "ready"
+          },
+          {
+            "id": "registan",
+            "pixels": 68165,
+            "state": "ready"
+          },
+          {
+            "id": "sagrada",
+            "pixels": 75077,
+            "state": "ready"
+          },
+          {
+            "id": "parthenon",
+            "pixels": 93156,
+            "state": "ready"
+          },
+          {
+            "id": "belem",
+            "pixels": 99013,
+            "state": "ready"
+          },
+          {
+            "id": "great_wall",
+            "pixels": 57350,
+            "state": "ready"
+          },
+          {
+            "id": "taj_mahal",
+            "pixels": 79181,
+            "state": "ready"
+          },
+          {
+            "id": "marina_bay",
+            "pixels": 76037,
+            "state": "ready"
+          },
+          {
+            "id": "petronas",
+            "pixels": 67780,
+            "state": "ready"
+          },
+          {
+            "id": "fuji",
+            "pixels": 57654,
+            "state": "ready"
+          },
+          {
+            "id": "bali_temple",
+            "pixels": 84658,
+            "state": "ready"
+          },
+          {
+            "id": "maldives",
+            "pixels": 55329,
+            "state": "ready"
+          },
+          {
+            "id": "christ",
+            "pixels": 65001,
+            "state": "ready"
+          },
+          {
+            "id": "chichen_itza",
+            "pixels": 68398,
+            "state": "ready"
+          },
+          {
+            "id": "golden_gate",
+            "pixels": 58252,
+            "state": "ready"
+          },
+          {
+            "id": "opera",
+            "pixels": 56896,
+            "state": "ready"
+          },
+          {
+            "id": "table_mountain",
+            "pixels": 63929,
+            "state": "ready"
+          }
+        ]
+      },
+      {
+        "angle": 180,
+        "models": [
+          {
+            "id": "tower",
+            "pixels": 51810,
+            "state": "ready"
+          },
+          {
+            "id": "kremlin",
+            "pixels": 66154,
+            "state": "ready"
+          },
+          {
+            "id": "spire",
+            "pixels": 34731,
+            "state": "ready"
+          },
+          {
+            "id": "clocktower",
+            "pixels": 38904,
+            "state": "ready"
+          },
+          {
+            "id": "colosseum",
+            "pixels": 80951,
+            "state": "ready"
+          },
+          {
+            "id": "gate",
+            "pixels": 91884,
+            "state": "ready"
+          },
+          {
+            "id": "pyramids",
+            "pixels": 52289,
+            "state": "ready"
+          },
+          {
+            "id": "liberty",
+            "pixels": 37073,
+            "state": "ready"
+          },
+          {
+            "id": "isaac",
+            "pixels": 91765,
+            "state": "ready"
+          },
+          {
+            "id": "kulsharif",
+            "pixels": 90602,
+            "state": "ready"
+          },
+          {
+            "id": "sochi_port",
+            "pixels": 67052,
+            "state": "ready"
+          },
+          {
+            "id": "shamanka",
+            "pixels": 61667,
+            "state": "ready"
+          },
+          {
+            "id": "kamchatka",
+            "pixels": 58465,
+            "state": "ready"
+          },
+          {
+            "id": "russky_bridge",
+            "pixels": 58908,
+            "state": "ready"
+          },
+          {
+            "id": "galata",
+            "pixels": 63576,
+            "state": "ready"
+          },
+          {
+            "id": "cappadocia",
+            "pixels": 67249,
+            "state": "ready"
+          },
+          {
+            "id": "registan",
+            "pixels": 69559,
+            "state": "ready"
+          },
+          {
+            "id": "sagrada",
+            "pixels": 73910,
+            "state": "ready"
+          },
+          {
+            "id": "parthenon",
+            "pixels": 96481,
+            "state": "ready"
+          },
+          {
+            "id": "belem",
+            "pixels": 100011,
+            "state": "ready"
+          },
+          {
+            "id": "great_wall",
+            "pixels": 59082,
+            "state": "ready"
+          },
+          {
+            "id": "taj_mahal",
+            "pixels": 78436,
+            "state": "ready"
+          },
+          {
+            "id": "marina_bay",
+            "pixels": 83182,
+            "state": "ready"
+          },
+          {
+            "id": "petronas",
+            "pixels": 69250,
+            "state": "ready"
+          },
+          {
+            "id": "fuji",
+            "pixels": 57746,
+            "state": "ready"
+          },
+          {
+            "id": "bali_temple",
+            "pixels": 81969,
+            "state": "ready"
+          },
+          {
+            "id": "maldives",
+            "pixels": 57557,
+            "state": "ready"
+          },
+          {
+            "id": "christ",
+            "pixels": 67085,
+            "state": "ready"
+          },
+          {
+            "id": "chichen_itza",
+            "pixels": 68578,
+            "state": "ready"
+          },
+          {
+            "id": "golden_gate",
+            "pixels": 58786,
+            "state": "ready"
+          },
+          {
+            "id": "opera",
+            "pixels": 64194,
+            "state": "ready"
+          },
+          {
+            "id": "table_mountain",
+            "pixels": 65593,
+            "state": "ready"
+          }
+        ]
+      }
+    ],
+    "baselineCards": 8,
+    "mobile": {
+      "width": 390,
+      "overflow": false
+    },
+    "globeViews": [
+      {
+        "view": [
+          20,
+          25
+        ],
+        "visible": [
+          "tower",
+          "pyramids",
+          "christ",
+          "liberty",
+          "taj_mahal",
+          "great_wall",
+          "kremlin",
+          "table_mountain",
+          "maldives"
+        ],
+        "ready": true
+      },
+      {
+        "view": [
+          110,
+          30
+        ],
+        "visible": [
+          "tower",
+          "taj_mahal",
+          "opera",
+          "pyramids",
+          "great_wall",
+          "fuji",
+          "marina_bay",
+          "kamchatka",
+          "maldives"
+        ],
+        "ready": true
+      },
+      {
+        "view": [
+          -90,
+          25
+        ],
+        "visible": [
+          "liberty",
+          "tower",
+          "christ",
+          "golden_gate",
+          "chichen_itza",
+          "kamchatka"
+        ],
+        "ready": true
+      },
+      {
+        "view": [
+          140,
+          -25
+        ],
+        "visible": [
+          "opera",
+          "taj_mahal",
+          "great_wall",
+          "kamchatka",
+          "bali_temple"
+        ],
+        "ready": true
+      },
+      {
+        "view": [
+          60,
+          58
+        ],
+        "visible": [
+          "tower",
+          "pyramids",
+          "taj_mahal",
+          "liberty",
+          "kremlin",
+          "great_wall",
+          "golden_gate",
+          "spire",
+          "shamanka",
+          "marina_bay",
+          "registan",
+          "kamchatka",
+          "maldives"
+        ],
+        "ready": true
+      }
+    ],
+    "individualModels": [
+      "tower",
+      "kremlin",
+      "spire",
+      "clocktower",
+      "colosseum",
+      "gate",
+      "pyramids",
+      "liberty",
+      "isaac",
+      "kulsharif",
+      "sochi_port",
+      "shamanka",
+      "kamchatka",
+      "russky_bridge",
+      "galata",
+      "cappadocia",
+      "registan",
+      "sagrada",
+      "parthenon",
+      "belem",
+      "great_wall",
+      "taj_mahal",
+      "marina_bay",
+      "petronas",
+      "fuji",
+      "bali_temple",
+      "maldives",
+      "christ",
+      "chichen_itza",
+      "golden_gate",
+      "opera",
+      "table_mountain"
+    ],
+    "pageErrors": []
+  },
+  "application": {
+    "desktop": {
+      "visible": [
+        "Париж: Эйфелева башня",
+        "Каир: Пирамиды Гизы",
+        "Агра: Тадж-Махал",
+        "Москва: Московский Кремль",
+        "Китай: Великая Китайская стена",
+        "Кейптаун: Столовая гора",
+        "Дубай: Бурдж-Халифа",
+        "Мальдивы: Виллы над водой"
+      ],
+      "overflow": false
+    },
+    "mobile": {
+      "width": 390,
+      "visible": [
+        "Каир: Пирамиды Гизы",
+        "Париж: Эйфелева башня",
+        "Москва: Московский Кремль",
+        "Дубай: Бурдж-Халифа",
+        "Самарканд: Регистан"
+      ],
+      "overflow": false
+    },
+    "popup": "ИДЕЯ ДЛЯ ПОЕЗДКИ\nЭйфелева башня\n\nПариж\n\nСтилизованная миниатюра; масштаб увеличен, положение приблизительное.\n\nОфициальный сайт ↗\nВыбрать место\n×",
+    "pageErrors": []
+  },
+  "missing_asset": {
+    "expectedFailure": "HTTP 404 twice",
+    "failedIds": [
+      "tower"
+    ],
+    "state": "fallback",
+    "visible": true,
+    "remainingMapListeners": 0
+  }
+}
