@@ -51,7 +51,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     summary = data?.trip_summary || {};
     const stage = data?.stage || "start";
     boardLabel = ["plan","cart","payment","booked"].includes(stage) ? "Поездка" : "Карта";
-    const titles = {start:"Начнём с желания",destination:"Ищем ваше место",plan:"Выбираем лучшее",cart:"Всё складывается",payment:"Последний шаг",booked:"Поездка собрана",hotel_search:"Выбираем жильё",transfer_search:"Подбираем трансфер",flight_search:"Выбираем дорогу"};
+    const titles = {start:"Начнём с желания",destination:"Выбираем направление",plan:"Выбираем лучшее",cart:"Всё складывается",payment:"Последний шаг",booked:"Поездка собрана",hotel_search:"Выбираем жильё",transfer_search:"Подбираем трансфер",flight_search:"Выбираем дорогу"};
     byId("chat-title").textContent = stage === "start" && data?.understood?.length ? "Уточняем вашу поездку" : titles[stage] || titles.start;
     byId("undo").disabled = !data?.can_undo || isBusy();
     const types = summary.trip_types || [];
@@ -116,7 +116,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   document.addEventListener("click",(event)=>{if(!event.target.closest(".chat-menu"))closeMenu();if(!event.target.closest("#journey,#stage-toggle")){byId("journey").classList.remove("open");byId("stage-toggle").setAttribute("aria-expanded","false");}});
   document.addEventListener("keydown",(event)=>{if(event.key==="Escape"){closeMenu();byId("journey").classList.remove("open");byId("stage-toggle").setAttribute("aria-expanded","false");}});
   document.querySelectorAll("dialog").forEach((dialog)=>dialog.addEventListener("click",(event)=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}}));
-  return {update, setMood, fill, configureExamples, openExamples:()=>show("examples-dialog"),
+  return {update, setMood, fill, configureExamples, openCondition, openExamples:()=>show("examples-dialog"),
     showChat:()=>{document.body.classList.remove("show-map");byId("mobile-map").textContent=boardLabel;byId("mobile-map").setAttribute("aria-expanded","false");},
     moodLabel:()=>moodNames[selectedMood], showIdeas:()=>{ideas();document.body.classList.add("show-map");byId("mobile-map").textContent="В чат";byId("mobile-map").setAttribute("aria-expanded","true");window.dispatchEvent(new Event("resize"));},
     reset:()=>{summary={};setMood("neutral");byId("text").value="";byId("text").dispatchEvent(new Event("input",{bubbles:true}));update(null);byId("edit-banner").hidden=true;}};

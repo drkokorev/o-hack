@@ -32,7 +32,7 @@ from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
 from domains.trips import map_catalog
-from domains.trips.state import TripState
+from domains.trips.state import TripState, TripUpdate
 from domains.trips.world_places import find_world_places
 from apps.voice import LocalVoice, MAX_AUDIO_BYTES
 
@@ -58,6 +58,7 @@ class ChatIn(BaseModel):
     map_point_id: str | None = Field(default=None, max_length=200)
     map_country_code: str | None = Field(default=None, min_length=2, max_length=2)
     map_city_id: str | None = Field(default=None, max_length=200)
+    destination_id: str | None = Field(default=None, max_length=100)
     detected_city: str | None = None  # untrusted browser hint; never an exact location
 
 
@@ -72,6 +73,10 @@ class NavigateIn(BaseModel):
 
 class EditIn(NavigateIn):
     text: str
+
+
+class TransferIn(NavigateIn):
+    kind: Literal["auto", "taxi", "shuttle"]
 
 
 class Sessions:
@@ -543,6 +548,35 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         if revision != session.ui_revision or not session.ui_previous or not chat_navigation.can_snapshot(session):
             raise HTTPException(status_code=409, detail="Этот шаг уже нельзя изменить. Уточните условия в чате.")
 
+    @app.post("/api/session")
+    def resume_session(body: ResetIn, response: Response):
+        """Read current state; never replay a message, checkout or payment."""
+        response.headers["Cache-Control"] = "no-store"
+        session = sessions.existing(body.session_id)
+        with session.lock:
+            step = session.last or Step("Расскажите о поездке.", payload={"kind": "greeting"})
+            return present(body.session_id, session, step, time.perf_counter())
+
+    @app.post("/api/trip/transfer")
+    def change_transfer(body: TransferIn, response: Response):
+        response.headers["Cache-Control"] = "no-store"
+        session = sessions.existing(body.session_id)
+        with session.lock:
+            state = session.state
+            if (session.ui_revision != body.revision or state.stage != "cart" or
+                    state.order or state.pending_trip_candidate or not session.last or
+                    not isinstance(session.last.payload, dict) or session.last.payload.get("kind") != "cart"):
+                raise HTTPException(status_code=409, detail="Откройте выбранную поездку ещё раз, чтобы изменить трансфер.")
+            # Preserve the chosen hotel; change only the ground-transport preference.
+            state.hotel_id = session.last.payload["package"]["hotel"]["id"]
+            state.transfer_kind = None if body.kind == "auto" else body.kind
+            state.params_changed = True
+            state.act = {}
+            session.last = agent.domain.step(state)
+            session.last_nlu, session.last_notes = "action", []
+            chat_navigation.complete_turn(session, None)
+            return present(body.session_id, session, session.last, time.perf_counter())
+
     @app.post("/api/chat/undo")
     def undo_chat(body: NavigateIn, response: Response):
         started = time.perf_counter()
@@ -589,9 +623,21 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                     session.state.ip_city_hint = location["city_name"]
             previous = chat_navigation.snapshot(session)
             selected = None
-            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id)) > 1:
+            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id, body.destination_id)) > 1:
                 raise HTTPException(status_code=422, detail="Выберите один объект карты")
-            if body.map_point_id:
+            if body.destination_id:
+                dest = BY_ID.get(body.destination_id)
+                if dest is None:
+                    raise HTTPException(status_code=422, detail="Направление отсутствует в каталоге")
+                if session.state.order or session.state.pending_trip_candidate or session.state.stage in {"payment", "booked"}:
+                    raise HTTPException(status_code=409, detail="Начните новую поездку, чтобы выбрать другое направление.")
+                # A catalog ID is a structured action, not a natural-language
+                # utterance. Free-form messages still use the full privacy path.
+                session.state = agent.domain.merge(session.state, TripUpdate(destination=dest.id))
+                step = agent.domain.step(session.state)
+                session.last, session.last_nlu, session.last_notes = step, "action", []
+                selected = {"id": dest.id, "name": dest.name, "accepted": session.state.dest_id == dest.id}
+            elif body.map_point_id:
                 point = map_catalog.lookup(body.map_point_id)
                 if not point or point["kind"] != "hotel" or not body.map_point_id.startswith("overture:"):
                     raise HTTPException(status_code=422, detail="Не найден выбранный отель")

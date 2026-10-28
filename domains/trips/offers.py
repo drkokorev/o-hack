@@ -383,13 +383,17 @@ class Transfer(BaseModel):
     note: str = ""
 
 
-def transfer(hotel: Hotel, guests: int, train: bool = False) -> Transfer:
+def transfer(hotel: Hotel, guests: int, train: bool = False, preferred: str | None = None) -> Transfer:
     dest = BY_ID[hotel.dest_id]
     km = hotel.center_km + 2 if train else hotel.airport_km
     per_km = 45 if dest.abroad else 35
     minutes = int(km / 40 * 60) + 15
     taxi = int(round((400 + km * per_km) * (1.4 if guests > 4 else 1.0), -1))
-    if km > 40 and guests <= 3 and not train:
+    if preferred == "shuttle":
+        return Transfer(kind="shuttle", minutes=minutes + 40,
+                        price=int(round(guests * (300 + km * 9), -1)),
+                        note="групповой трансфер, может заезжать в другие отели")
+    if preferred != "taxi" and km > 40 and guests <= 3 and not train:
         shuttle = int(round(guests * (300 + km * 9), -1))
         if shuttle < taxi * 0.7:
             return Transfer(kind="shuttle", minutes=minutes + 40, price=shuttle,

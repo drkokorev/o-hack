@@ -39,6 +39,7 @@ class Trip:
     wishes: list[str] = field(default_factory=list)
     trip_types: list[str] = field(default_factory=list)
     room_guests: list[tuple[int, int]] = field(default_factory=list)  # explicit adults, children per room
+    transfer_kind: str | None = None
 
     @property
     def nights(self) -> int:
@@ -221,7 +222,7 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
     if pinned_hotel and pinned is None:
         return [], ["выбранный отель не подходит под текущие условия или отсутствует в демонстрационном каталоге"]
     def stay_cost(hp: tuple[Hotel, int]) -> int:  # отель вместе с трансферами туда и обратно
-        return hp[1] + transfer(hp[0], trip.people, outs[0].mode == "train").price * 2
+        return hp[1] + transfer(hp[0], trip.people, outs[0].mode == "train", trip.transfer_kind).price * 2
 
     # Для отдыха на море даже «Экономный» и «Комфорт» — не дальше пешей прогулки до пляжа (если такие есть)
     beach = bool({"sea", "beach"} & set(trip.trip_types)) or "beach_line" in trip.wishes
@@ -255,8 +256,8 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
         if (hotel_in, hotel_out) != (trip.date_in, trip.date_out) and hotel_out > hotel_in:
             price = _stay_price(hotel, trip, hotel_in, (hotel_out - hotel_in).days)
         pkg = Package(key, out, back, hotel, price,
-                      transfer(hotel, trip.people, out.mode == "train"),
-                      transfer(hotel, trip.people, back.mode == "train"), hotel_in, hotel_out)
+                      transfer(hotel, trip.people, out.mode == "train", trip.transfer_kind),
+                      transfer(hotel, trip.people, back.mode == "train", trip.transfer_kind), hotel_in, hotel_out)
         if any(p.out.id == pkg.out.id and p.back.id == pkg.back.id and p.hotel.id == pkg.hotel.id
                for p in packages):
             continue

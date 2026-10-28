@@ -1207,7 +1207,7 @@ class TripsDomain:
             max_hours=state.max_travel_hours, meal=state.meal,
             free_cancellation=bool(state.free_cancellation), stars_min=state.stars_min,
             wishes=list(state.hotel_wishes or []) + (["pets"] if state.pets else []),
-            trip_types=list(state.trip_types or []))
+            trip_types=list(state.trip_types or []), transfer_kind=state.transfer_kind)
         trip.budget_night = state.budget_night
         return trip, None
 
@@ -1766,7 +1766,8 @@ class TripsDomain:
 
     @staticmethod
     def _leg_card(leg, people: int = 1) -> dict:
-        return {"price": fmt_money(leg.price_per_person * people), "mode": leg.mode, "carrier": leg.carrier, "number": leg.number, "depart": f"{leg.depart:%d.%m %H:%M}",
+        return {"id": leg.id, "price": fmt_money(leg.price_per_person * people), "price_rub": leg.price_per_person * people,
+                "mode": leg.mode, "carrier": leg.carrier, "number": leg.number, "depart": f"{leg.depart:%d.%m %H:%M}",
                 "arrive": f"{leg.arrive:%d.%m %H:%M}", "duration": hm(leg.minutes), "stops": leg.stops,
                 "via": leg.via, "layover": hm(leg.layover_min) if leg.stops else None, "baggage": leg.baggage,
                 "seat_class": leg.seat_class}
@@ -1777,16 +1778,34 @@ class TripsDomain:
         return {"id": h.id, "name": h.name, "stars": h.stars, "rating": h.rating, "reviews": h.reviews,
                 "area": h.area, "beach_km": h.beach_km, "center_km": h.center_km, "meal": MEALS[h.meal],
                 "amenities": [AMENITIES[a] for a in h.amenities if a in AMENITIES], "price": fmt_money(price),
-                "per_night": fmt_money(price // nights), "check_in": h.check_in,
+                "per_night": fmt_money(price // nights), "check_in": h.check_in, "check_out": h.check_out,
                 "date_in": stay_in.isoformat(), "date_out": stay_out.isoformat(), "dates": _dates(stay_in, stay_out),
                 "free_cancel_days": h.free_cancel_days, "praise": h.praise, "complaints": h.complaints,
                 "kind": h.kind, "source": h.source, "website": h.website, "map_url": h.map_url}
 
     def _package_card(self, p: Package, trip: Trip) -> dict:
+        exit_minutes = 40 if p.out.mode == "plane" else 15
+        buffer_minutes = 120 if p.back.mode == "plane" else 40
+        pickup_in = p.out.arrive + timedelta(minutes=exit_minutes)
+        arrive_in = pickup_in + timedelta(minutes=p.transfer_in.minutes)
+        arrive_out = p.back.depart - timedelta(minutes=buffer_minutes)
+        pickup_out = arrive_out - timedelta(minutes=p.transfer_out.minutes)
+        def ground_card(transfer, start, end, pickup, arrive):
+            return {"kind": transfer.kind, "from": start, "to": end,
+                    "pickup": pickup.strftime("%d.%m %H:%M"), "arrive": arrive.strftime("%d.%m %H:%M"),
+                    "minutes": hm(transfer.minutes), "duration_minutes": transfer.minutes,
+                    "price": fmt_money(transfer.price), "price_rub": transfer.price,
+                    "note": transfer.note, "people": _people(trip.adults, trip.children)}
+        arrival_point = ("Вокзал" if p.out.mode == "train" else "Аэропорт") + ", " + trip.dest.name
+        departure_point = ("Вокзал" if p.back.mode == "train" else "Аэропорт") + ", " + trip.dest.name
         return {"key": p.key, "title": p.title, "total": fmt_money(p.total(trip.people)),
+                "total_rub": p.total(trip.people),
                 "out": self._leg_card(p.out, trip.people), "back": self._leg_card(p.back, trip.people),
                 "hotel": self._hotel_card(p.hotel, p.hotel_total, trip, p.hotel_in, p.hotel_out),
                 "transfer": {"minutes": hm(p.transfer_in.minutes), "price": fmt_money(p.transfer_in.price + p.transfer_out.price),
-                             "note": p.transfer_in.note},
+                             "note": p.transfer_in.note, "preference": trip.transfer_kind or "auto",
+                             "in": ground_card(p.transfer_in, arrival_point, p.hotel.name, pickup_in, arrive_in),
+                             "out": ground_card(p.transfer_out, p.hotel.name, departure_point, pickup_out, arrive_out),
+                             "arrival_buffer": hm(exit_minutes), "departure_buffer": hm(buffer_minutes)},
                 "why": p.why, "tradeoffs": p.tradeoffs, "timeline": timeline(p, trip),
                 "checks": [{"level": k, "text": t} for k, t in p.checks]}
