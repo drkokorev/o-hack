@@ -325,8 +325,11 @@ class TripsDomain:
             changes["unavailable_origin"] = None
             changes["origin_inferred"] = False
         landmark = update.landmark
-        if landmark and not data.get("destination") and not state.dest_id:
-            data["destination"] = landmark  # «парковка Дайкоку» — определим город в step(), с проверкой
+        unknown_only = data.get("destination") == update.unknown_place and not update.destination
+        if landmark and (not data.get("destination") or unknown_only) and not state.dest_id:
+            # «парковка Дайкоку», «в статуе свободы» — полное название от модели вместо обрубка правил
+            # («стату»); город определим в step(), с проверкой
+            data["destination"] = landmark
         if "destination" in data:
             dest_id = data["destination"] if data["destination"] in BY_ID else find_destination(norm(data["destination"]))
             changes["dest_id"] = dest_id

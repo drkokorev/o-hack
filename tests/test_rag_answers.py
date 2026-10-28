@@ -185,3 +185,12 @@ def test_verify_rejects_quoted_names_not_in_facts():
     facts = "«фуфлыжная гора» пока нет в каталоге. Когда хотите поехать?"
     answer = "Похоже, вы имели в виду «фундуковую гору»? Когда хотите поехать?"
     assert any("названия" in p for p in verify(answer, facts, "хочу на фуфлыжную гору", set(), facts))
+
+
+def test_model_landmark_wins_over_rule_fragment():
+    ny = '{"known": true, "city": "Нью-Йорк", "country": "США"}'
+    llm = FakeLLM({"landmark": "статуя свободы"}, ny, ny)
+    a = agent(llm, nlg=False)
+    session = a.new_session()
+    a.handle(session, "хочу в статуе свободы")  # правила дают обрубок «стату»
+    assert session.state.dest_id == "newyork"
