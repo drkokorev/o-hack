@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import re
+from calendar import monthrange
 from datetime import date, timedelta
 
 MONTHS = {
@@ -162,6 +163,20 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
             check_in = today + timedelta(days=1)
         elif re.search(r"\bсегодня\b", t):
             check_in = today
+    if check_in is None:
+        relative = re.search(
+            r"\bчерез\s+(\d{1,4}|один|одну|два|две|три|четыре|пять|шесть|семь|пару)\s+"
+            r"(день|дня|дней|сутки|суток|неделю|недели|недель)\b", t
+        )
+        if relative:
+            count = 2 if relative.group(1) == "пару" else num_word(relative.group(1))
+            days = count * (7 if relative.group(2).startswith("недел") else 1) if count else 0
+            if 0 < days <= 3650:
+                check_in = today + timedelta(days=days)
+        elif re.search(r"\bчерез\s+месяц\b", t):
+            year = today.year + (today.month == 12)
+            month = today.month % 12 + 1
+            check_in = date(year, month, min(today.day, monthrange(year, month)[1]))
     if check_in is None and re.search(r"выходн", t):
         return _nearest_weekend(today, bool(re.search(r"следующ", t)))
 

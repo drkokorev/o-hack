@@ -24,7 +24,7 @@ from .inspire import Suggestion, suggest
 from .offers import AMENITIES, MEALS, hotel_price, hotels_for, transport_options
 from .planner import Package, Trip, _leg_ok, cheapest_start, hm, leg_text, make_packages, month_window, timeline
 from .arbiter import arbitrate
-from .rules import find_destination, rule_extract
+from .rules import find_destination, rule_extract, time_expression_not_place
 from .state import PARAM_FIELDS, TripState, TripUpdate
 from .tent import tent_order, tent_step
 from .temperature import TEMP_FIELDS, matches_history
@@ -47,6 +47,8 @@ EXTRACTION_PROMPT = """Ты — модуль понимания в агенте 
 - destination — город, курорт или страна, если пользователь назвал или выбрал направление ("Турция" → "Анталья" не додумывай, пиши как сказано).
 - trip_types — коды из списка: sea, beach, warm, mountains, ski, city, culture, nature, food, spa, exotic, surf. "К тёплому морю" → ["sea", "warm"].
 - month — только явно названный месяц; время года не означает конкретный месяц. date_from/date_to — YYYY-MM-DD от сегодняшней даты. nights — число ночей ("на неделю" → 7).
+- "в следующем месяце" — следующий календарный месяц относительно сегодня, без конкретного дня. Слова "следующем" и "месяце" не являются названиями мест.
+- "через 3 дня" — дата начала через три дня от сегодня; это не длительность и не дата окончания.
 - adults/children — указывай число взрослых только если оно названо; «вдвоём» и «с другом» не означают, что оба взрослые. pets — едут с животным.
 - budget_total — бюджет на всю поездку ("до 200к" → 200000). budget_night — только если сказано "за ночь".
 - max_travel_hours — только явно названное число часов. «Без долгих перелётов» — пожелание, не численный лимит.
@@ -125,6 +127,12 @@ class TripsDomain:
         return arbitrate(state, text, llm, rules)
 
     def merge(self, state: TripState, update: TripUpdate) -> TripState:
+        # Repair a time word mistakenly stored as an unknown destination by an
+        # older version when the traveller subsequently provides a date.
+        if (not state.dest_id and state.destination and time_expression_not_place(state.destination)
+                and (update.date_from is not None or update.month is not None)
+                and not update.destination and not update.unknown_place):
+            state = state.model_copy(update={"destination": None, "place_country": None, "country_conflict": None})
         resolution = None
         if state.pending_trip_candidate:
             if update.resolve_trip_choice not in ("new", "edit"):
@@ -332,6 +340,8 @@ class TripsDomain:
             act["temperature_mentioned"] = True
         if any(key in data for key in ("trip_types", "abroad", "lodging", "transport", "budget_total", "economy")):
             act["preference_mentioned"] = True
+        if any(key in data for key in ("date_from", "date_to", "month")):
+            act["period_mentioned"] = True
         params_changed = new.params() != state.params()
         if resolution:
             act["trip_resolution"] = resolution
@@ -455,6 +465,16 @@ class TripsDomain:
             if first > last:
                 return Step("Указанный период уже прошёл. Укажите, пожалуйста, будущий месяц и год поездки.",
                             payload={"kind": "question"})
+
+        if act.get("period_mentioned"):
+            if state.date_from and state.date_to:
+                notes.append(f"Учёл даты поездки: {_dates(state.date_from, state.date_to)}.")
+            elif state.date_from:
+                start = state.date_from
+                notes.append(f"Учёл начало поездки: {start.day} {MONTHS_GEN[start.month - 1]} {start.year}.")
+            elif state.month:
+                year = f" {state.year}" if state.year else ""
+                notes.append(f"Учёл поездку в {MONTHS_PREP[state.month - 1]}{year}; точные даты ещё не указаны.")
 
         if state.transport == "none":
             return Step("В прототипе доступны только самолёт и поезд. По указанным условиям подходящего "

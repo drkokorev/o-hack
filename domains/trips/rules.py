@@ -60,6 +60,18 @@ _NOT_PLACES = {"январе", "феврале", "марте", "апреле", "
                "ноябре", "декабре", "россии", "европу", "европе", "азию", "азии", "горы", "море", "отпуск", "субботу",
                "воскресенье", "пятницу", "понедельник", "отеле", "отель", "город", "одиночку", "общем", "целом",
                "пути", "дороге", "перелете", "полете"}
+_TIME_NOT_PLACE = re.compile(
+    r"(?:(?:следующ|будущ|прошл|текущ)[а-я]*|эт(?:от|а|о|и|ом|ого|ому|у|ой|им|ими|их))"
+    r"(?:\s+(?:месяц|недел|год|выходн|дн)[а-я]*)?"
+    r"|(?:месяц|недел|выходн|завтра|послезавтра|сегодня)[а-я]*"
+)
+
+
+def time_expression_not_place(value: str) -> bool:
+    """Reject time words even when the model repeats them as a destination."""
+    return bool(_TIME_NOT_PLACE.fullmatch(norm(value).strip()))
+
+
 _COUNTRY_STEMS = [(country, re.sub(r"[аия]$", "", norm(country))) for country in COUNTRY_NAMES | {d.country for d in DESTINATIONS}]
 _COUNTRY_PATTERNS = [(country, stem, re.compile(rf"(?<![а-яё]){re.escape(stem)}[а-яё]{{0,3}}(?![а-яё])"))
                      for country, stem in _COUNTRY_STEMS]
@@ -91,7 +103,8 @@ def _fuzzy_destination(word: str) -> str | None:
     from difflib import SequenceMatcher
 
     w = norm(word)
-    if len(w) < 4 or w in _NOT_PLACES or any(re.search(pattern, w) for _, pattern in TRIP_TYPE_WORDS) or find_world_places(w):
+    if (len(w) < 4 or w in _NOT_PLACES or time_expression_not_place(w)
+            or any(re.search(pattern, w) for _, pattern in TRIP_TYPE_WORDS) or find_world_places(w)):
         return None
     scores = {}
     for d in DESTINATIONS:
@@ -115,7 +128,7 @@ def _unknown_place(text: str) -> str | None:
         word = m.group(1)
         if re.search(r"игра(?:ю|ем|ешь|ете|ет|ют|ть|л|ла|ли)\s+$", norm(text[:m.start()])):
             continue  # «играет в шахматы» не обозначает направление
-        if (norm(word) in _NOT_PLACES or not_place_stems.match(norm(word)) or _mentioned_countries(norm(word)) or find_destination(norm(word))
+        if (norm(word) in _NOT_PLACES or time_expression_not_place(word) or not_place_stems.match(norm(word)) or _mentioned_countries(norm(word)) or find_destination(norm(word))
                 or _fuzzy_destination(word)):
             continue
         if len(word) > 5 and word.endswith(("е", "у", "ю")):
@@ -354,10 +367,9 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     if part and not d_in:
         word = part.group(2)
         data["month_part"] = "early" if word.startswith(("начал", "перв")) else "mid" if word.startswith("середин") else "late"
-    if re.search(r"через месяц", t) and not d_in:
-        data["date_from"] = today + timedelta(days=30)
-    elif (mm := re.search(r"через (\d+|две|три|пару) недел", t)) and not d_in:
-        data["date_from"] = today + timedelta(days=7 * ({"две": 2, "три": 3, "пару": 2}.get(mm.group(1)) or int(mm.group(1))))
+    if not d_in and re.search(r"\b(?:следующ(?:ем|ий|его|им)|будущ(?:ем|ий|его))\s+месяц(?:е|а|у|ем)?\b", t):
+        data["month"] = today.month % 12 + 1
+        data["year"] = today.year + (today.month == 12)
     if "month" not in data and not d_in:
         season = None
         # A summer mood describes the desired atmosphere, not a travel date.

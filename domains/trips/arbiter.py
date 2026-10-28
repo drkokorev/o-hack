@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 
 from .geo import BY_ID
-from .rules import find_destination
+from .rules import find_destination, time_expression_not_place
 from .state import TripState, TripUpdate
 from .textparse import norm
 
@@ -177,7 +177,8 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
             # Do not turn generic tags ("mountains") or an origin city into
             # a destination merely because the model produced a valid string.
             destination_text = re.sub(r"(?:\bиз|вылет\w* из|едем из|летим из|живу в)\s+[а-яё\-]+", " ", t)
-            if norm(dest) not in destination_text:
+            if time_expression_not_place(dest) or not re.search(
+                    rf"(?<![а-яёa-z0-9]){re.escape(norm(dest))}(?![а-яёa-z0-9])", destination_text):
                 notes.append("destination: в реплике нет указанного моделью места")
                 data["destination"] = None
         elif find_destination(norm(dest)) == state.dest_id and state.dest_id:
