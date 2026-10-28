@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-28",
+  "baseline": "c9bd172777d062f74994ee3074b819f0e9821878",
+  "offline_tests": {"passed": 365, "seconds": 148.64, "final_targeted_passed": 12},
+  "docker": {
+    "initial_build": "PASS",
+    "read_only_mounts": ["private settings", "GigaAM weights"],
+    "key_in_container_environment": false,
+    "unprivileged_user": true,
+    "healthy_after_restart": true,
+    "tracked_runtime_files_compared": 403,
+    "runtime_file_differences": 0
+  },
+  "gigachat": {"model": "GigaChat-2-Max", "synthetic_turns": 4, "model_and_rules_turns": 4, "final_config_synthetic_turns": 1, "final_config_model_and_rules_turns": 1, "result": "PASS"},
+  "gigaam": {"status": "ready", "public_audio_samples": 1, "nonempty_transcriptions": 1, "result": "PASS"},
+  "actual_microphone_tested": false,
+  "private_key_and_model_weights_in_repository": false
+}

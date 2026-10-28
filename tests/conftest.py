@@ -34,8 +34,9 @@ def no_local_env(monkeypatch):
     from core import config
 
     for name in list(os.environ):
-        if name.startswith(("LLM_", "GIGACHAT_")):
+        if name.startswith(("LLM_", "GIGACHAT_")) or name in {"ODIN_SECRET_ENV_FILE", "ODIN_MODE", "VOICE_MODEL_DIR"}:
             monkeypatch.delenv(name)
+    monkeypatch.setenv("ODIN_MODE", "rules")
     monkeypatch.setattr(config, "load_dotenv", lambda *a, **k: False)
     config.get_settings.cache_clear()
     yield

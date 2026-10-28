@@ -27,16 +27,18 @@ def test_switching_example_to_gigachat_uses_its_own_endpoint_and_model(example_e
     example_env.setenv("GIGACHAT_AUTH_KEY", "test-key")
     settings = get_settings()
     assert settings.llm_base_url == "https://api.giga.chat/v1"
-    assert settings.llm_model == "GigaChat-2"
+    assert settings.llm_model == "GigaChat-2-Max"
     assert not settings.llm_json_mode
     assert settings.llm_enabled
 
 
-def test_example_keeps_cloud_defaults_without_a_key(example_env):
+def test_example_defaults_to_gigachat_max_without_a_key(example_env):
     settings = get_settings()
-    assert settings.llm_base_url == "https://foundation-models.api.cloud.ru/v1"
-    assert settings.llm_model == "Qwen/Qwen3-235B-A22B-Instruct-2507"
-    assert settings.llm_json_mode
+    assert settings.llm_provider == "gigachat"
+    assert settings.llm_base_url == "https://api.giga.chat/v1"
+    assert settings.llm_model == "GigaChat-2-Max"
+    assert not settings.llm_json_mode
+    assert settings.llm_timeout == 30
     assert not settings.llm_enabled
 
 
@@ -51,6 +53,7 @@ def test_empty_session_timeout_allows_application_start(example_env):
     from apps.web import build_app
 
     example_env.setenv("SESSION_TTL_SECONDS", "")
+    example_env.setenv("ODIN_MODE", "rules")
     app = build_app()
     assert any(route.path == "/health" for route in app.routes)
 

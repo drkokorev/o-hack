@@ -21,7 +21,7 @@ def index():
                        cwd=Path(__file__).resolve().parents[1], check=True)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def client():
     return TestClient(build_app(Agent(TripsDomain(), None)))
 

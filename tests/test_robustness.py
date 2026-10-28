@@ -129,6 +129,7 @@ def test_provider_rejecting_response_format_falls_back(monkeypatch):
             "choices": [{"index": 0, "finish_reason": "stop",
                          "message": {"role": "assistant", "content": '{"destination": "Сочи"}'}}]})
 
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
     monkeypatch.setenv("LLM_API_KEY", "test")
     get_settings.cache_clear()
     try:

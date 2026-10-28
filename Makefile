@@ -3,7 +3,7 @@ PY ?= .venv/bin/python
 .PHONY: install test run up down climate hotels images llm-check eval simulate
 
 install:
-	python3 -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
+	python3 -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt -r requirements-voice.txt
 
 test:
 	$(PY) -m pytest -q

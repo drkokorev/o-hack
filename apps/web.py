@@ -288,12 +288,23 @@ class Images:
 
 def build_app(agent: Agent | None = None) -> FastAPI:
     settings = get_settings()
+    mode = (os.getenv("ODIN_MODE") or "models").lower()
+    if mode not in {"models", "rules"}:
+        raise RuntimeError("ODIN_MODE должен быть models или rules")
+    require_models = mode == "models"
+    voice_dir = os.getenv("VOICE_MODEL_DIR") or (str(Path(__file__).resolve().parents[2] / "models" / "gigaam-v3-int8")
+                                                  if require_models else None)
+    if require_models and ((agent is None and not settings.llm_enabled) or
+                           (agent is not None and agent.llm is None)):
+        raise RuntimeError("Не задан доступ к языковой модели. Укажите GIGACHAT_AUTH_KEY или ODIN_SECRET_ENV_FILE.")
+    if require_models and (not voice_dir or not Path(voice_dir).is_dir()):
+        raise RuntimeError("Не найдена локальная GigaAM. Укажите существующую папку в VOICE_MODEL_DIR.")
     if agent is None:
-        llm = build_llm(settings)
+        llm = build_llm(settings) if require_models else None
         agent = Agent(TripsDomain(), llm, nlg=settings.llm_nlg)
     sessions = Sessions(agent, ttl_seconds=float(os.getenv("SESSION_TTL_SECONDS") or "3600"))
     images = Images()
-    voice = LocalVoice(os.getenv("VOICE_MODEL_DIR"))
+    voice = LocalVoice(voice_dir)
 
     @asynccontextmanager
     async def lifespan(_app):
@@ -322,6 +333,8 @@ def build_app(agent: Agent | None = None) -> FastAPI:
 
     @app.get("/health")
     def health() -> dict:
+        if require_models and voice.status != "ready":
+            raise HTTPException(status_code=503, detail="Локальная модель голоса ещё не готова")
         return {"status": "ok"}
 
     @app.get("/api/visitor-country")
@@ -430,8 +443,12 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         with session.lock:
             step = agent.handle(session, body.text)
             state: TripState = session.state  # type: ignore[assignment]
+            breaker = getattr(agent.llm, "breaker", None)
+            reply = step.reply
+            if session.last_nlu == "rules" and breaker and breaker.state in {"degraded", "down"}:
+                reply += "\n\nЯзыковая модель временно недоступна; ответ подготовлен по правилам."
             return {
-                "session_id": session_id, "reply": step.reply, "payload": images.decorate(step.payload), "stage": state.stage,
+                "session_id": session_id, "reply": reply, "payload": images.decorate(step.payload), "stage": state.stage,
                 "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
                 "suggestions": contextual_suggestions(state, step),
                 "trip_summary": {"destination": BY_ID[state.dest_id].name if state.dest_id else state.destination},

@@ -17,7 +17,7 @@ def wav(seconds=1, rate=16000, channels=1):
     return out.getvalue()
 
 
-def test_local_voice_off_by_default(monkeypatch):
+def test_rules_mode_uses_browser_voice_when_no_local_model_is_set(monkeypatch):
     monkeypatch.delenv("VOICE_MODEL_DIR", raising=False)
     with TestClient(build_app()) as client:
         assert client.get("/api/voice").json() == {"backend": "browser", "status": "off", "max_seconds": 20}

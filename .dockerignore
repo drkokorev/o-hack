@@ -8,6 +8,7 @@ secrets.env
 **/__pycache__
 .pytest_cache
 .playwright-cli
+models
 tests
 eval
 tools/*

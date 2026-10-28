@@ -1,2 +1,5 @@
-# Optional local speech recognition; the normal text-only Docker image does not need these.
+# Local speech recognition dependencies; model weights remain outside the image.
 onnx-asr[cpu,hub]==0.12.0
+onnxruntime==1.31.1
+numpy==2.5.4
+huggingface-hub==2.3.0
