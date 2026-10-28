@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-28",
+  "input": "synthetic travel dialogue and one public speech sample",
+  "text_model": "GigaChat-2-Max",
+  "model_dialogue": {
+    "status": "PASS",
+    "turns": 4,
+    "model_and_rules_turns": 4,
+    "checks": ["interrupted question", "destination change", "duration retained", "visible trip summary"],
+    "script": "eval/browser_live_model_20261028.js"
+  },
+  "voice_model": {
+    "name": "GigaAM-v3 E2E CTC INT8",
+    "status": "ready",
+    "weights_sha256_verified": true,
+    "vocabulary_sha256_verified": true,
+    "http_sample": "PASS: nonempty transcription of one public sample",
+    "script": "eval/asr_http_smoke_20261028.py",
+    "real_microphone_tested": false
+  },
+  "credentials_included": false,
+  "notes": "Text model is cloud-hosted and was used for parameter extraction with application rules. The test does not establish quality for arbitrary requests."
+}
