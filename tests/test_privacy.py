@@ -10,20 +10,22 @@ from tests.conftest import FakeLLM
 from fastapi.testclient import TestClient
 
 
-@pytest.mark.parametrize("private_text", [
-    "Мой телефон +7 900 000-00-00, поездка в Сочи",
-    "Отправьте сведения на test@example.com",
-    "Мой паспорт: 1234 567890",
-    "Карта 4111 1111 1111 1111",
+@pytest.mark.parametrize("private_text, secret", [
+    ("Мой телефон +7 900 000-00-00, поездка в Сочи", "+7 900 000-00-00"),
+    ("Отправьте сведения на test@example.com", "test@example.com"),
+    ("Мой паспорт: 1234 567890", "1234 567890"),
+    ("Карта 4111 1111 1111 1111", "4111 1111 1111 1111"),
 ])
-def test_obvious_private_data_is_not_sent_to_model_or_kept_in_history(private_text):
+def test_obvious_private_data_is_not_sent_to_model_or_kept_in_history(private_text, secret):
     llm = FakeLLM({"destination": "sochi"})
     agent = Agent(TripsDomain(), llm)
     session = agent.new_session()
     step = agent.handle(session, private_text)
-    assert not llm.calls
+    assert all(secret not in str(call) for call in llm.calls)
     assert private_text not in str(session.history)
     assert "личн" in step.reply.lower() or "данн" in step.reply.lower()
+    if "Сочи" in private_text:
+        assert llm.calls and session.state.dest_id == "sochi"
 
 
 def test_normal_dates_and_budgets_are_not_blocked():

@@ -6,6 +6,7 @@ LLM только извлекает пожелания и действия из 
 
 from __future__ import annotations
 
+import re
 import zlib
 from calendar import monthrange
 from dataclasses import replace
@@ -98,6 +99,36 @@ class TripsDomain:
 
     def __init__(self, today: Callable[[], date] = date.today):
         self.today = today
+
+    @staticmethod
+    def preserve_place(text: str, start: int, end: int) -> bool:
+        """Не скрываем известный город, который упомянут именно как место поездки."""
+        prefix = norm(text[max(0, start - 40):start])
+        if not re.search(r"(?:\b(?:в|во|из|до|через|по|на|город|городе|посетить|"
+                         r"посмотрим|увидеть|побывать|покажи)\s+)$", prefix):
+            return False
+        value = norm(text[start:end])
+        if value in {norm(o.name) for o in ORIGIN_BY_NAME.values()}:
+            return True
+        if any(value == norm(d.name) or value in d.aliases for d in BY_ID.values()):
+            return True
+        return bool(find_world_places(value))
+
+    @staticmethod
+    def contains_unresolved_context(state: TripState) -> bool:
+        """Проверяем строковые параметры, которые включаются в системный контекст."""
+        from core.guard import contains_unresolved_sensitive_data
+
+        def walk(value) -> bool:
+            if isinstance(value, str):
+                return contains_unresolved_sensitive_data(value)
+            if isinstance(value, list):
+                return any(walk(item) for item in value)
+            if isinstance(value, dict):
+                return any(walk(item) for item in value.values())
+            return False
+
+        return walk(state.params().model_dump(mode="json", exclude_none=True))
 
     # ---------- понимание ----------
 
