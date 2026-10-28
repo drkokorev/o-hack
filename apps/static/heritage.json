@@ -1,0 +1,1090 @@
+{
+  "source": "UNESCO World Heritage List",
+  "source_url": "https://data.unesco.org/explore/dataset/whc001/",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "checked_at": "2026-10-28",
+  "coordinate_note": "Координата единственного компонента объекта; не обязательно вход.",
+  "sites": [
+    {
+      "id": "unesco:81",
+      "name": "Кафедральный собор в городе Шартр",
+      "country": "Франция",
+      "lat": 48.4475,
+      "lon": 1.487222222,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/81/"
+    },
+    {
+      "id": "unesco:83",
+      "name": "Дворец и парк в Версале",
+      "country": "Франция",
+      "lat": 48.805,
+      "lon": 2.119444444,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/83/"
+    },
+    {
+      "id": "unesco:228",
+      "name": "Исторический центр города Авиньон",
+      "country": "Франция",
+      "lat": 43.95277778,
+      "lon": 4.806111111,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/228/"
+    },
+    {
+      "id": "unesco:344",
+      "name": "Древнеримский акведук Пон-дю-Гар",
+      "country": "Франция",
+      "lat": 43.94722222,
+      "lon": 4.535277778,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/344/"
+    },
+    {
+      "id": "unesco:345",
+      "name": "Исторический укрепленный город Каркасон",
+      "country": "Франция",
+      "lat": 43.2070631,
+      "lon": 2.3636562,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/345/"
+    },
+    {
+      "id": "unesco:600",
+      "name": "Берега Сены в Париже",
+      "country": "Франция",
+      "lat": 48.8655,
+      "lon": 2.3211388889,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/600/"
+    },
+    {
+      "id": "unesco:872",
+      "name": "Историческая часть города Лион",
+      "country": "Франция",
+      "lat": 45.76722,
+      "lon": 4.83333,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/872/"
+    },
+    {
+      "id": "unesco:544",
+      "name": "Кижский погост",
+      "country": "Россия",
+      "lat": 62.0675833333,
+      "lon": 35.2243611111,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/544/"
+    },
+    {
+      "id": "unesco:754",
+      "name": "Озеро Байкал",
+      "country": "Россия",
+      "lat": 53.17361111,
+      "lon": 107.6625,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/754/"
+    },
+    {
+      "id": "unesco:980",
+      "name": "Историко-архитектурный комплекс Казанского Кремля",
+      "country": "Россия",
+      "lat": 55.7994526626,
+      "lon": 49.1064602384,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/980/"
+    },
+    {
+      "id": "unesco:1070",
+      "name": "Цитадель, Старый город и крепостные сооружения Дербента",
+      "country": "Россия",
+      "lat": 42.0558333333,
+      "lon": 48.2827777778,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1070/"
+    },
+    {
+      "id": "unesco:1170",
+      "name": "Исторический центр Ярославля",
+      "country": "Россия",
+      "lat": 57.65278,
+      "lon": 39.87611,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1170/"
+    },
+    {
+      "id": "unesco:1234",
+      "name": "Плато Путорана",
+      "country": "Россия",
+      "lat": 69.0469444444,
+      "lon": 94.1580555556,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/1234/"
+    },
+    {
+      "id": "unesco:1525",
+      "name": "Assumption Cathedral and Monastery of the town-island of Sviyazhsk",
+      "country": "Россия",
+      "lat": 55.7702777778,
+      "lon": 48.6527777778,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1525/"
+    },
+    {
+      "id": "unesco:174",
+      "name": "Исторический центр Флоренции",
+      "country": "Италия",
+      "lat": 43.77306,
+      "lon": 11.25611,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/174/"
+    },
+    {
+      "id": "unesco:394",
+      "name": "Венеция и ее лагуна",
+      "country": "Италия",
+      "lat": 45.43430556,
+      "lon": 12.33894444,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/394/"
+    },
+    {
+      "id": "unesco:395",
+      "name": "Соборный комплекс в городе Пиза",
+      "country": "Италия",
+      "lat": 43.72305556,
+      "lon": 10.39638889,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/395/"
+    },
+    {
+      "id": "unesco:670",
+      "name": "«И-Сасси-ди-Матера» - старые районы города Матера",
+      "country": "Италия",
+      "lat": 40.66638889,
+      "lon": 16.61027778,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/670/"
+    },
+    {
+      "id": "unesco:717",
+      "name": "Исторический центр города Сиена",
+      "country": "Италия",
+      "lat": 43.31861111,
+      "lon": 11.33166667,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/717/"
+    },
+    {
+      "id": "unesco:797",
+      "name": "Город Верона",
+      "country": "Италия",
+      "lat": 45.43861111,
+      "lon": 10.99388889,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/797/"
+    },
+    {
+      "id": "unesco:830",
+      "name": "Костьера-Амальфиана – Амальфийское побережье",
+      "country": "Италия",
+      "lat": 40.6333333333,
+      "lon": 14.6027777778,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/830/"
+    },
+    {
+      "id": "unesco:1427",
+      "name": "Mount Etna",
+      "country": "Италия",
+      "lat": 37.7561111111,
+      "lon": 14.9966666667,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/1427/"
+    },
+    {
+      "id": "unesco:311",
+      "name": "Старый город в Сеговии и древнеримский акведук",
+      "country": "Испания",
+      "lat": 40.94847222,
+      "lon": -4.11675,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/311/"
+    },
+    {
+      "id": "unesco:313",
+      "name": "Исторический центр города Кордова",
+      "country": "Испания",
+      "lat": 37.87919444,
+      "lon": -4.779722222,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/313/"
+    },
+    {
+      "id": "unesco:314",
+      "name": "Альгамбра, Хенералифе и Альбасин в городе Гранада",
+      "country": "Испания",
+      "lat": 37.1767777778,
+      "lon": -3.5899166667,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/314/"
+    },
+    {
+      "id": "unesco:379",
+      "name": "Исторический центр города Толедо",
+      "country": "Испания",
+      "lat": 39.8569444444,
+      "lon": -4.0244444444,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/379/"
+    },
+    {
+      "id": "unesco:1258",
+      "name": "Национальный парк дикой природы Тейде",
+      "country": "Испания",
+      "lat": 28.2713888889,
+      "lon": -16.6436111111,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/1258/"
+    },
+    {
+      "id": "unesco:369",
+      "name": "Побережье Козвэй-Кост (",
+      "country": "Великобритания",
+      "lat": 55.2408333333,
+      "lon": -6.5116666667,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/369/"
+    },
+    {
+      "id": "unesco:426",
+      "name": "Вестминстерский дворец, Вестминстерское аббатство и церковь Cент-Маргарет (Лондон)",
+      "country": "Великобритания",
+      "lat": 51.499,
+      "lon": -0.127,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/426/"
+    },
+    {
+      "id": "unesco:428",
+      "name": "Город Бат",
+      "country": "Великобритания",
+      "lat": 51.3813055556,
+      "lon": -2.3590555556,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/428/"
+    },
+    {
+      "id": "unesco:488",
+      "name": "Лондонский Тауэр",
+      "country": "Великобритания",
+      "lat": 51.50805556,
+      "lon": -0.076111111,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/488/"
+    },
+    {
+      "id": "unesco:728",
+      "name": "Старый город и Новый город в Эдинбурге",
+      "country": "Великобритания",
+      "lat": 55.95,
+      "lon": -3.216666667,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/728/"
+    },
+    {
+      "id": "unesco:292",
+      "name": "Кафедральный собор в городе Кëльн",
+      "country": "Германия",
+      "lat": 50.94111111,
+      "lon": 6.957222222,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/292/"
+    },
+    {
+      "id": "unesco:532",
+      "name": "Дворцы и парки Потсдама и Берлина",
+      "country": "Германия",
+      "lat": 52.4,
+      "lon": 13.03333333,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/532/"
+    },
+    {
+      "id": "unesco:624",
+      "name": "Город Бамберг",
+      "country": "Германия",
+      "lat": 49.89166667,
+      "lon": 10.88888889,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/624/"
+    },
+    {
+      "id": "unesco:896",
+      "name": "Музеумсинзель (Музейный остров) в Берлине",
+      "country": "Германия",
+      "lat": 52.51972222,
+      "lon": 13.39861111,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/896/"
+    },
+    {
+      "id": "unesco:1066",
+      "name": "Долина Среднего Рейна",
+      "country": "Германия",
+      "lat": 50.17361111,
+      "lon": 7.694166667,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1066/"
+    },
+    {
+      "id": "unesco:393",
+      "name": "Археологические памятники Дельф",
+      "country": "Греция",
+      "lat": 38.48149,
+      "lon": 22.49617,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/393/"
+    },
+    {
+      "id": "unesco:404",
+      "name": "Афинский Акрополь",
+      "country": "Греция",
+      "lat": 37.97087,
+      "lon": 23.72618,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/404/"
+    },
+    {
+      "id": "unesco:455",
+      "name": "Монастыри Метеоры",
+      "country": "Греция",
+      "lat": 39.71667,
+      "lon": 21.63333,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/455/"
+    },
+    {
+      "id": "unesco:493",
+      "name": "Средневековый город в Родосе",
+      "country": "Греция",
+      "lat": 36.44722,
+      "lon": 28.22778,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/493/"
+    },
+    {
+      "id": "unesco:517",
+      "name": "Археологические памятники Олимпии",
+      "country": "Греция",
+      "lat": 37.64,
+      "lon": 21.634,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/517/"
+    },
+    {
+      "id": "unesco:485",
+      "name": "Древний город Иерополис и источники Памуккале",
+      "country": "Турция",
+      "lat": 37.92389,
+      "lon": 29.12333,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/485/"
+    },
+    {
+      "id": "unesco:849",
+      "name": "Археологические памятники Трои",
+      "country": "Турция",
+      "lat": 39.95644,
+      "lon": 26.239,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/849/"
+    },
+    {
+      "id": "unesco:1572",
+      "name": "Гёбекли-Тепе",
+      "country": "Турция",
+      "lat": 37.2232419444,
+      "lon": 38.9223638889,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1572/"
+    },
+    {
+      "id": "unesco:448",
+      "name": "Археологические находки на горе Немрут-Даг",
+      "country": "Турция",
+      "lat": 37.9807939663,
+      "lon": 38.7409837493,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/448/"
+    },
+    {
+      "id": "unesco:444",
+      "name": "Ксары (укрепленные жилища) в Айт-Бен-Хадду",
+      "country": "Марокко",
+      "lat": 31.04722,
+      "lon": -7.12889,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/444/"
+    },
+    {
+      "id": "unesco:836",
+      "name": "Археологические памятники Волюбилиса",
+      "country": "Марокко",
+      "lat": 34.07389,
+      "lon": -5.55694,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/836/"
+    },
+    {
+      "id": "unesco:916",
+      "name": "Остров Роббен-Айленд",
+      "country": "Южно-Африканская Республика",
+      "lat": -33.8,
+      "lon": 18.36666667,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/916/"
+    },
+    {
+      "id": "unesco:1007",
+      "name": "Охраняемые территории Капской флористической области",
+      "country": "Южно-Африканская Республика",
+      "lat": -34.3558051153,
+      "lon": 18.4750321846,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/1007/"
+    },
+    {
+      "id": "unesco:39",
+      "name": "Охраняемая область Нгоронгоро",
+      "country": "Танзания",
+      "lat": -3.18722,
+      "lon": 35.54083,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/39/"
+    },
+    {
+      "id": "unesco:156",
+      "name": "Национальный парк Серенгети",
+      "country": "Танзания",
+      "lat": -2.74,
+      "lon": 34.859,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/156/"
+    },
+    {
+      "id": "unesco:173",
+      "name": "«Каменный город» в Занзибаре",
+      "country": "Танзания",
+      "lat": -6.16306,
+      "lon": 39.18917,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/173/"
+    },
+    {
+      "id": "unesco:403",
+      "name": "Национальный парк Килиманджаро",
+      "country": "Танзания",
+      "lat": -3.06667,
+      "lon": 37.36667,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/403/"
+    },
+    {
+      "id": "unesco:1295",
+      "name": "Форт Иисус, Момбаса",
+      "country": "Кения",
+      "lat": -4.0627777778,
+      "lon": 39.6794444444,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1295/"
+    },
+    {
+      "id": "unesco:231",
+      "name": "Комплекс «Красный форт»",
+      "country": "Индия",
+      "lat": 28.6555555556,
+      "lon": 77.2408333333,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/231/"
+    },
+    {
+      "id": "unesco:233",
+      "name": "Башня Кутб-Минар и окружающие ее археологические памятники, Дели",
+      "country": "Индия",
+      "lat": 28.52583,
+      "lon": 77.18528,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/233/"
+    },
+    {
+      "id": "unesco:241",
+      "name": "Памятники Хампи",
+      "country": "Индия",
+      "lat": 15.31444,
+      "lon": 76.47167,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/241/"
+    },
+    {
+      "id": "unesco:242",
+      "name": "Пещерные храмы в Аджанте",
+      "country": "Индия",
+      "lat": 20.553111,
+      "lon": 75.70025,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/242/"
+    },
+    {
+      "id": "unesco:251",
+      "name": "Форт в городе Агра",
+      "country": "Индия",
+      "lat": 27.179806,
+      "lon": 78.021528,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/251/"
+    },
+    {
+      "id": "unesco:252",
+      "name": "Мавзолей Тадж-Махал (город Агра)",
+      "country": "Индия",
+      "lat": 27.17417,
+      "lon": 78.04222,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/252/"
+    },
+    {
+      "id": "unesco:337",
+      "name": "Национальный парк Казиранга",
+      "country": "Индия",
+      "lat": 26.66666667,
+      "lon": 93.41666667,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/337/"
+    },
+    {
+      "id": "unesco:945",
+      "name": "Вокзал Чхатрапати-Шиваджи, бывший Виктория-Терминус (город Мумбаи)",
+      "country": "Индия",
+      "lat": 18.9401222222,
+      "lon": 72.8362027777,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/945/"
+    },
+    {
+      "id": "unesco:437",
+      "name": "Гора Тайшань",
+      "country": "Китай",
+      "lat": 36.26667,
+      "lon": 117.1,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/437/"
+    },
+    {
+      "id": "unesco:547",
+      "name": "Гора Хуаншань",
+      "country": "Китай",
+      "lat": 30.145333,
+      "lon": 118.155083,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/547/"
+    },
+    {
+      "id": "unesco:637",
+      "name": "Пейзажная достопримечательная зона Цзючжайгоу",
+      "country": "Китай",
+      "lat": 33.08333,
+      "lon": 103.91667,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/637/"
+    },
+    {
+      "id": "unesco:640",
+      "name": "Пейзажная достопримечательная зона Улинъюань",
+      "country": "Китай",
+      "lat": 29.33333,
+      "lon": 110.5,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/640/"
+    },
+    {
+      "id": "unesco:880",
+      "name": "Летний дворец и императорский парк в Пекине",
+      "country": "Китай",
+      "lat": 39.9969444444,
+      "lon": 116.268027778,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/880/"
+    },
+    {
+      "id": "unesco:881",
+      "name": "Храм Неба: императорский жертвенный алтарь в Пекине",
+      "country": "Китай",
+      "lat": 39.8821666667,
+      "lon": 116.406666667,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/881/"
+    },
+    {
+      "id": "unesco:1003",
+      "name": "Пещерные храмы Лунмэнь",
+      "country": "Китай",
+      "lat": 34.46666667,
+      "lon": 112.4666667,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1003/"
+    },
+    {
+      "id": "unesco:1334",
+      "name": "West Lake Cultural Landscape of Hangzhou",
+      "country": "Китай",
+      "lat": 30.2375,
+      "lon": 120.1408333333,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1334/"
+    },
+    {
+      "id": "unesco:661",
+      "name": "Замок Химедзи",
+      "country": "Япония",
+      "lat": 34.83333333,
+      "lon": 134.7,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/661/"
+    },
+    {
+      "id": "unesco:662",
+      "name": "Остров Якусима",
+      "country": "Япония",
+      "lat": 30.315,
+      "lon": 130.5086111111,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/662/"
+    },
+    {
+      "id": "unesco:775",
+      "name": "Мемориал Мира в Хиросиме (купол Генбаку)",
+      "country": "Япония",
+      "lat": 34.395556,
+      "lon": 132.453611,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/775/"
+    },
+    {
+      "id": "unesco:776",
+      "name": "Синтоистское святилище Ицукусима",
+      "country": "Япония",
+      "lat": 34.29441667,
+      "lon": 132.3246389,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/776/"
+    },
+    {
+      "id": "unesco:913",
+      "name": "Святилища и храмы Никко",
+      "country": "Япония",
+      "lat": 36.7475,
+      "lon": 139.6105556,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/913/"
+    },
+    {
+      "id": "unesco:576",
+      "name": "Исторический город Аютия и соседние исторические города",
+      "country": "Таиланд",
+      "lat": 14.34778,
+      "lon": 100.56056,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/576/"
+    },
+    {
+      "id": "unesco:609",
+      "name": "Национальный парк Комодо",
+      "country": "Индонезия",
+      "lat": -8.54333,
+      "lon": 119.48944,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/609/"
+    },
+    {
+      "id": "unesco:642",
+      "name": "Храмовый комплекс Прамбанан",
+      "country": "Индонезия",
+      "lat": -7.75222,
+      "lon": 110.49167,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/642/"
+    },
+    {
+      "id": "unesco:672",
+      "name": "Бухта Ха-Лонг – Архипелаг Катба",
+      "country": "Вьетнам",
+      "lat": 20.8327777778,
+      "lon": 107.1611111111,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/672/"
+    },
+    {
+      "id": "unesco:948",
+      "name": "Исторический город Хойан",
+      "country": "Вьетнам",
+      "lat": 15.88333333,
+      "lon": 108.3333333,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/948/"
+    },
+    {
+      "id": "unesco:411",
+      "name": "Доиспанский город и национальный парк Паленке",
+      "country": "Мексика",
+      "lat": 17.48333,
+      "lon": -92.05,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/411/"
+    },
+    {
+      "id": "unesco:414",
+      "name": "Доиспанский город Теотиуакан",
+      "country": "Мексика",
+      "lat": 19.69167,
+      "lon": -98.84167,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/414/"
+    },
+    {
+      "id": "unesco:483",
+      "name": "Доиспанский город Чичен-Ица",
+      "country": "Мексика",
+      "lat": 20.682739,
+      "lon": -88.568654,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/483/"
+    },
+    {
+      "id": "unesco:482",
+      "name": "Исторический город Гуанахуато и прилегающие рудники",
+      "country": "Мексика",
+      "lat": 21.01694,
+      "lon": -101.25556,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/482/"
+    },
+    {
+      "id": "unesco:27",
+      "name": "Древние индейские поселения на плато Меса-Верде",
+      "country": "Соединенные Штаты",
+      "lat": 37.26166667,
+      "lon": -108.4855556,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/27/"
+    },
+    {
+      "id": "unesco:28",
+      "name": "Йеллоустонский национальный парк",
+      "country": "Соединенные Штаты",
+      "lat": 44.46056,
+      "lon": -110.82778,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/28/"
+    },
+    {
+      "id": "unesco:75",
+      "name": "Национальный парк Гранд-Каньон",
+      "country": "Соединенные Штаты",
+      "lat": 36.10083333,
+      "lon": -112.0905556,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/75/"
+    },
+    {
+      "id": "unesco:308",
+      "name": "Йосемитский национальный парк",
+      "country": "Соединенные Штаты",
+      "lat": 37.74611111,
+      "lon": -119.5966667,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/308/"
+    },
+    {
+      "id": "unesco:134",
+      "name": "Национальный парк Редвуд",
+      "country": "Соединенные Штаты",
+      "lat": 41.37388889,
+      "lon": -123.9980556,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/134/"
+    },
+    {
+      "id": "unesco:300",
+      "name": "Исторический район города Квебек",
+      "country": "Канада",
+      "lat": 46.80944444,
+      "lon": -71.21055556,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/300/"
+    },
+    {
+      "id": "unesco:304",
+      "name": "Парки Канадских Скалистых гор",
+      "country": "Канада",
+      "lat": 51.42472222,
+      "lon": -116.4797222,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/304/"
+    },
+    {
+      "id": "unesco:419",
+      "name": "Национальный парк Грос-Морн",
+      "country": "Канада",
+      "lat": 49.6125,
+      "lon": -57.53138889,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/419/"
+    },
+    {
+      "id": "unesco:124",
+      "name": "Исторический город Ору-Прету",
+      "country": "Бразилия",
+      "lat": -20.38888889,
+      "lon": -43.50555556,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/124/"
+    },
+    {
+      "id": "unesco:309",
+      "name": "Исторический центр города Салвадор-ди-Баия",
+      "country": "Бразилия",
+      "lat": -12.972917,
+      "lon": -38.512981,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/309/"
+    },
+    {
+      "id": "unesco:355",
+      "name": "Национальный парк Игуасу",
+      "country": "Бразилия",
+      "lat": -25.4481472222,
+      "lon": -53.8001444444,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/355/"
+    },
+    {
+      "id": "unesco:1611",
+      "name": "Национальный парк Ленсойс-Мараньенсес",
+      "country": "Бразилия",
+      "lat": -2.5366666667,
+      "lon": -43.0636111111,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/1611/"
+    },
+    {
+      "id": "unesco:274",
+      "name": "Руины древнего города Мачу-Пикчу",
+      "country": "Перу",
+      "lat": -13.184934,
+      "lon": -72.533443,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/274/"
+    },
+    {
+      "id": "unesco:700",
+      "name": "Линии и геоглифы в районах Наска и Пампас-де-Хумана",
+      "country": "Перу",
+      "lat": -14.72583,
+      "lon": -75.14861,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/700/"
+    },
+    {
+      "id": "unesco:1016",
+      "name": "Исторический центр города Арекипа",
+      "country": "Перу",
+      "lat": -16.398353,
+      "lon": -71.536777,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/1016/"
+    },
+    {
+      "id": "unesco:145",
+      "name": "Национальный парк Лос-Гласьярес",
+      "country": "Аргентина",
+      "lat": -50.0,
+      "lon": -73.24944,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/145/"
+    },
+    {
+      "id": "unesco:303",
+      "name": "Национальный парк Игуасу",
+      "country": "Аргентина",
+      "lat": -25.577357,
+      "lon": -54.286073,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/303/"
+    },
+    {
+      "id": "unesco:937",
+      "name": "Полуостров Вальдес",
+      "country": "Аргентина",
+      "lat": -42.5,
+      "lon": -64.0,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/937/"
+    },
+    {
+      "id": "unesco:154",
+      "name": "Большой Барьерный Риф",
+      "country": "Австралия",
+      "lat": -18.28611111,
+      "lon": 147.7,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/154/"
+    },
+    {
+      "id": "unesco:166",
+      "name": "Сиднейский оперный театр",
+      "country": "Австралия",
+      "lat": -33.8566666667,
+      "lon": 151.2152777777,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/166/"
+    },
+    {
+      "id": "unesco:447",
+      "name": "Национальный парк Улуру-Катаюта (Айерс-Рок – Маунт-Олга)",
+      "country": "Австралия",
+      "lat": -25.33333333,
+      "lon": 131.0,
+      "category": "Наследие",
+      "icon": "heritage_culture",
+      "url": "https://whc.unesco.org/en/list/447/"
+    },
+    {
+      "id": "unesco:917",
+      "name": "Горный район Блу-Маунтинс",
+      "country": "Австралия",
+      "lat": -33.7,
+      "lon": 150.0,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/917/"
+    },
+    {
+      "id": "unesco:551",
+      "name": "Те-Вахипоунаму – юго-запад острова Южный",
+      "country": "Новая Зеландия",
+      "lat": -45.03602778,
+      "lon": 167.3196111,
+      "category": "Природа",
+      "icon": "heritage_nature",
+      "url": "https://whc.unesco.org/en/list/551/"
+    }
+  ]
+}

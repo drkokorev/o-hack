@@ -69,6 +69,7 @@ class TripState(TripParams):
     suggested: list[str] = Field(default_factory=list)       # id предложенных направлений
     seen: list[str] = Field(default_factory=list)            # все показанные в этом подборе — «ещё» листает дальше
     dest_id: str | None = None           # выбранное направление
+    map_place: dict | None = None         # точная запись города, явно выбранного на карте
     package: str | None = None           # выбранный вариант: optimal | budget | comfort
     hotel_id: str | None = None          # закреплённый пользователем отель
     showing: str | None = None           # что показано для выбора по номеру: destinations | packages | hotels

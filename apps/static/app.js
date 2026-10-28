@@ -22,7 +22,15 @@ function el(tag, attrs = {}, ...children) {
 const marks = (cls, items) => el("ul", { class: "marks " + cls }, items.map((t) => typeof t === "string" ? el("li", {}, t) : el("li", { class: t.level }, t.text)));
 const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button", class: cls, onclick: () => send(text || label) }, label);
 
-const tripMap = createTripMap({ container: $("map"), onChoose: (place) => send(`хочу в ${place.name}`),
+const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
+  if (place.kind === "hotel") return send(`Хочу остановиться в «${place.name}»`, {map_point_id:place.id});
+  if (place.kind === "country") return send(`Хочу поехать: ${place.name}`, {map_country_code:place.code});
+  if (place.kind === "city") return send(`Хочу поехать: ${place.name}${place.country_name ? `, ${place.country_name}` : ""}`,
+    {map_city_id:place.id});
+  if (place.event) return send(`Хочу поехать на ${place.event} в ${place.name}`);
+  if (place.landmark) return send(`Хочу посетить ${place.landmark}, ${place.name}`);
+  return send(`Хочу поехать в ${place.name}${place.country_name ? `, ${place.country_name}` : ""}`);
+},
   isFavorite: (point) => Boolean(preferenceData.saved[`point:${point.id}`]), onFavorite: (point) => {
     const key = `point:${point.id}`;
     if (preferenceData.saved[key]) delete preferenceData.saved[key];
@@ -535,17 +543,17 @@ function attachEdit(turn,data) {
   turn.user.classList.add("latest-user");
   turn.user.append(el("button",{type:"button",class:"message-edit text-button",onclick:()=>editTurn(turn)},"Изменить"));
 }
-async function send(text) {
+async function send(text, selection = {}) {
   if(busy || !text.trim()) return;
   if(voice.isActive()) voice.cancel();
-  const replacing=editing && latestTurn;
+  const replacing=editing && latestTurn && !Object.keys(selection).length;
   const previousStarted=conversationStarted;
   if(!conversationStarted) $("view").replaceChildren();
   conversationStarted=true; $("suggest").replaceChildren(); setBusy(true);
   const user=replacing ? replacing.user : addMessage("user",text);
   const typing=addMessage("bot",el("span",{class:"typing",role:"status","aria-label":"Подбираю варианты"},el("i"),el("i"),el("i")));
   try {
-    const data=await post(replacing ? "/api/chat/edit" : "/api/chat",{text,session_id:sessionId,revision:lastData?.revision});
+    const data=await post(replacing ? "/api/chat/edit" : "/api/chat",{text,session_id:sessionId,revision:lastData?.revision,...selection});
     typing.remove();
     if(replacing){replacing.bot.remove();user.replaceChildren(text);}
     const reply=el("div"); renderTravelReply(reply,data.reply,(data.payload||{}).kind);
@@ -591,8 +599,31 @@ async function resetConversation(){
     sessionId=null;$("log").replaceChildren();$("view").replaceChildren();$("say").textContent="";start();
   }catch(error){addMessage("bot","Не удалось начать новую поездку. Попробуйте ещё раз.");}finally{setBusy(false);}
 }
-Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/land.geojson").then((r) => r.json()),
-  fetch("/static/img/credits.json").then((r) => r.ok ? r.json() : {}).catch(() => ({})),
-  fetch("/static/inspiration.json").then((r) => r.ok ? r.json() : null).catch(() => null)])
-  .then(([i, l, credits, prompts]) => { info = i; imageCredits = credits; inspiration = prompts || inspiration; tripMap.setData(i, l); experience.configureExamples(i); start(); })
-  .catch(() => addMessage("bot", "Сервер недоступен."));
+async function initialise() {
+  const load = async (url) => {
+    const response = await fetch(url, {cache: "no-store"});
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  };
+  try {
+    const [i, l, credits, prompts] = await Promise.all([
+      load("/api/info"), load("/static/land.geojson"),
+      load("/static/img/credits.json").catch(() => ({})),
+      load("/static/inspiration.json").catch(() => null),
+    ]);
+    $("startup-error")?.remove();
+    info = i; imageCredits = credits; inspiration = prompts || inspiration;
+    tripMap.setData(i, l); experience.configureExamples(i); start();
+  } catch (_) {
+    tripMap.unavailable();
+    $("startup-error")?.remove();
+    const retry = el("button", {type:"button", class:"startup-retry", onclick: () => {
+      retry.disabled = true;
+      initialise();
+    }}, "Повторить");
+    const message = addMessage("bot", el("div", {role:"status"},
+      el("span", {}, "Не удалось подключиться. Проверьте, что приложение запущено."), retry));
+    message.id = "startup-error";
+  }
+}
+initialise();
