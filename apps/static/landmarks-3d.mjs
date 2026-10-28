@@ -1,7 +1,7 @@
 /* Small local Three.js models rendered as animated, geographically anchored map markers. */
 import * as THREE from './vendor/three/three.module.js';
 
-export function createLandmarkModels() {
+export function createLandmarkModels({illustrationsOnly=false} = {}) {
   const iron = new THREE.MeshStandardMaterial({color:0x9a8b70, roughness:0.75, metalness:0.2});
   const lightIron = new THREE.MeshStandardMaterial({color:0xd6c8ac, roughness:0.72});
   const red = new THREE.MeshStandardMaterial({color:0xa46553, roughness:0.82});
@@ -128,19 +128,47 @@ export function createLandmarkModels() {
     return group;
   }
   function gate() {
-    const group = new THREE.Group();
-    for(const x of [-1.7,1.7]) box(group,.55,4.3,.55,x,2.15,0,red);
-    box(group,4.5,.45,1.05,0,4.3,0,dark); box(group,4.1,.38,.9,0,4.75,0,red);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(3.1,1.05,4),dark);
-    roof.scale.z=.45; roof.position.y=5.45; roof.rotation.y=Math.PI/4; group.add(roof);
-    const lantern=new THREE.Mesh(new THREE.SphereGeometry(.65,12,8),gold);
-    lantern.scale.y=1.15; lantern.position.set(0,3.25,0); group.add(lantern); return group;
+    // Kaminarimon-inspired gate: layered curved roof, pillars and lantern.
+    const group=new THREE.Group();
+    const lacquer=new THREE.MeshStandardMaterial({color:0xb36a56});
+    const roofMat=new THREE.MeshStandardMaterial({color:0x405b55});
+    const lanternMat=new THREE.MeshStandardMaterial({color:0xc9785b});
+    for (const x of [-1.75,1.75]) {
+      box(group,.64,3.85,.70,x,1.95,0,lacquer);
+      box(group,.83,.28,.85,x,.14,0,stone);
+      box(group,.82,.20,.85,x,3.86,0,gold);
+    }
+    box(group,4.35,.42,.9,0,4.15,0,lacquer);
+    box(group,4.60,.13,1.05,0,4.40,0,stone);
+    const roofShape=new THREE.Shape();
+    roofShape.moveTo(-2.65,4.42);roofShape.quadraticCurveTo(0,4.73,2.65,4.42);
+    roofShape.lineTo(2.30,5.08);roofShape.quadraticCurveTo(0,5.40,-2.30,5.08);roofShape.closePath();
+    const roof=new THREE.Mesh(new THREE.ExtrudeGeometry(roofShape,{depth:1.06,bevelEnabled:true,bevelSize:.08,bevelThickness:.04,bevelSegments:2}),roofMat);
+    roof.position.z=-.53;group.add(roof);
+    box(group,3.45,.11,.72,0,5.25,0,gold);
+    const lanternShape=[new THREE.Vector2(.25,-.72),new THREE.Vector2(.52,-.55),new THREE.Vector2(.64,-.22),
+      new THREE.Vector2(.64,.24),new THREE.Vector2(.50,.58),new THREE.Vector2(.25,.72)];
+    const lantern=new THREE.Mesh(new THREE.LatheGeometry(lanternShape,20),lanternMat);lantern.position.set(0,3.13,0);group.add(lantern);
+    for(const y of [2.43,3.83]) {const ring=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.13,16),dark);ring.position.set(0,y,0);group.add(ring);}
+    beam(group,[0,3.9,0],[0,4.2,0],.055,gold);
+    for(const x of [-1.1,1.1]) {box(group,.48,1.12,.06,x,2.4,.40,stone);box(group,.38,.85,.08,x,2.4,.45,dark);}
+    return group;
   }
   function pyramids() {
-    const group = new THREE.Group();
-    for(const [x,z,size] of [[-.65,0,2.7],[1.6,-.5,1.35]]) {
-      const pyramid = new THREE.Mesh(new THREE.ConeGeometry(size,size*1.35,4),gold);
-      pyramid.rotation.y=Math.PI/4; pyramid.position.set(x,size*.675,z); group.add(pyramid);
+    const group=new THREE.Group();
+    const sand=new THREE.MeshStandardMaterial({color:0xd2b685});
+    const lines=new THREE.MeshStandardMaterial({color:0xe3d1ae});
+    for (const [x,z,size] of [[-1.05,0,2.25],[1.35,-.15,1.52],[2.65,.50,.90]]) {
+      const h=size*1.30;
+      const pyramid=new THREE.Mesh(new THREE.ConeGeometry(size,h,4),sand);
+      pyramid.rotation.y=Math.PI/4;pyramid.position.set(x,h/2,z);group.add(pyramid);
+      for (const f of [.27,.52,.75]) {
+        const radius=size*Math.SQRT1_2*(1-f)*1.012,y=h*f;
+        for (const side of [-1,1]) {
+          beam(group,[x-radius,y,z+side*radius],[x+radius,y,z+side*radius],.018,lines);
+          beam(group,[x+side*radius,y,z-radius],[x+side*radius,y,z+radius],.018,lines);
+        }
+      }
     }
     return group;
   }
@@ -153,8 +181,9 @@ export function createLandmarkModels() {
     const flame=new THREE.Mesh(new THREE.ConeGeometry(.24,.6,6),gold); flame.position.set(1.2,7.15,0); group.add(flame);
     return group;
   }
-  const models = {tower:eiffel(), kremlin:kremlin(), spire:spire(), clocktower:clocktower(),
-    colosseum:colosseum(), gate:gate(), pyramids:pyramids(), liberty:liberty()};
+  const models={kremlin:kremlin(),gate:gate(),pyramids:pyramids()};
+  if (!illustrationsOnly) Object.assign(models,{tower:eiffel(),spire:spire(),clocktower:clocktower(),
+    colosseum:colosseum(),liberty:liberty()});
   return models;
 }
 

@@ -3,7 +3,7 @@
    the screen like billboards. Sizes are deliberately enlarged for discovery. */
 import * as THREE from './vendor/three/three.module.js';
 import {GLTFLoader} from './vendor/three/GLTFLoader.js';
-import {createLandmarkModels} from './landmarks-3d.mjs?v=globe-20261028-15';
+import {createLandmarkModels} from './landmarks-3d.mjs?v=globe-20261028-32';
 
 function makeEventModels() {
   const material = (color) => new THREE.MeshStandardMaterial({color});
@@ -98,33 +98,49 @@ function makeEventModels() {
   box(heritage_culture,2.9,.25,.7,0,2.05,0,gold);
   const heritage_nature = new THREE.Group();
   const mountain=new THREE.Mesh(new THREE.ConeGeometry(1.7,2.6,5),jade); mountain.position.y=1.3; heritage_nature.add(mountain);
-  return {race,music,art,nature,sport,culture,tech,film,festive,bicycle,sailing,surfing,flower,book,food,paw,
+  const models={race,music,art,nature,sport,culture,tech,film,festive,bicycle,sailing,surfing,flower,book,food,paw,
     heritage_culture,heritage_nature};
+  // One restrained base ties event categories together visually.
+  for (const [name,group] of Object.entries(models)) {
+    if (name==='race' || name.startsWith('heritage_')) continue;
+    for (const child of group.children) child.position.y+=.22;
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(1.65,1.78,.22,24),dark);base.position.y=.11;group.add(base);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(1.65,.06,6,24),gold);rim.rotation.x=Math.PI/2;rim.position.y=.24;group.add(rim);
+  }
+  return models;
 }
 
 // Convert scene meshes into a small set of WebGL buffers. The original UVs and
 // textures are retained; positions are normalized around the actual anchor.
 function geometryData(group, kind, imported=false) {
-  // A slight presentation angle keeps the open-wheel silhouette legible from above.
   if (imported && kind==='race') group.rotation.set(.30,.65,0);
+  if (imported && kind==='film') group.rotation.y=Math.PI/2;
   group.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(group), size=new THREE.Vector3();
   bounds.getSize(size);
-  const factor=imported ? (kind==='race' ? 4.8/Math.max(size.x,size.z) : 7.35/size.y) : 1;
+  const horizontal=kind==='race' || kind==='colosseum' || kind==='art';
+  const factor=imported ? (horizontal ? 5.0/Math.max(size.x,size.z) : 7.35/size.y) : 1;
   const midX=imported ? (bounds.min.x+bounds.max.x)/2 : 0;
   const midZ=imported ? (bounds.min.z+bounds.max.z)/2 : 0;
   const floor=imported ? bounds.min.y : 0;
   const pieces=new Map(), normalMatrix=new THREE.Matrix3(), pos=new THREE.Vector3(), normal=new THREE.Vector3();
   const materialColor=(material) => {
-    if (imported && kind==='tower') return new THREE.Color('#e0c99c');
-    if (imported && kind==='spire') return new THREE.Color('#c3d5cb');
+    const colours={tower:'#decaa6',spire:'#b7d0c5',clocktower:'#ead6b5',colosseum:'#e1d0b0',liberty:'#a5c4ad',music:'#e6c999'};
+    if (imported && kind==='art') {
+      const palette={Base:'#e5d3af',Color1:'#c78267',Color2:'#8aada0',Color3:'#d5ad68',Color4:'#6f9495',Color5:'#c5a58e',Color6:'#e4d2ac',Color7:'#9b8276'};
+      return new THREE.Color(palette[material?.name] || palette.Base).convertLinearToSRGB();
+    }
+    if (imported && kind==='sport') return new THREE.Color(/black/i.test(material?.name || '') ? '#304b48' : '#e8ddc5').convertLinearToSRGB();
+    if (imported && kind==='film' && material?.color && material.color.r + material.color.g + material.color.b < .3)
+      return new THREE.Color('#304b48').convertLinearToSRGB();
+    if (imported && colours[kind]) return new THREE.Color(colours[kind]).convertLinearToSRGB();
     return (material?.color || new THREE.Color('#dbcaa5')).clone().convertLinearToSRGB();
   };
   group.traverse((mesh) => {
     if (!mesh.isMesh || !mesh.geometry?.getAttribute('position')) return;
     const geometry=mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry;
-    const positions=geometry.getAttribute('position'), normals=geometry.getAttribute('normal'), uv=geometry.getAttribute('uv');
-    if (!normals) geometry.computeVertexNormals();
+    const positions=geometry.getAttribute('position'), uv=geometry.getAttribute('uv');
+    if (!geometry.getAttribute('normal')) geometry.computeVertexNormals();
     const normalAttribute=geometry.getAttribute('normal');
     normalMatrix.getNormalMatrix(mesh.matrixWorld);
     const mats=Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -132,25 +148,75 @@ function geometryData(group, kind, imported=false) {
     for (const section of groups) {
       const material=mats[section.materialIndex] || mats[0], color=materialColor(material);
       const texture=(material?.map && uv) ? material.map : null;
-      if (!pieces.has(texture)) pieces.set(texture,[]);
-      const data=pieces.get(texture);
-      for (let i=section.start; i<Math.min(section.start+section.count,positions.count); i++) {
+      if (!pieces.has(texture)) pieces.set(texture,{chunks:[],length:0});
+      const end=Math.min(section.start+section.count,positions.count);
+      const chunk=new Float32Array((end-section.start)*11); let at=0;
+      for (let i=section.start;i<end;i++) {
         pos.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);
         normal.fromBufferAttribute(normalAttribute,i).applyNormalMatrix(normalMatrix);
-        data.push((pos.x-midX)*factor,(pos.y-floor)*factor,(pos.z-midZ)*factor,
-          normal.x,normal.y,normal.z,color.r,color.g,color.b,uv ? uv.getX(i) : 0,uv ? uv.getY(i) : 0);
+        chunk[at++]=(pos.x-midX)*factor;chunk[at++]=(pos.y-floor)*factor;chunk[at++]=(pos.z-midZ)*factor;
+        chunk[at++]=normal.x;chunk[at++]=normal.y;chunk[at++]=normal.z;
+        chunk[at++]=color.r;chunk[at++]=color.g;chunk[at++]=color.b;
+        chunk[at++]=uv ? uv.getX(i) : 0;chunk[at++]=uv ? uv.getY(i) : 0;
       }
+      const piece=pieces.get(texture);piece.chunks.push(chunk);piece.length+=chunk.length;
     }
     if (geometry!==mesh.geometry) geometry.dispose();
   });
-  return [...pieces].map(([texture,data]) => ({texture,data:new Float32Array(data)})).filter((piece)=>piece.data.length);
+  const result=[...pieces].map(([texture,piece])=>{
+    const data=new Float32Array(piece.length);let offset=0;
+    for(const chunk of piece.chunks){data.set(chunk,offset);offset+=chunk.length;}
+    return {texture,data};
+  }).filter(piece=>piece.data.length);
+  result.dimensions={x:size.x*factor,y:size.y*factor,z:size.z*factor};
+  return result;
 }
 
-export function createGlobeModelLayer(map, lib) {
-  const geometries={...createLandmarkModels(), ...makeEventModels()};
+export function createGlobeModelLayer(map, lib, onModelState=()=>{}) {
+  const assetFiles={tower:'eiffel-tower.glb',spire:'burj-khalifa.glb',clocktower:'big-ben.glb',
+    colosseum:'colosseum.glb',liberty:'statue-liberty.glb',race:'formula-car.glb',
+    film:'event-film.glb',art:'event-art.glb',music:'event-music.glb',sport:'event-sport.glb'};
+  const geometries={...createLandmarkModels({illustrationsOnly:true}), ...makeEventModels()};
+  // For supplied models show an accessible small marker while loading, rather
+  // than constructing a crude temporary 3D model and then swapping it abruptly.
+  for (const name of [...Object.keys(assetFiles),'heritage_culture','heritage_nature']) delete geometries[name];
   const parts=new Map(Object.entries(geometries).map(([name,mesh])=>[name,geometryData(mesh,name)]));
-  const buffers=new Map(), programs=new Map(), textures=new Map(), loaded=new Set();
+  const buffers=new Map(), programs=new Map(), textures=new Map(), loaded=new Set(), loading=new Set(), failed=new Set();
+  const loader=new GLTFLoader();
   let landmarks=[], events=[], glContext=null, removed=false;
+  function state(name) {return !assetFiles[name] ? 'stylised' : loaded.has(name) ? 'ready' : failed.has(name) ? 'failed' : 'loading';}
+  function requestAsset(name) {
+    const file=assetFiles[name];
+    if (!file || loaded.has(name) || loading.has(name) || failed.has(name) || !glContext) return;
+    loading.add(name);
+    loader.load(new URL(`./assets/${file}?v=globe-20261028-32`,import.meta.url).href,(asset)=>{
+      if (removed || !glContext) return;
+      try {
+        const imported=geometryData(asset.scene,name,true);
+        if (!imported.length) throw Error('empty model');
+        parts.set(name,imported);install(glContext,name,imported);loaded.add(name);
+      } catch (error) {failed.add(name);console.warn(`3D model ${name} could not be prepared`,error);}
+      loading.delete(name);onModelState(name,state(name));map.triggerRepaint();
+    },undefined,(error)=>{
+      loading.delete(name);failed.add(name);onModelState(name,state(name));
+      console.warn(`3D model ${name} could not be loaded`,error);map.triggerRepaint();
+    });
+  }
+  function requestAssets(targets) {for(const target of targets) requestAsset(target.kind);}
+  // Estimate local projected metres in CSS pixels, so the same object does not
+  // inflate with latitude, zoom level, or device pixel ratio.
+  function scaleFor(target,dimensions,lean) {
+    const lat=Math.max(-84.5,Math.min(84.5,target.lat)), sample=15000;
+    const latitudeDelta=sample/111320, longitudeDelta=sample/(111320*Math.max(.1,Math.cos(lat*Math.PI/180)));
+    const anchor=map.project([target.lon,lat]);
+    const east=map.project([target.lon+longitudeDelta,lat]);
+    const south=map.project([target.lon,lat-latitudeDelta]);
+    const pixelsPerMeter=Math.max(Math.hypot(east.x-anchor.x,east.y-anchor.y),Math.hypot(south.x-anchor.x,south.y-anchor.y))/sample;
+    const span=Math.max(dimensions.x,dimensions.z+dimensions.y*lean,dimensions.y,1);
+    const width=map.getContainer().clientWidth, targetPixels=Math.min(70,Math.max(52,width*.16))*(target.event ? .85 : 1);
+    if (!Number.isFinite(pixelsPerMeter) || pixelsPerMeter<1e-10) return 1;
+    return Math.max(.05,Math.min(260000,targetPixels/(pixelsPerMeter*span)));
+  }
   function shader(gl,type,code) {
     const result=gl.createShader(type); gl.shaderSource(result,code); gl.compileShader(result);
     if (!gl.getShaderParameter(result,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(result));
@@ -169,11 +235,12 @@ export function createGlobeModelLayer(map, lib) {
       }`;
     const fragment=`#version 300 es\nprecision highp float;
       in vec3 v_normal; in vec3 v_color; in vec2 v_uv; out vec4 fragColor;
-      uniform vec3 u_light; uniform sampler2D u_image; uniform float u_has_image;
+      uniform vec3 u_light; uniform sampler2D u_image; uniform float u_has_image; uniform float u_texture_lift;
       void main() {
         vec3 n=normalize(v_normal);
         float diffuse=.62+.38*max(0.0,dot(n,normalize(u_light)));
         vec3 tex=mix(vec3(1.0),texture(u_image,v_uv).rgb,u_has_image);
+        tex=mix(tex,vec3(1.0),u_texture_lift*u_has_image);
         vec3 color=v_color*tex*diffuse;
         color+=vec3(.055,.047,.032)*pow(max(0.0,dot(n,normalize(u_light+vec3(0.0,1.0,1.0)))),12.0);
         fragColor=vec4(color,1.0);
@@ -210,17 +277,7 @@ export function createGlobeModelLayer(map, lib) {
     onAdd(_map,gl) {
       glContext=gl;
       for (const [name,items] of parts) install(gl,name,items);
-      const loader=new GLTFLoader();
-      for (const [name,file] of Object.entries({tower:'eiffel-tower.glb',spire:'burj-khalifa.glb',race:'formula-car.glb'})) {
-        loader.load(new URL(`./assets/${file}`,import.meta.url).href,(asset)=>{
-          if (removed || !glContext) return;
-          try {
-            const imported=geometryData(asset.scene,name,true);
-            if (!imported.length) throw Error('empty model');
-            parts.set(name,imported); install(glContext,name,imported); loaded.add(name); map.triggerRepaint();
-          } catch (error) { console.warn(`3D model ${name} could not be prepared`,error); }
-        },undefined,(error)=>console.warn(`3D model ${name} could not be loaded`,error));
-      }
+      requestAssets([...landmarks,...events]);
     },
     render(gl,args) {
       const p=program(gl,args.shaderData),projection=args.defaultProjectionData;
@@ -239,10 +296,15 @@ export function createGlobeModelLayer(map, lib) {
       const east=[-Math.sin(lambda),Math.cos(lambda),0],north=[-Math.sin(phi)*Math.cos(lambda),-Math.sin(phi)*Math.sin(lambda),Math.cos(phi)];
       const light=view.map((v,i)=>v-.42*east[i]+.62*north[i]);
       for (const target of [...landmarks,...events]) {
-        const targetBuffers=buffers.get(target.kind); if (!targetBuffers) continue;
+        const targetBuffers=buffers.get(target.kind); if (!targetBuffers || state(target.kind)==='loading' || state(target.kind)==='failed') continue;
         const coord=lib.MercatorCoordinate.fromLngLat([target.lon,target.lat]);
-        if (Math.sin(phi)*Math.sin(target.lat*rad)+Math.cos(phi)*Math.cos(target.lat*rad)*Math.cos((target.lon-center.lng)*rad)<=.03) continue;
-        const scale=Math.max(1,310000*Math.pow(2,1.3-map.getZoom()))*(target.event ? 1.05 : 1);
+        const facing=Math.sin(phi)*Math.sin(target.lat*rad)+Math.cos(phi)*Math.cos(target.lat*rad)*Math.cos((target.lon-center.lng)*rad);
+        if (facing<=.40) continue;
+        const lean=target.kind==='pyramids' ? 1.0 : target.kind==='spire' ? .8 : .58;
+        // Shrink gently near the limb instead of letting large objects project
+        // into empty space or vanish while they are still on the visible side.
+        const horizonFactor=Math.max(.02,Math.min(1,(facing-.40)/.20));
+        const scale=scaleFor(target,parts.get(target.kind).dimensions,lean)*horizonFactor;
         const lat=target.lat*rad,lon=target.lon*rad;
         const up=[Math.cos(lat)*Math.cos(lon),Math.cos(lat)*Math.sin(lon),Math.sin(lat)];
         const side=[-Math.sin(lon),Math.cos(lon),0],south=[Math.sin(lat)*Math.cos(lon),Math.sin(lat)*Math.sin(lon),-Math.cos(lat)];
@@ -250,13 +312,14 @@ export function createGlobeModelLayer(map, lib) {
         gl.uniform3f(u('u_light'),dot(light,side),dot(light,up),dot(light,south));
         gl.uniform2f(u('u_anchor'),coord.x,coord.y);
         gl.uniform1f(u('u_meter_scale'),coord.meterInMercatorCoordinateUnits()); gl.uniform1f(u('u_model_scale'),scale);
-        gl.uniform1f(u('u_model_lean'),target.kind==='pyramids' ? 1.45 : target.kind==='spire' ? 1.0 : .62);
+        gl.uniform1f(u('u_model_lean'),lean);
         for (const piece of targetBuffers) {
           gl.bindBuffer(gl.ARRAY_BUFFER,piece.buffer);
           gl.vertexAttribPointer(aPosition,3,gl.FLOAT,false,44,0); gl.vertexAttribPointer(aNormal,3,gl.FLOAT,false,44,12);
           gl.vertexAttribPointer(aColor,3,gl.FLOAT,false,44,24); gl.vertexAttribPointer(aUV,2,gl.FLOAT,false,44,36);
           gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,piece.texture); gl.uniform1i(u('u_image'),0);
           gl.uniform1f(u('u_has_image'),piece.texture ? 1 : 0);
+          gl.uniform1f(u('u_texture_lift'),target.kind==='clocktower' ? .25 : 0);
           gl.drawArrays(gl.TRIANGLES,0,piece.count);
         }
       }
@@ -276,8 +339,9 @@ export function createGlobeModelLayer(map, lib) {
   };
   map.addLayer(layer);
   return {
-    setLandmarks(next) {landmarks=next; if (glContext) map.triggerRepaint();},
-    setEvents(next) {events=next; if (glContext) map.triggerRepaint();},
+    setLandmarks(next) {landmarks=next;requestAssets(next);if (glContext) map.triggerRepaint();},
+    setEvents(next) {events=next;requestAssets(next);if (glContext) map.triggerRepaint();},
     getLoadedModels() {return [...loaded];},
+    getModelState(name) {return state(name);},
   };
 }

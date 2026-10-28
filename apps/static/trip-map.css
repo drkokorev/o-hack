@@ -49,6 +49,7 @@
   .trip-map .globe-hint { position: absolute; left: 20px; bottom: 20px; z-index: 1; display: flex; align-items: center; gap: 10px;
     color: #e3f2eb; font-size: 12px; font-weight: 600; pointer-events: none; }
   .trip-map .globe-hint small { display: block; margin-top: 2px; color: #a1c3bc; font-size: 11px; font-weight: 400; }
+  .trip-map .map-detailed .globe-hint { padding: 7px 10px; border-radius: 12px; background: #102e32e8; }
   .trip-map .globe-hint-symbol { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #c3d9d2;
     border-radius: 50%; background: #183c43; color: #edcf8c; font-size: 15px; }
   .trip-map .map-controls { position: absolute; right: 12px; top: 12px; z-index: 2; display: grid; gap: 6px; }
@@ -63,7 +64,11 @@
   .trip-map .cluster-marker { background: #19645d; color: white; padding: 0 7px; z-index: 1; }
   .trip-map .event-marker { background: #fff9e8; color: #263c48; gap: 0; z-index: 2; }
   .trip-map .event-marker.has-3d { width: 64px; height: 64px; border: 0; background: transparent; box-shadow: none; }
-  .trip-map .event-hit-area { width: 64px; height: 64px; }
+  .trip-map .event-hit-area { display: grid; place-items: center; width: 64px; height: 64px; }
+  .trip-map .event-model-fallback, .trip-map .landmark-fallback { opacity: 0; pointer-events: none; transition: opacity .18s ease; }
+  .trip-map .model-pending .event-model-fallback, .trip-map .model-pending .landmark-fallback { opacity: 1; }
+  .trip-map .event-model-fallback { display: grid; place-items: center; width: 38px; height: 38px;
+    border: 1px solid #dbc28e; border-radius: 50%; background: #f4ead7; box-shadow: 0 4px 10px #061a2166; }
   .trip-map .event-illustration { display: grid; place-items: center; line-height: 1; }
   .trip-map .event-count { position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px;
     display: grid; place-items: center; padding: 0 4px; border: 2px solid white; border-radius: 50%; background: #d39e36; color: #1d2d28; font-weight: 700; }
@@ -73,14 +78,30 @@
   .trip-map .landmark-marker svg { width: 30px; height: 36px; padding: 4px; border-radius: 8px; background: #ffffffed; }
   .trip-map .landmark-marker canvas.landmark-model { width: 112px; height: 112px; object-fit: contain; filter: drop-shadow(0 6px 5px #1c392c50); }
   .trip-map .landmark-marker.overview canvas.landmark-model { width: 76px; height: 76px; }
-  .trip-map .landmark-marker .landmark-hit-area { display: block; width: 112px; height: 112px; padding: 0; background: transparent; }
-  .trip-map .landmark-marker.overview .landmark-hit-area { width: 76px; height: 76px; }
-  .trip-map .landmark-marker .landmark-label { padding: 3px 8px; border: 1px solid #dbc28e8c; border-radius: 999px; background: #102e32ee; color: #f8e9c9; }
+  .trip-map .landmark-marker .landmark-hit-area { display: grid; place-items: center; width: 68px; height: 68px; padding: 0; background: transparent; }
+  .trip-map .landmark-fallback { display: grid; place-items: center; width: 38px; height: 38px;
+    border: 1px solid #dbc28e; border-radius: 50%; background: #183c43; color: #f5dfab; box-shadow: 0 4px 10px #061a2166; }
+  .trip-map .landmark-fallback svg { width: 25px; height: 30px; padding: 1px; background: transparent; }
+  .trip-map .landmark-count { position: absolute; right: -4px; bottom: 3px; padding: 2px 5px; border: 1px solid #183c43;
+    border-radius: 999px; background: #d1ab69; color: #112b2b; font-size: 10px; font-weight: 700; }
+  .trip-map .landmark-marker:hover .landmark-label, .trip-map .landmark-marker:focus-visible .landmark-label { border-color: #f8df9e; background: #254e4a; }
+  .trip-map .landmark-marker .landmark-label { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    padding: 3px 8px; border: 1px solid #dbc28e8c; border-radius: 999px; background: #102e32ee; color: #f8e9c9; }
   .trip-map .landmark-marker .landmark-label { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .trip-map .event-marker .event-count { font-size: 10px; }
   .trip-map .event-label { position: absolute; left: 50%; bottom: -30px; transform: translateX(-50%);
     padding: 3px 7px; border: 1px solid #dbc28e8c; border-radius: 999px; background: #102e32ee;
     color: #f8e9c9; font-size: 10px; white-space: nowrap; box-shadow: 0 3px 8px #061a2180; }
+  .trip-map .heritage-marker .landmark-hit-area { width: 38px; height: 38px; }
+  .trip-map .heritage-marker .landmark-fallback { width: 30px; height: 30px; opacity: 1; }
+  .trip-map .heritage-marker .landmark-fallback svg { width: 21px; height: 25px; }
+  .trip-map .heritage-marker .landmark-label { display: none; top: calc(100% + 2px); }
+  .trip-map .heritage-marker:hover .landmark-label, .trip-map .heritage-marker:focus-visible .landmark-label { display: block; }
+  .trip-map .heritage-marker .landmark-count { right: -4px; bottom: -4px; }
+  .trip-map .map-inspect { min-height: 38px; margin: 10px 0 0 7px; border: 1px solid #b9d5c9; border-radius: 999px;
+    padding: 7px 12px; background: #fff; color: #19645d; font: 600 12px var(--body, system-ui); cursor: pointer; }
+  .trip-map .map-nearby { margin-top: 10px; border-top: 1px solid #d3dfd9; padding-top: 8px; }
+  .trip-map .map-nearby summary { cursor: pointer; color: #19645d; font-size: 12px; }
   .trip-map .map-credits details { margin-top: 5px; }
   .trip-map .map-credits summary { cursor: pointer; }
   .trip-map .map-credits p { max-width: 620px; line-height: 1.5; }
@@ -125,8 +146,12 @@
     .trip-map .map-surface { height: min(420px, 55vh); min-height: 320px; }
     .trip-map .globe-hint { left: 12px; bottom: 12px; }
     .trip-map .map-legend { display: none; }
+    .trip-map .landmark-marker .landmark-hit-area { width: 58px; height: 58px; }
+    .trip-map .heritage-marker .landmark-hit-area { width: 38px; height: 38px; }
   }
   @media (prefers-reduced-motion: no-preference) {
     .trip-map .event-marker:not(.has-3d) { animation: map-event-glow 3.5s ease-in-out infinite; }
     @keyframes map-event-glow { 50% { box-shadow: 0 0 0 7px #f5c54a3b, 0 5px 18px #174a432e; } }
   }
+
+  @media (prefers-reduced-motion: reduce) { .trip-map .event-model-fallback, .trip-map .landmark-fallback { transition: none; } }

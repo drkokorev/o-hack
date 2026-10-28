@@ -1,31 +1,46 @@
 /* Geographic Blue Marble imagery rendered on the same MapLibre globe.
    Source: NASA Earth Observatory, Blue Marble Next Generation, October 2004.
    The image is local and is never used to infer points or country borders. */
-export async function addEarthSurface(map, imageUrl) {
-  const sourceImage = new Image();
-  sourceImage.decoding = 'async';
-  sourceImage.src = imageUrl;
-  await sourceImage.decode();
+// Begin decoding while the map itself is starting; no external network needed.
+export async function prepareEarthImage(imageUrl) {
+  const sourceImage=new Image(); sourceImage.decoding='async'; sourceImage.src=imageUrl;
+  await sourceImage.decode(); return sourceImage;
+}
+
+export async function addEarthSurface(map, imageOrUrl) {
+  const sourceImage=typeof imageOrUrl==='string' ? await prepareEarthImage(imageOrUrl) : imageOrUrl;
   if (!map.getLayer('land')) return null;
 
-  const values = [];
-  const rad = Math.PI / 180;
-  const mercatorY = (latitude) => (1-Math.log(Math.tan(Math.PI/4+latitude*rad/2))/Math.PI)/2;
-  function vertex(lon, lat, pole=0) {
-    const lambda=lon*rad, phi=lat*rad;
-    values.push((lon+180)/360, mercatorY(lat), (lon+180)/360, pole ? (pole<0 ? 0 : 1) : (90-lat)/180,
-      pole ? 0 : Math.cos(phi)*Math.cos(lambda), pole ? 0 : Math.cos(phi)*Math.sin(lambda), pole ? (pole<0 ? 1 : -1) : Math.sin(phi), pole);
+  // An indexed mesh reuses each geographic vertex instead of calculating and
+  // transferring six copies. Separate pole vertices retain correct image UVs.
+  const step=2.5, columns=145, rows=69, cells=(columns-1)*(rows-1), polar=(columns-1);
+  const values=new Float32Array((columns*rows+polar*2)*8);
+  const indices=new Uint16Array(cells*6+polar*6);
+  const rad=Math.PI/180; let v=0, ix=0;
+  const mercatorY=(latitude)=>(1-Math.log(Math.tan(Math.PI/4+latitude*rad/2))/Math.PI)/2;
+  function vertex(lon,lat,pole=0) {
+    const lambda=lon*rad,phi=lat*rad;
+    values[v++]=(lon+180)/360; values[v++]=mercatorY(lat);
+    values[v++]=(lon+180)/360; values[v++]=pole ? (pole<0 ? 0 : 1) : (90-lat)/180;
+    values[v++]=pole ? 0 : Math.cos(phi)*Math.cos(lambda);
+    values[v++]=pole ? 0 : Math.cos(phi)*Math.sin(lambda);
+    values[v++]=pole ? (pole<0 ? 1 : -1) : Math.sin(phi); values[v++]=pole;
   }
-  for (let lat=-85; lat<85; lat+=2.5) for (let lon=-180; lon<180; lon+=2.5) {
-    const north=Math.min(85,lat+2.5), east=lon+2.5;
-    vertex(lon,lat); vertex(east,lat); vertex(east,north);
-    vertex(lon,lat); vertex(east,north); vertex(lon,north);
+  for(let y=0;y<rows;y++) for(let x=0;x<columns;x++) vertex(-180+x*step,-85+y*step);
+  for(let y=0;y<rows-1;y++) for(let x=0;x<columns-1;x++) {
+    const a=y*columns+x,b=a+1,c=a+1+columns,d=a+columns;
+    indices[ix++]=a;indices[ix++]=b;indices[ix++]=c;
+    indices[ix++]=a;indices[ix++]=c;indices[ix++]=d;
   }
-  for (let lon=-180;lon<180;lon+=2.5) {
-    vertex(lon,85); vertex(lon+2.5,85); vertex(lon+1.25,85,-32768);
-    vertex(lon,-85); vertex(lon+1.25,-85,32768); vertex(lon+2.5,-85);
+  const northPoleStart=columns*rows,southPoleStart=northPoleStart+polar;
+  for(let x=0;x<polar;x++) vertex(-180+(x+.5)*step,85,-32768);
+  for(let x=0;x<polar;x++) vertex(-180+(x+.5)*step,-85,32768);
+  for(let x=0;x<polar;x++) {
+    const top=(rows-1)*columns+x;
+    indices[ix++]=top;indices[ix++]=top+1;indices[ix++]=northPoleStart+x;
+    indices[ix++]=x;indices[ix++]=southPoleStart+x;indices[ix++]=x+1;
   }
-  const programs=new Map(); let buffer, texture;
+  const programs=new Map(); let buffer, indexBuffer, texture;
   function compile(gl,type,src) {
     const shader=gl.createShader(type); gl.shaderSource(shader,src); gl.compileShader(shader);
     if (!gl.getShaderParameter(shader,gl.COMPILE_STATUS)) throw Error(gl.getShaderInfoLog(shader));
@@ -61,22 +76,27 @@ export async function addEarthSurface(map, imageUrl) {
   map.addLayer({id:'earth-imagery',type:'custom',
     onAdd(_map,gl) {
       buffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(values),gl.STATIC_DRAW);
-      const limit=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE));
-      const factor=Math.min(1,limit/sourceImage.width,limit/sourceImage.height);
-      const canvas=document.createElement('canvas');
-      canvas.width=Math.round(sourceImage.width*factor); canvas.height=Math.round(sourceImage.height*factor);
-      canvas.getContext('2d').drawImage(sourceImage,0,0,canvas.width,canvas.height);
+      gl.bufferData(gl.ARRAY_BUFFER,values,gl.STATIC_DRAW);
+      indexBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,indices,gl.STATIC_DRAW);
+      const limit=gl.getParameter(gl.MAX_TEXTURE_SIZE);
+      let image=sourceImage;
+      if (sourceImage.width>limit || sourceImage.height>limit) {
+        const factor=Math.min(limit/sourceImage.width,limit/sourceImage.height);
+        const canvas=document.createElement('canvas');
+        canvas.width=Math.round(sourceImage.width*factor);canvas.height=Math.round(sourceImage.height*factor);
+        canvas.getContext('2d').drawImage(sourceImage,0,0,canvas.width,canvas.height);image=canvas;
+      }
       texture=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,texture);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
-      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
     },
     render(gl,args) {
-      const alpha=Math.max(0,Math.min(1,(6-map.getZoom())/2));
+      const alpha=Math.max(0,Math.min(1,(5-map.getZoom())/1.5));
       if (!alpha) return;
       const p=getProgram(gl,args.shaderData), projection=args.defaultProjectionData;
       gl.useProgram(p); const u=(name)=>gl.getUniformLocation(p,name);
@@ -99,12 +119,13 @@ export async function addEarthSurface(map, imageUrl) {
       gl.enableVertexAttribArray(pos); gl.enableVertexAttribArray(uv); gl.enableVertexAttribArray(normal); gl.enableVertexAttribArray(pole);
       gl.vertexAttribPointer(pos,2,gl.FLOAT,false,32,0); gl.vertexAttribPointer(uv,2,gl.FLOAT,false,32,8);
       gl.vertexAttribPointer(normal,3,gl.FLOAT,false,32,16); gl.vertexAttribPointer(pole,1,gl.FLOAT,false,32,28);
-      gl.drawArrays(gl.TRIANGLES,0,values.length/8);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);
+      gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       gl.disableVertexAttribArray(pos); gl.disableVertexAttribArray(uv); gl.disableVertexAttribArray(normal); gl.disableVertexAttribArray(pole);
     },
-    onRemove(_map,gl) { gl.deleteBuffer(buffer); gl.deleteTexture(texture); programs.forEach((p)=>gl.deleteProgram(p)); programs.clear(); },
+    onRemove(_map,gl) { gl.deleteBuffer(buffer); gl.deleteBuffer(indexBuffer); gl.deleteTexture(texture); programs.forEach((p)=>gl.deleteProgram(p)); programs.clear(); },
   },'land');
-  map.setPaintProperty('land','fill-opacity',['interpolate',['linear'],['zoom'],0,.055,4,.055,6,1]);
+  map.setPaintProperty('land','fill-opacity',['interpolate',['linear'],['zoom'],0,.055,3.5,.055,5,1]);
   map.addLayer({id:'country-outlines',type:'line',source:'countries',
     paint:{'line-color':'#d6ead7','line-opacity':['interpolate',['linear'],['zoom'],0,.28,5,.4,8,.18],
       'line-width':['interpolate',['linear'],['zoom'],0,.5,5,1,10,.6]}},'trip-route');
