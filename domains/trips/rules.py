@@ -50,12 +50,12 @@ QUESTION_TOPICS = [("travel", r"время (?:в )?пути|сколько (?:е
                    # вопросы о месте — отвечаем по путеводителю (RAG)
                    ("sights", r"что (?:\w+ )?(?:посмотреть|интересного|посетить)|достопримечательн|куда (?:\w+ )?сходить|"
                               r"чем (?:\w+ )?заняться|что (?:там )?делать"),
-                   ("areas", r"какой район|в каком районе|где (?:\w+ )?(?:жить|остановиться|поселиться)"),
-                   ("food", r"где (?:\w+ )?(?:поесть|покушать|пообедать|поужинать)|что (?:\w+ )?попробовать|местн\w* кухн|"
+                   ("areas", r"какой район|в каком районе|где (?:\w+ ){0,2}(?:жить|остановиться|поселиться)"),
+                   ("food", r"где (?:\w+ ){0,2}(?:поесть|покушать|пообедать|поужинать)|что (?:\w+ )?попробовать|местн\w* кухн|"
                             r"ресторан|кафе"),
                    ("safety", r"безопасн|опасно|не опасно"),
                    ("local_transport", r"как (?:там )?передвигаться|общественн\w* транспорт|метро|автобус")]
-_PLACE_QUESTIONS = frozenset({"sights", "areas", "food", "safety", "local_transport"})
+PLACE_QUESTIONS = frozenset({"sights", "areas", "food", "safety", "local_transport"})
 CONFIRM_STRONG = (r"^(да\b(?!\s*нет)|оформля|оформи|бронир|оплачива|оплати|покупа|купи|куплю|подтвержда|согласн|верно|"
                   r"всё верно|все верно|бер[уё]м?\b|давай оформ|давай брон|давай бер|давай куп|давайте оформ|"
                   r"хочу (купить|оформить|забронировать)|можно оформ)")
@@ -260,8 +260,15 @@ def _fuzzy_origin(words: list[str]) -> str | None:
 
 
 def _find_origin(t: str) -> str | None:
-    m = re.search(r"(?:\bиз|вылет\w* из|выезжа\w* из|еду из|едем из|летим из|лечу из|живу в|нахожусь в)\s+([а-яё\- ]{3,30})", t)
-    return match_origin(m.group(1)) if m else None
+    m = re.search(r"(?:\bиз|вылет\w* из|выезжа\w* из|еду из|едем из|летим из|лечу из|живу в|нахожусь в|"
+                  r"\bоткуда:?|\bвылет\w*:?|\bотправлени\w*:?)\s+([а-яё\- ]{3,30})", t)
+    if m and (found := match_origin(m.group(1))):
+        return found
+    # маршрут «Краснодар-Нячанг», «Уфа – Стамбул»: слева город отправления, справа направление каталога
+    for route in re.finditer(r"([а-яё]+(?:-на-[а-яё]+)?)\s*[-–—]\s*([а-яё]+)", t):
+        if match_origin(route.group(1)) and find_destination(route.group(2)):
+            return match_origin(route.group(1))
+    return None
 
 
 def find_destination(t: str) -> str | None:
@@ -444,6 +451,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     if d_out:
         data["date_to"] = d_out
     m = re.search(rf"\bв\s+{MONTH_RE}|на\s+{MONTH_RE}\b(?!\s*\d)|{MONTH_RE}\s*$|"
+                  rf"(?:^|[,;:]\s*|когда\s+|в течени\w+\s+|примерно\s+|только\s+){MONTH_RE}(?=\s*(?:[,;.]|$|на\s|\d|мес))|"
                   rf"(?:начал\w*|середин\w*|конц\w*|конец|первой половин\w*|второй половин\w*)\s+{MONTH_RE}", t)
     if m and not d_in:
         data["month"] = month_of(next(g for g in m.groups() if g))
@@ -515,10 +523,10 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["clear_duration"] = True
 
     # Состав
-    m = re.search(rf"{NUM}\s+взросл", t)
+    m = re.search(rf"{NUM}\s*(?:взросл|взр\b)", t)
     if m:
         data["adults"] = num_word(m.group(1))
-    elif (inflected := re.search(r"\b(?:на\s+)?(двоих|троих|четверых)\s+взросл", t)):
+    elif (inflected := re.search(r"\b(?:на\s+)?(двоих|троих|четверых)\s+(?:взросл|взр\b)", t)):
         data["adults"] = {"двоих": 2, "троих": 3, "четверых": 4}[inflected.group(1)]
     elif (mm := re.search(rf"(?:не\s+\w+,?\s+а|а)\s+(двое|трое|четверо|пятеро|{NUM})\b(?!{_UNITS})", t)) and re.search(r"\bне\s+(двое|трое|один|одна|четверо)", t):
         data["party_size"] = num_word(mm.group(1))  # «не двое, а трое»
@@ -544,11 +552,11 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     if re.search(r"добав\w* (ещ[её] )?(одного )?взросл|ещ[её] (один|одна|одного) (взросл|человек)|\+\s*1", t):
         data["add_adults"] = 1
     kids = (re.search(rf"(?:с|и)\s+(?:{NUM}|(одним|одной|двумя|тремя))\s+(?:детьми|дет|реб[её]н)", t) or
-            re.search(rf"\b{NUM}\s+(?:детей|ребенка|ребенок|дети)\b", t))
+            re.search(rf"\b{NUM}\s*(?:детей|ребенка|ребенок|дети|реб\b|дет\b)", t))
     if kids:
         word = kids.group(1) or (kids.group(2) if kids.lastindex and kids.lastindex >= 2 else "")
         data["children"] = {"двумя": 2, "тремя": 3}.get(word, num_word(word))
-    elif re.search(r"с реб[её]нк|с дочк|с сыном|с малыш|с ребенк|и реб[её]н|и дочк|и сын\b|и сыном|"
+    elif re.search(r"с реб[её]нк|с дочк|с сыном|с малыш|с ребенк|и реб[её]н|и дочк|и сын\b|и сыном|\+\s*реб|"
                    r"[,;]\s*(?:и\s+)?(?:ребенок|дочка|сын|малыш)\b", t):
         data["children"] = 1
     elif re.search(r"с детьми|и дети\b", t):
@@ -749,7 +757,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         for topic, pattern in QUESTION_TOPICS:
             # «что посмотреть», «где поесть» — вопрос и без знака «?»
             if (topic == "location" and re.search(r"\bадрес\b", t) or
-                    topic in _PLACE_QUESTIONS and re.search(pattern, t) or
+                    topic in PLACE_QUESTIONS and re.search(pattern, t) or
                     any(_question_clause(t, mm.start(), mm.end()) for mm in re.finditer(pattern, t))):
                 questions.append(topic)
         asked_wishes = [code for code, pattern in WISH_WORDS.items()
@@ -758,7 +766,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             questions.append("amenities:" + ",".join(asked_wishes))
         if questions:
             data["question"] = "|".join(questions)
-            if set(questions) <= _PLACE_QUESTIONS:
+            if set(questions) <= PLACE_QUESTIONS:
                 # «где поесть?», «что попробовать из еды?» — вопрос о месте, а не новые условия поездки
                 data.pop("trip_types", None)
                 data.pop("unknown_origin", None)

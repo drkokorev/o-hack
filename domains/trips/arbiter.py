@@ -10,11 +10,12 @@
 from __future__ import annotations
 
 import re
+from difflib import SequenceMatcher
 
 from .geo import BY_ID
-from .rules import find_destination, match_origin, time_expression_not_place
+from .rules import PLACE_QUESTIONS, find_destination, match_origin, time_expression_not_place
 from .state import TripState, TripUpdate
-from .textparse import norm
+from .textparse import MONTH_RE, month_of, norm
 
 # Поля, где правила точнее модели: если правила что-то нашли, берём их значение
 RULES_WIN = {"date_from", "date_to", "nights", "month", "season", "year", "budget_total", "budget_night", "adults", "children", "pets", "trip_types", "transport", "lodging",
@@ -114,6 +115,68 @@ def _grounded(field: str, value, t: str, state: TripState, rules: TripUpdate) ->
     return value in numbers
 
 
+# ---------- значения модели со ссылкой на реплику (evidence) ----------
+# Модель главная в понимании: значение принимаем, если её дословная ссылка есть в реплике (с опечатками)
+# и подтверждает значение. Действия (оформить, оплатить, отменить, выбрать) — по-прежнему только с правилами.
+_EVIDENCE_FIELDS = {"destination", "origin", "month", "date_from", "date_to", "nights", "adults", "children",
+                    "budget_total", "budget_night", "max_travel_hours", "trip_types", "transport", "meal", "lodging",
+                    "pets", "direct_only", "hotel_wishes", "abroad", "economy", "baggage", "stars_min", "party_size"}
+_ADULT_WORDS = r"взр|чел|друз|жен|муж|супруг|подруг|парн|девушк|коллег|один|одна|\bсам\b|\bсама\b"
+
+
+def _quote_in(quote: str, t: str) -> bool:
+    """Фрагмент модели действительно есть в реплике — дословно или с мелкими расхождениями («стамбл»)."""
+    q = norm(quote).strip(" .,!?:;«»\"'")
+    if len(q) < 1:
+        return False
+    if q in t:
+        return True
+    if len(q) < 4:
+        return False
+    return any(SequenceMatcher(None, q, t[i:i + len(q)]).ratio() >= 0.85 for i in range(0, max(1, len(t) - len(q) + 1)))
+
+
+def _quote_numbers(q: str) -> set[int]:
+    found: set[int] = set()
+    for m in re.finditer(rf"(?<![а-яё\d]){_NUMBER}\s*(тыс\w*|т\.?р\.?|к\b|k\b|млн|миллион\w*)?", q):
+        found |= _value(m.group(1), (m.group(2) or "").strip())
+    found |= {n for stem, n in (("вдво", 2), ("двоих", 2), ("втро", 3), ("троих", 3), ("вчетв", 4), ("четверых", 4),
+                                ("впят", 5)) if stem in q}
+    for m in re.finditer(r"(?:(\d|две|два|три|пару)\s*)?\bнед(?:ел\w*|\b)", q):
+        found.add(7 * ({"две": 2, "два": 2, "три": 3, "пару": 2}.get(m.group(1) or "") or int(m.group(1) or 1)))
+    if re.search(r"полтор\w* недел", q):
+        found |= {10, 11}
+    return found
+
+
+def _backed(field: str, value, quote: str | None, t: str) -> bool:
+    """Ссылка модели есть в реплике и согласуется со значением поля."""
+    if field not in _EVIDENCE_FIELDS or not quote or value is None or not _quote_in(quote, t):
+        return False
+    q = norm(quote)
+    if field == "destination":
+        dest_id = find_destination(norm(str(value)))
+        return norm(str(value))[:4] in q or (dest_id is not None and find_destination(q) == dest_id)
+    if field == "origin":
+        return norm(str(value))[:4] in q or match_origin(q) == value
+    if field == "month":
+        return any(month_of(m.group(0)) == value for m in re.finditer(MONTH_RE, q))
+    if field in ("date_from", "date_to"):
+        return hasattr(value, "day") and re.search(rf"(?<!\d){value.day}(?!\d)", q) is not None
+    if field in ("nights", "adults", "children", "budget_total", "budget_night", "max_travel_hours", "party_size"):
+        if isinstance(value, bool) or not isinstance(value, int):
+            return False
+        numbers = _quote_numbers(q)
+        if field == "nights":
+            return value in numbers or value + 1 in numbers  # «11 дней» — 10 ночей
+        if field == "adults":  # «втроём» возраст не подтверждает — решение команды
+            return value in numbers and bool(re.search(_ADULT_WORDS, q))
+        if field == "children":
+            return value in numbers or (value == 1 and bool(re.search(r"реб|сын|доч|малыш", q)))
+        return value in numbers
+    return True  # тип отдыха, транспорт, питание, удобства — смысл понимает модель, ссылка подтверждена
+
+
 def _same(a, b) -> bool:
     if isinstance(a, list) and isinstance(b, list):
         return sorted(map(str, a)) == sorted(map(str, b))
@@ -125,6 +188,9 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     data = llm.model_dump()
     rule_data = rules.model_dump()
     notes: list[str] = []
+    quotes = llm.evidence or {}
+    backed = {field for field, value in data.items() if _backed(field, value, quotes.get(field), t)}
+    data.pop("evidence", None)
 
     service_fields = ("unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
@@ -149,11 +215,12 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
             data[field] = None  # повтор уже известного — не изменение
             continue
         cue = CUES.get(field)
-        if cue and not re.search(cue, t):
+        if cue and not re.search(cue, t) and field not in backed:
             notes.append(f"{field}={value!r}: нет опоры в тексте")
             data[field] = None
 
-    if rules.month is not None and rules.date_from is None and (data.get("date_from") or data.get("date_to")):
+    if (rules.month is not None and rules.date_from is None and (data.get("date_from") or data.get("date_to"))
+            and "date_from" not in backed):
         notes.append("модель указала точные даты, хотя правила нашли только месяц")
         data["date_from"] = data["date_to"] = None
 
@@ -180,7 +247,7 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         data["pick_name"] = None
 
     if (data.get("origin") and not rules.origin and norm(data["origin"])[:4] not in t and
-            match_origin(t) != data["origin"]):  # «пинза» — опечатка в названии, модель поняла верно
+            match_origin(t) != data["origin"] and "origin" not in backed):  # «пинза» — опечатка в названии, модель поняла верно
         notes.append("origin: в реплике нет указанного моделью города отправления")
         data["origin"] = None
 
@@ -190,6 +257,13 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         data["meal"] = None
 
     question_topics = set((rules.question or "").split("|"))
+    asked = set((data.get("question") or rules.question or "").split("|")) - {""}
+    if asked and asked <= PLACE_QUESTIONS:
+        # «где вкусно поесть?» — вопрос о месте: ответ по путеводителю, условия поездки не меняем,
+        # даже если модель нашла в нём «еду» со ссылкой на текст
+        for field in TripState.model_fields:
+            if field in data and field not in ("question",) and rule_data.get(field) is None:
+                data[field] = None
     if "pets" in question_topics and rules.pets is None and data.get("pets") is not None:
         notes.append("pets: вопрос об условиях для животных не подтверждает их участие в поездке")
         data["pets"] = None
@@ -208,7 +282,7 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
 
     for field in ("budget_total", "budget_night", "adults", "children", "nights", "max_travel_hours", "hotel_wishes"):
         if data.get(field) is not None and rule_data.get(field) is None:
-            if field != "hotel_wishes" and _grounded(field, data[field], t, state, rules):
+            if field in backed or (field != "hotel_wishes" and _grounded(field, data[field], t, state, rules)):
                 continue  # «11 дн», «полторы недели», «бюджет 150к» — правила не разобрали, а число в реплике есть
             notes.append(f"{field}: точное значение в реплике не подтверждено")
             data[field] = None
@@ -216,9 +290,9 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     explicit_day = re.search(r"\b\d{1,2}\s*[./]\s*\d{1,2}|\b\d{1,2}\s*(?:–|-|по\b|"
                              r"январ|феврал|март|апрел|ма[йяе]|июн|июл|август|сентябр|октябр|ноябр|декабр)|"
                              r"\b(?:завтра|послезавтра|сегодня)\b", t)
-    if not rules.date_from and not explicit_day:
+    if not rules.date_from and not explicit_day and "date_from" not in backed:
         data["date_from"] = data["date_to"] = None
-    elif not rules.date_to and data.get("date_to"):
+    elif not rules.date_to and data.get("date_to") and "date_to" not in backed:
         notes.append("date_to: дата окончания поездки явно не подтверждена")
         data["date_to"] = None
 
@@ -240,9 +314,9 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         elif rule_data.get("destination") and rule_data["destination"] != find_destination(norm(dest)):
             notes.append(f"destination: правила {rule_data['destination']} вместо LLM {dest}")
             data["destination"] = rule_data["destination"]
-        elif rule_data.get("unknown_place"):
+        elif rule_data.get("unknown_place") and "destination" not in backed:
             data["destination"] = rule_data["unknown_place"]
-        elif not rule_data.get("destination"):
+        elif not rule_data.get("destination") and "destination" not in backed:
             # Do not turn generic tags ("mountains") or an origin city into
             # a destination merely because the model produced a valid string.
             destination_text = re.sub(r"(?:\bиз|вылет\w* из|едем из|летим из|живу в)\s+[а-яё\-]+", " ", t)

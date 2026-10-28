@@ -213,3 +213,33 @@ def test_model_numbers_are_accepted_only_next_to_their_unit():
                                    ("хочу недорого", 7, False)):
         result, _ = arbitrate(state, text, TripUpdate(nights=nights), rule_extract(state, text, TODAY))
         assert (result.nights is not None or bool(result.trip_days_min)) == accepted, text
+
+
+# ---------- модель главная: значения со ссылкой на реплику ----------
+
+def test_model_values_with_evidence_win_where_rules_do_not_understand():
+    text = "мы с женой из пинзы в стамбл на 11 дн в нояюре"
+    model = TripUpdate(origin="Пенза", destination="Стамбул", nights=10, adults=2, month=11,
+                       evidence={"origin": "из пинзы", "destination": "в стамбл", "nights": "11 дн",
+                                 "adults": "мы с женой", "month": "в нояюре"})
+    result, _ = arbitrate(TripState(), text, model, rule_extract(TripState(), text, TODAY))
+    assert (result.origin, result.nights, result.adults, result.month) == ("Пенза", 10, 2, 11)
+    assert result.destination in ("Стамбул", "istanbul")
+
+
+def test_evidence_that_does_not_support_the_value_is_rejected():
+    text = "хочу недорого отдохнуть с семьей"
+    model = TripUpdate(budget_total=100000, nights=7, adults=2,
+                       evidence={"budget_total": "недорого", "nights": "отдохнуть", "adults": "с семьей"})
+    result, _ = arbitrate(TripState(), text, model, rule_extract(TripState(), text, TODAY))
+    assert result.budget_total is None and result.nights is None and result.adults is None
+    fake = TripUpdate(origin="Москва", evidence={"origin": "из Москвы"})  # ссылки нет в реплике
+    result, _ = arbitrate(TripState(), "хочу в Сочи", fake, rule_extract(TripState(), "хочу в Сочи", TODAY))
+    assert result.origin is None
+
+
+def test_together_does_not_make_adults_even_with_evidence():
+    text = "едем втроём в Казань"
+    model = TripUpdate(adults=3, evidence={"adults": "втроём"})
+    result, _ = arbitrate(TripState(), text, model, rule_extract(TripState(), text, TODAY))
+    assert result.adults is None

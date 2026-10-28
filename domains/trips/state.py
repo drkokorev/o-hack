@@ -106,6 +106,9 @@ class TripState(TripParams):
 
 
 class TripUpdate(TripParams):
+    evidence: dict[str, str] | None = Field(None, description="Для каждого заполненного поля — дословный фрагмент "
+                                            "последней реплики, на котором основано значение: {\"nights\": \"11 дн\", "
+                                            "\"origin\": \"из пинзы\"}")
     landmark: str | None = Field(None, description="Достопримечательность, парк, музей, улица, объект, если назван он, "
                                  "а не город — дословно, как в реплике («Эйфелева башня», «парковка Дайкоку»). "
                                  "Город за него не подставляй")

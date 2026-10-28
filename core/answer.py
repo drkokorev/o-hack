@@ -149,6 +149,9 @@ def compose(llm: LLM | None, user_text: str, facts: str, draft: str, sources: li
             log.info("Генерация ответа недоступна (%s), показан шаблон", type(err).__name__)
             return Composed(draft, "template", [type(err).__name__])
         answer = plain(answer)
+        if facts.rstrip().endswith("?") and "?" not in answer:
+            # модель часто теряет финальный вопрос — дописываем его из фактов, а не отказываемся от ответа
+            answer = answer.rstrip() + "\n\n" + facts.rstrip().splitlines()[-1].strip()
         problems = verify(answer, context, user_text, known_tokens, facts)
         if not problems:
             return Composed(answer, "llm")
