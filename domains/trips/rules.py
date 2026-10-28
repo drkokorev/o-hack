@@ -15,7 +15,7 @@ from .world_places import COUNTRY_NAMES, find_world_places
 TRIP_TYPE_WORDS = [
     ("sea", r"\bмор[еяюи]\b|морск|\bна море|побереж|океан"),
     ("beach", r"пляж|купат|позагорать|загорать"),
-    ("warm", r"т[её]пл|жар[кау]|солнц|лето зимой|погреться|вайб лета|летн\w* (?:настроен|вайб)"),
+    ("warm", r"т[её]пл|жар[кау]|солнц|солнеч|лето зимой|погреться|вайб лета|летн\w* (?:настроен|вайб)"),
     ("mountains", r"\bгор[ыа]?\b|\bв горы|горн(?!олыж)"),
     ("ski", r"лыж|сноуборд|горнолыж|покатат"),
     ("city", r"город|прогуля|погулять по"),
@@ -63,7 +63,7 @@ _NOT_PLACES = {"январе", "феврале", "марте", "апреле", "
 _TIME_NOT_PLACE = re.compile(
     r"(?:(?:следующ|будущ|прошл|текущ)[а-я]*|эт(?:от|а|о|и|ом|ого|ому|у|ой|им|ими|их))"
     r"(?:\s+(?:месяц|недел|год|выходн|дн)[а-я]*)?"
-    r"|(?:месяц|недел|выходн|завтра|послезавтра|сегодня)[а-я]*"
+    r"|(?:месяц|недел|выходн|сут|ноч|день|дня|дней|год|завтра|послезавтра|сегодня)[а-я]*"
 )
 
 
@@ -431,20 +431,22 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["party_size"] = num_word(mm.group(1))  # «не двое, а трое»
     elif (n := parse_guests(text)) is not None and re.search(r"человек|чел\b|персон|нас\b|вчетвером|втроём|втроем|на двоих|на троих|на четверых|\bтрое\b|\bчетверо\b", t):
         data["party_size"] = n
-    elif re.search(r"\bвдво[её]м\b|на двоих", t):
+    elif re.search(r"\bвдво[её]м\b|(?:на|для) двоих", t):
         data["party_size"] = 2
-    elif re.search(r"\bвтро[её]м\b|на троих", t):
+    elif re.search(r"\bвтро[её]м\b|(?:на|для) троих", t):
         data["party_size"] = 3
-    elif re.search(r"\bвчетвером\b|на четверых", t):
+    elif re.search(r"\bвчетвером\b|(?:на|для) четверых", t):
         data["party_size"] = 4
     elif (friends := re.search(rf"\bя\s+и\s+{NUM}\s+(?:друг|друз|подруг)\w*", t)):
         if (count := num_word(friends.group(1))) is not None:
             data["party_size"] = count + 1
     elif re.search(r"\bя\s+и\s+(?:(?:мой|моя)\s+)?(?:друг|подруга)\b", t):
         data["party_size"] = 2
-    elif re.search(r"\bс\s+(?:другом|дргуом|друагом|подругой|подругай)\b", t) and not re.search(r"\bдет(?:и|ей|ям|ьми)|реб[её]н|компан|друзьями", t):
-        data["party_size"] = 2
-    elif re.search(r"\bс\s+(?:женой|жиной|мужем)\b", t) and not re.search(r"\bдет(?:и|ей|ям|ьми)|реб[её]н|сын|доч", t):
+    elif ((companion := re.search(r"\bс\s+(?:(?:моей|моим|своей|своим|любимой|любимым)\s+)?"
+                                  r"(?:другом|дргуом|друагом|подругой|подругай|женой|жиной|мужем|"
+                                  r"девушкой|евушкой|парнем|молодым\s+человеком)\b", t))
+          and not _negated_at(t, companion.start(), companion.end())
+          and not re.search(r"\bдет(?:и|ей|ям|ьми)|реб[её]н|сын|доч|компан|друзьями", t)):
         data["party_size"] = 2
     if re.search(r"добав\w* (ещ[её] )?(одного )?взросл|ещ[её] (один|одна|одного) (взросл|человек)|\+\s*1", t):
         data["add_adults"] = 1
@@ -672,9 +674,11 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     # Preserve explicitly tentative choices as ideas, not confirmed inputs to
     # a price calculation. Only local qualifiers are used, not a broad guess
     # that the whole message is uncertain.
-    maybe = r"\b(?:может(?:\s+быть)?|возможно|наверное|вероятно)\s*,?\s*"
+    maybe = r"\b(?:может(?:\s+быть)?|возможно|наверное|вероятно|скорее\s+всего)\s*,?\s*"
     possible = []
-    if re.search(maybe + r"(?:(?:поеду|поедем|полетим|поехать)\s+)?с\s+(?:другом|дргуом|друагом|подругой|подругай)\b", t):
+    if re.search(maybe + r"(?:(?:поеду|поедем|полетим|поехать)\s+)?с\s+"
+                 r"(?:(?:моей|моим|своей|своим)\s+)?"
+                 r"(?:другом|дргуом|друагом|подругой|подругай|девушкой|евушкой|парнем|женой|жиной|мужем|молодым\s+человеком)\b", t):
         possible.append("party_size")
     if re.search(maybe + r"(?:(?:жить|ночевать|останавливаться)\s+)?(?:в\s+)?палатк", t):
         possible.append("lodging")

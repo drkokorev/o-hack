@@ -128,6 +128,19 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
             check_out = check_out.replace(year=check_out.year + 1)
         return check_in, check_out
 
+    # «с 1 декабря по 7»: the second day belongs to the stated month and
+    # year. Do not silently move an earlier end day to a different month.
+    m = re.search(rf"(?<!\d)(?P<day_in>\d{{1,2}})(?:-?го)?\s+"
+                  rf"(?P<month>{month_pattern})(?:\s+(?P<year_in>20\d{{2}}))?\s*"
+                  rf"(?:-|–|—|по|до)\s*(?P<day_out>\d{{1,2}})(?:-?го)?\b(?:\s+(?P<year_out>20\d{{2}}))?"
+                  rf"(?!\s*(?:{month_pattern}|ноч|сут|дн|руб|тыс|человек))", t)
+    if m:
+        month = month_of(m.group("month"))
+        check_in = _date_with_year(int(m.group("day_in")), month, m.group("year_in") or m.group("year_out"), today)
+        check_out = (_date_with_year(int(m.group("day_out")), month, m.group("year_out") or check_in.year, today)
+                     if check_in else None)
+        return check_in, check_out
+
     # «5-12.12», «5–12.12.2026»
     m = re.search(r"\b(\d{1,2})\s*[-–—]\s*(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?\b", t)
     if m and 1 <= int(m.group(3)) <= 12:
@@ -173,6 +186,8 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
             days = count * (7 if relative.group(2).startswith("недел") else 1) if count else 0
             if 0 < days <= 3650:
                 check_in = today + timedelta(days=days)
+        elif re.search(r"\bчерез\s+неделю\b", t):
+            check_in = today + timedelta(days=7)
         elif re.search(r"\bчерез\s+месяц\b", t):
             year = today.year + (today.month == 12)
             month = today.month % 12 + 1
@@ -196,7 +211,7 @@ def parse_budget(text: str) -> tuple[int | None, bool]:
     t = norm(text).replace("\u00a0", " ")
     pattern = (
         r"(?:до|не дороже|не больше|максимум|бюджет\w*|в пределах|за|около|примерно|по|тысяч\w* на)\s*"
-        r"(\d[\d\s]*(?:[.,]\d+)?)\s*(к\b|тыс\w*|т\.р|тр\b)?"
+        r"((?:\d{1,3}(?: \d{3})+(?!\d)|\d+)(?:[.,]\d+)?)\s*(к\b|тыс\w*|т\.р|тр\b)?"
     )
     for m in re.finditer(pattern, t):
         raw = m.group(1).strip().replace(" ", "").replace(",", ".")
@@ -208,7 +223,7 @@ def parse_budget(text: str) -> tuple[int | None, bool]:
         if unit:
             value *= 1000
         tail = t[m.end(): m.end() + 40]
-        if value < 500 or re.match(r"\s*(звезд|ноч|сут|дн|человек|гост|км|минут|\.|январ|феврал|март|апрел|ма[йя]|июн|июл|август|сентябр|октябр|ноябр|декабр)", tail):
+        if value < 500 or re.match(r"\s*(звезд|ноч|сут|дн|год|человек|гост|км|минут|\.|январ|феврал|март|апрел|ма[йя]|июн|июл|август|сентябр|октябр|ноябр|декабр)", tail):
             continue  # «за 2 ночи», «по 9 ноября», «4 звезды» — это не деньги
         total = bool(re.match(
             r"\s*(руб\w*|₽|р\.?)?\s*(за (все|всю|весь|поездк|отпуск)|на (все|всю|весь|поездк|отпуск)|в сумме|итого)", tail))

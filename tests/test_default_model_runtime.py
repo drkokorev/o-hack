@@ -92,3 +92,20 @@ def test_provider_failure_discloses_the_rules_fallback():
         reply = client.post("/api/chat", json={"text": "Хочу в Казань"}).json()
     assert reply["nlu"] == "rules"
     assert "модель временно недоступна" in reply["reply"].lower()
+
+
+def test_provider_failure_is_visible_even_when_no_rule_understood_the_message():
+    from core.agent import Agent
+    from core.llm import Breaker
+    from domains.trips.domain import TripsDomain
+
+    class UnavailableLLM:
+        breaker = Breaker()
+
+        def complete(self, *_args, **_kwargs):
+            raise TimeoutError("simulated failure")
+
+    with TestClient(build_app(Agent(TripsDomain(), UnavailableLLM()))) as client:
+        reply = client.post("/api/chat", json={"text": "абракадабра"}).json()
+    assert reply["nlu"] == "none"
+    assert "модель временно недоступна" in reply["reply"].lower()

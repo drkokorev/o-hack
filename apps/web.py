@@ -151,6 +151,8 @@ def understood(state: TripState) -> list[str]:
         chips.append("с питомцем")
     if state.budget_total:
         chips.append(f"бюджет {fmt_money(state.budget_total)}")
+    if state.economy:
+        chips.append("недорого")
     if state.budget_per_person:
         chips.append(f"до {fmt_money(state.budget_per_person)} на человека")
     if state.budget_night:
@@ -447,7 +449,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             state: TripState = session.state  # type: ignore[assignment]
             breaker = getattr(agent.llm, "breaker", None)
             reply = step.reply
-            if session.last_nlu == "rules" and breaker and breaker.state in {"degraded", "down"}:
+            if session.last_nlu in {"rules", "none"} and breaker and breaker.state in {"degraded", "down"}:
                 reply += "\n\nЯзыковая модель временно недоступна; ответ подготовлен по правилам."
             return {
                 "session_id": session_id, "reply": reply, "payload": images.decorate(step.payload), "stage": state.stage,

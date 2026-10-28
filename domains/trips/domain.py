@@ -49,7 +49,9 @@ EXTRACTION_PROMPT = """Ты — модуль понимания в агенте 
 - month — только явно названный месяц; время года не означает конкретный месяц. date_from/date_to — YYYY-MM-DD от сегодняшней даты. nights — число ночей ("на неделю" → 7).
 - "в следующем месяце" — следующий календарный месяц относительно сегодня, без конкретного дня. Слова "следующем" и "месяце" не являются названиями мест.
 - "через 3 дня" — дата начала через три дня от сегодня; это не длительность и не дата окончания.
+- "с 1 декабря по 7" — начало и конец в декабре, если другой месяц не указан; перенос года считай от сегодняшней даты.
 - adults/children — указывай число взрослых только если оно названо; «вдвоём» и «с другом» не означают, что оба взрослые. pets — едут с животным.
+- «с девушкой/парнем» означает двух путешественников, но не подтверждает возраст. Явное «возможно» делает состав предварительным.
 - budget_total — бюджет на всю поездку ("до 200к" → 200000). budget_night — только если сказано "за ночь".
 - max_travel_hours — только явно названное число часов. «Без долгих перелётов» — пожелание, не численный лимит.
 - pick — номер выбранного варианта из показанного списка; pick_name — название, если выбрали словами.
@@ -460,6 +462,13 @@ class TripsDomain:
         if state.date_from and state.date_to and state.date_to <= state.date_from:
             return Step("Дата окончания должна быть позже даты начала. Укажите, пожалуйста, весь период заново.",
                         payload={"kind": "question"})
+        if (state.date_from and state.date_to and state.nights is not None and
+                state.nights != (state.date_to - state.date_from).days):
+            span = (state.date_to - state.date_from).days
+            return Step(f"Указанные даты — {span} {plural(span, 'ночь', 'ночи', 'ночей')}, "
+                        f"а отдельно вы назвали {state.nights} {plural(state.nights, 'ночь', 'ночи', 'ночей')}. "
+                        "Уточните даты целиком или напишите нужное число ночей.",
+                        payload={"kind": "question", "field": "duration_conflict"})
         if state.month and state.year and not state.date_from:
             first, last = month_window(state.month, state.month_part, today, state.year)
             if first > last:
