@@ -58,6 +58,8 @@ class Session:
     last: Step | None = None
     last_nlu: str = ""  # кто разобрал последнюю реплику: llm | llm+rules | rules | none
     last_notes: list[str] = field(default_factory=list)  # что отброшено из ответа LLM и почему
+    ui_previous: Any = field(default=None, repr=False, compare=False)
+    ui_revision: int = 0
     lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
 
 

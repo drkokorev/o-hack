@@ -77,7 +77,7 @@
     const filter = node("select", { class: "map-kind", "aria-label": "Тип мест",
       onchange: (e) => { kind = e.target.value; schedule(); } },
       Object.entries(KINDS).map(([id, title]) => node("option", { value: id }, title)));
-    const scope = node("button", { type: "button", class: "map-scope", onclick: () => world() }, "Весь мир");
+    const scope = node("button", { type: "button", class: "map-scope", hidden:true, onclick: () => world() }, "К глобусу");
     const zoomBy = (delta) => map && map.easeTo({zoom: Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + delta)),
       duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650, easing: (t) => 1 - Math.pow(1-t, 3)});
     const controls = node("div", { class: "map-controls" },
@@ -88,7 +88,7 @@
     const itemsList = node("div", { class: "map-list-items" });
     const more = node("button", { class: "map-more", type: "button",
       onclick: () => { listShown += 40; renderList(); } }, "Показать ещё");
-    const list = node("details", { class: "map-list" }, node("summary", {}, "Места и группы на карте"),
+    const list = node("details", { class: "map-list" }, node("summary", {}, "Найти направление или место"),
       search, itemsList, more);
     const detailList = node("div", { class: "map-choice", hidden: true, role: "region",
       "aria-label": "Несколько объектов рядом" });
@@ -98,7 +98,9 @@
         if (place) chooseLegacy(place);
       } });
     const footer = node("div", { class: "map-footer" },
-      node("span", {}, "Открытые данные · наличие не проверено"), legacySelect);
+      node("span", {}, "Открытые данные · наличие не проверено"));
+    list.insertBefore(node("label", {class:"map-destination-picker"}, "Направления", legacySelect), search);
+    list.insertBefore(node("p", {class:"map-empty"}, "Места в видимой области"), search);
     const surface = node("div", { class: "map-surface" }, holder, controls);
     const head = node("div", { class: "map-head" }, node("div", { class: "map-caption" },
       node("b", {}, "Исследуйте мир"), node("small", {}, "Места и события на глобусе")),
@@ -413,7 +415,7 @@
     }
     function world() {
       if (!map) return;
-      const point = countryCenter(manualCountry || initialCountry) || worldCenter();
+      const point = worldCenter();
       map.easeTo({ center: point, zoom: overviewZoom(),
         duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700 });
     }
@@ -538,7 +540,13 @@
           detailSequence++;
           sequence++;
         });
-        map.on("moveend", () => { renderLandmarks(); renderEvents(); schedule(); });
+        const syncScope = () => {
+          const center=map.getCenter(), base=worldCenter();
+          const longitude=Math.abs(((center.lng-base[0]+540)%360)-180);
+          scope.hidden=map.getZoom()<=overviewZoom()+.05 && longitude<.5 && Math.abs(center.lat-base[1])<.5;
+        };
+        map.on("moveend", () => { syncScope(); renderLandmarks(); renderEvents(); schedule(); });
+        syncScope();
         map.on("click", "catalog-points", (event) => {
           const features = map.queryRenderedFeatures(event.point, { layers: ["catalog-points"] });
           if (features.length) showOverlapping(features, event.lngLat);

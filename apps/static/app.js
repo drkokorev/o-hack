@@ -31,7 +31,10 @@ const tripMap = createTripMap({ container: $("map"), onChoose: (place) => send(`
   } });
 const drawMap = (options = {}) => tripMap.draw(options);
 const preferences = createPreferences(tripMap);
-const voice = createVoiceInput({input:$("text"), button:$("send"), status:$("voice-status")});
+const voice = createVoiceInput({input:$("text"), button:$("send"), status:$("voice-status"), holdToTalk:true});
+let lastData = null, latestTurn = null, editing = false;
+const experience = createExperience({send, reset:resetConversation, undo:undoTurn, edit:editTurn,
+  isBusy:()=>busy, voice, ideas:renderWelcome});
 
 function renderHead(data) {
   const p = (data && data.payload) || {};
@@ -46,8 +49,8 @@ function renderHead(data) {
     $("head").replaceChildren(el("div", { class: "hero" }, el("h1", {}, title)));
   } else {
     $("head").replaceChildren(el("div", { class: "hero" },
-      el("h1", {}, "Путешествие начинается с идеи"),
-      el("p", {}, "Выберите место на глобусе или расскажите, чего хочется.")));
+      el("h1", {}, "Куда хочется?"),
+      el("p", {}, "Выберите место на глобусе. Или просто расскажите, чего хочется.")));
   }
 }
 
@@ -65,14 +68,7 @@ function renderConditions(data) {
   lastDestination = destination;
   $("conditions").replaceChildren(...understood.map((c) => el("span", { class: "chip" }, c)),
     ...assumed.map((a) => el("span", { class: "chip assumed", title: "Предположение — можно уточнить в чате" }, a)));
-  const fields = [["Откуда", "Я выезжаю из "], ["Куда", "Хочу в "], ["Даты", "Даты поездки: "],
-    ["Длительность", "Длительность поездки: "], ["Гости", "Путешественники: "], ["Бюджет", "Бюджет в рублях: "], ["Транспорт", "Транспорт: "]];
-  $("condition-actions").replaceChildren(...fields.map(([label, prefix]) => el("button", { type: "button", onclick: () => {
-    if (!$("text").value.trim()) $("text").value = prefix;
-    document.querySelector(".condition-edit").open = false;
-    voice.update();
-    $("text").focus();
-  } }, label)));
+
 }
 
 function renderSaved() {
@@ -393,7 +389,8 @@ const views = {
 
 function addMessage(role, content, meta) {
   const m = el("div", { class: `msg ${role}` }, content, meta ? el("span", { class: "meta" }, meta) : null);
-  $("log").append(m); preferences.apply(); $("log").scrollTop = $("log").scrollHeight; return m;
+  $("log").append(m); preferences.apply();
+  requestAnimationFrame(()=>{const scroll=$("conversation-scroll");scroll.scrollTop=scroll.scrollHeight;}); return m;
 }
 function renderStages(stage) {
   const list = info ? info.stages : [];
@@ -422,8 +419,14 @@ function dateControls() {
 function renderSuggest(data) {
   const stage = typeof data === "string" ? data : data.stage;
   if (!conversationStarted) {
-    $("suggest").replaceChildren(...(inspiration.starters || []).map(({label,text,sound}) =>
-      el("button", {type:"button", "data-sound":sound, onclick:() => send(text)}, label)));
+    const starters = [
+      ["К морю", "Хочу к морю, пока не знаю куда. Предложи идеи без дат.", "sea"],
+      ["В горы", "Хочу в горы, пока не знаю куда. Предложи идеи без дат.", "alpine"],
+      ["Пока не знаю", null, null]
+    ];
+    $("suggest").replaceChildren(...starters.map(([label,text,mood]) => el("button", {type:"button",onclick:()=>{
+      if(text){experience.setMood(mood);send(text);}else{experience.showIdeas();showMoodChoices();}
+    }},label)),el("button",{type:"button",class:"example-link",onclick:()=>experience.openExamples()},"Посмотреть примеры запросов ↗"));
     return;
   }
   const payload = typeof data === "object" ? data.payload || {} : {};
@@ -486,7 +489,7 @@ function locationChoice() {
   return el("div", { class: "actions" }, button, result);
 }
 function render(data) {
-  sessionId = data.session_id;
+  sessionId = data.session_id; lastData = data;
   renderStages(data.stage); renderHead(data); renderConditions(data); renderSuggest(data);
   document.querySelector(".board").classList.toggle("compact", ["plan", "cart", "booked"].includes(data.stage));
   const p = data.payload || {};
@@ -499,52 +502,97 @@ function render(data) {
     if (data.stage !== "destination") drawMap({});
   }
   decorateOptions(p);
-  preferences.apply();
+  preferences.apply(); experience.update(data);
 }
 async function post(path, body) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(`Сервер ответил ${r.status}`);
+  if (!r.ok) {
+    const detail=await r.json().catch(()=>({}));
+    throw new Error(typeof detail.detail === "string" ? detail.detail : "Не удалось отправить. Текст сохранён — попробуйте ещё раз.");
+  }
   return r.json();
 }
+function showMoodChoices() {
+  const choices=[["Море","sea","Хочу к морю"],["Снежные горы","alpine","Хочу в горы кататься на лыжах"],
+    ["Город","city","Хочу в интересный город"],["Лес и тишина","forest","Хочу на природу в лес"],["Закаты вдвоём","sunset","Хочу романтическую поездку к морю"]];
+  $("suggest").replaceChildren(el("div",{class:"mood-choices"},choices.map(([label,mood,text])=>el("button",{type:"button",onclick:()=>{
+    experience.setMood(mood); send(text+", пока не знаю куда. Предложи идеи без дат.");
+  }},label))),el("button",{type:"button",class:"example-link",onclick:()=>experience.openExamples()},"Или взять готовый пример ↗"));
+}
+function setBusy(value) {
+  busy=value; $("send").disabled=value; $("undo").disabled=value || !lastData?.can_undo;
+  $("reset").disabled=value; $("conditions-edit").disabled=value;
+}
+function editTurn(turn) {
+  if(busy) return;
+  editing=Boolean(turn && lastData?.can_undo);
+  $("edit-banner").hidden=!editing;
+  experience.fill(editing ? turn.text : "");
+}
+function attachEdit(turn,data) {
+  $("log").querySelectorAll(".latest-user").forEach((n)=>n.classList.remove("latest-user"));
+  if(!data.can_undo) return;
+  turn.user.classList.add("latest-user");
+  turn.user.append(el("button",{type:"button",class:"message-edit text-button",onclick:()=>editTurn(turn)},"Изменить"));
+}
 async function send(text) {
-  if (busy || !text.trim()) return;
-  if (voice.isActive()) voice.cancel();
-  if (!conversationStarted) $("view").replaceChildren();
-  conversationStarted = true; $("suggest").replaceChildren(); busy = true; $("send").disabled = true;
-  addMessage("user", text);
-  const typing = addMessage("bot", el("span", { class: "typing", role: "status", "aria-label": "Агент думает" }, el("i"), el("i"), el("i")));
+  if(busy || !text.trim()) return;
+  if(voice.isActive()) voice.cancel();
+  const replacing=editing && latestTurn;
+  const previousStarted=conversationStarted;
+  if(!conversationStarted) $("view").replaceChildren();
+  conversationStarted=true; $("suggest").replaceChildren(); setBusy(true);
+  const user=replacing ? replacing.user : addMessage("user",text);
+  const typing=addMessage("bot",el("span",{class:"typing",role:"status","aria-label":"Подбираю варианты"},el("i"),el("i"),el("i")));
   try {
-    const data = await post("/api/chat", { text, session_id: sessionId });
+    const data=await post(replacing ? "/api/chat/edit" : "/api/chat",{text,session_id:sessionId,revision:lastData?.revision});
     typing.remove();
-    const reply = el("div");
-    renderTravelReply(reply, data.reply, (data.payload || {}).kind);
-    addMessage("bot", reply);
-    render(data);
-    const mobile = window.matchMedia("(max-width: 900px)").matches;
-    $("say").textContent = "";
-    if (mobile) document.querySelector(".chat").scrollIntoView({behavior:"auto", block:"start"});
-    else if (data.payload) window.scrollTo({ top: 0, behavior: "smooth" });
-  } catch (e) {
-    typing.remove();
-    if (!$("text").value) $("text").value = text;
-    const error = "Не удалось отправить. Текст сохранён — попробуйте ещё раз.";
-    addMessage("bot", error); $("say").textContent = error;
-  } finally { busy = false; $("send").disabled = false; voice.update(); $("text").focus({preventScroll:true}); }
+    if(replacing){replacing.bot.remove();user.replaceChildren(text);}
+    const reply=el("div"); renderTravelReply(reply,data.reply,(data.payload||{}).kind);
+    const bot=addMessage("bot",reply);
+    latestTurn={text,user,bot}; editing=false; $("edit-banner").hidden=true;
+    render(data); attachEdit(latestTurn,data); $("say").textContent="";
+    experience.showChat();
+    return true;
+  } catch(error) {
+    typing.remove(); if(!replacing)user.remove();
+    conversationStarted=previousStarted;
+    if(!$("text").value)experience.fill(text);
+    addMessage("bot",error.message || "Не удалось отправить. Текст сохранён — попробуйте ещё раз.");
+    renderSuggest(lastData || "start"); return false;
+  } finally {setBusy(false);voice.update();$("text").focus({preventScroll:true});}
 }
-function greet() {
-  addMessage("bot", "Расскажите, что важно в поездке. Можно начать с места, настроения или бюджета.");
+async function undoTurn() {
+  if(busy || !lastData?.can_undo || !latestTurn) return;
+  setBusy(true);
+  try {
+    const data=await post("/api/chat/undo",{session_id:sessionId,revision:lastData.revision});
+    const text=latestTurn.text;latestTurn.user.remove();latestTurn.bot.remove();latestTurn=null;editing=false;
+    $("edit-banner").hidden=true;
+    conversationStarted=Boolean($("log").querySelector(".user"));
+    render(data);experience.fill(text);voice.clearStatus();
+    $("voice-status").hidden=false;$("voice-status").textContent="Последняя реплика отменена. Можно исправить и отправить снова.";
+  } catch(error){addMessage("bot",error.message);} finally {setBusy(false);}
 }
-function start() { conversationStarted = false; lastDestination = null; $("map").hidden = false; renderStages("start"); renderHead(null); renderConditions(null); renderSaved(); renderSuggest("start"); renderWelcome(); drawMap({}); greet(); }
-$("ask").addEventListener("submit", (e) => { e.preventDefault(); if (busy) return;
-  if (voice.isActive() || !$("text").value.trim()) { voice.toggle(); return; }
-  const t = $("text").value; $("text").value = ""; voice.clearStatus(); voice.update(); send(t);
+function greet(){addMessage("bot","Расскажите о поездке — можно начать с желания или описать всё сразу.");}
+function start(){conversationStarted=false;lastDestination=null;lastData=null;latestTurn=null;editing=false;
+  $("map").hidden=false;renderStages("start");renderHead(null);renderConditions(null);renderSaved();renderSuggest("start");
+  $("view").replaceChildren();drawMap({});experience.reset();greet();}
+$("ask").addEventListener("submit",(event)=>{
+  event.preventDefault();if(busy)return;
+  if(voice.isActive()){voice.toggle();return;}
+  const text=$("text").value.trim();
+  if(!text){$("voice-status").hidden=false;$("voice-status").textContent="Удерживайте стрелку для диктовки или напишите сообщение.";$("text").focus();return;}
+  experience.fill("");voice.clearStatus();send(text);
 });
-$("reset").addEventListener("click", async () => {
-  if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
-  voice.cancel(); sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); $("say").textContent = ""; start();
-});
+async function resetConversation(){
+  if(busy)return;voice.cancel();setBusy(true);
+  try {if(sessionId)await post("/api/reset",{session_id:sessionId});
+    sessionId=null;$("log").replaceChildren();$("view").replaceChildren();$("say").textContent="";start();
+  }catch(error){addMessage("bot","Не удалось начать новую поездку. Попробуйте ещё раз.");}finally{setBusy(false);}
+}
 Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/land.geojson").then((r) => r.json()),
   fetch("/static/img/credits.json").then((r) => r.ok ? r.json() : {}).catch(() => ({})),
   fetch("/static/inspiration.json").then((r) => r.ok ? r.json() : null).catch(() => null)])
-  .then(([i, l, credits, prompts]) => { info = i; imageCredits = credits; inspiration = prompts || inspiration; tripMap.setData(i, l); start(); })
+  .then(([i, l, credits, prompts]) => { info = i; imageCredits = credits; inspiration = prompts || inspiration; tripMap.setData(i, l); experience.configureExamples(i); start(); })
   .catch(() => addMessage("bot", "Сервер недоступен."));

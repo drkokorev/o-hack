@@ -26,6 +26,7 @@ from core.config import get_settings
 from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
 from apps.location import visitor_country
+from apps import chat_navigation
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count
@@ -56,6 +57,15 @@ class ChatIn(BaseModel):
 
 class ResetIn(BaseModel):
     session_id: str
+
+
+class NavigateIn(BaseModel):
+    session_id: str
+    revision: int
+
+
+class EditIn(NavigateIn):
+    text: str
 
 
 class Sessions:
@@ -98,6 +108,18 @@ class Sessions:
             while len(self._items) > self.limit:
                 self._items.popitem(last=False)
             return session_id, session
+
+    def existing(self, session_id: str) -> Session:
+        with self.lock:
+            now = self.clock()
+            self._prune_locked(now)
+            item = self._items.get(session_id)
+            if item is None:
+                raise HTTPException(status_code=404, detail="Диалог уже завершён. Начните новую поездку.")
+            session, _ = item
+            self._items[session_id] = (session, now)
+            self._items.move_to_end(session_id)
+            return session
 
     def drop(self, session_id: str) -> None:
         with self.lock:
@@ -435,27 +457,65 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             raise HTTPException(status_code=503, detail="Распознавание не удалось") from exc
         return {"text": transcript, "backend": "gigaam"}
 
+    def present(session_id, session, step, started):
+        state = session.state
+        breaker = getattr(agent.llm, "breaker", None)
+        reply = step.reply
+        if session.last_nlu == "rules" and breaker and breaker.state in {"degraded", "down"}:
+            reply += "\n\nЯзыковая модель временно недоступна; ответ подготовлен по правилам."
+        summary = state.model_dump(mode="json", include={"origin", "date_from", "date_to", "nights",
+            "adults", "children", "children_ages", "budget_total", "transport", "trip_types"})
+        summary["destination"] = BY_ID[state.dest_id].name if state.dest_id else state.destination
+        return {"session_id": session_id, "reply": reply, "payload": images.decorate(step.payload),
+            "stage": state.stage, "understood": understood(state), "assumptions": state.assumptions,
+            "nlu": session.last_nlu, "suggestions": contextual_suggestions(state, step),
+            "trip_summary": summary, "revision": session.ui_revision,
+            "can_undo": bool(session.ui_previous) and chat_navigation.can_snapshot(session),
+            "checked": ["Неподтверждённый параметр отклонён или исправлен."] * len(session.last_notes),
+            "ms": round((time.perf_counter() - started) * 1000)}
+
+    def check_navigation(session, revision):
+        if revision != session.ui_revision or not session.ui_previous or not chat_navigation.can_snapshot(session):
+            raise HTTPException(status_code=409, detail="Этот шаг уже нельзя изменить. Уточните условия в чате.")
+
+    @app.post("/api/chat/undo")
+    def undo_chat(body: NavigateIn, response: Response):
+        started = time.perf_counter()
+        response.headers["Cache-Control"] = "no-store"
+        session = sessions.existing(body.session_id)
+        with session.lock:
+            check_navigation(session, body.revision)
+            step = chat_navigation.undo(session)
+            return present(body.session_id, session, step, started)
+
+    @app.post("/api/chat/edit")
+    def edit_chat(body: EditIn, response: Response):
+        started = time.perf_counter()
+        response.headers["Cache-Control"] = "no-store"
+        session = sessions.existing(body.session_id)
+        with session.lock:
+            check_navigation(session, body.revision)
+            proposed = chat_navigation.candidate(session)
+            step = agent.handle(proposed, body.text)
+            if proposed.last_nlu == "none":
+                raise HTTPException(status_code=422, detail="Проверьте текст сообщения и попробуйте снова.")
+            previous = session.ui_previous
+            session.state, session.last = proposed.state, proposed.last
+            session.last_nlu, session.last_notes = proposed.last_nlu, proposed.last_notes
+            session.history = []
+            chat_navigation.complete_turn(session, previous)
+            return present(body.session_id, session, step, started)
+
     @app.post("/api/chat")
     def chat(body: ChatIn, response: Response) -> dict:
         started = time.perf_counter()
         session_id, session = sessions.get(body.session_id)
         response.headers["Cache-Control"] = "no-store"
         with session.lock:
+            previous = chat_navigation.snapshot(session)
             step = agent.handle(session, body.text)
-            state: TripState = session.state  # type: ignore[assignment]
-            breaker = getattr(agent.llm, "breaker", None)
-            reply = step.reply
-            if session.last_nlu == "rules" and breaker and breaker.state in {"degraded", "down"}:
-                reply += "\n\nЯзыковая модель временно недоступна; ответ подготовлен по правилам."
-            return {
-                "session_id": session_id, "reply": reply, "payload": images.decorate(step.payload), "stage": state.stage,
-                "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
-                "suggestions": contextual_suggestions(state, step),
-                "trip_summary": {"destination": BY_ID[state.dest_id].name if state.dest_id else state.destination},
-                # Never return rejected, untrusted model text to the client.
-                "checked": ["Неподтверждённый параметр отклонён или исправлен."] * len(session.last_notes),
-                "ms": round((time.perf_counter() - started) * 1000),
-            }
+            chat_navigation.complete_turn(session, previous)
+            return present(session_id, session, step, started)
 
     @app.post("/api/reset")
     def reset(body: ResetIn, response: Response) -> dict:
