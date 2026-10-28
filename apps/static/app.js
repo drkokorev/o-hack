@@ -281,8 +281,10 @@ function renderStages(stage) {
   const idx = list.findIndex((s) => s.key === stage);
   $("stages").replaceChildren(...list.map((s, i) => el("li", { class: i < idx ? "done" : i === idx ? "now" : null }, s.title)));
 }
-function renderSuggest(stage) {
-  const items = stage === "start" ? (info ? info.examples : []) : (QUICK[stage] || []);
+function renderSuggest(data) {
+  const stage = typeof data === "string" ? data : data.stage;
+  const items = Array.isArray(data.suggestions) ? data.suggestions :
+    (stage === "start" ? (info ? info.examples : []) : (QUICK[stage] || []));
   $("suggest").replaceChildren(...items.map((q) => el("button", { type: "button", onclick: () => send(q) }, q)));
 }
 function locationChoice() {
@@ -311,7 +313,7 @@ function locationChoice() {
 }
 function render(data) {
   sessionId = data.session_id;
-  renderStages(data.stage); renderHead(data); renderSuggest(data.stage);
+  renderStages(data.stage); renderHead(data); renderSuggest(data);
   document.querySelector(".board").classList.toggle("compact", ["plan", "cart", "booked"].includes(data.stage));
   const p = data.payload || {};
   const notice = p.notice && p.kind !== "packages" ? el("p", { class: "notice" }, p.notice) : null;
@@ -351,6 +353,7 @@ function greet() {
 }
 function start() { renderStages("start"); renderHead(null); renderSuggest("start"); drawMap({}); greet(); }
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; send(t); });
+window.attachVoiceInput({ input: $("text"), button: $("send"), status: $("voice-status"), form: $("ask") });
 $("reset").addEventListener("click", async () => {
   if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
   sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); $("say").textContent = ""; start();

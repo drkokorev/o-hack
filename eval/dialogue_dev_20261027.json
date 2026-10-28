@@ -1,0 +1,73 @@
+[
+  {
+    "id": "H01_original_tent",
+    "family": "tent, undefined values, follow-up question",
+    "turns": [
+      {"text": "хочу увидеть горы, вайб лета, шашлыка, с другом, денег не много, главное еда и перелет, проживание в палатках", "state": {"origin": null, "month": null, "date_from": null, "nights": null, "lodging": "tent", "party_size": 2, "adults": null, "meal": null}},
+      {"text": "горы", "state": {"origin": null, "nights": null, "lodging": "tent"}},
+      {"text": "только по России", "state": {"abroad": false, "nights": null, "lodging": "tent"}},
+      {"text": "какое время пути", "state": {"origin": null, "nights": null}, "reply_any": ["откуда", "город"]},
+      {"text": "я не говорил про 7 ночей", "state": {"origin": null, "nights": null, "lodging": "tent", "party_size": 2, "adults": null}, "reply_any": ["вы правы"]}
+    ]
+  },
+  {
+    "id": "D02_summer_month_open",
+    "family": "season instead of month",
+    "turns": [
+      {"text": "Хочу на Алтай летом", "state": {"season": "summer", "month": null, "date_from": null}, "reply_all": ["июнь", "июль", "август"]}
+    ]
+  },
+  {
+    "id": "D03_may_holidays_not_exact_dates",
+    "family": "holiday without dates",
+    "turns": [
+      {"text": "Поедем в Казань на майские", "state": {"month": 5, "date_from": null, "date_to": null, "nights": null}}
+    ]
+  },
+  {
+    "id": "D03b_new_year_not_exact_dates",
+    "family": "holiday without dates",
+    "turns": [
+      {"text": "Поедем в Сочи на Новый год", "state": {"date_from": null, "date_to": null, "nights": null}}
+    ]
+  },
+  {
+    "id": "D04_lodging_amenity_removed",
+    "family": "change amenity preference",
+    "turns": [
+      {"text": "В Казань из Москвы с 10 по 14 июля 2027 двое взрослых, нужен бассейн и парковка", "contains": {"hotel_wishes": ["pool", "parking"]}},
+      {"text": "Бассейн больше не нужен, парковку оставь", "contains": {"hotel_wishes": ["parking"]}, "excludes": {"hotel_wishes": ["pool"]}, "state": {"dest_id": "kazan", "origin": "Москва"}}
+    ]
+  },
+  {
+    "id": "D05_ask_pet_policy",
+    "family": "question versus preference",
+    "turns": [
+      {"text": "Хочу в Сочи, можно ли с собакой?", "state": {"dest_id": "sochi", "pets": null}}
+    ]
+  },
+  {
+    "id": "D06_unknown_duration_then_answer",
+    "family": "skip and resume slot",
+    "turns": [
+      {"text": "В Сочи в августе"},
+      {"text": "Пока не знаю", "state": {"nights": null}},
+      {"text": "Остановимся на четыре ночи", "state": {"dest_id": "sochi", "month": 8, "nights": 4}}
+    ]
+  },
+  {
+    "id": "D07_group_size_change",
+    "family": "incomplete party size changes",
+    "turns": [
+      {"text": "Хочу в Казань, едем вдвоём", "state": {"party_size": 2, "adults": null}},
+      {"text": "Нас теперь трое", "state": {"party_size": 3, "adults": null}}
+    ]
+  },
+  {
+    "id": "D08_city_country_conflict",
+    "family": "country disagreement",
+    "turns": [
+      {"text": "Хочу в Рейкьявик во Франции", "state": {"dest_id": null, "country_conflict": "Франция"}, "reply_all": ["франци"]}
+    ]
+  }
+]

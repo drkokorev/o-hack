@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+.playwright-cli/
 .env
 .env.*
 !.env.example
@@ -10,3 +11,7 @@ eval/guided_report.json
 
 # Локальные загрузки и рабочие данные не добавляем в репозиторий.
 /data/
+
+# Воспроизводимый пространственный индекс; исходные открытые снимки остаются в Git.
+domains/trips/data/map_catalog.sqlite3
+domains/trips/data/map_catalog.building.sqlite3

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 
+from .geo import BY_ID
 from .rules import find_destination
 from .state import TripState, TripUpdate
 from .textparse import norm
@@ -18,7 +19,7 @@ from .textparse import norm
 # Поля, где правила точнее модели: если правила что-то нашли, берём их значение
 RULES_WIN = {"date_from", "date_to", "nights", "month", "season", "year", "budget_total", "budget_night", "adults", "children", "pets", "trip_types", "transport", "lodging",
              "meal", "hotel_wishes", "abroad", "economy", "direct_only", "baggage",
-             "max_travel_hours", "stars_min", "shift_days", "pick", "confirm", "after_sale", "origin"}
+             "max_travel_hours", "stars_min", "shift_days", "pick", "confirm", "after_sale", "origin", "question"}
 
 _NUM = r"\d|один|одна|дв|три|четыр|пят|шест|сем|восем|девят|десят|пар"
 _MONTHS = r"январ|феврал|март|апрел|ма[йяе]|июн|июл|август|сентябр|октябр|ноябр|декабр"
@@ -37,7 +38,7 @@ CUES = {
     "budget_total": _NUM + r"|тыс|к\b|млн|миллион|бюджет|руб|₽|дешев|недорог",
     "budget_night": _NUM + r"|тыс|к\b|ноч|сутк",
     "max_travel_hours": _NUM + r"|час|долг|далек|близк|недалек",
-    "transport": r"поезд|самол|перел[её]т|лет[еая]|\bж/?д\b|электрич|сапсан|машин|авто",
+    "transport": r"\bпоезд(?!к)|самол|перел[её]т|лет[еая]|\bж/?д\b|электрич|сапсан|машин|авто",
     "direct_only": r"пересад|прям",
     "meal": r"завтрак|включ|пансион|питан|еда|корм|inclusive|ужин",
     "free_cancellation": r"отмен|возврат|предоплат",
@@ -57,7 +58,7 @@ CUES = {
     "add_adults": r"добав|ещ[её]|\+",
     "wants_ideas": r"отдох|поех|съезд|отпуск|путешеств|куда|поездк|тур|посовет|иде",
     "hesitate": r"подума|подожд|погоди|уверен|готов|позже|сейчас|сомнева|посовет",
-    "question": r"\?|виз|паспорт|отмен|багаж|погод|трансфер|животн|собак",
+    "question": r"\?|виз|паспорт|отмен|багаж|погод|трансфер|животн|собак|адрес|расположен|местоположен",
     "clear": r"не важ|без разниц|люб[оа]|убери|не нужн|друг\w* направлен|не учитыва|неважн",
 }
 
@@ -74,7 +75,7 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     rule_data = rules.model_dump()
     notes: list[str] = []
 
-    service_fields = ("unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "corrected_place", "unsure", "duration_not_given", "payment_method", "season", "children_unknown", "party_size")
+    service_fields = ("unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
     for field, value in list(data.items()):
@@ -101,7 +102,7 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     if rules.season and not rules.month and not rules.date_from:
         # A season is a range, not an invented month or exact departure date.
         data["month"] = data["date_from"] = data["date_to"] = None
-    if re.search(r"вайб\s+лета|летн\w*\s+настроен", t) and not rules.month and not rules.season:
+    if re.search(r"вайб\s+лета|летн\w*\s+(?:настроен|вайб)", t) and not rules.month and not rules.season:
         data["month"] = data["date_from"] = data["date_to"] = None
     if rules.duration_not_given:
         data["nights"] = None
@@ -121,7 +122,19 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         notes.append("meal: конкретный тип питания пользователь не назвал")
         data["meal"] = None
 
-    for field in ("budget_total", "budget_night", "adults", "children", "nights", "hotel_wishes"):
+    if rules.question == "pets" and rules.pets is None and data.get("pets") is not None:
+        notes.append("pets: вопрос об условиях для животных не подтверждает их участие в поездке")
+        data["pets"] = None
+    if rules.remove_hotel_wishes and data.get("clear") and "hotel_wishes" in data["clear"]:
+        data["clear"] = [field for field in data["clear"] if field != "hotel_wishes"] or None
+    if rules.clear:
+        data["clear"] = list(dict.fromkeys([*(data.get("clear") or []), *rules.clear]))
+    if rules.clear and "lodging" in rules.clear and not rules.lodging:
+        data["lodging"] = None
+    if rules.flight_concern and rules.transport is None:
+        data["transport"] = None  # fear is not a final choice or a hard ban
+
+    for field in ("budget_total", "budget_night", "adults", "children", "nights", "max_travel_hours", "hotel_wishes"):
         if data.get(field) is not None and rule_data.get(field) is None:
             notes.append(f"{field}: точное значение в реплике не подтверждено")
             data[field] = None
@@ -138,7 +151,17 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     # Направление: правила знают каталог точно; без упоминания в тексте модель часто повторяет контекст
     if data.get("destination"):
         dest = data["destination"]
-        if rule_data.get("country") and not rule_data.get("destination"):
+        dest_id = find_destination(norm(dest))
+        excluded = set(rules.excluded_countries or [])
+        if (not rules.destination and excluded and
+                (norm(dest) in {norm(country) for country in excluded} or
+                 (dest_id and BY_ID[dest_id].country in excluded))):
+            notes.append("destination: страна была исключена, а не выбрана")
+            data["destination"] = None
+        elif rules.question == "travel" and not rules.destination and not rules.unknown_place:
+            notes.append("destination: вопрос о времени пути не называет направление")
+            data["destination"] = None
+        elif rule_data.get("country") and not rule_data.get("destination"):
             data["destination"] = None
         elif rule_data.get("destination") and rule_data["destination"] != find_destination(norm(dest)):
             notes.append(f"destination: правила {rule_data['destination']} вместо LLM {dest}")

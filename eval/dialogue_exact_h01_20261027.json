@@ -1,0 +1,12 @@
+[
+  {
+    "id": "H01_exact_wording",
+    "family": "mountains, summer mood, friend, small budget and personal tent",
+    "turns": [
+      {"text": "Хочу горы, летний вайб, шашлык, с другом, мало денег, живём в палатках", "state": {"season": null, "month": null, "date_from": null, "nights": null, "origin": null, "party_size": 2, "adults": null, "lodging": "tent", "meal": null}},
+      {"text": "только Россия", "state": {"abroad": false, "season": null, "destination": null, "nights": null}, "payload_kind": "ideas", "items_country": "Россия"},
+      {"text": "какое время в пути?", "state": {"destination": null, "origin": null, "nights": null}, "reply_any": ["откуда"], "payload_kind": "question"},
+      {"text": "я не говорил про семь ночей", "state": {"destination": null, "origin": null, "nights": null, "abroad": false, "lodging": "tent", "party_size": 2, "adults": null}, "reply_any": ["вы правы"], "payload_kind": "ideas", "items_country": "Россия"}
+    ]
+  }
+]

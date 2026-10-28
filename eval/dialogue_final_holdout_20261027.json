@@ -1,0 +1,66 @@
+[
+  {
+    "id": "F01_pet_removed",
+    "family": "explicit pet removal",
+    "turns": [
+      {"text": "В Казань из Москвы с 3 по 7 июня 2027 двое взрослых, с собакой", "state": {"pets": true}},
+      {"text": "Теперь без собаки", "state": {"pets": false, "dest_id": "kazan", "origin": "Москва"}}
+    ]
+  },
+  {
+    "id": "F02_cancel_question",
+    "family": "post-purchase cancellation question",
+    "turns": [
+      {"text": "В Казань из Москвы с 10 по 14 ноября 2027 двое взрослых"},
+      {"text": "выбираю первый вариант", "state": {"stage": "cart"}},
+      {"text": "да, оформить", "state": {"stage": "payment"}},
+      {"text": "оплата картой", "state": {"stage": "payment"}},
+      {"text": "да, подтверждаю", "state": {"stage": "booked"}},
+      {"text": "Что будет, если отменить бронь?", "state": {"stage": "booked"}}
+    ]
+  },
+  {
+    "id": "F03_city_outside_catalog",
+    "family": "geographical lookup without offers",
+    "turns": [
+      {"text": "Хочу поехать в Рейкьявик", "state": {"dest_id": null}, "reply_any": ["нет", "не показываю"]}
+    ]
+  },
+  {
+    "id": "F04_past_dates",
+    "family": "reject past dates",
+    "turns": [
+      {"text": "Казань из Москвы, двое взрослых, с 10 по 14 ноября 2025", "reply_any": ["дат"]}
+    ]
+  },
+  {
+    "id": "F05_new_search",
+    "family": "new journey resets previous preferences",
+    "turns": [
+      {"text": "В Казань из Москвы с 3 по 7 июня 2027 двое взрослых, с собакой"},
+      {"text": "Новая поездка, начнем поиск заново", "state": {"origin": "Москва", "dest_id": null, "pets": null, "date_from": null}}
+    ]
+  },
+  {
+    "id": "F06_exclusion",
+    "family": "negative type of trip",
+    "turns": [
+      {"text": "Хочу природу в июле, море не интересует", "contains": {"trip_types": ["nature"]}, "excludes": {"trip_types": ["sea"]}}
+    ]
+  },
+  {
+    "id": "F07_relative_tomorrow",
+    "family": "relative single-day date",
+    "turns": [
+      {"text": "Хочу в Сочи завтра", "state": {"date_from": "2026-10-28", "nights": null}}
+    ]
+  },
+  {
+    "id": "F08_mock_hotel_disclosure",
+    "family": "hotel comparison disclosure",
+    "turns": [
+      {"text": "Из Москвы в Сочи с 10 по 14 июня 2027 двое взрослых"},
+      {"text": "покажи другие отели", "reply_any": ["демонстрацион", "смоделирован"]}
+    ]
+  }
+]

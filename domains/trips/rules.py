@@ -7,20 +7,22 @@ from datetime import date, timedelta
 
 from .geo import BY_ID, DESTINATIONS, ORIGINS
 from .state import TripState, TripUpdate
-from .textparse import (MONTH_RE, NUM, month_of, negated, norm, num_word, parse_budget, parse_dates, parse_guests,
+from .temperature import temperature_preferences
+from .textparse import (MONTH_RE, NUM, month_of, negated, norm, num_word, parse_budget_scopes, parse_dates, parse_guests,
                         parse_stars)
 from .world_places import COUNTRY_NAMES, find_world_places
 
 TRIP_TYPE_WORDS = [
     ("sea", r"\bмор[еяюи]\b|морск|\bна море|побереж|океан"),
     ("beach", r"пляж|купат|позагорать|загорать"),
-    ("warm", r"т[её]пл|жар[кау]|солнц|лето зимой|погреться|вайб лета|летн\w* настроен"),
+    ("warm", r"т[её]пл|жар[кау]|солнц|лето зимой|погреться|вайб лета|летн\w* (?:настроен|вайб)"),
     ("mountains", r"\bгор[ыа]?\b|\bв горы|горн(?!олыж)"),
     ("ski", r"лыж|сноуборд|горнолыж|покатат"),
     ("city", r"город|прогуля|погулять по"),
     ("culture", r"музе|истори|культур|экскурс|архитектур|театр"),
     ("nature", r"природ|поход|трек|озер|вулкан|лес|северное сияние"),
-    ("food", r"гастро|кухн|поесть|вкусн|ресторан|вино|\bед[ауы]\b|шашлык"),
+    ("surf", r"(?<![а-яё])с[её]рф"),
+    ("food", r"гастро|кухн|поесть|вкусн|ресторан|вино|\bед[ауы]\b|шашлык|\bшашлы\b"),
     ("spa", r"санатор|оздоров|минеральн|лечени|термальн"),
     ("exotic", r"экзоти|необычн|тропик"),
 ]
@@ -30,11 +32,13 @@ WISH_WORDS = {
     "kitchen": r"кухн\w* в номере|с кухней|апартамент",
 }
 MEAL_WORDS = [("all_inclusive", r"вс[её] включено|all inclusive|олл? инклюзив|ультра"),
-              ("half_board", r"полупансион"), ("breakfast", r"завтрак")]
+              ("half_board", r"полупансион"), ("breakfast", r"завтрак"),
+              ("meal_included", r"(?:с|и|нужн\w*)\s+питани\w*|питани\w*\s+(?:включ|нужн)")]
 # Согласие на необратимое действие должно быть явным: «давай подумаем», «да нет», «ок, а что с визой?» — не согласие
 CONFIRM_NO = r"^(нет|неа|не надо|не нужно|не стоит|отмена|стоп|не хочу|да нет)\b|передума"
 HESITATE = r"подума|подожд|погоди|не уверен|не готов|позже реш|не сейчас|пока нет|сомнева|посоветуюсь"
 QUESTION_TOPICS = [("travel", r"время (?:в )?пути|сколько (?:ехать|лететь|в пути)|долго ли (?:ехать|лететь)"),
+                   ("location", r"адрес|где (?:находится|расположен)|местоположен"),
                    ("visa", r"виз|паспорт|границ"), ("cancellation", r"отмен|вернуть деньги|возврат"),
                    ("baggage", r"багаж|чемодан|ручн\w* клад"), ("weather", r"погод|температур|тепло ли|холодно|дожд|мор[еяю] .*тепл|вода"),
                    ("transfer", r"трансфер|как добрат|до отеля|такси"), ("pets", r"собак|кошк|животн|питом")]
@@ -48,11 +52,12 @@ _OFFSET_WORDS = {"день": 1, "дня": 1, "дней": 1, "сутки": 1, "н
 
 _NEG_BEFORE = re.compile(r"(\bне|\bбез|\bвместо|\bкроме|\bпередумал(?:а|и)?\s+(?:насчет|про)|"
                          r"\bотказал(?:ся|ась)\s+от)\s+(\w+\s+)?$")
-_NEG_AFTER = re.compile(r"^\W*(?:\w+\W+)?(не надо|не хочу|не интересует|не нужн\w*|не подходит|отпадает|не вариант)")
+_NEG_AFTER = re.compile(r"^\W*(?:\w+\W+)?(не надо|не хочу|не интересует|не нуж(?:н\w*|ен)|не подходит|отпадает|не вариант)")
 # Слова с заглавной буквы после «в», которые не города
 _NOT_PLACES = {"январе", "феврале", "марте", "апреле", "мае", "июне", "июле", "августе", "сентябре", "октябре",
                "ноябре", "декабре", "россии", "европу", "европе", "азию", "азии", "горы", "море", "отпуск", "субботу",
-               "воскресенье", "пятницу", "понедельник", "отеле", "отель", "город", "одиночку", "общем", "целом"}
+               "воскресенье", "пятницу", "понедельник", "отеле", "отель", "город", "одиночку", "общем", "целом",
+               "пути", "дороге", "перелете", "полете"}
 _COUNTRY_STEMS = [(country, re.sub(r"[аия]$", "", norm(country))) for country in COUNTRY_NAMES | {d.country for d in DESTINATIONS}]
 _COUNTRY_PATTERNS = [(country, stem, re.compile(rf"(?<![а-яё]){re.escape(stem)}[а-яё]{{0,3}}(?![а-яё])"))
                      for country, stem in _COUNTRY_STEMS]
@@ -89,6 +94,8 @@ def _unknown_place(text: str) -> str | None:
                                  r"этот|этом|друг|тепл|холод|город|страна|росси|самолет|поезд|машин|палат|кемпинг|отел)")
     for m in re.finditer(r"\b(?:в|во)\s+([а-яё]{3,}(?:-[а-яё]+)?)", text, re.IGNORECASE):
         word = m.group(1)
+        if re.search(r"игра(?:ю|ем|ешь|ете|ет|ют|ть|л|ла|ли)\s+$", norm(text[:m.start()])):
+            continue  # «играет в шахматы» не обозначает направление
         if (norm(word) in _NOT_PLACES or not_place_stems.match(norm(word)) or _mentioned_countries(norm(word)) or find_destination(norm(word))
                 or _fuzzy_destination(word)):
             continue
@@ -110,6 +117,25 @@ def _mentioned_countries(t: str) -> set[str]:
             if (len(stem) <= 3 and match.group() != norm(country) and not explicit_context):
                 continue  # "мало денег" — не упоминание страны Мали
             if not _negated_at(t, match.start(), match.end()):
+                hits.append((len(stem), match.start(), match.end(), country))
+    found, occupied = set(), []
+    for _, start, end, country in sorted(hits, key=lambda item: (-item[0], item[1], item[3])):
+        if not any(start < right and left < end for left, right in occupied):
+            found.add(country)
+            occupied.append((start, end))
+    return found
+
+
+def _excluded_countries(t: str) -> set[str]:
+    """Only explicit negative country mentions; choose the longest overlapping name."""
+    hits = []
+    for country, stem, pattern in _COUNTRY_PATTERNS:
+        for match in pattern.finditer(t):
+            prefix = t[max(0, match.start() - 12):match.start()]
+            explicit_context = bool(re.search(r"(?:\bв|\bво|\bпо|\bиз|страна)\s+$", prefix))
+            if len(stem) <= 3 and match.group() != norm(country) and not explicit_context:
+                continue
+            if _negated_at(t, match.start(), match.end()):
                 hits.append((len(stem), match.start(), match.end(), country))
     found, occupied = set(), []
     for _, start, end, country in sorted(hits, key=lambda item: (-item[0], item[1], item[3])):
@@ -144,6 +170,8 @@ def find_destination(t: str) -> str | None:
             stem = alias if len(alias) <= 4 else re.sub(r"[аеиоуыья]$", "", alias)
             for m in re.finditer(rf"(?<![а-яё]){re.escape(stem)}[а-яё]{{0,3}}(?![а-яё])", t):
                 hits.append((m.start(), d.id, _negated_at(t, m.start(), m.end())))
+    for m in re.finditer(r"(?<![а-яё])дубаи(?![а-яё])", t):
+        hits.append((m.start(), "dubai", _negated_at(t, m.start(), m.end())))
     positive = sorted(h for h in hits if not h[2])
     if positive:
         return positive[-1][1] if any(h[2] for h in hits) else positive[0][1]
@@ -204,10 +232,24 @@ def _shift(t: str) -> int | None:
 def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     t = norm(text)
     data: dict = {}
+    if state.pending_trip_candidate:
+        if re.fullmatch(r"\s*(?:новая поездка|новый поиск|новый запрос|начать заново|заново|сначала)\s*[.!]?\s*", t):
+            return TripUpdate(resolve_trip_choice="new")
+        if re.fullmatch(r"\s*(?:изменить текущую|изменить поездку|текущая поездка|продолжить текущую|сохранить условия)\s*[.!]?\s*", t):
+            return TripUpdate(resolve_trip_choice="edit")
     origin_reply = _find_origin(f"из {t}") if state.pending_question == "origin" else None
 
     if re.search(r"заново|сначала|новый поиск|другой запрос", t):
         data["new_search"] = True
+    excluded = _excluded_countries(t)
+    explicitly_allowed = _mentioned_countries(t)
+    previous_excluded = set() if data.get("new_search") else set(state.excluded_countries or [])
+    if excluded or previous_excluded.intersection(explicitly_allowed):
+        data["excluded_countries"] = sorted((previous_excluded | excluded) - explicitly_allowed)
+    if re.search(r"\bбез\s+виз\w*|\bбезвизов\w*", t):
+        data["visa_free_requested"] = True
+    elif re.search(r"\bвиз\w*\s+(?:не важно|не важна|подойдет|подходит|можно)", t):
+        data["visa_free_requested"] = False
     if (origin := _find_origin(t) or origin_reply):
         data["origin"] = origin
     elif (m := re.search(r"(?:\bиз|вылет\w* из|живу в|я из)\s+([а-яё]+(?:-[а-яё]+)?)", text, re.IGNORECASE)):
@@ -299,30 +341,31 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["date_from"] = today + timedelta(days=7 * ({"две": 2, "три": 3, "пару": 2}.get(mm.group(1)) or int(mm.group(1))))
     if "month" not in data and not d_in:
         season = None
-        if re.search(r"\bзим(ой|у|ние|них)\b|на зиму", t):
+        # A summer mood describes the desired atmosphere, not a travel date.
+        season_text = re.sub(r"вайб\s+лета|летн\w*\s+(?:вайб|настроен\w*)", " ", t)
+        if re.search(r"\bзим(ой|у|ние|них)\b|на зиму", season_text):
             season = "winter"
-        elif re.search(r"\bлет(ом|о)\b|летн", t):
+        elif re.search(r"\bлет(ом|о)\b|летн", season_text):
             season = "summer"
-        elif re.search(r"\bвесн(ой|а)\b", t):
+        elif re.search(r"\bвесн(ой|а)\b", season_text):
             season = "spring"
-        elif re.search(r"\bосен(ью|ь)\b", t):
+        elif re.search(r"\bосен(ью|ь)\b", season_text):
             season = "autumn"
         if season:
             data["season"] = season
-    if re.search(r"недорог|бюджетн|подешевле|дешев|эконом|не дорого|подешёвк|мало денег|денег\s+не\s*много", t) and not state.last_plan:
+    if re.search(r"недорог|недораг|бюджетн|подешевле|дешев|эконом|не дорого|подешёвк|мало денег|немного\s+денег|"
+                 r"(?:денег|деньги)\s+(?:мало|не\s*много|в\s+обрез)|бюджет\s+(?:маленьк|небольш|низк)|"
+                 r"(?:маленьк\w*|небольш\w*)\s+бюджет", t) and not state.last_plan:
         data["economy"] = True
     if re.search(r"отдох|поехать|съездить|отпуск|путешеств|куда|поездк|\bтур\b|развеяться|выбраться|посоветуй|идеи", t):
         data["wants_ideas"] = True
-    if re.search(r"майски", t):
-        data["month"] = 5
-        data.setdefault("date_from", date(today.year + (today.month > 5), 5, 1))
-        data.setdefault("date_to", data["date_from"].replace(day=4))
-    if re.search(r"нов\w+ год", t) and not d_in:
-        year = today.year if today.month < 12 or today.day < 29 else today.year + 1
-        data["date_from"], data["date_to"] = date(year, 12, 30), date(year + 1, 1, 6)
+    if re.search(r"майски", t) and not d_in:
+        data["month"] = 5  # праздники указывают месяц, но не конкретные даты или длительность
     m = re.search(rf"на\s+{NUM}\s+(ноч|сут)", t) or re.search(rf"\b{NUM}\s+ноч", t) or re.search(rf"ноч\w*\s+на\s+{NUM}", t)
     weeks = re.search(r"(?:на\s+)?(\d|две|два|три|четыре|пару)\s+недел", t)
-    days = re.search(rf"на\s+{NUM}\s+(дн|день|дня)", t) or re.search(rf"(?:дн\w*|сут\w*)\s+на\s+{NUM}", t)
+    day_range = re.search(r"(?<!\d)(\d{1,3})\s*(?:-|–|—|до|по)\s*(\d{1,3})\s*(?:дней|дня|день|дей)\b", t)
+    days = re.search(rf"(?:\bна\s+|^){NUM}\s+(?:дней|дня|день|дей)\b", t)
+    short_refused = re.search(r"\bне\s+(?:хочу\s+)?(?:пару|два|две|2)\s+(?:дней|дня|день|дей|ночи|ночей)\b", t)
     if shift is not None:
         pass
     elif m:
@@ -332,21 +375,30 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["nights"] = 7 * n
     elif re.search(r"на неделю|неделю отдыха|на недельку", t):
         data["nights"] = 7
-    elif days:
+    elif day_range and not _negated_at(t, day_range.start(), day_range.end()):
+        low, high = int(day_range.group(1)), int(day_range.group(2))
+        if 1 <= low <= high <= 365:
+            data["trip_days_min"], data["trip_days_max"] = low, high
+    elif days and not _negated_at(t, days.start(), days.end()):
         n = num_word(days.group(1))
-        data["nights"] = max(1, (n or 2) - 1)
-    elif re.search(r"на пару дней|пару дней", t):
-        data["nights"] = 2
+        if n and n <= 365:
+            data["trip_days_min"] = data["trip_days_max"] = n
+    elif (pair := re.search(r"(?:на\s+)?пару\s+дней\b", t)) and not _negated_at(t, pair.start(), pair.end()):
+        data["trip_days_min"] = data["trip_days_max"] = 2
     elif re.search(r"на выходные", t) and not d_in:
         data["nights"] = 2
+    if short_refused:
+        data["clear_duration"] = True
 
     # Состав
     m = re.search(rf"{NUM}\s+взросл", t)
     if m:
         data["adults"] = num_word(m.group(1))
+    elif (inflected := re.search(r"\b(?:на\s+)?(двоих|троих|четверых)\s+взросл", t)):
+        data["adults"] = {"двоих": 2, "троих": 3, "четверых": 4}[inflected.group(1)]
     elif (mm := re.search(rf"(?:не\s+\w+,?\s+а|а)\s+(двое|трое|четверо|пятеро|{NUM})\b(?!{_UNITS})", t)) and re.search(r"\bне\s+(двое|трое|один|одна|четверо)", t):
         data["party_size"] = num_word(mm.group(1))  # «не двое, а трое»
-    elif (n := parse_guests(text)) is not None and re.search(r"человек|чел\b|персон|нас\b|вчетвером|втроём|втроем|на двоих|на троих|на четверых", t):
+    elif (n := parse_guests(text)) is not None and re.search(r"человек|чел\b|персон|нас\b|вчетвером|втроём|втроем|на двоих|на троих|на четверых|\bтрое\b|\bчетверо\b", t):
         data["party_size"] = n
     elif re.search(r"\bвдво[её]м\b|на двоих", t):
         data["party_size"] = 2
@@ -357,11 +409,16 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     elif (friends := re.search(rf"\bя\s+и\s+{NUM}\s+(?:друг|друз|подруг)\w*", t)):
         if (count := num_word(friends.group(1))) is not None:
             data["party_size"] = count + 1
-    elif re.search(r"с другом|с подругой", t) and not re.search(r"\bдет(?:и|ей|ям|ьми)|реб[её]н|компан|друзьями", t):
+    elif re.search(r"\bя\s+и\s+(?:(?:мой|моя)\s+)?(?:друг|подруга)\b", t):
+        data["party_size"] = 2
+    elif re.search(r"\bс\s+(?:другом|дргуом|друагом|подругой|подругай)\b", t) and not re.search(r"\bдет(?:и|ей|ям|ьми)|реб[её]н|компан|друзьями", t):
+        data["party_size"] = 2
+    elif re.search(r"\bс\s+(?:женой|жиной|мужем)\b", t) and not re.search(r"\bдет(?:и|ей|ям|ьми)|реб[её]н|сын|доч", t):
         data["party_size"] = 2
     if re.search(r"добав\w* (ещ[её] )?(одного )?взросл|ещ[её] (один|одна|одного) (взросл|человек)|\+\s*1", t):
         data["add_adults"] = 1
-    kids = re.search(rf"(?:с|и)\s+(?:{NUM}|двумя|тремя)\s+(?:детьми|дет|реб[её]н)", t)
+    kids = (re.search(rf"(?:с|и)\s+(?:{NUM}|двумя|тремя)\s+(?:детьми|дет|реб[её]н)", t) or
+            re.search(rf"\b{NUM}\s+(?:детей|ребенка|ребенок|дети)\b", t))
     if kids:
         word = kids.group(1) or ""
         data["children"] = {"двумя": 2, "тремя": 3}.get(word, num_word(word) if word else 2)
@@ -373,31 +430,69 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     if re.search(r"без (реб[её]нк|детей)|детей не будет|реб[её]нок не едет|дети не едут", t):
         data["children"] = 0
         data["children_unknown"] = False
+    # Accept only explicit ages in years. Months, future birthdays and dates
+    # cannot establish the age at check-in or a carrier's tariff category.
+    single_age = re.search(r"(?:ребенку|ребенка|сыну|дочке|дочери|малышу)\s+(\d{1,2})\s+(?:год|года|лет)\b", t)
+    pair_ages = re.search(r"дет(?:ям|ей|и|ьми)\s+(\d{1,2})\s*(?:и|,)\s*(\d{1,2})\s+(?:года|лет)\b", t)
+    ages = ([int(pair_ages.group(1)), int(pair_ages.group(2))] if pair_ages else
+            [int(single_age.group(1))] if single_age else None)
+    if ages and all(0 <= age <= 17 for age in ages) and data.get("children") != 0:
+        data["children_ages"] = ages
+        if data.get("children") is None and state.children is None:
+            if pair_ages or data.get("children_unknown"):
+                data["children_unknown"] = True  # two named ages need not describe every child
+            else:
+                data["children"] = 1
+    room_match = re.search(rf"\b{NUM}\s+(?:отдельн\w*\s+)?номер(?:а|ов)?\b", t)
+    if room_match and (number := num_word(room_match.group(1))) is not None and 1 <= number <= 20:
+        data["rooms"] = number
     if data.get("party_size") and data.get("children") is not None and not data.get("children_unknown") and "adults" not in data:
         remaining = data["party_size"] - data["children"]
         if remaining > 0:
             data["adults"] = remaining
-    if "adults" not in data and not data.get("party_size") and re.search(r"\b(одна|один|одному|одной)\b(?!\s*(ноч|день|раз))|в одиночку", t):
+    if "adults" not in data and not data.get("party_size") and re.search(r"\b(одна|один|одному|одной)\b(?!\s*(ноч|день|раз|номер|комнат|отел))|в одиночку", t):
         data["party_size"] = 1
     if re.search(r"(мы|я) с (мужем|женой) и (реб|дет|сын|доч)", t):
         data["adults"] = 2
-    if re.search(r"с собак|с кош|с питомц|с животн|с собачк|с котом|с псом|со щенк|"
-                 r"\bи (?:с\s+)?(?:собак|кошк|питомец|кот\b|пес\b|щен)", t):
+    pet_mention = re.search(r"с собак|с кош|с питомц|с животн|с собачк|с котом|с псом|со щенк|"
+                            r"\bи (?:с\s+)?(?:собак|кошк|питомец|кот\b|пес\b|щен)", t)
+    pet_question = re.search(r"(?:можно|разреш\w*|принима\w*|пуст\w*)\s+(?:ли\s+)?"
+                             r"(?:(?:ехать|останавливат\w*|засел\w*|поселиться)\s+)?"
+                             r"(?:с|со)\s+(?:собак|кош|питомц|животн|кот|пс|щен)", t)
+    if pet_mention and not (pet_question and pet_question.start() <= pet_mention.start() < pet_question.end()):
         data["pets"] = True
     elif re.search(r"без (собак|животн|питомц)", t):
         data["pets"] = False
-    if re.search(r"палатк|кемпинг|без отеля|сво[её] жиль[её]|жиль[её] не нуж", t):
+    tent_refused = re.search(r"\b(?:без|не|не хочу|не хотим|не нужна|не нужен)\s+(?:своей\s+)?палатк", t)
+    if tent_refused:
+        if re.search(r"отел|гостиниц", t) and not re.search(r"без\s+(?:отел|гостиниц)", t):
+            data["lodging"] = "hotel"
+        else:
+            data.setdefault("clear", []).append("lodging")
+    elif re.search(r"палатк|кемпинг|без отеля|сво[её] жиль[её]|жиль[её] не нуж", t):
         data["lodging"] = "tent"
-    elif re.search(r"нужен отель|отель нужен|жить в отеле", t):
+    elif re.search(r"нужен отель|отель нужен|жить в отеле", t) or (state.pending_question == "lodging" and re.fullmatch(r"\s*отель\s*[.!]?\s*", t)):
         data["lodging"] = "hotel"
 
     # Деньги
-    budget, _total = parse_budget(text)
-    if budget:
-        if re.search(r"за ночь|в сутки|ночь\b|/ночь", t):
-            data["budget_night"] = budget
+    data.update(temperature_preferences(text))
+    if re.search(r"температур\w*.*(?:не важн|не нужн|без разниц)|(?:не важн|не нужн).*температур", t):
+        if re.search(r"вод[аые]|мор[ея]", t):
+            data.setdefault("clear", []).extend(["sea_min_temp", "sea_max_temp"])
+        elif re.search(r"воздух|днем", t):
+            data.setdefault("clear", []).extend(["air_min_temp", "air_max_temp"])
         else:
-            data["budget_total"] = budget
+            data.setdefault("clear", []).extend(["air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp"])
+    total_budget, nightly_budget = parse_budget_scopes(text)
+    if total_budget is not None:
+        if re.search(r"\bна\s+(?:(?:одного|каждого)\s+)?(?:человека|чел\w*|персону)|\bна\s+каждого\b|\bс\s+человека\b|/\s*чел", t):
+            data["budget_per_person"] = total_budget
+        else:
+            data["budget_total"] = total_budget
+    if nightly_budget is not None:
+        data["budget_night"] = nightly_budget
+    if re.search(r"бюджет\w*\s+не\s+важ|убери\w*\s+(?:ограничени\w*\s+)?бюджет|без\s+ограничени\w*\s+по\s+бюджету", t):
+        data.setdefault("clear", []).extend(["budget_total", "budget_per_person"])
     if re.search(r"бюджет\w* (меньше|поменьше|ниже)|дешевле|подешевле|дороговато|дорого", t) and state.last_plan:
         data["cheaper"] = True
 
@@ -406,13 +501,21 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     if m:
         data["max_travel_hours"] = float(m.group(1))
     elif re.search(r"без долг\w+ (перел[её]т|дорог)|недалеко|не очень далеко|близко лететь|недолго лететь", t):
-        data["max_travel_hours"] = 5.0
+        data["prefer_short_travel"] = True
+    if re.search(r"время\s+в\s+пути\s+не\s+важ|дорога\s+не\s+важ|убери\w*\s+ограничени\w*\s+(?:по\s+)?времени", t):
+        data.setdefault("clear", []).extend(["max_travel_hours", "prefer_short_travel"])
     no_plane = re.search(r"\bбез\s+(?:самол[её]т|перел[её]т|авиаперел[её]т)|"
                          r"\bне\s+(?:(?:хочу|буду|готов\w*)\s+)?(?:лететь|летать|полететь|самол[её]том)|"
-                         r"\b(?:лететь|летать|полететь)\s+не\s+(?:буду|будем|хочу|хотим|могу|можем)", t)
-    no_train = re.search(r"\bбез\s+поезд|\bне\s+поезд", t)
+                         r"\b(?:лететь|летать|полететь)\s+не\s+(?:буду|будем|хочу|хотим|могу|можем)|"
+                         r"\b(?:самол[её]т|перел[её]т)\w*\s+не\s+(?:подходит|нужен|хочу)", t)
+    no_train = re.search(r"\bбез\s+поезд(?!к)|\bне\s+поезд(?!к)", t)
+    fear_flying = re.search(r"(?:боюсь|боимся|страшно|опасаюсь)\s+(?:летать|лететь|полет(?:а|е)ть|перел[её]т\w*)", t)
+    if fear_flying and not no_plane:
+        data["flight_concern"] = True
+    elif state.flight_concern and (no_plane or re.search(r"самол[её]т|перел[её]т|лететь|летать|поезд(?!к)", t)):
+        data["flight_concern"] = False
     other_transport = re.search(r"\bна\s+(?:машин|авто|автомобил|автобус)", t)
-    train = re.search(r"поезд|\bж/?д\b|по железной|сапсан|ласточк", t) and not no_train
+    train = re.search(r"\bпоезд(?!к)|\bж/?д\b|по железной|сапсан|ласточк", t) and not no_train
     if no_plane and (no_train or (other_transport and not train)):
         data["transport"] = "none"  # другие виды транспорта прототип пока не моделирует
     elif no_plane:
@@ -425,26 +528,39 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             data["transport"] = "plane"
     if re.search(r"без пересад|\bпрям(ой|ые|ым|ыми|ого)\b", t):
         data["direct_only"] = True
+    elif re.search(r"можно\s+с\s+пересад|пересадк\w*\s+(?:подходят|допускаются|нормально)", t):
+        data["direct_only"] = False
     if (mm := re.search(r"с багаж|багаж нуж|нужен багаж|чемодан", t)) and not negated(t, mm.start()):
         data["baggage"] = True
 
     # Отель
     for code, pattern in MEAL_WORDS:
         mm = re.search(pattern, t)
-        if mm and not negated(t, mm.start()):
+        if mm and not _negated_at(t, mm.start(), mm.end()):
             data["meal"] = code
             break
+    if state.meal and not data.get("meal"):
+        for code, pattern in MEAL_WORDS:
+            mm = re.search(pattern, t)
+            if code == state.meal and mm and _negated_at(t, mm.start(), mm.end()):
+                data.setdefault("clear", []).append("meal")
+                break
     if re.search(r"бесплатн\w* отмен|можно отменить|без предоплат|с возвратом", t):
         data["free_cancellation"] = True
     if (stars := parse_stars(text)) is not None:
         data["stars_min"] = stars
     wishes = [code for code, pattern in WISH_WORDS.items()
-              if (mm := re.search(pattern, t)) and not negated(t, mm.start())]
+              if (mm := re.search(pattern, t)) and not _negated_at(t, mm.start(), mm.end())]
     if wishes:
         data["hotel_wishes"] = wishes
+    removed_wishes = [code for code, pattern in WISH_WORDS.items()
+                      if (mm := re.search(pattern, t)) and _negated_at(t, mm.start(), mm.end())]
+    if removed_wishes:
+        data["remove_hotel_wishes"] = removed_wishes
     if re.search(r"за границ|за рубеж|заграниц", t):
         data["abroad"] = True
-    elif re.search(r"по росси|в росси|без загран|без визы и загран", t):
+    elif re.search(r"по росси|в росси|без загран|без визы и загран|"
+                   r"\b(?:только|лишь|исключительно)\s+(?:(?:по|в)\s+)?(?:росси\w*|рф)\b", t):
         data["abroad"] = False
 
     # Действия
@@ -474,8 +590,12 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["shift_days"] = shift
     if re.search(r"друг\w* отел|ещ[её] отел|покажи отел|другой вариант жиль|все отели|сменить отель", t):
         data["show_hotels"] = True
+    if (re.search(r"реальн\w*|настоящ\w*|без демо|без выдум|открыт\w* данн", t)
+            and re.search(r"отел|гостиниц|жиль", t)):
+        data["show_real_hotels"] = True
     asking = "?" in text or re.search(r"\b(можно ли|если|а что если|какие условия|условия отмены)\b", t)
-    if "?" in text or re.search(r"^(а |какая |какие |какой |какое |нужн\w+ ли|есть ли|сколько )", t):
+    if "?" in text or re.search(r"\bможно ли\b|\bадрес\b|где (?:находится|расположен)|"
+                                r"^(а |какая |какие |какой |какое |нужн\w+ ли|есть ли|сколько )", t):
         for topic, pattern in QUESTION_TOPICS:
             if re.search(pattern, t) and not (topic == "pets" and data.get("pets")):
                 data["question"] = topic
@@ -504,4 +624,29 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             elif state.pending_question == "children":
                 data["children"], data["children_unknown"] = number, False
             data.pop("pick", None)
+    # Preserve explicitly tentative choices as ideas, not confirmed inputs to
+    # a price calculation. Only local qualifiers are used, not a broad guess
+    # that the whole message is uncertain.
+    maybe = r"\b(?:может(?:\s+быть)?|возможно|наверное|вероятно)\s*,?\s*"
+    possible = []
+    if re.search(maybe + r"(?:(?:поеду|поедем|полетим|поехать)\s+)?с\s+(?:другом|дргуом|друагом|подругой|подругай)\b", t):
+        possible.append("party_size")
+    if re.search(maybe + r"(?:(?:жить|ночевать|останавливаться)\s+)?(?:в\s+)?палатк", t):
+        possible.append("lodging")
+    if re.search(maybe + r"(?:(?:на|лететь|ехать)\s+)?(?:самолет|перелет|поезд(?!к))", t):
+        possible.append("transport")
+    if re.search(maybe + r"(?:(?:поехать|ехать)\s+)?(?:в\s+)?гор[ыа]\b", t):
+        possible.append("trip_types")
+    if possible:
+        data["tentative_fields"] = possible
+    # A fresh, incompatible request may be either a new trip or an edit. Do not
+    # silently carry a prior pet, weekend or party into it; ask what the person means.
+    fresh_request = re.match(r"\s*(?:хочу|мне хочется|планирую|ищу|подбери|помоги подобрать)\b", t)
+    explicit_edit = re.search(r"\b(?:лучше|вместо|тогда|измени|поменяй|скорректируй)\b", t)
+    if state.dest_id and fresh_request and not explicit_edit and not data.get("new_search"):
+        requested = set(data.get("trip_types") or []) - {"warm", "food"}
+        destination_changed = data.get("destination") and data["destination"] != state.dest_id
+        category_changed = requested and not requested.intersection(BY_ID[state.dest_id].tags)
+        if destination_changed or category_changed:
+            data["needs_trip_choice"] = True
     return TripUpdate(**data)

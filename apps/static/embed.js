@@ -11,6 +11,7 @@
   frame.title = "Помощник в планировании поездки";
   frame.src = `${service}/static/widget.html`;
   frame.referrerPolicy = "no-referrer";
+  frame.allow = "microphone";
   frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
   frame.hidden = true;
   Object.assign(frame.style, { width: "min(390px, calc(100vw - 32px))", height: "min(620px, calc(100dvh - 100px))",
@@ -25,6 +26,7 @@
     boxShadow: "0 8px 24px #152d8e44" });
   toggle.addEventListener("click", () => {
     frame.hidden = !frame.hidden;
+    if (frame.hidden && frame.contentWindow) frame.contentWindow.postMessage({ type: "odin-widget-hidden" }, service);
     toggle.textContent = frame.hidden ? "Помочь с поездкой" : "Закрыть";
     toggle.setAttribute("aria-expanded", String(!frame.hidden));
     toggle.setAttribute("aria-label", frame.hidden ? "Открыть помощника по поездкам" : "Закрыть помощника по поездкам");

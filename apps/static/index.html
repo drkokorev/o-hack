@@ -30,10 +30,11 @@
     <div class="log" id="log" aria-live="polite"></div>
     <div class="suggest" id="suggest"></div>
     <form class="composer" id="ask">
-      <p class="privacy">Не вводите личные и платёжные данные. При подключении облачной модели текст отправляется её поставщику.</p>
+      <p class="privacy">Не вводите личные и платёжные данные. Текст может отправляться поставщику модели; голос обрабатывается выбранным способом распознавания.</p>
+      <p class="voice-status" id="voice-status" role="status" aria-live="polite"></p>
       <div class="field">
         <input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение агенту">
-        <button type="submit" id="send" aria-label="Отправить">
+        <button type="submit" id="send" aria-label="Отправить сообщение; для голосового ввода удерживайте кнопку" title="Нажмите, чтобы отправить; удерживайте для голосового ввода">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
@@ -42,6 +43,7 @@
 </div>
 
 <script src="/static/trip-map.js"></script>
+<script src="/static/voice-input.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

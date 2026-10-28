@@ -1,0 +1,14 @@
+[
+  {"id": "E01_friend_ages", "text": "Хочу съездить с подругой, спокойно и недорого", "expect": {"party_size": 2}, "empty": ["adults", "children", "budget_total", "date_from", "nights"]},
+  {"id": "E02_month_no_dates", "text": "На двоих в Сочи в августе, точные даты пока не известны", "expect": {"destination": "sochi", "month": 8, "party_size": 2}, "empty": ["adults", "date_from", "date_to", "nights"]},
+  {"id": "E03_restrictions", "text": "Только по России, не море, а горы", "expect": {"abroad": false}, "contains": {"trip_types": "mountains"}, "not_contains": {"trip_types": "sea"}},
+  {"id": "E04_two_budgets", "text": "Бюджет на всю поездку не более 90 тысяч рублей, за отель до 5500 рублей в сутки", "expect": {"budget_total": 90000, "budget_night": 5500}},
+  {"id": "E05_pet_question", "text": "Можно ли взять кошку в отель?", "empty": ["pets", "adults", "date_from", "budget_total"]},
+  {"id": "E06_year_dates", "text": "С 18 по 22 марта 2027 года в Казань, выезд из Москвы", "expect": {"destination": "kazan", "origin": "Москва", "date_from": "2027-03-18", "date_to": "2027-03-22"}, "empty": ["adults"]},
+  {"id": "E07_season", "text": "Планирую отдых во время зимних праздников", "empty": ["date_from", "date_to", "month", "nights", "adults"]},
+  {"id": "E08_train_only", "text": "Возьму поезд, самолет не подходит", "expect": {"transport": "train"}, "forbid": {"confirm": true}},
+  {"id": "E09_total_budget", "text": "Стоимость до 50 тысяч рублей за всю поездку", "expect": {"budget_total": 50000}, "empty": ["adults", "children", "nights", "destination"]},
+  {"id": "E10_no_confirmation", "text": "Не подтверждаю покупку, я еще подумаю", "forbid": {"confirm": true, "after_sale": "cancel"}},
+  {"id": "E11_features", "text": "В отеле нужна парковка и кухня в номере", "contains": {"hotel_wishes": "parking"}, "empty": ["adults", "date_from", "budget_total"]},
+  {"id": "E12_no_budget", "text": "Хочу выбрать место, но пока не знаю, сколько потратим", "empty": ["budget_total", "budget_night", "date_from", "adults", "nights"]}
+]

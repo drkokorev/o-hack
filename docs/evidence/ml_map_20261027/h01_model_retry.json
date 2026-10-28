@@ -1,0 +1,9 @@
+{
+  "scenario": "h01_final_gigachat",
+  "observed": "One model extraction attempt reported ValueError; a retry completed the turn.",
+  "exception_class": "ValueError",
+  "attempt_failures": 1,
+  "final_model_turns": 4,
+  "final_checked_scenarios_passed": 1,
+  "raw_model_response_saved": false
+}

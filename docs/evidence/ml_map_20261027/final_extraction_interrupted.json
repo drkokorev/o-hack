@@ -1,0 +1,12 @@
+{
+  "scenario": "raw model extraction after the map and real-hotel additions",
+  "status": "INCOMPLETE",
+  "provider": "gigachat",
+  "model": "GigaChat-2-Max",
+  "planned_cases": 12,
+  "successful_model_responses": 0,
+  "request_attempts": 3,
+  "request_errors": {"RateLimitError": 3},
+  "not_attempted_after_circuit_breaker": 9,
+  "interpretation": "No quality score is valid: the first three calls were rejected and the circuit breaker skipped the remaining calls. The previous evaluation script incorrectly counted empty fallback responses as passes for null-only cases; its output is excluded from the comparison. The script now stops and reports an incomplete run."
+}

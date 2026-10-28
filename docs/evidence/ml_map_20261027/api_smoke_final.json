@@ -1,0 +1,53 @@
+{
+  "base_url": "http://127.0.0.1:18082",
+  "checks": [
+    {
+      "id": "health_and_catalog",
+      "pass": true,
+      "destinations": 75,
+      "objects": 65924,
+      "llm_state": "off"
+    },
+    {
+      "id": "sourced_map_catalog",
+      "pass": true,
+      "counts": {
+        "airport": 48101,
+        "beach": 7866,
+        "camping": 8,
+        "city": 161662,
+        "hotel": 65924
+      }
+    },
+    {
+      "id": "H01_tent",
+      "pass": true,
+      "turns": 5,
+      "nlu": "rules"
+    },
+    {
+      "id": "real_hotel_records_no_rates",
+      "pass": true,
+      "nlu": "rules"
+    },
+    {
+      "id": "multi_room_no_fake_quote",
+      "pass": true
+    },
+    {
+      "id": "tent_refusal_then_lodging_question",
+      "pass": true,
+      "turns": 4
+    },
+    {
+      "id": "temperature_historical_not_forecast",
+      "pass": true
+    },
+    {
+      "id": "yaroslavl_train_mock_order",
+      "pass": true,
+      "turns": 5,
+      "nlu": "rules"
+    }
+  ]
+}

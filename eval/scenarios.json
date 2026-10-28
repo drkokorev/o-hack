@@ -4,7 +4,7 @@
   "scenarios": [
     {"id": "sea_kid_to_purchase", "persona": "семья с ребёнком, не знает куда",
      "turns": ["Хочу к тёплому морю в ноябре, недорого, с ребёнком, без долгих перелётов", "давай первый", "беру 1 вариант", "да, оформляй"],
-     "expect": {"stage": "booked", "children": 1, "max_travel_hours": 5.0}},
+     "expect": {"stage": "booked", "children": 1, "prefer_short_travel": true}},
     {"id": "kazan_train_dog", "persona": "выходные с собакой, поезд",
      "turns": ["Казань из Питера на выходные с собакой, поездом"],
      "expect": {"stage": "plan", "dest_id": "kazan", "pets": true, "transport": "train", "all_hotels_pets": true}},

@@ -1,0 +1,102 @@
+{
+  "model": "gigaam-v3-e2e-ctc",
+  "model_revision": "322c3b29492673eb7d0b434bfa9dfb8653e34d02",
+  "quantization": "int8",
+  "dataset": "bond005/sova_rudevices",
+  "dataset_revision": "d9197eacfb0afff29d90a2d4e7d0d98a5dfb54bc",
+  "dataset_license": "CC BY 4.0",
+  "split": "test",
+  "selection": "first 20 rows",
+  "requested": 20,
+  "processed": 0,
+  "failed": [
+    {
+      "index": 0,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 1,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 2,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 3,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 4,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 5,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 6,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 7,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 8,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 9,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 10,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 11,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 12,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 13,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 14,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 15,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 16,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 17,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 18,
+      "error_type": "TypeError"
+    },
+    {
+      "index": 19,
+      "error_type": "TypeError"
+    }
+  ],
+  "speaker_count": "unknown",
+  "word_errors": 0,
+  "reference_words": 0,
+  "wer": null,
+  "latency_median_s": null,
+  "audio_seconds": 0,
+  "load_seconds": 45.794,
+  "limitations": "Small convenience sample; no speaker labels; domain differs from travel; dataset may be represented in upstream evaluation/training."
+}

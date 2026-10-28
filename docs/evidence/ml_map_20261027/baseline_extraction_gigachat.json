@@ -1,0 +1,144 @@
+{
+  "fixed_today": "2026-10-27",
+  "provider": "gigachat",
+  "model": "GigaChat-2-Max",
+  "passed": 10,
+  "total": 12,
+  "calls": 12,
+  "invalid_responses": 0,
+  "request_errors": 0,
+  "median_seconds": 0.4268,
+  "p95_seconds": 1.0276,
+  "cases": [
+    {
+      "id": "E01_friend_ages",
+      "pass": false,
+      "failures": [
+        "party_size: ожидалось 2, получено None",
+        "adults: модель добавила неуказанное значение"
+      ],
+      "fields": {
+        "adults": 2,
+        "economy": true
+      },
+      "seconds": 1.0175
+    },
+    {
+      "id": "E02_month_no_dates",
+      "pass": false,
+      "failures": [
+        "party_size: ожидалось 2, получено None",
+        "adults: модель добавила неуказанное значение"
+      ],
+      "fields": {
+        "destination": "Сочи",
+        "month": 8,
+        "adults": 2
+      },
+      "seconds": 0.6906
+    },
+    {
+      "id": "E03_restrictions",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "trip_types": [
+          "mountains"
+        ],
+        "abroad": false
+      },
+      "seconds": 0.4547
+    },
+    {
+      "id": "E04_two_budgets",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "budget_total": 90000,
+        "budget_night": 5500
+      },
+      "seconds": 0.6544
+    },
+    {
+      "id": "E05_pet_question",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "question": "pets"
+      },
+      "seconds": 0.3958
+    },
+    {
+      "id": "E06_year_dates",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "origin": "Москва",
+        "destination": "Казань",
+        "date_from": "2027-03-18",
+        "date_to": "2027-03-22"
+      },
+      "seconds": 1.0276
+    },
+    {
+      "id": "E07_season",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "season": "winter"
+      },
+      "seconds": 0.3084
+    },
+    {
+      "id": "E08_train_only",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "transport": "train"
+      },
+      "seconds": 0.3129
+    },
+    {
+      "id": "E09_total_budget",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "budget_total": 50000
+      },
+      "seconds": 0.4021
+    },
+    {
+      "id": "E10_no_confirmation",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "confirm": false,
+        "hesitate": true
+      },
+      "seconds": 0.3749
+    },
+    {
+      "id": "E11_features",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "hotel_wishes": [
+          "parking",
+          "kitchen"
+        ]
+      },
+      "seconds": 0.4386
+    },
+    {
+      "id": "E12_no_budget",
+      "pass": true,
+      "failures": [],
+      "fields": {
+        "clear": [
+          "budget_total"
+        ]
+      },
+      "seconds": 0.415
+    }
+  ]
+}

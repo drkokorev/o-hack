@@ -7,8 +7,9 @@ from datetime import date
 from statistics import median
 
 from .climate import MonthClimate, climate
-from .geo import DESTINATIONS, TAG_NAMES, Destination, Origin
+from .geo import DESTINATIONS, TAG_NAMES, Destination, Origin, destination_has_tag
 from .offers import hotel_price, hotels_for, transport_options
+from .temperature import matches_history
 
 
 @dataclass
@@ -51,14 +52,16 @@ def _hours(minutes: int) -> str:
 def suggest(origin: Origin, start: date, nights: int, adults: int, children: int, *, trip_types: list[str],
             budget: int | None, max_hours: float | None, abroad: bool | None, pets: bool, mode: str | None,
             exclude: set[str] | None = None, limit: int = 3, economy: bool = False, meal: str | None = None,
-            stars_min: int | None = None, window: tuple[date, date] | None = None) -> list[Suggestion]:
+            stars_min: int | None = None, window: tuple[date, date] | None = None, short_travel: bool = False,
+            air_min_temp: float | None = None, air_max_temp: float | None = None,
+            sea_min_temp: float | None = None, sea_max_temp: float | None = None) -> list[Suggestion]:
     from .planner import MEAL_RANK, cheapest_start
 
     wants = set(trip_types)
     core = wants - {"warm", "sea", "beach", "food"}
     beach = bool(wants & {"sea", "beach"})
     warm = "warm" in wants or beach
-    max_minutes = (max_hours or (6 if children else 9)) * 60
+    max_minutes = (max_hours or (5 if short_travel else 6 if children else 9)) * 60
     out: list[Suggestion] = []
     for dest in DESTINATIONS:
         if dest.name == origin.name or (exclude and dest.id in exclude):
@@ -67,10 +70,17 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             continue
         # Сначала дешёвые ограничения по направлению и климату: не строим тысячи отелей,
         # если направление заведомо не подходит пользователю.
-        if core and not core & set(dest.tags):
+        if "surf" in core and not destination_has_tag(dest, "surf"):
+            continue
+        other_core = core - {"surf"}
+        if other_core and not other_core & set(dest.tags):
             continue
         day = (cheapest_start(origin, dest, window[0], window[1], nights, mode) if window else start) or start
         weather = climate(dest.id, day.month)
+        thresholds = {"air_min_temp": air_min_temp, "air_max_temp": air_max_temp,
+                      "sea_min_temp": sea_min_temp, "sea_max_temp": sea_max_temp}
+        if any(value is not None for value in thresholds.values()) and matches_history(weather, **thresholds) is not True:
+            continue
         if beach and not (weather and (weather.beach_ok or (weather.sea is not None and weather.sea >= 21))):
             continue
         if not beach and warm and not (weather and weather.warm):
@@ -92,7 +102,7 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
         total, minutes, leg_mode, stops = est
         score, reasons, risks = 0.0, [], []
 
-        matched = [TAG_NAMES[t] for t in wants & set(dest.tags) if t not in ("sea", "beach", "warm")]
+        matched = [TAG_NAMES[t] for t in wants if t not in ("sea", "beach", "warm") and destination_has_tag(dest, t)]
         score += 0.6 * len(matched)
         if beach:
             if weather and weather.beach_ok:

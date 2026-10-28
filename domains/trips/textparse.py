@@ -44,7 +44,9 @@ _NEGATION = r"(без|не нужн\w*|не надо|не обязательно
 
 
 def norm(text: str) -> str:
-    return text.lower().replace("ё", "е")
+    text = text.lower().replace("ё", "е")
+    # Narrow, common month misspellings; do not guess arbitrary place names.
+    return re.sub(r"\b(?:дикабр|декобр)(?=[ьяе]\b)", "декабр", text)
 
 
 def num_word(word: str) -> int | None:
@@ -164,11 +166,9 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
         return _nearest_weekend(today, bool(re.search(r"следующ", t)))
 
     base = check_in or known_in
-    m = (re.search(rf"на\s+{NUM}\s+(ноч|сут|дн|день)", t) or re.search(r"на\s+(неделю)", t)
+    m = (re.search(rf"на\s+{NUM}\s+(ноч|сут)", t) or re.search(r"на\s+(неделю)", t)
          or re.search(rf"(?<!за )\b{NUM}\s+(ноч|сут)", t))
     nights = num_word(m.group(1)) if m else None
-    if m and nights and m.group(0).endswith(("дн", "день")) and nights > 1:
-        nights -= 1  # «на 3 дня» — две ночи
     if re.search(r"\bна (одну )?ночь\b", t):
         nights = 1
     if base and nights:
@@ -198,10 +198,24 @@ def parse_budget(text: str) -> tuple[int | None, bool]:
         total = bool(re.match(
             r"\s*(руб\w*|₽|р\.?)?\s*(за (все|всю|весь|поездк|отпуск)|на (все|всю|весь|поездк|отпуск)|в сумме|итого)", tail))
         return int(round(value)), total
+    # Amounts with an explicit currency or multiplier can be stated without
+    # «до/бюджет»: «100 тысяч рублей», «150 к», «тысяч за 100».
+    bare = re.search(r"(?<!\d)(\d{1,3}(?:[ \u00a0]\d{3})+|\d+)(?:([.,]\d+))?\s*"
+                     r"(тыс\w*|тысяч\w*|к\b|руб\w*|₽)", t)
+    if bare:
+        number = bare.group(1).replace(" ", "").replace("\u00a0", "") + (bare.group(2) or "")
+        value = float(number.replace(",", "."))
+        if bare.group(3).startswith(("тыс", "тысяч", "к")):
+            value *= 1000
+        if value >= 500:
+            return int(round(value)), False
+    reverse_thousands = re.search(r"\bтысяч\w*\s+(?:за|около|до)\s*(\d{1,3})\b", t)
+    if reverse_thousands:
+        return int(reverse_thousands.group(1)) * 1000, False
     for unit in re.finditer(r"\bтысяч\w*\b|\bтыс\w*\b", t):
         prefix, suffix = t[:unit.start()], t[unit.end():unit.end() + 35]
         if not (re.search(r"бюджет|денег|потрат|предел|не дороже|не больше|не более|максимум|\bдо\b", prefix[-100:])
-                or re.match(r"\s*(?:руб\w*|₽)", suffix)):
+                or re.match(r"\s*(?:руб\w*|₽|на\s+(?:каждого|человека|персону)|с\s+человека)", suffix)):
             continue
         words = re.findall(r"[а-я]+", prefix)[-3:]
         values = []
@@ -216,17 +230,46 @@ def parse_budget(text: str) -> tuple[int | None, bool]:
     return None, False
 
 
+def parse_budget_scopes(text: str) -> tuple[int | None, int | None]:
+    """Extract independently stated trip and nightly budgets without mixing their amounts.
+
+    Split independent clauses, keeping decimal commas and dates intact. A lone
+    unqualified amount retains the existing convention: it is a trip budget.
+    """
+    clauses = re.split(
+        r"[;\n]|,(?=\s)|\.(?=\s|$)|\s+и\s+(?=(?:отел|жиль|за ночь|в сутки|на ночь|на отель|на жиль|на всю|бюджет))",
+        norm(text),
+    )
+    total = nightly = None
+    for clause in clauses:
+        value, _ = parse_budget(clause)
+        is_nightly = bool(re.search(r"за ночь|в сутки|на ночь|/ночь", clause))
+        if value is None and is_nightly:
+            # "на отель 7 тысяч за ночь" has an explicit scope and currency,
+            # but no "до"/"бюджет" prefix accepted by the generic parser.
+            money = re.search(r"\b\d[\d\s]*(?:[.,]\d+)?\s*(?:к\b|тыс\w*|руб\w*|₽)", clause)
+            if money:
+                value, _ = parse_budget("до " + money.group())
+        if value is None:
+            continue
+        if is_nightly:
+            nightly = value
+        else:
+            total = value
+    return total, nightly
+
+
 def parse_guests(text: str) -> int | None:
     t = norm(text)
     m = (re.search(rf"{NUM}\s+(взросл|человек|гост|чел\b|персон)", t)
-         or re.search(rf"\bнас\s+(?:будет\s+)?{NUM}\b", t)
+         or re.search(rf"\bнас\s+(?:(?:будет|теперь|уже)\s+)*{NUM}\b", t)
          or re.search(rf"на\s+{NUM}\b(?!\s*(ноч|сут|дн|звезд|\d))", t))
     if m:
         n = num_word(m.group(1))
         if n and 1 <= n <= 10:
             return n
-    for pattern, n in [(r"\bвдво[её]м\b|на двоих|с женой|с мужем|с девушк|с парнем|с другом|с подругой", 2),
-                       (r"\bвтро[её]м\b|на троих", 3), (r"\bвчетвером\b|на четверых", 4),
+    for pattern, n in [(r"\bвдво[её]м\b|на двоих|с женой|с жиной|с мужем|с девушк|с парнем|с другом|с подругой", 2),
+                       (r"\bвтро[её]м\b|на троих|\bтрое\b", 3), (r"\bвчетвером\b|на четверых|\bчетверо\b", 4),
                        (r"\bодн[аи]\b|\bодин\b(?!\s*(ноч|день|раз))|в одиночку", 1)]:
         if re.search(pattern, t):
             return n

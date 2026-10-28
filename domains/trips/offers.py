@@ -24,7 +24,7 @@ AIRLINES = ("Авиа Альфа", "Авиа Бета", "Авиа Гамма", "
 HUB_MOSCOW = (55.756, 37.617)
 
 MEALS = {"room_only": "без питания", "breakfast": "завтраки", "half_board": "полупансион",
-         "all_inclusive": "всё включено"}
+         "all_inclusive": "всё включено", "meal_included": "питание включено, вид уточняется"}
 AMENITIES = {
     "pool": "бассейн", "kids_club": "детский клуб", "spa": "спа", "gym": "фитнес", "parking": "парковка",
     "pets": "можно с животными", "beach_line": "первая линия", "wifi": "Wi-Fi", "kitchen": "кухня в номере",

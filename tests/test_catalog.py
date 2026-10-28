@@ -12,7 +12,7 @@ from domains.trips import offers
 
 
 def test_versioned_catalog_keeps_destinations_and_relationships():
-    assert len(DESTINATIONS) == 69
+    assert len(DESTINATIONS) == 75
     assert len(ORIGINS) == 7
     assert BY_ID["sochi"].name == "Сочи"
     assert BY_ID["sochi"].areas and BY_ID["sochi"].rail
@@ -37,4 +37,15 @@ def test_app_info_does_not_generate_all_hotels(monkeypatch):
     client = TestClient(build_app(Agent(TripsDomain(), None)))
     response = client.get("/api/info")
     assert response.status_code == 200
-    assert response.json()["hotels"] == 65107
+    assert response.json()["hotels"] == 65924
+
+
+@pytest.mark.parametrize("dest_id", ["yaroslavl", "yekaterinburg", "samara", "ufa", "perm", "tyumen"])
+def test_added_cities_have_source_objects_and_airports(dest_id):
+    data = json.loads((Path(__file__).resolve().parents[1] / "domains/trips/data/hotels.json").read_text(encoding="utf-8"))
+    city = BY_ID[dest_id]
+    records = data["hotels"][dest_id]
+    assert records and city.iata in data["airports"]
+    assert len({record["id"] for record in records}) == len(records)
+    assert all(record.get("overture_id") and record["conf"] >= 0.5 for record in records)
+    assert all(offers.distance_km(city.lat, city.lon, record["lat"], record["lon"]) <= 22.01 for record in records)

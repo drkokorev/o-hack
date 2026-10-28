@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Callable, Protocol
@@ -57,6 +58,7 @@ class Session:
     last: Step | None = None
     last_nlu: str = ""  # кто разобрал последнюю реплику: llm | llm+rules | rules | none
     last_notes: list[str] = field(default_factory=list)  # что отброшено из ответа LLM и почему
+    lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
 
 
 NLG_SYSTEM = (
@@ -88,19 +90,30 @@ class Agent:
     def handle(self, session: Session, text: str) -> Step:
         text = sanitize(text)
         if not text:
+            session.last_nlu, session.last_notes = "none", []
             step = Step("Напишите, пожалуйста, ваш запрос.")
         elif contains_sensitive_data(text):
             text = "[личные данные скрыты]"
             session.last_nlu, session.last_notes = "none", []
             step = Step("Для демонстрации не вводите личные и платёжные данные. Удалите их из сообщения и повторите запрос.")
         elif looks_like_injection(text):
+            text = "[сообщение не обработано]"
+            session.last_nlu, session.last_notes = "none", []
             step = Step(self.domain.off_topic_reply)
         else:
             update, session.last_nlu = self._understand(session, text)
-            session.state = self.domain.merge(session.state, update)
-            step = self.domain.step(session.state)
-            if self.nlg and step.facts:
-                step.reply = self._rephrase(step)
+            if not update.model_dump(exclude_none=True) and session.last is not None:
+                # A message with no understood action must not advance the
+                # conversation, skip a pending question, or modify an order.
+                previous = session.last
+                question = isinstance(previous.payload, dict) and previous.payload.get("kind") == "question"
+                step = Step("Не понял сообщение. " + (previous.reply if question else
+                            "Расскажите о поездке или уточните, что хотите изменить."), payload=previous.payload)
+            else:
+                session.state = self.domain.merge(session.state, update)
+                step = self.domain.step(session.state)
+                if self.nlg and step.facts and getattr(self.domain, "allow_nlg", True):
+                    step.reply = self._rephrase(step)
         session.history += [
             {"role": "user", "content": text},
             {"role": "assistant", "content": step.reply},

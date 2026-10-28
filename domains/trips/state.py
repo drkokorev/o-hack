@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -13,8 +14,10 @@ class TripParams(BaseModel):
     origin: str | None = Field(None, description="Город вылета в именительном падеже")
     destination: str | None = Field(None, description="Куда едет: город, курорт или страна, если назван")
     country: str | None = Field(None, description="Названная страна, если город ещё не выбран")
+    excluded_countries: list[str] | None = Field(None, description="Страны, которые пользователь явно исключил")
+    visa_free_requested: bool | None = Field(None, description="Пользователь хочет безвизовый въезд; актуальные условия не подтверждены")
     trip_types: list[str] | None = Field(None, description="Коды типа отдыха: sea, beach, warm, mountains, ski, "
-                                         "city, culture, nature, food, spa, exotic")
+                                         "city, culture, nature, food, spa, exotic, surf")
     month: int | None = Field(None, ge=1, le=12, description="Месяц поездки 1–12, если точных дат нет")
     season: str | None = Field(None, description="Время года без указанного месяца: summer, autumn, winter, spring")
     year: int | None = Field(None, ge=1, le=9999, description="Год поездки, только если пользователь явно его назвал")
@@ -22,18 +25,30 @@ class TripParams(BaseModel):
     date_from: date | None = Field(None, description="Дата начала поездки YYYY-MM-DD")
     date_to: date | None = Field(None, description="Дата окончания поездки YYYY-MM-DD")
     nights: int | None = Field(None, description="Число ночей")
+    trip_days_min: int | None = Field(None, ge=1, le=365, description="Минимальная длительность поездки в днях, если явно названа")
+    trip_days_max: int | None = Field(None, ge=1, le=365, description="Максимальная длительность поездки в днях, если явно названа")
     party_size: int | None = Field(None, description="Общее число путешественников, если известно; возрастной состав может быть не указан")
     adults: int | None = Field(None, description="Взрослых")
     children: int | None = Field(None, description="Детей")
     children_unknown: bool | None = Field(None, description="Едут дети, но их число не указано")
+    children_ages: list[Annotated[int, Field(ge=0, le=17)]] | None = Field(
+        None, description="Только явно названный возраст детей в годах; список может быть неполным")
+    rooms: int | None = Field(None, ge=1, le=20, description="Явно названное число отдельных номеров в отеле")
     pets: bool | None = Field(None, description="Едут с животным")
     lodging: str | None = Field(None, description="tent — палатка или своё размещение; hotel — нужен отель")
     budget_total: int | None = Field(None, description="Бюджет на всю поездку на всех, руб.")
+    budget_per_person: int | None = Field(None, description="Бюджет на одного путешественника, если явно указан")
     budget_night: int | None = Field(None, description="Лимит цены отеля за ночь, руб., если назван именно он")
     max_travel_hours: float | None = Field(None, description="Максимум часов в дороге в одну сторону")
+    prefer_short_travel: bool | None = Field(None, description="Желательно недолго ехать или лететь; без численного ограничения")
+    air_min_temp: float | None = Field(None, ge=-60, le=60, description="Явный минимум дневной температуры воздуха, °C")
+    air_max_temp: float | None = Field(None, ge=-60, le=60, description="Явный максимум дневной температуры воздуха, °C")
+    sea_min_temp: float | None = Field(None, ge=-60, le=60, description="Явный минимум температуры моря, °C")
+    sea_max_temp: float | None = Field(None, ge=-60, le=60, description="Явный максимум температуры моря, °C")
     transport: str | None = Field(None, description="plane | train; none — подходящего вида транспорта в прототипе нет")
+    flight_concern: bool | None = Field(None, description="Человек боится летать, но пока не запретил перелёт")
     direct_only: bool | None = Field(None, description="Только без пересадок")
-    meal: str | None = Field(None, description="breakfast | half_board | all_inclusive")
+    meal: str | None = Field(None, description="meal_included | breakfast | half_board | all_inclusive")
     free_cancellation: bool | None = Field(None, description="Нужна бесплатная отмена")
     stars_min: int | None = Field(None, description="Минимальная звёздность отеля")
     hotel_wishes: list[str] | None = Field(None, description="Коды удобств: pool, kids_club, spa, gym, parking, "
@@ -41,6 +56,7 @@ class TripParams(BaseModel):
     abroad: bool | None = Field(None, description="true — за границу, false — только по России")
     baggage: bool | None = Field(None, description="true, если нужен багаж в самолёте")
     economy: bool | None = Field(None, description="true, если важна низкая цена («недорого», «бюджетно»)")
+    tentative_fields: list[str] | None = Field(None, description="Упомянутые как возможные, но ещё не подтверждённые параметры")
 
 
 PARAM_FIELDS = tuple(TripParams.model_fields)
@@ -71,6 +87,8 @@ class TripState(TripParams):
     place_country: str | None = None                         # уточнённая страна для неоднозначного названия
     unavailable_origin: str | None = None                    # указанный город отправления отсутствует в демо
     pending_question: str | None = None                      # какой недостающий параметр уточняем
+    pending_trip_candidate: dict | None = None                # новое намерение до выбора: новая поездка или изменение
+    group_conflict: bool = False                              # состав противоречит названному общему числу
     skipped_questions: list[str] = Field(default_factory=list)  # отложенные пользователем уточнения
     payment_method: str | None = None                        # только демонстрационный способ
     last_view: dict | None = None                            # последний показанный список — повторить при непонятной реплике
@@ -82,13 +100,17 @@ class TripState(TripParams):
 
 class TripUpdate(TripParams):
     new_search: bool | None = Field(None, description="true, если пользователь начинает поиск заново")
+    needs_trip_choice: bool | None = Field(None, description="Новое намерение может относиться к новой поездке; определяется правилами")
+    resolve_trip_choice: str | None = Field(None, description="Выбор при уточнении: new или edit; определяется правилами")
     clear: list[str] | None = Field(None, description="Параметры, которые больше не нужно учитывать")
+    remove_hotel_wishes: list[str] | None = Field(None, description="Удобства, от которых пользователь явно отказался; определяется правилами")
     cheaper: bool | None = Field(None, description="true, если просит дешевле")
     pick: int | None = Field(None, description="Номер выбранного варианта из показанного списка (1, 2, 3)")
     pick_name: str | None = Field(None, description="Название выбранного варианта, если назван не номером")
     confirm: bool | None = Field(None, description="true — согласие оформить/подтвердить, false — отказ")
     shift_days: int | None = Field(None, description="Сдвиг дат: +2 «на два дня позже», -1 «на день раньше»")
     show_hotels: bool | None = Field(None, description="true, если просит другие отели")
+    show_real_hotels: bool | None = Field(None, description="true, если просит реальные объекты без модельных цен и условий; определяется правилами")
     wants_ideas: bool | None = Field(None, description="true, если хочет поехать, но не знает куда («хочу отдохнуть», "
                                      "«куда поехать?», «посоветуй»)")
     more: bool | None = Field(None, description="true, если просит другие варианты направлений («покажи ещё»)")
@@ -100,10 +122,11 @@ class TripUpdate(TripParams):
     corrected_place: str | None = Field(None, description="Исходное написание места, исправленное по опечатке (служебное поле правил)")
     unsure: bool | None = Field(None, description="true, если человек пока не знает ответ на уточняющий вопрос")
     duration_not_given: bool | None = Field(None, description="true, если человек говорит, что не называл длительность")
+    clear_duration: bool | None = Field(None, description="true, если человек явно отказался от прежней короткой длительности")
     payment_method: str | None = Field(None, description="Демонстрационный способ оплаты: card | sbp")
     add_adults: int | None = Field(None, description="Сколько взрослых добавить («ещё один взрослый» → 1)")
     hesitate: bool | None = Field(None, description="true, если сомневается и хочет подумать («давай подумаем», «подожди»)")
-    question: str | None = Field(None, description="О чём спрашивает: visa | cancellation | baggage | weather | "
+    question: str | None = Field(None, description="О чём спрашивает: location | visa | cancellation | baggage | weather | "
                                  "transfer | pets — если задаёт вопрос, а не меняет условия")
     after_sale: str | None = Field(None, description="После покупки: early_checkin | late_checkout | change_dates | "
                                    "cancel (просит отменить) | cancel_info (спрашивает об условиях) | reminder | transfer")

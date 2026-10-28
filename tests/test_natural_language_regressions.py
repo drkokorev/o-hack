@@ -29,7 +29,7 @@ def test_excluding_flights_uses_only_the_available_ground_transport(phrase):
 def test_saying_no_long_flights_is_not_a_ban_on_flying():
     result = rule_extract(TripState(), "без долгих перелётов", TODAY)
     assert result.transport is None
-    assert result.max_travel_hours == 5
+    assert result.max_travel_hours is None and result.prefer_short_travel is True
 
 
 @pytest.mark.parametrize("phrase", ["без самолёта и без поезда", "без самолёта, на машине"])

@@ -1,0 +1,64 @@
+[
+  {
+    "id": "H01_meal_removed",
+    "family": "meal preference removal",
+    "turns": [
+      {"text": "Из Москвы в Казань двое взрослых с 3 по 6 июня 2027, нужен завтрак", "state": {"meal": "breakfast"}},
+      {"text": "Передумал, завтрак не нужен", "state": {"meal": null, "dest_id": "kazan", "adults": 2}}
+    ]
+  },
+  {
+    "id": "H02_transport_change_preserve_dates",
+    "family": "transport correction",
+    "turns": [
+      {"text": "Сочи из Москвы с 2 по 7 сентября 2027, двое взрослых, самолетом", "state": {"transport": "plane"}},
+      {"text": "Теперь только поездом", "state": {"transport": "train", "date_from": "2027-09-02", "date_to": "2027-09-07", "dest_id": "sochi"}, "all_legs": "train"}
+    ]
+  },
+  {
+    "id": "H03_unsupported_departure",
+    "family": "unknown origin disclosure",
+    "turns": [
+      {"text": "В Сочи из Якутска 5–10 июля 2027 двое взрослых", "state": {"origin": null}, "reply_any": ["якутск"]}
+    ]
+  },
+  {
+    "id": "H04_future_date_shift",
+    "family": "relative date shift",
+    "turns": [
+      {"text": "Из Москвы в Казань 10–14 ноября 2027, двое взрослых"},
+      {"text": "Перенеси всю поездку на два дня позже", "state": {"date_from": "2027-11-12", "date_to": "2027-11-16", "dest_id": "kazan"}}
+    ]
+  },
+  {
+    "id": "H05_no_payment_on_question",
+    "family": "payment question is not confirmation",
+    "turns": [
+      {"text": "В Казань из Москвы двое взрослых с 10 по 14 ноября 2027"},
+      {"text": "выбираю первый вариант", "state": {"stage": "cart", "order": null}},
+      {"text": "А что будет, если я оплачу?", "state": {"stage": "cart", "order": null}}
+    ]
+  },
+  {
+    "id": "H06_air_and_train_excluded",
+    "family": "unsupported ground transport",
+    "turns": [
+      {"text": "В Казань без самолета и без поезда", "state": {"transport": "none"}}
+    ]
+  },
+  {
+    "id": "H07_budget_scope",
+    "family": "total and nightly budget separation",
+    "turns": [
+      {"text": "В Казань из Москвы 3–7 июня 2027, двое взрослых. На всю поездку до 80000 рублей, отель до 6000 рублей за ночь", "state": {"budget_total": 80000, "budget_night": 6000}}
+    ]
+  },
+  {
+    "id": "H08_fuzzy_user_correction",
+    "family": "user corrects destination",
+    "turns": [
+      {"text": "Из Москвы в Сочи 10–14 ноября 2027, двое взрослых"},
+      {"text": "Нет, вместо Сочи давай Калининград", "state": {"dest_id": "kaliningrad", "origin": "Москва", "date_from": "2027-11-10", "date_to": "2027-11-14", "adults": 2}}
+    ]
+  }
+]

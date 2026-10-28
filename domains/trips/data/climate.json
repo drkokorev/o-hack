@@ -5935,6 +5935,522 @@
     "rain_mm": 73,
     "sea": null
    }
+  },
+  "yaroslavl": {
+   "1": {
+    "t_day": -5.1,
+    "t_night": -10.8,
+    "rain_days": 2,
+    "rain_mm": 42,
+    "sea": null
+   },
+   "2": {
+    "t_day": -3.3,
+    "t_night": -8.8,
+    "rain_days": 2,
+    "rain_mm": 30,
+    "sea": null
+   },
+   "3": {
+    "t_day": 3.0,
+    "t_night": -5.5,
+    "rain_days": 2,
+    "rain_mm": 33,
+    "sea": null
+   },
+   "4": {
+    "t_day": 11.5,
+    "t_night": 1.3,
+    "rain_days": 2,
+    "rain_mm": 48,
+    "sea": null
+   },
+   "5": {
+    "t_day": 15.7,
+    "t_night": 5.6,
+    "rain_days": 4,
+    "rain_mm": 56,
+    "sea": null
+   },
+   "6": {
+    "t_day": 21.2,
+    "t_night": 11.6,
+    "rain_days": 7,
+    "rain_mm": 92,
+    "sea": null
+   },
+   "7": {
+    "t_day": 24.5,
+    "t_night": 14.9,
+    "rain_days": 6,
+    "rain_mm": 81,
+    "sea": null
+   },
+   "8": {
+    "t_day": 23.1,
+    "t_night": 13.3,
+    "rain_days": 6,
+    "rain_mm": 64,
+    "sea": null
+   },
+   "9": {
+    "t_day": 17.5,
+    "t_night": 8.6,
+    "rain_days": 2,
+    "rain_mm": 33,
+    "sea": null
+   },
+   "10": {
+    "t_day": 8.4,
+    "t_night": 2.8,
+    "rain_days": 6,
+    "rain_mm": 69,
+    "sea": null
+   },
+   "11": {
+    "t_day": 1.6,
+    "t_night": -2.1,
+    "rain_days": 4,
+    "rain_mm": 51,
+    "sea": null
+   },
+   "12": {
+    "t_day": -2.9,
+    "t_night": -7.0,
+    "rain_days": 4,
+    "rain_mm": 66,
+    "sea": null
+   }
+  },
+  "yekaterinburg": {
+   "1": {
+    "t_day": -9.1,
+    "t_night": -15.5,
+    "rain_days": 1,
+    "rain_mm": 22,
+    "sea": null
+   },
+   "2": {
+    "t_day": -6.3,
+    "t_night": -13.2,
+    "rain_days": 0,
+    "rain_mm": 16,
+    "sea": null
+   },
+   "3": {
+    "t_day": 0.1,
+    "t_night": -8.4,
+    "rain_days": 0,
+    "rain_mm": 20,
+    "sea": null
+   },
+   "4": {
+    "t_day": 10.5,
+    "t_night": -0.1,
+    "rain_days": 3,
+    "rain_mm": 38,
+    "sea": null
+   },
+   "5": {
+    "t_day": 16.4,
+    "t_night": 5.4,
+    "rain_days": 4,
+    "rain_mm": 51,
+    "sea": null
+   },
+   "6": {
+    "t_day": 21.8,
+    "t_night": 12.0,
+    "rain_days": 6,
+    "rain_mm": 78,
+    "sea": null
+   },
+   "7": {
+    "t_day": 23.5,
+    "t_night": 14.2,
+    "rain_days": 5,
+    "rain_mm": 81,
+    "sea": null
+   },
+   "8": {
+    "t_day": 21.4,
+    "t_night": 12.0,
+    "rain_days": 4,
+    "rain_mm": 58,
+    "sea": null
+   },
+   "9": {
+    "t_day": 15.8,
+    "t_night": 7.0,
+    "rain_days": 2,
+    "rain_mm": 36,
+    "sea": null
+   },
+   "10": {
+    "t_day": 7.0,
+    "t_night": 0.6,
+    "rain_days": 1,
+    "rain_mm": 26,
+    "sea": null
+   },
+   "11": {
+    "t_day": -1.5,
+    "t_night": -6.4,
+    "rain_days": 2,
+    "rain_mm": 45,
+    "sea": null
+   },
+   "12": {
+    "t_day": -8.1,
+    "t_night": -14.3,
+    "rain_days": 2,
+    "rain_mm": 35,
+    "sea": null
+   }
+  },
+  "samara": {
+   "1": {
+    "t_day": -6.3,
+    "t_night": -13.4,
+    "rain_days": 3,
+    "rain_mm": 46,
+    "sea": null
+   },
+   "2": {
+    "t_day": -4.6,
+    "t_night": -11.1,
+    "rain_days": 2,
+    "rain_mm": 39,
+    "sea": null
+   },
+   "3": {
+    "t_day": 3.1,
+    "t_night": -5.4,
+    "rain_days": 2,
+    "rain_mm": 41,
+    "sea": null
+   },
+   "4": {
+    "t_day": 16.0,
+    "t_night": 4.6,
+    "rain_days": 2,
+    "rain_mm": 30,
+    "sea": null
+   },
+   "5": {
+    "t_day": 19.3,
+    "t_night": 8.4,
+    "rain_days": 3,
+    "rain_mm": 44,
+    "sea": null
+   },
+   "6": {
+    "t_day": 24.5,
+    "t_night": 15.1,
+    "rain_days": 3,
+    "rain_mm": 75,
+    "sea": null
+   },
+   "7": {
+    "t_day": 27.2,
+    "t_night": 17.3,
+    "rain_days": 3,
+    "rain_mm": 43,
+    "sea": null
+   },
+   "8": {
+    "t_day": 26.1,
+    "t_night": 16.2,
+    "rain_days": 2,
+    "rain_mm": 38,
+    "sea": null
+   },
+   "9": {
+    "t_day": 19.7,
+    "t_night": 10.6,
+    "rain_days": 2,
+    "rain_mm": 36,
+    "sea": null
+   },
+   "10": {
+    "t_day": 11.0,
+    "t_night": 4.3,
+    "rain_days": 4,
+    "rain_mm": 61,
+    "sea": null
+   },
+   "11": {
+    "t_day": 3.8,
+    "t_night": -0.9,
+    "rain_days": 4,
+    "rain_mm": 57,
+    "sea": null
+   },
+   "12": {
+    "t_day": -3.5,
+    "t_night": -8.4,
+    "rain_days": 3,
+    "rain_mm": 44,
+    "sea": null
+   }
+  },
+  "ufa": {
+   "1": {
+    "t_day": -8.2,
+    "t_night": -15.2,
+    "rain_days": 3,
+    "rain_mm": 46,
+    "sea": null
+   },
+   "2": {
+    "t_day": -5.7,
+    "t_night": -12.8,
+    "rain_days": 2,
+    "rain_mm": 33,
+    "sea": null
+   },
+   "3": {
+    "t_day": 1.3,
+    "t_night": -7.4,
+    "rain_days": 4,
+    "rain_mm": 43,
+    "sea": null
+   },
+   "4": {
+    "t_day": 14.8,
+    "t_night": 3.0,
+    "rain_days": 4,
+    "rain_mm": 52,
+    "sea": null
+   },
+   "5": {
+    "t_day": 18.5,
+    "t_night": 7.3,
+    "rain_days": 4,
+    "rain_mm": 47,
+    "sea": null
+   },
+   "6": {
+    "t_day": 23.1,
+    "t_night": 13.5,
+    "rain_days": 6,
+    "rain_mm": 93,
+    "sea": null
+   },
+   "7": {
+    "t_day": 25.7,
+    "t_night": 15.6,
+    "rain_days": 4,
+    "rain_mm": 80,
+    "sea": null
+   },
+   "8": {
+    "t_day": 24.0,
+    "t_night": 13.8,
+    "rain_days": 4,
+    "rain_mm": 69,
+    "sea": null
+   },
+   "9": {
+    "t_day": 18.3,
+    "t_night": 8.6,
+    "rain_days": 3,
+    "rain_mm": 42,
+    "sea": null
+   },
+   "10": {
+    "t_day": 9.6,
+    "t_night": 2.6,
+    "rain_days": 4,
+    "rain_mm": 68,
+    "sea": null
+   },
+   "11": {
+    "t_day": 1.5,
+    "t_night": -3.3,
+    "rain_days": 7,
+    "rain_mm": 76,
+    "sea": null
+   },
+   "12": {
+    "t_day": -6.4,
+    "t_night": -12.3,
+    "rain_days": 4,
+    "rain_mm": 54,
+    "sea": null
+   }
+  },
+  "perm": {
+   "1": {
+    "t_day": -8.9,
+    "t_night": -14.7,
+    "rain_days": 4,
+    "rain_mm": 53,
+    "sea": null
+   },
+   "2": {
+    "t_day": -6.1,
+    "t_night": -12.0,
+    "rain_days": 2,
+    "rain_mm": 29,
+    "sea": null
+   },
+   "3": {
+    "t_day": 0.1,
+    "t_night": -8.2,
+    "rain_days": 1,
+    "rain_mm": 31,
+    "sea": null
+   },
+   "4": {
+    "t_day": 9.7,
+    "t_night": -0.8,
+    "rain_days": 3,
+    "rain_mm": 54,
+    "sea": null
+   },
+   "5": {
+    "t_day": 15.7,
+    "t_night": 4.9,
+    "rain_days": 4,
+    "rain_mm": 59,
+    "sea": null
+   },
+   "6": {
+    "t_day": 21.1,
+    "t_night": 11.8,
+    "rain_days": 5,
+    "rain_mm": 78,
+    "sea": null
+   },
+   "7": {
+    "t_day": 23.8,
+    "t_night": 14.6,
+    "rain_days": 4,
+    "rain_mm": 56,
+    "sea": null
+   },
+   "8": {
+    "t_day": 22.1,
+    "t_night": 12.9,
+    "rain_days": 4,
+    "rain_mm": 59,
+    "sea": null
+   },
+   "9": {
+    "t_day": 16.1,
+    "t_night": 7.9,
+    "rain_days": 3,
+    "rain_mm": 49,
+    "sea": null
+   },
+   "10": {
+    "t_day": 6.9,
+    "t_night": 1.2,
+    "rain_days": 2,
+    "rain_mm": 42,
+    "sea": null
+   },
+   "11": {
+    "t_day": -0.5,
+    "t_night": -4.7,
+    "rain_days": 5,
+    "rain_mm": 68,
+    "sea": null
+   },
+   "12": {
+    "t_day": -7.4,
+    "t_night": -13.0,
+    "rain_days": 4,
+    "rain_mm": 56,
+    "sea": null
+   }
+  },
+  "tyumen": {
+   "1": {
+    "t_day": -9.5,
+    "t_night": -16.7,
+    "rain_days": 1,
+    "rain_mm": 28,
+    "sea": null
+   },
+   "2": {
+    "t_day": -7.2,
+    "t_night": -14.4,
+    "rain_days": 1,
+    "rain_mm": 18,
+    "sea": null
+   },
+   "3": {
+    "t_day": -0.9,
+    "t_night": -8.6,
+    "rain_days": 2,
+    "rain_mm": 25,
+    "sea": null
+   },
+   "4": {
+    "t_day": 10.7,
+    "t_night": -0.3,
+    "rain_days": 3,
+    "rain_mm": 35,
+    "sea": null
+   },
+   "5": {
+    "t_day": 17.3,
+    "t_night": 5.9,
+    "rain_days": 3,
+    "rain_mm": 43,
+    "sea": null
+   },
+   "6": {
+    "t_day": 22.3,
+    "t_night": 12.7,
+    "rain_days": 5,
+    "rain_mm": 73,
+    "sea": null
+   },
+   "7": {
+    "t_day": 24.3,
+    "t_night": 15.1,
+    "rain_days": 4,
+    "rain_mm": 67,
+    "sea": null
+   },
+   "8": {
+    "t_day": 21.6,
+    "t_night": 12.3,
+    "rain_days": 3,
+    "rain_mm": 50,
+    "sea": null
+   },
+   "9": {
+    "t_day": 16.2,
+    "t_night": 7.2,
+    "rain_days": 2,
+    "rain_mm": 31,
+    "sea": null
+   },
+   "10": {
+    "t_day": 7.6,
+    "t_night": 0.6,
+    "rain_days": 1,
+    "rain_mm": 22,
+    "sea": null
+   },
+   "11": {
+    "t_day": -1.7,
+    "t_night": -6.8,
+    "rain_days": 2,
+    "rain_mm": 35,
+    "sea": null
+   },
+   "12": {
+    "t_day": -8.4,
+    "t_night": -15.0,
+    "rain_days": 2,
+    "rain_mm": 36,
+    "sea": null
+   }
   }
  }
 }

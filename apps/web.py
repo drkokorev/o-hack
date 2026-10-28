@@ -13,10 +13,12 @@ import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from core.agent import Agent, Session
@@ -26,7 +28,9 @@ from core.ru import MONTHS_GEN, fmt_money, plural
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count
+from domains.trips import map_catalog
 from domains.trips.state import TripState
+from apps.voice import LocalVoice, MAX_AUDIO_BYTES
 
 log = logging.getLogger(__name__)
 STATIC = Path(__file__).parent / "static"
@@ -108,6 +112,10 @@ def understood(state: TripState) -> list[str]:
         chips.append(BY_ID[state.dest_id].name)
     elif state.destination:
         chips.append(state.destination)
+    if state.excluded_countries:
+        chips.append("исключены: " + ", ".join(state.excluded_countries))
+    if state.visa_free_requested:
+        chips.append("безвизовый въезд: не проверен")
     for t in state.trip_types or []:
         chips.append(TAG_NAMES.get(t, t))
     if state.date_from and state.date_to:
@@ -116,22 +124,43 @@ def understood(state: TripState) -> list[str]:
                      f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]} {state.date_to.year}")
     elif state.month:
         chips.append(MONTHS_NOM[state.month - 1] + (f" {state.year}" if state.year else ""))
+    if state.trip_days_min:
+        days = (str(state.trip_days_min) if state.trip_days_min == state.trip_days_max else
+                f"{state.trip_days_min}–{state.trip_days_max}")
+        chips.append(f"поездка: {days} дней")
     if state.adults:
         chips.append(f"{state.adults} {plural(state.adults, 'взрослый', 'взрослых', 'взрослых')}")
     elif state.party_size:
-        chips.append(f"{state.party_size} {plural(state.party_size, 'путешественник', 'путешественника', 'путешественников')}")
+        prefix = "возможно: " if "party_size" in (state.tentative_fields or []) else ""
+        chips.append(f"{prefix}{state.party_size} {plural(state.party_size, 'путешественник', 'путешественника', 'путешественников')}")
     if state.children:
         chips.append(f"{state.children} {plural(state.children, 'ребёнок', 'ребёнка', 'детей')}")
+    if state.children_ages:
+        chips.append("возраст детей: " + ", ".join(map(str, state.children_ages)) + " лет")
+    if state.rooms:
+        chips.append(f"номеров: {state.rooms}")
+    if state.lodging:
+        prefix = "возможно: " if "lodging" in (state.tentative_fields or []) else ""
+        chips.append(prefix + {"tent": "палатка", "hotel": "отель"}.get(state.lodging, state.lodging))
     if state.pets:
         chips.append("с питомцем")
     if state.budget_total:
         chips.append(f"бюджет {fmt_money(state.budget_total)}")
+    if state.budget_per_person:
+        chips.append(f"до {fmt_money(state.budget_per_person)} на человека")
     if state.budget_night:
         chips.append(f"до {fmt_money(state.budget_night)}/ночь")
     if state.max_travel_hours:
         chips.append(f"в пути до {state.max_travel_hours:g} ч")
+    if state.prefer_short_travel:
+        chips.append("желательно недолго в пути")
+    for label, value in (("воздух от", state.air_min_temp), ("воздух до", state.air_max_temp),
+                         ("море от", state.sea_min_temp), ("море до", state.sea_max_temp)):
+        if value is not None:
+            chips.append(f"{label} {value:g} °C")
     if state.transport:
-        chips.append({"train": "поезд", "plane": "самолёт", "none": "нет подходящего транспорта"}.get(state.transport, state.transport))
+        prefix = "возможно: " if "transport" in (state.tentative_fields or []) else ""
+        chips.append(prefix + {"train": "поезд", "plane": "самолёт", "none": "нет подходящего транспорта"}.get(state.transport, state.transport))
     if state.direct_only:
         chips.append("без пересадок")
     if state.meal:
@@ -144,6 +173,40 @@ def understood(state: TripState) -> list[str]:
     if state.abroad is not None:
         chips.append("за границу" if state.abroad else "по России")
     return chips
+
+
+def contextual_suggestions(state: TripState, step) -> list[str]:
+    """Only offer actions supported by the current result, not by stage alone."""
+    payload = step.payload if isinstance(step.payload, dict) else {}
+    if state.pending_trip_candidate:
+        return ["новая поездка", "изменить текущую"]
+    if isinstance(payload.get("suggestions"), list):
+        return payload["suggestions"]
+    kind = payload.get("kind")
+    if kind == "greeting":
+        return EXAMPLES
+    if kind == "question":
+        return ["пока не знаю"] if payload.get("field") in ("when", "duration", "origin", "people", "children") else []
+    if kind in ("ideas", "destinations"):
+        choices = ["покажи ещё"]
+        if state.abroad is None and not state.country:
+            choices.append("только по России")
+        return choices
+    if kind == "packages":
+        choices = ["подешевле", "покажи другие отели"]
+        if state.date_from:
+            choices.append("а если на два дня позже?")
+        if not state.direct_only and any(item.get(leg, {}).get("stops", 0) for item in payload.get("items", [])
+                                         for leg in ("out", "back")):
+            choices.append("только без пересадок")
+        return choices + ["другое направление"]
+    if kind in ("cart", "tent_cart"):
+        return ["да, оформляй", "нет, вернуться к вариантам"]
+    if kind == "payment":
+        return ["оплата картой", "оплата СБП", "нет"]
+    if kind in ("order", "tent_order"):
+        return ["запроси ранний заезд", "поздний выезд", "перенеси на 2 дня позже", "отмени бронь"]
+    return []
 
 
 class Images:
@@ -227,6 +290,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         agent = Agent(TripsDomain(), llm, nlg=settings.llm_nlg)
     sessions = Sessions(agent, ttl_seconds=float(os.getenv("SESSION_TTL_SECONDS") or "3600"))
     images = Images()
+    voice = LocalVoice(os.getenv("VOICE_MODEL_DIR"))
 
     @asynccontextmanager
     async def lifespan(_app):
@@ -238,6 +302,8 @@ def build_app(agent: Agent | None = None) -> FastAPI:
 
         worker = threading.Thread(target=cleanup, name="session-cleanup", daemon=True)
         worker.start()
+        if voice.model_dir:
+            threading.Thread(target=voice.load, name="local-voice-load", daemon=True).start()
         try:
             yield
         finally:
@@ -266,21 +332,108 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                 "origins": [{"name": o.name, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
                 "examples": EXAMPLES, "stages": [{"key": k, "title": t} for k, t in STAGES]}
 
+    @app.get("/api/voice")
+    def voice_info(response: Response) -> dict:
+        response.headers["Cache-Control"] = "no-store"
+        return {"backend": "gigaam" if voice.model_dir else "browser", "status": voice.status,
+                "max_seconds": 20}
+
+    @app.post("/api/voice/transcribe")
+    async def transcribe_voice(request: Request, response: Response) -> dict:
+        response.headers["Cache-Control"] = "no-store"
+        if voice.status != "ready":
+            raise HTTPException(status_code=503, detail="Локальное распознавание пока недоступно")
+        raw = bytearray()
+        async for chunk in request.stream():
+            raw.extend(chunk)
+            if len(raw) > MAX_AUDIO_BYTES:
+                raise HTTPException(status_code=413, detail="Аудио слишком длинное")
+        try:
+            transcript = await run_in_threadpool(voice.transcribe, bytes(raw))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except Exception as exc:
+            log.warning("Speech recognition failed: %s", type(exc).__name__)
+            raise HTTPException(status_code=503, detail="Распознавание не удалось") from exc
+        return {"text": transcript, "backend": "gigaam"}
+
+    @app.get("/api/map/catalog")
+    def map_info() -> dict:
+        try:
+            return map_catalog.catalogue()
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @app.get("/api/map/countries")
+    def map_countries() -> dict:
+        try:
+            return map_catalog.countries()
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @app.get("/api/map/destinations")
+    def map_destinations() -> dict:
+        try:
+            return map_catalog.destinations()
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @app.get("/api/map/points")
+    def map_points(kind: Literal["hotel", "airport", "beach", "city", "camping", "all"] = "hotel",
+                   west: float = -180, south: float = -90, east: float = 180, north: float = 90,
+                   cursor: int = Query(0, ge=0), limit: int = Query(500, ge=1, le=1000),
+                   country_code: str | None = None, destination_id: str | None = None) -> dict:
+        try:
+            return map_catalog.points(kind, west, south, east, north, cursor, limit,
+                                      country_code=country_code, destination_id=destination_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @app.get("/api/map/point/{point_id}")
+    def map_point(point_id: str) -> dict:
+        try:
+            record = map_catalog.lookup(point_id)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        if record is None:
+            raise HTTPException(status_code=404, detail="Точка отсутствует в каталоге")
+        return record
+
+    @app.get("/api/map/clusters")
+    def map_clusters(kind: Literal["hotel", "airport", "beach", "city", "camping", "all"] = "hotel",
+                     west: float = -180, south: float = -90, east: float = 180, north: float = 90,
+                     zoom: int = Query(3, ge=0, le=8), country_code: str | None = None,
+                     destination_id: str | None = None) -> dict:
+        try:
+            return map_catalog.clusters(kind, west, south, east, north, zoom,
+                                        country_code=country_code, destination_id=destination_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
     @app.post("/api/chat")
-    def chat(body: ChatIn) -> dict:
+    def chat(body: ChatIn, response: Response) -> dict:
         started = time.perf_counter()
         session_id, session = sessions.get(body.session_id)
-        step = agent.handle(session, body.text)
-        state: TripState = session.state  # type: ignore[assignment]
-        return {
-            "session_id": session_id, "reply": step.reply, "payload": images.decorate(step.payload), "stage": state.stage,
-            "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
-            "checked": session.last_notes,
-            "ms": round((time.perf_counter() - started) * 1000),
-        }
+        response.headers["Cache-Control"] = "no-store"
+        with session.lock:
+            step = agent.handle(session, body.text)
+            state: TripState = session.state  # type: ignore[assignment]
+            return {
+                "session_id": session_id, "reply": step.reply, "payload": images.decorate(step.payload), "stage": state.stage,
+                "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
+                "suggestions": contextual_suggestions(state, step),
+                # Never return rejected, untrusted model text to the client.
+                "checked": ["Неподтверждённый параметр отклонён или исправлен."] * len(session.last_notes),
+                "ms": round((time.perf_counter() - started) * 1000),
+            }
 
     @app.post("/api/reset")
-    def reset(body: ResetIn) -> dict:
+    def reset(body: ResetIn, response: Response) -> dict:
+        response.headers["Cache-Control"] = "no-store"
         sessions.drop(body.session_id)
         return {"ok": True}
 

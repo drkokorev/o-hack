@@ -1,0 +1,11 @@
+{
+  "scenario": "summer_mood_model",
+  "status": "PASS",
+  "nlu": "llm+rules",
+  "season": null,
+  "month": null,
+  "nights": null,
+  "lodging": "tent",
+  "adults": null,
+  "reply": "Когда примерно хотите поехать? Можно назвать месяц или время года. Если пока не знаете — так и скажите, предложу идеи без дат и цен."
+}

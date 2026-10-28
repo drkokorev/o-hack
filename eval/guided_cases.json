@@ -4,7 +4,7 @@
   {"id": "child_total", "turns": ["На неделю в Сочи из Москвы в декабре, с ребёнком на двоих, до 150 тысяч"], "state": {"dest_id": "sochi", "adults": 1, "children": 1, "budget_total": 150000}, "payload": "packages"},
   {"id": "unsupported_transport", "turns": ["В Казань в ноябре без самолёта и без поезда"], "state": {"transport": "none"}, "payload": "question"},
   {"id": "exclude_flight", "turns": ["В Казань из Москвы в декабре на неделю двое взрослых, не хочу лететь"], "state": {"dest_id": "kazan", "transport": "train"}, "payload": "packages", "all_legs": "train"},
-  {"id": "short_flight", "turns": ["Тёплое море из Москвы в ноябре на неделю, двое взрослых с ребёнком, без долгих перелётов"], "state": {"children": 1, "max_travel_hours": 5.0}, "types_include": ["sea", "warm"], "payload": "destinations"},
+  {"id": "short_flight", "turns": ["Тёплое море из Москвы в ноябре на неделю, двое взрослых с ребёнком, без долгих перелётов"], "state": {"children": 1, "prefer_short_travel": true}, "types_include": ["sea", "warm"], "payload": "destinations"},
   {"id": "update_budget_nights", "turns": ["Казань из Москвы с 10 по 15 ноября 2027 двое взрослых, поездом, бюджет 100 тысяч", "Теперь на три ночи и до 70 тысяч"], "state": {"dest_id": "kazan", "transport": "train", "budget_total": 70000, "nights": 3, "date_from": "2027-11-10", "date_to": "2027-11-13"}, "payload": "packages"},
   {"id": "replace_destination", "turns": ["Сочи из Москвы на неделю в декабре двое взрослых", "Нет, лучше Казань"], "state": {"dest_id": "kazan"}, "payload": "packages"},
   {"id": "numeric_year", "turns": ["Из Москвы в Казань с 05.11.2028 по 12.11.2028 двое взрослых"], "state": {"dest_id": "kazan", "date_from": "2028-11-05", "date_to": "2028-11-12"}, "payload": "packages"},

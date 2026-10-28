@@ -1,0 +1,2 @@
+# Optional local speech recognition; the normal text-only Docker image does not need these.
+onnx-asr[cpu,hub]==0.12.0

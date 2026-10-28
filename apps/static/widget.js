@@ -1,4 +1,9 @@
   const log = document.getElementById("log"), input = document.getElementById("text"), form = document.getElementById("form");
+  const sendButton = form.querySelector('button[type="submit"]');
+  const voice = window.attachVoiceInput({ input, button: sendButton, status: document.getElementById("voice-status"), form });
+  window.addEventListener("message", (event) => {
+    if (event.source === window.parent && event.data?.type === "odin-widget-hidden") voice.cancel();
+  });
   let session = null, busy = false;
   function element(tag, className, text) {
     const node = document.createElement(tag); if (className) node.className = className;
@@ -36,7 +41,7 @@
   }
   async function send(text) {
     text = String(text || "").trim(); if (!text || busy) return;
-    busy = true; form.querySelector("button").disabled = true; input.value = ""; message(text, true);
+    busy = true; sendButton.disabled = true; input.value = ""; message(text, true);
     try {
       const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, session_id: session }) });
@@ -48,6 +53,6 @@
       }
       message(reply); render(data.payload);
     } catch (_) { message("Не удалось связаться с помощником. Попробуйте ещё раз."); }
-    finally { busy = false; form.querySelector("button").disabled = false; input.focus(); }
+    finally { busy = false; sendButton.disabled = false; input.focus(); }
   }
   form.addEventListener("submit", (event) => { event.preventDefault(); send(input.value); });

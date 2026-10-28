@@ -11,9 +11,11 @@
 <header>О<span>!</span>дин запрос <small> · помощник по поездкам</small></header>
 <main id="log" aria-live="polite"><div class="message">Привет! Расскажите, куда или как хотите отдохнуть. Если пока не знаете — подскажу.</div></main>
 <form id="form">
-  <p class="privacy">Не вводите личные и платёжные данные. При подключении облачной модели текст отправляется её поставщику.</p>
-  <div class="entry"><input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение помощнику"><button class="send" aria-label="Отправить">↑</button></div>
+  <p class="privacy">Не вводите личные и платёжные данные. Текст может отправляться поставщику модели; голос обрабатывается выбранным способом распознавания.</p>
+  <p class="voice-status" id="voice-status" role="status" aria-live="polite"></p>
+  <div class="entry"><input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение помощнику"><button type="submit" id="send" class="send" aria-label="Отправить сообщение; для голосового ввода удерживайте кнопку" title="Нажмите, чтобы отправить; удерживайте для голосового ввода">↑</button></div>
 </form>
+<script src="/static/voice-input.js"></script>
 <script src="/static/widget.js"></script>
 </body>
 </html>

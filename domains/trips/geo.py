@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -96,8 +97,16 @@ ORIGIN_BY_NAME = {o.name: o for o in ORIGINS}
 TAG_NAMES = {
     "sea": "море", "beach": "пляж", "warm": "тепло", "mountains": "горы", "ski": "горные лыжи",
     "city": "город", "culture": "культура и история", "nature": "природа", "food": "гастрономия",
-    "spa": "оздоровление", "exotic": "экзотика",
+    "spa": "оздоровление", "exotic": "экзотика", "surf": "сёрфинг",
 }
+
+
+def destination_has_tag(destination: Destination, tag: str) -> bool:
+    if tag == "surf":
+        # Existing demo descriptions mention surfing for a few places; they
+        # do not prove current schools, waves, safety or season availability.
+        return any(re.search(r"(?<![а-яё])с[её]рф", item, re.IGNORECASE) for item in destination.highlights)
+    return tag in destination.tags
 
 
 def distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

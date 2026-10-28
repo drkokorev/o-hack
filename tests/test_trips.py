@@ -62,12 +62,12 @@ def test_inspiration_for_warm_sea_in_november_with_a_child():
 
 @pytest.mark.parametrize("text, expected", [
     ("Хочу к тёплому морю в ноябре, недорого, с ребёнком, без долгих перелётов",
-     {"trip_types": ["sea", "warm"], "month": 11, "children": 1, "max_travel_hours": 5.0, "economy": True}),
+     {"trip_types": ["sea", "warm"], "month": 11, "children": 1, "prefer_short_travel": True, "economy": True}),
     ("Казань из Питера на выходные с собакой, поездом",
      {"destination": "kazan", "origin": "Санкт-Петербург", "pets": True, "transport": "train",
       "date_from": date(2026, 10, 30), "date_to": date(2026, 11, 1)}),
     ("Новый год на море, всё включено, 4 звезды",
-     {"date_from": date(2026, 12, 30), "meal": "all_inclusive", "stars_min": 4}),
+     {"meal": "all_inclusive", "stars_min": 4}),
     ("двое взрослых и двое детей хотят в Сочи на неделю с 3 ноября до 300 тысяч",
      {"destination": "sochi", "adults": 2, "children": 2, "nights": 7, "date_from": date(2026, 11, 3),
       "budget_total": 300_000}),

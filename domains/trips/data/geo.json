@@ -3670,6 +3670,204 @@
         "аргентин"
       ],
       "via": "Стамбул"
+    },
+    {
+      "id": "yaroslavl",
+      "name": "Ярославль",
+      "country": "Россия",
+      "iata": "IAR",
+      "lat": 57.62987,
+      "lon": 39.87368,
+      "tags": [
+        "city",
+        "culture"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "городские прогулки",
+        "культура и история"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.0,
+          "beach_km": null,
+          "airport_km": 18.6
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "ярославль"
+      ],
+      "via": null
+    },
+    {
+      "id": "yekaterinburg",
+      "name": "Екатеринбург",
+      "country": "Россия",
+      "iata": "SVX",
+      "lat": 56.8519,
+      "lon": 60.6122,
+      "tags": [
+        "city",
+        "culture"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "городские прогулки",
+        "культура и история"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.0,
+          "beach_km": null,
+          "airport_km": 16.8
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "екатеринбург"
+      ],
+      "via": null
+    },
+    {
+      "id": "samara",
+      "name": "Самара",
+      "country": "Россия",
+      "iata": "KUF",
+      "lat": 53.20007,
+      "lon": 50.15,
+      "tags": [
+        "city",
+        "culture"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "городские прогулки",
+        "культура и история"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.0,
+          "beach_km": null,
+          "airport_km": 33.9
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "самара"
+      ],
+      "via": null
+    },
+    {
+      "id": "ufa",
+      "name": "Уфа",
+      "country": "Россия",
+      "iata": "UFA",
+      "lat": 54.74306,
+      "lon": 55.96779,
+      "tags": [
+        "city",
+        "culture"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "городские прогулки",
+        "культура и история"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.0,
+          "beach_km": null,
+          "airport_km": 21.5
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "уфа"
+      ],
+      "via": null
+    },
+    {
+      "id": "perm",
+      "name": "Пермь",
+      "country": "Россия",
+      "iata": "PEE",
+      "lat": 58.01046,
+      "lon": 56.25017,
+      "tags": [
+        "city",
+        "culture"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "городские прогулки",
+        "культура и история"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.0,
+          "beach_km": null,
+          "airport_km": 17.2
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "пермь"
+      ],
+      "via": null
+    },
+    {
+      "id": "tyumen",
+      "name": "Тюмень",
+      "country": "Россия",
+      "iata": "TJM",
+      "lat": 57.15222,
+      "lon": 65.52722,
+      "tags": [
+        "city",
+        "culture"
+      ],
+      "base_price": 7000,
+      "highlights": [
+        "городские прогулки",
+        "культура и история"
+      ],
+      "areas": [
+        {
+          "name": "Центр",
+          "center_km": 0.0,
+          "beach_km": null,
+          "airport_km": 12.4
+        }
+      ],
+      "visa": "не нужна",
+      "rail": true,
+      "sea": null,
+      "peak_months": [],
+      "aliases": [
+        "тюмень"
+      ],
+      "via": null
     }
   ]
 }

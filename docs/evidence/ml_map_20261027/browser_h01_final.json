@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "browser": "Playwright headless, local Chrome",
+  "service": "separate Docker Compose project odin-ml-final on 127.0.0.1:18082",
+  "model": "disabled; rules only",
+  "turns": 4,
+  "inputs": "eval/browser_h01_20261028.js",
+  "checked": ["each reply appeared in the chat", "only Russia in ideas", "departure city requested for travel time", "seven-night correction retained"]
+}

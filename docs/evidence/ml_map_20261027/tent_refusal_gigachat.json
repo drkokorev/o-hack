@@ -1,0 +1,8 @@
+{
+  "mode": "GigaChat-2-Max plus rules; local HTTP server",
+  "synthetic_inputs": ["Хочу горы, возможно палатка", "передумал, без палатки"],
+  "nlu": ["llm+rules", "llm+rules"],
+  "result": "PASS",
+  "checks": ["the tent was removed from understood preferences", "mountains remained", "the reply offered unpriced ideas"],
+  "note": "The separate rules-only HTTP test also continues to an explicit accommodation question."
+}
