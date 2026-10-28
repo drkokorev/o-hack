@@ -26,7 +26,7 @@ from .inspire import Suggestion, suggest
 from .offers import AMENITIES, MEALS, hotel_price, hotels_for, transport_options
 from .planner import Package, Trip, _leg_ok, cheapest_start, hm, leg_text, make_packages, month_window, timeline
 from .arbiter import arbitrate
-from .rules import find_destination, rule_extract, time_expression_not_place
+from .rules import find_destination, match_origin, rule_extract, time_expression_not_place
 from .state import PARAM_FIELDS, TripState, TripUpdate
 from .tent import tent_order, tent_step
 from .temperature import TEMP_FIELDS, matches_history
@@ -334,7 +334,7 @@ class TripsDomain:
             if (state.country != "Россия") != data["abroad"]:
                 data["country"] = None
         if "origin" in data and data["origin"] is not None:
-            origin = next((o for o in ORIGIN_BY_NAME if norm(o)[:5] == norm(data["origin"])[:5]), None)
+            origin = data["origin"] if data["origin"] in ORIGIN_BY_NAME else match_origin(data["origin"])
             if origin:
                 data["origin"] = origin
             else:
@@ -527,7 +527,8 @@ class TripsDomain:
 
         if state.unavailable_origin:
             return Step(f"В прототипе пока нет отправления из {state.unavailable_origin}. "
-                        f"Укажите доступный город: {', '.join(ORIGIN_BY_NAME)}.", payload={"kind": "question"})
+                        f"Есть {len(ORIGIN_BY_NAME)} городов России от 50 тыс. жителей — назовите ваш или ближайший крупный.",
+                        payload={"kind": "question"})
         if state.country_conflict and state.dest_id:
             dest = BY_ID[state.dest_id]
             return Step(f"{dest.name} находится в стране {dest.country}, а вы указали {state.country_conflict}. "

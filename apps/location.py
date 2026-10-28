@@ -72,6 +72,7 @@ def city_hint(city: str | None) -> dict:
                "kazan": "Казань", "yekaterinburg": "Екатеринбург", "ekaterinburg": "Екатеринбург",
                "novosibirsk": "Новосибирск", "nizhny novgorod": "Нижний Новгород", "samara": "Самара"}
     supported = {origin.name.casefold(): origin.name for origin in ORIGINS}
+    supported.update({origin.en.casefold(): origin.name for origin in ORIGINS if origin.en})
     origin = supported.get(city.casefold()) or aliases.get(city.casefold())
     result.update(city_name=origin or city, origin=origin,
                   source={"name": "IPinfo", "url": "https://ipinfo.io/"})

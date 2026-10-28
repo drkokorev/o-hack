@@ -23,9 +23,9 @@ def test_local_public_ip_lookup_is_only_used_when_explicitly_enabled(monkeypatch
 
 
 def test_unknown_city_is_not_silently_replaced_by_a_supported_origin(monkeypatch):
-    monkeypatch.setattr(location, "_fetch_city", lambda _address: {"city": "Томск"})
+    monkeypatch.setattr(location, "_fetch_city", lambda _address: {"city": "Урюпинск"})
     result = location.visitor_city("8.8.8.8")
-    assert result["city_name"] == "Томск" and result["origin"] is None
+    assert result["city_name"] == "Урюпинск" and result["origin"] is None
 
 
 def test_city_is_a_visible_assumption_and_explicit_correction_wins(monkeypatch):
@@ -48,8 +48,8 @@ def test_unknown_explicit_origin_clears_the_ip_guess(monkeypatch):
                         {"city_name": "Москва", "origin": "Москва"})
     agent = Agent(TripsDomain(), None)
     with TestClient(web.build_app(agent)) as client:
-        answer = client.post("/api/chat", json={"text": "хочу из Томска в Париж"}).json()
-    assert "томск" in answer["reply"].lower()
+        answer = client.post("/api/chat", json={"text": "хочу из Урюпинска в Париж"}).json()
+    assert "урюпинск" in answer["reply"].lower()
     assert not any("из: Москва" in chip for chip in answer["understood"])
 
 

@@ -72,9 +72,13 @@ _TRAVEL_COMMANDS = frozenset({"перенеси", "перенесите", "по�
 
 @lru_cache(maxsize=1)
 def _morph():
+    import inspect
+
     import pymorphy2_dicts_ru
     from pymorphy2 import MorphAnalyzer
 
+    if not hasattr(inspect, "getargspec"):  # pymorphy2 0.9 на Python 3.11+: функцию убрали из стандартной библиотеки
+        inspect.getargspec = lambda func: inspect.getfullargspec(func)[:4]
     return MorphAnalyzer(pymorphy2_dicts_ru.get_path())  # путь явно: поиск словаря требует pkg_resources
 
 

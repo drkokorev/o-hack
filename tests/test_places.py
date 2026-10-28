@@ -41,9 +41,9 @@ def test_country_clarification_resumes_search():
 def test_lowercase_unknown_origin_is_not_silently_replaced_with_moscow():
     agent = new_agent()
     session = agent.new_session()
-    step = agent.handle(session, "из краснодара в сочи на неделю в ноябре")
+    step = agent.handle(session, "из урюпинска в сочи на неделю в ноябре")
     assert step.payload["kind"] == "question"
-    assert "краснодар" in step.reply.lower()
+    assert "урюпинск" in step.reply.lower()
     step = agent.handle(session, "из Москвы двое взрослых")
     assert step.payload["kind"] == "packages"
     assert session.state.origin == "Москва"
@@ -96,3 +96,18 @@ def test_changing_country_does_not_keep_a_city_from_the_old_country():
     answer = agent.handle(session, "лучше в Турцию")
     assert session.state.dest_id is None and session.state.country == "Турция"
     assert answer.payload["kind"] == "ideas" and all(item["country"] == "Турция" for item in answer.payload["items"])
+
+
+def test_any_russian_city_from_50k_is_an_origin_in_any_case():
+    from domains.trips.rules import match_origin
+
+    cases = {"пензы": "Пенза", "нижнего тагила": "Нижний Тагил", "нижнего новгорода": "Нижний Новгород",
+             "ростова-на-дону": "Ростов-на-Дону", "великих лук": "Великие Луки", "улан-удэ": "Улан-Удэ",
+             "набережных челнов": "Набережные Челны", "твери": "Тверь", "краснодара": "Краснодар"}
+    assert {text: match_origin(text) for text in cases} == cases
+    agent = new_agent()
+    session = agent.new_session()
+    agent.handle(session, "Хочу в Сочи 10–15 ноября двое взрослых")
+    step = agent.handle(session, "пенза")
+    assert session.state.origin == "Пенза" and step.payload["kind"] == "packages"
+    assert "из Пензы" in step.reply

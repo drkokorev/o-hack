@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from datetime import date, timedelta
 
 from .geo import BY_ID, DESTINATIONS, ORIGINS
@@ -189,21 +190,39 @@ def _excluded_countries(t: str) -> set[str]:
     return found
 
 
+_ORIGIN_ALIASES = {"питер": "Санкт-Петербург", "спб": "Санкт-Петербург", "мск": "Москва", "екб": "Екатеринбург",
+                   "нижн": "Нижний Новгород", "новосиб": "Новосибирск", "челяб": "Челябинск", "орла": "Орёл",
+                   "ростова": "Ростов-на-Дону", "ростов": "Ростов-на-Дону", "краснодара": "Краснодар"}
+
+
+def _stem(word: str) -> str:
+    return word[:-2] if len(word) >= 6 else word[:-1] if len(word) >= 4 else word
+
+
+@lru_cache(maxsize=1)
+def _origin_stems() -> tuple[tuple[str, tuple[str, ...]], ...]:
+    return tuple((o.name, tuple(_stem(w) for w in re.split(r"[ \-]", norm(o.name)) if w)) for o in ORIGINS)
+
+
+def match_origin(fragment: str) -> str | None:
+    """Город отправления в начале фрагмента в любом падеже: «пензы», «нижнего тагила», «ростова-на-дону».
+    Из нескольких совпадений — самое длинное («Нижний Тагил», а не «Нижний Новгород» по слову «нижний»)."""
+    words = [w for w in re.split(r"[ \-]", norm(fragment).strip(" .,!?")) if w]
+    best, best_len = None, 0
+    for name, stems in _origin_stems():
+        if len(stems) <= len(words) and all(w.startswith(st) for w, st in zip(words, stems)):
+            size = sum(map(len, stems))
+            if size > best_len:
+                best, best_len = name, size
+    if best:
+        return best
+    head = " ".join(words)
+    return next((v for k, v in _ORIGIN_ALIASES.items() if head.startswith(k)), None)
+
+
 def _find_origin(t: str) -> str | None:
     m = re.search(r"(?:\bиз|вылет\w* из|выезжа\w* из|еду из|едем из|летим из|лечу из|живу в|нахожусь в)\s+([а-яё\- ]{3,30})", t)
-    if not m:
-        return None
-    tail = m.group(1)
-    for o in ORIGINS:
-        stem = norm(o.name)[:-1] if len(o.name) > 5 else norm(o.name)
-        if tail.startswith(stem) or tail.startswith(norm(o.name)[:5]):
-            return o.name
-    aliases = {"питер": "Санкт-Петербург", "спб": "Санкт-Петербург", "мск": "Москва", "екб": "Екатеринбург",
-               "нижн": "Нижний Новгород", "новосиб": "Новосибирск"}
-    for k, v in aliases.items():
-        if tail.startswith(k):
-            return v
-    return None
+    return match_origin(m.group(1)) if m else None
 
 
 def find_destination(t: str) -> str | None:
