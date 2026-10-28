@@ -129,6 +129,9 @@ form.composer { flex:none; padding:14px 18px 14px; border-top:0; background:var(
 .trip-map .map-list summary { color:var(--muted); min-height:44px; display:flex; align-items:center; font-size:12px; font-weight:400; }
 .trip-map .map-list summary::before { content:"⌕"; font-size:20px; margin-right:8px; }
 .trip-map .map-footer { display:flex; justify-content:flex-start; padding:10px 0 0; }
+.trip-map .globe-hint { color:var(--ink); }
+.trip-map .globe-hint small { color:var(--muted); }
+.trip-map .map-detailed .globe-hint { background:var(--surface); }
 .map-destination-picker { display:grid; gap:8px; margin:8px 0 16px; color:var(--muted); }
 .map-destination-picker select { width:100%; min-height:44px; padding:8px 12px; background:var(--surface); border:1px solid var(--line); border-radius:12px; color:var(--ink); }
 .trip-map .map-kind,.trip-map .map-frame .map-scope { font-size:12px; min-height:40px; background:var(--surface); }
