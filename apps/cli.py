@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 import sys
 
 from core.agent import Agent
@@ -18,9 +19,12 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO if args.debug else logging.WARNING)
 
     settings = get_settings()
-    if not settings.llm_enabled:
-        print("⚠️  LLM_API_KEY не задан в .env — агент не сможет разобрать запрос", file=sys.stderr)
-    llm = build_llm(settings)
+    mode = (os.getenv("ODIN_MODE") or "models").lower()
+    if mode not in {"models", "rules"}:
+        raise SystemExit("ODIN_MODE должен быть models или rules")
+    if mode == "models" and not settings.llm_enabled:
+        raise SystemExit("Не задан доступ к языковой модели. Укажите GIGACHAT_AUTH_KEY или ODIN_SECRET_ENV_FILE.")
+    llm = build_llm(settings) if mode == "models" else None
     agent = Agent(build_domain(args.domain), llm, nlg=settings.llm_nlg)
     session = agent.new_session()
     print(f"Модель: {settings.llm_model if llm else 'нет (правила)'}. Команды: /state, /reset, /quit")

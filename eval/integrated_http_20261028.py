@@ -7,7 +7,9 @@ from urllib.request import Request, urlopen
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', default='http://127.0.0.1:8080')
-    base = parser.parse_args().url.rstrip('/')
+    parser.add_argument('--voice', choices=('gigaam', 'browser'), default='gigaam')
+    args = parser.parse_args()
+    base = args.url.rstrip('/')
 
     def get(path):
         with urlopen(base + path, timeout=20) as response:
@@ -31,7 +33,7 @@ def main():
         'catalog_counts': catalog['counts'] == {'airport': 48101, 'beach': 7866, 'camping': 8, 'city': 161662, 'hotel': 65924},
         'catalog_destinations_and_clusters': len(destinations['items']) == 75 and sum(x['count'] for x in clusters['items']) == 283561,
         'visitor_country_no_cache_or_ip': country_headers.get('Cache-Control') == 'no-store' and 'ip' not in country,
-        'voice_default': voice == {'backend': 'browser', 'status': 'off', 'max_seconds': 20},
+        'voice_backend': voice == {'backend': args.voice, 'status': 'ready' if args.voice == 'gigaam' else 'off', 'max_seconds': 20},
         'chat_no_cache': headers.get('Cache-Control') == 'no-store',
         'duration_and_changed_destination': second['trip_summary']['destination'] == 'Казань' and
             changed['trip_summary']['destination'] == 'Дубай' and 'поездка: 7 дней' in changed['understood'],

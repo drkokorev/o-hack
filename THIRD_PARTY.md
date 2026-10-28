@@ -9,6 +9,8 @@
 | fastapi | 0.142.4 | MIT | Веб-приложение и API |
 | uvicorn | 0.54.0 | BSD-3-Clause | Сервер |
 | maxminddb | 3.2.0 | Apache-2.0 | Чтение локального снимка DB-IP без передачи IP стороннему сервису |
+| onnx-asr | 0.12.0 | MIT | Локальное распознавание речи GigaAM |
+| ONNX Runtime | 1.31.1 | MIT | Выполнение локальной модели голоса на CPU |
 | MapLibre GL JS | 6.16.0 | BSD-3-Clause | Глобус и слои карты, локальная копия; лицензия `apps/static/vendor/maplibre/LICENSE.txt` |
 | Three.js | 0.186.1 | MIT | Локальный рендер стилизованных 3D-моделей; два модуля уменьшены esbuild 0.25.12 без изменения публичного API; лицензия `apps/static/vendor/three/LICENSE.txt` |
 | Pillow | 13.0.0 | MIT-CMU | Ужатие фото при сборке (`tools/build_images.py`, только для разработки) |

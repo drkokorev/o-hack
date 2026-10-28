@@ -2,13 +2,39 @@ services:
   app:
     build: .
     platform: linux/amd64
-    image: o-odin-zapros:latest
-    env_file:
-      - path: .env
-        required: false
+    image: odin-zapros-model:local
     environment:
       APP_HOST: 0.0.0.0
       APP_PORT: "8080"
+      ODIN_MODE: "${ODIN_MODE:-models}"
+      LLM_PROVIDER: "${LLM_PROVIDER:-gigachat}"
+      LLM_MODEL: "${LLM_MODEL:-GigaChat-2-Max}"
+      LLM_TIMEOUT: "${LLM_TIMEOUT:-30}"
+      LLM_BASE_URL: "${LLM_BASE_URL:-}"
+      LLM_JSON_MODE: "${LLM_JSON_MODE:-}"
+      LLM_SCHEMA_MODE: "${LLM_SCHEMA_MODE:-}"
+      LLM_REASONING_EFFORT: "${LLM_REASONING_EFFORT:-}"
+      LLM_NLG: "${LLM_NLG:-}"
+      GIGACHAT_SCOPE: "${GIGACHAT_SCOPE:-}"
+      GIGACHAT_OAUTH_URL: "${GIGACHAT_OAUTH_URL:-}"
+      GIGACHAT_VERIFY_SSL: "${GIGACHAT_VERIFY_SSL:-}"
+      SESSION_TTL_SECONDS: "${SESSION_TTL_SECONDS:-}"
+      ODIN_SECRET_ENV_FILE: /run/odin-private/settings.env
+      VOICE_MODEL_DIR: /opt/odin/voice-model
+      HF_HUB_OFFLINE: "1"
+    volumes:
+      - type: bind
+        source: ${ODIN_SECRET_ENV_FILE:-.env}
+        target: /run/odin-private/settings.env
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${ODIN_VOICE_MODEL_DIR:-../models/gigaam-v3-int8}
+        target: /opt/odin/voice-model
+        read_only: true
+        bind:
+          create_host_path: false
     ports:
       - "${APP_BIND_HOST:-127.0.0.1}:${APP_PORT:-8080}:8080"
     healthcheck:
