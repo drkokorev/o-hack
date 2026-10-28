@@ -231,6 +231,8 @@ class TripsDomain:
         if update.unknown_place and "destination" not in data:
             data["destination"] = update.unknown_place
         changes: dict = {"group_conflict": group_conflict}
+        if update.destination is not None or update.unknown_place is not None:
+            changes["map_place"] = None
         if update.place_country:
             changes["place_country"] = update.place_country
         elif update.destination is not None or update.unknown_place is not None:
@@ -308,7 +310,7 @@ class TripsDomain:
                 if new.dest_id:
                     new.suggested = [d for d in new.suggested if d != new.dest_id]
                     new.rejected = sorted(set(new.rejected) | {new.dest_id})
-                new.dest_id = new.destination = new.package = new.hotel_id = None
+                new.dest_id = new.destination = new.package = new.hotel_id = new.map_place = None
                 new.stage = "destination" if new.stage in ("plan", "cart") else new.stage
             elif field in PARAM_FIELDS:
                 setattr(new, field, None)
@@ -464,7 +466,7 @@ class TripsDomain:
         if act.get("back") and (state.dest_id or state.stage in ("plan", "cart")):
             if state.dest_id:
                 state.rejected = sorted(set(state.rejected) | {state.dest_id})
-            state.dest_id = state.destination = state.package = state.hotel_id = None
+            state.dest_id = state.destination = state.package = state.hotel_id = state.map_place = None
             if state.dates_assumed:
                 state.date_from = state.date_to = None
             if state.last_view and state.last_view.get("kind") in ("destinations", "ideas"):
@@ -475,8 +477,14 @@ class TripsDomain:
             unknown = state.destination
             state.stage, state.showing = "destination", None
             if act.get("more"):
-                state.destination = None
+                state.destination = state.map_place = None
                 return self._prefix(ideas(state), notes)
+            if state.map_place and state.map_place.get("name") == unknown:
+                place = state.map_place
+                return self._prefix(Step(f"Вы выбрали {place['name']}, {place['country']}. "
+                                         "Предложений по этому месту в демо-каталоге пока нет; "
+                                         "цены и наличие не проверены.",
+                                         payload={"kind": "place_info", "place": place}), notes)
             places = find_world_places(unknown)
             if state.country_conflict and places:
                 actual = ", ".join(dict.fromkeys(place.country for place in places))

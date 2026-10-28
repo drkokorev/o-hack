@@ -158,6 +158,43 @@ def test_map_country_selection_is_preserved_by_code(client):
     assert client.post("/api/chat", json={"text": "Выбираю", "map_country_code": "ZZ"}).status_code == 422
 
 
+def test_map_country_does_not_replace_an_unresolved_destination(client):
+    first = client.post("/api/chat", json={"text": "Хочу в Мехико"}).json()
+    assert first["trip_summary"]["destination"] == "Мехико"
+    result = client.post("/api/chat", json={"session_id": first["session_id"], "text": "Выбираю страну",
+                                             "map_country_code": "RU"}).json()
+    assert not result["map_selection"]["accepted"] and result["trip_summary"]["destination"] == "Мехико"
+
+
+def test_map_city_in_catalog_matches_exact_geonames_identity(client):
+    point = client.get("/api/map/point/geonames:2988507").json()
+    result = client.post("/api/chat", json={"text": "Выбираю город", "map_city_id": point["id"]}).json()
+    assert result["map_selection"]["accepted"] is True
+    assert result["trip_summary"]["destination"] == "Париж"
+
+
+def test_map_city_outside_catalog_keeps_exact_point(client):
+    point = client.get("/api/map/point/geonames:3514674").json()
+    result = client.post("/api/chat", json={"text": "Выбираю город", "map_city_id": point["id"]}).json()
+    assert result["map_selection"]["accepted"] is True
+    assert result["trip_summary"]["destination"] == point["name"]
+    assert result["payload"]["kind"] == "place_info"
+    selected = result["payload"]["place"]
+    assert selected["id"] == point["id"] and selected["lat"] == point["lat"] and selected["lon"] == point["lon"]
+    assert "предложений" in result["reply"].lower() and "не проверены" in result["reply"]
+    followup = client.post("/api/chat", json={"session_id": result["session_id"], "text": "а что там есть?"}).json()
+    assert followup["payload"]["place"]["id"] == point["id"]
+
+
+def test_map_city_rejects_non_city_and_does_not_replace_active_trip(client):
+    hotel = client.get("/api/map/points", params={"kind": "hotel", "limit": 1}).json()["items"][0]
+    assert client.post("/api/chat", json={"text": "Выбираю", "map_city_id": hotel["id"]}).status_code == 422
+    first = client.post("/api/chat", json={"text": "Хочу в Сочи"}).json()
+    result = client.post("/api/chat", json={"session_id": first["session_id"], "text": "Выбираю город",
+                                             "map_city_id": "geonames:2988507"}).json()
+    assert not result["map_selection"]["accepted"] and result["trip_summary"]["destination"] == "Сочи"
+
+
 def test_selected_hotel_address_comes_from_source_or_is_explicitly_unknown():
     today = date(2026, 10, 27)
     agent = Agent(TripsDomain(today=lambda: today), None, today=lambda: today)

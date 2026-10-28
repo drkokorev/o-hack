@@ -48,10 +48,29 @@ async (page) => {
   const hotel = await (await hotelResponse).json();
   if (!hotel.map_selection?.accepted || hotel.map_selection.id !== point.id) throw Error('Hotel identity was not preserved');
 
+  await page.goto(base + '/');
+  await page.locator('.maplibregl-canvas').waitFor({timeout:30000});
+  const city = await page.evaluate(() => fetch('/api/map/point/geonames:3514674').then(r=>r.json()));
+  await page.evaluate(point => tripMap.showPoint(point), city);
+  await page.locator('.map-pop').getByRole('button',{name:'Хочу сюда'}).waitFor({timeout:30000});
+  const cityResponse = page.waitForResponse(r => r.url().endsWith('/api/chat') && r.request().method() === 'POST');
+  await page.locator('.map-pop').getByRole('button',{name:'Хочу сюда'}).click();
+  const cityResult = await (await cityResponse).json();
+  if (!cityResult.map_selection?.accepted || cityResult.payload?.place?.id !== city.id ||
+      cityResult.payload.place.lat !== city.lat || cityResult.payload.place.lon !== city.lon)
+    throw Error('City selection lost its geographic identity');
+
   await page.setViewportSize({width:375,height:812});
   await page.goto(base + '/');
   await page.locator('.maplibregl-canvas').waitFor({timeout:30000});
   if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw Error('Mobile layout overflows');
+  await page.getByText('Расскажите, что важно в поездке.',{exact:false}).waitFor({timeout:30000});
+  const mobileOverlap = await page.evaluate(() => {
+    const composer=document.querySelector('.composer').getBoundingClientRect();
+    return composer.top < document.querySelector('.map-surface').getBoundingClientRect().bottom ||
+      composer.top < document.querySelector('.msg.bot').getBoundingClientRect().bottom;
+  });
+  if (mobileOverlap) throw Error('Chat input covers the globe or the greeting');
   if (errors.length) throw Error('JavaScript errors: ' + errors.join('; '));
-  return {paris:'pass', mexico:'pass', exactHotel:'pass', filters:'pass', mobile:'pass', errors};
+  return {paris:'pass', mexico:'pass', exactHotel:'pass', exactCity:'pass', filters:'pass', mobile:'pass', errors};
 }

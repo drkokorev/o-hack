@@ -25,9 +25,11 @@ const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button"
 const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
   if (place.kind === "hotel") return send(`Хочу остановиться в «${place.name}»`, {map_point_id:place.id});
   if (place.kind === "country") return send(`Хочу поехать: ${place.name}`, {map_country_code:place.code});
+  if (place.kind === "city") return send(`Хочу поехать: ${place.name}${place.country_name ? `, ${place.country_name}` : ""}`,
+    {map_city_id:place.id});
   if (place.event) return send(`Хочу поехать на ${place.event} в ${place.name}`);
   if (place.landmark) return send(`Хочу посетить ${place.landmark}, ${place.name}`);
-  return send(`Хочу поехать: ${place.name}`);
+  return send(`Хочу поехать в ${place.name}${place.country_name ? `, ${place.country_name}` : ""}`);
 },
   isFavorite: (point) => Boolean(preferenceData.saved[`point:${point.id}`]), onFavorite: (point) => {
     const key = `point:${point.id}`;

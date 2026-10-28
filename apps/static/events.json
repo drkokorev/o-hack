@@ -996,7 +996,7 @@
       "category": "Еда",
       "source": "I amsterdam",
       "url": "https://www.iamsterdam.com/en/whats-on/festivals-and-events",
-      "icon": "festive",
+      "icon": "food",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1047,7 +1047,7 @@
       "category": "Еда",
       "source": "I amsterdam",
       "url": "https://www.iamsterdam.com/en/whats-on/festivals-and-events",
-      "icon": "festive",
+      "icon": "food",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1234,7 +1234,7 @@
       "category": "Животные",
       "source": "VisitBritain",
       "url": "https://www.visitbritain.com/en/annual-events-britain",
-      "icon": "nature",
+      "icon": "paw",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1370,7 +1370,7 @@
       "category": "Природа",
       "source": "VisitBritain",
       "url": "https://www.visitbritain.com/en/annual-events-britain",
-      "icon": "nature",
+      "icon": "flower",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1387,7 +1387,7 @@
       "category": "Литература",
       "source": "VisitBritain",
       "url": "https://www.visitbritain.com/en/annual-events-britain",
-      "icon": "culture",
+      "icon": "book",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1489,7 +1489,7 @@
       "category": "Парусный спорт",
       "source": "VisitBritain",
       "url": "https://www.visitbritain.com/en/annual-events-britain",
-      "icon": "sport",
+      "icon": "sailing",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1523,7 +1523,7 @@
       "category": "Литература",
       "source": "Tourism New Zealand",
       "url": "https://www.newzealand.com/nz/feature/new-zealands-top-arts-and-culture-events/",
-      "icon": "culture",
+      "icon": "book",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1557,7 +1557,7 @@
       "category": "Велоспорт",
       "source": "South Australian Tourism Commission",
       "url": "https://southaustralia.com/whats-on",
-      "icon": "sport",
+      "icon": "bicycle",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1625,7 +1625,7 @@
       "category": "Сёрфинг",
       "source": "Visit Noosa",
       "url": "https://www.visitnoosa.com.au/noosa-events-calendar",
-      "icon": "sport",
+      "icon": "surfing",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },
@@ -1642,7 +1642,7 @@
       "category": "Еда",
       "source": "Visit Noosa",
       "url": "https://www.visitnoosa.com.au/noosa-events-calendar",
-      "icon": "festive",
+      "icon": "food",
       "location_note": "Метка показывает город, а не вход на площадку.",
       "location_source": "https://www.geonames.org/"
     },

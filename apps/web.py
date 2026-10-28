@@ -31,6 +31,7 @@ from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
 from domains.trips import map_catalog
 from domains.trips.state import TripState
+from domains.trips.world_places import find_world_places
 from apps.voice import LocalVoice, MAX_AUDIO_BYTES
 
 log = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ class ChatIn(BaseModel):
     session_id: str | None = None
     map_point_id: str | None = Field(default=None, max_length=200)
     map_country_code: str | None = Field(default=None, min_length=2, max_length=2)
+    map_city_id: str | None = Field(default=None, max_length=200)
 
 
 class ResetIn(BaseModel):
@@ -446,7 +448,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         response.headers["Cache-Control"] = "no-store"
         with session.lock:
             selected = None
-            if body.map_point_id and body.map_country_code:
+            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id)) > 1:
                 raise HTTPException(status_code=422, detail="Выберите один объект карты")
             if body.map_point_id:
                 point = map_catalog.lookup(body.map_point_id)
@@ -480,6 +482,48 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                         step.reply = f"Выбран отель «{point['name']}». Наличие и цена не проверены.\n\n" + step.reply
                     else:
                         step.reply = "Не удалось закрепить отель. Уточните направление и выберите его ещё раз.\n\n" + step.reply
+            elif body.map_city_id:
+                point = map_catalog.lookup(body.map_city_id)
+                if not point or point["kind"] != "city" or not point["source_id"]:
+                    raise HTTPException(status_code=422, detail="Город не найден")
+                # Match a demo destination only when its geographic alias is
+                # the same GeoNames record, not merely a similar name.
+                matches = [dest for dest in DESTINATIONS
+                           if map_catalog._destination_country(dest) == point["country_code"]
+                           and any(str(place.id) == point["source_id"] for place in find_world_places(dest.name))]
+                dest = matches[0] if len(matches) == 1 else None
+                state = session.state
+                selected = {"id": body.map_city_id, "name": point["name"], "accepted": False}
+                if (state.order or state.pending_trip_candidate or
+                    (state.dest_id and (dest is None or state.dest_id != dest.id)) or
+                    (state.destination and not state.dest_id and state.destination != point["name"]) or
+                    (state.country and state.country != point["country_name"])):
+                    step = Step("У вас уже есть другая поездка или открытый заказ. Начните новую поездку, "
+                                "затем выберите этот город на карте.")
+                elif dest:
+                    step = agent.handle(session, f"Хочу в {dest.name}")
+                    selected["accepted"] = session.state.dest_id == dest.id
+                    if selected["accepted"]:
+                        step.reply = f"Выбран город: {point['name']}, {point['country_name']}.\n\n" + step.reply
+                    else:
+                        step.reply = "Не удалось выбрать город. Попробуйте ещё раз.\n\n" + step.reply
+                else:
+                    def choose_city(merged: BaseModel) -> None:
+                        if not merged.act.get("ask_trip_choice"):
+                            merged.dest_id = merged.hotel_id = merged.package = None
+                            merged.destination = point["name"]
+                            merged.country = point["country_name"]
+                            merged.place_country = point["country_name"]
+                            merged.map_place = {"id": point["id"], "name": point["name"],
+                                                "country": point["country_name"], "lat": point["lat"], "lon": point["lon"]}
+                            merged.params_changed = True
+                            selected["accepted"] = True
+                    step = agent.handle(session, "Хочу поехать", after_merge=choose_city)
+                    selected["accepted"] = selected["accepted"] and session.state.map_place is not None
+                    if selected["accepted"] and (not isinstance(step.payload, dict) or step.payload.get("kind") != "place_info"):
+                        step.reply = f"Выбран город: {point['name']}, {point['country_name']}.\n\n" + step.reply
+                    elif not selected["accepted"]:
+                        step.reply = "Не удалось выбрать город. Попробуйте ещё раз.\n\n" + step.reply
             elif body.map_country_code:
                 code = body.map_country_code.upper()
                 country = map_catalog._countries().get(code)
@@ -487,7 +531,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                     raise HTTPException(status_code=422, detail="Страна не найдена")
                 state = session.state
                 selected = {"code": code, "name": country, "accepted": False}
-                if (state.order or state.pending_trip_candidate or
+                if (state.order or state.pending_trip_candidate or (state.destination and not state.dest_id) or
                     (state.dest_id and BY_ID[state.dest_id].country != country)):
                     step = Step("У вас уже есть другая поездка или открытый заказ. Начните новую поездку, "
                                 "затем выберите эту страну на карте.")

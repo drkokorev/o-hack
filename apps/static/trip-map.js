@@ -3,7 +3,11 @@
   "use strict";
   const scriptUrl = document.currentScript && document.currentScript.src;
   const staticRoot = scriptUrl ? new URL(".", scriptUrl) : new URL("/static/", location.href);
-  const asset = (path) => new URL(path, staticRoot).href;
+  const asset = (path) => {
+    const url = new URL(path, staticRoot);
+    if (!path.startsWith("vendor/")) url.searchParams.set("v", "globe-20261028-3");
+    return url.href;
+  };
   const ORIGIN = staticRoot.origin;
   const fmt = new Intl.NumberFormat("ru-RU");
   const KINDS = { all: "Всё на глобусе", attraction: "Достопримечательности", event: "События", city: "Города", hotel: "Размещение",
@@ -41,7 +45,7 @@
     document.head.append(link);
   }
   async function json(url, signal) {
-    const response = await fetch(url, { signal });
+    const response = await fetch(url, { signal, cache: "no-cache" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
@@ -218,7 +222,9 @@
       try {
         const point = await json(api(`/api/map/point/${encodeURIComponent(id)}`));
         if (request !== detailSequence || !map) return;
-        makePopup(lon, lat, pointContent(point));
+        // The click may be on the edge of a rendered circle; anchor the card
+        // to the sourced point rather than the cursor's nearby coordinates.
+        makePopup(point.lon, point.lat, pointContent(point));
       } catch (_) { showStatus("Не удалось открыть место. Попробуйте ещё раз.", true); }
     }
     function showOverlapping(features, lngLat) {
@@ -266,9 +272,10 @@
       return node("div", { class: "map-pop" },
         node("div", { class: "map-pop-kind" }, place.heritage ? place.category : "Идея для поездки"), node("strong", {}, place.name),
         node("p", {}, place.city || place.country), node("p", { class: "map-note" }, place.heritage ?
-          "Координата объекта из списка ЮНЕСКО; вход может находиться в другом месте." :
+          "Условный значок. Координата объекта из списка ЮНЕСКО; вход может находиться в другом месте." :
           "Стилизованная модель у достопримечательности; масштаб увеличен."),
-        node("div", { class: "map-pop-links" }, safeLink(place.url, place.heritage ? "ЮНЕСКО ↗" : "Официальный сайт ↗")),
+        node("div", { class: "map-pop-links" }, safeLink(place.url, place.heritage ? "ЮНЕСКО ↗" : "Официальный сайт ↗"),
+          place.heritage ? safeLink("https://creativecommons.org/licenses/by-sa/4.0/", "CC BY-SA 4.0 ↗") : null),
         node("p", {class:"map-question"}, "Хотите посетить это место?"),
         node("button", { type: "button", class: "map-choose", "data-sound":"select", onclick: () => {
           closePopup(); onChoose({ kind:place.heritage ? "heritage" : "landmark", name:place.city || place.country,

@@ -70,3 +70,6 @@ def test_mexico_grand_prix_is_at_the_circuit_and_dated():
     assert mexico["start"] == "2026-10-30" and mexico["end"] == "2026-11-01"
     assert abs(mexico["lat"] - 19.404167) < .00001 and abs(mexico["lon"] + 99.088611) < .00001
     assert mexico["icon"] == "race" and valid_source(mexico["location_source"])
+    icons = {event["id"]: event["icon"] for event in events}
+    assert icons["tour-down-under"] == "bicycle" and icons["cowes-week"] == "sailing"
+    assert icons["chelsea-flower"] == "flower" and icons["hay-festival"] == "book"

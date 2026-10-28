@@ -2,7 +2,7 @@
    projected by MapLibre, so objects turn with the globe rather than facing
    the screen like billboards. Sizes are deliberately enlarged for discovery. */
 import * as THREE from './vendor/three/three.module.js';
-import {createLandmarkModels} from './landmarks-3d.mjs';
+import {createLandmarkModels} from './landmarks-3d.mjs?v=globe-20261028-3';
 
 function makeEventModels() {
   const material = (color) => new THREE.MeshStandardMaterial({color});
@@ -48,13 +48,57 @@ function makeEventModels() {
   box(film,2,.95,.3,0,1,0,dark); box(film,2,.3,.35,0,1.75,0,pale);
   const festive = new THREE.Group();
   box(festive,1.7,1.5,1.4,0,.75,0,red); box(festive,.2,1.6,1.5,0,.8,0,gold); box(festive,1.8,.2,.2,0,1.55,0,gold);
+  const segment = (group, from, to, radius, mat) => {
+    const start = new THREE.Vector3(...from), end = new THREE.Vector3(...to), delta=end.clone().sub(start);
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),8),mat);
+    rod.position.copy(start).add(end).multiplyScalar(.5);
+    rod.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize()); group.add(rod);
+  };
+  const bicycle = new THREE.Group();
+  for (const x of [-1.15,1.15]) {
+    const tyre = new THREE.Mesh(new THREE.TorusGeometry(.66,.1,8,20),dark);
+    tyre.position.set(x,.76,0); bicycle.add(tyre);
+  }
+  for (const [a,b] of [[[-1.15,.76,0],[0,1.55,0]],[[0,1.55,0],[.15,.76,0]],
+    [[.15,.76,0],[-1.15,.76,0]],[[0,1.55,0],[.8,1.55,0]],[[.8,1.55,0],[1.15,.76,0]],
+    [[.15,.76,0],[.8,1.55,0]]]) segment(bicycle,a,b,.065,red);
+  box(bicycle,.5,.12,.23,-.1,1.72,0,dark); box(bicycle,.35,.1,.25,.85,1.72,0,dark);
+  const sailing = new THREE.Group();
+  box(sailing,3,.35,.95,0,.27,0,blue); segment(sailing,[0,.42,0],[0,3.2,0],.08,dark);
+  const sailShape=new THREE.Shape(); sailShape.moveTo(.08,.6); sailShape.lineTo(.08,2.95); sailShape.lineTo(1.3,.6); sailShape.closePath();
+  const sail=new THREE.Mesh(new THREE.ShapeGeometry(sailShape),pale); sailing.add(sail);
+  const surfing = new THREE.Group();
+  const board=new THREE.Mesh(new THREE.CapsuleGeometry(.34,2.6,4,10),gold);
+  board.rotation.z=Math.PI/2; board.position.y=.42; board.scale.z=.45; surfing.add(board);
+  const wave=new THREE.Mesh(new THREE.TorusGeometry(1,.16,8,16,Math.PI),blue);
+  wave.rotation.x=Math.PI/2; wave.position.y=.17; surfing.add(wave);
+  const flower = new THREE.Group();
+  segment(flower,[0,.2,0],[0,2.1,0],.12,jade);
+  for (let i=0;i<6;i++) {
+    const angle=i*Math.PI/3, petal=new THREE.Mesh(new THREE.SphereGeometry(.35,10,7),red);
+    petal.position.set(Math.cos(angle)*.52,2.2+Math.sin(angle)*.52,0); flower.add(petal);
+  }
+  const flowerCenter=new THREE.Mesh(new THREE.SphereGeometry(.32,10,7),gold); flowerCenter.position.y=2.2; flower.add(flowerCenter);
+  const book = new THREE.Group();
+  box(book,1.1,1.55,.22,-.57,1,0,blue); box(book,1.1,1.55,.22,.57,1,0,red);
+  box(book,.1,1.62,.28,0,1,.05,gold);
+  const food = new THREE.Group();
+  const plate=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.05,.16,20),pale); plate.position.y=.25; food.add(plate);
+  const meal=new THREE.Mesh(new THREE.SphereGeometry(.62,12,8),red); meal.scale.y=.5; meal.position.y=.58; food.add(meal);
+  segment(food,[1.35,.15,0],[1.35,2.1,0],.09,dark); box(food,.45,.1,.15,1.35,2.05,0,dark);
+  const paw = new THREE.Group();
+  const pad=new THREE.Mesh(new THREE.SphereGeometry(.7,12,8),gold); pad.scale.set(1,.7,.4); pad.position.y=1; paw.add(pad);
+  for (const [x,y] of [[-.85,1.8],[-.3,2.15],[.3,2.15],[.85,1.8]]) {
+    const toe=new THREE.Mesh(new THREE.SphereGeometry(.3,10,6),gold); toe.position.set(x,y,0); paw.add(toe);
+  }
   const heritage_culture = new THREE.Group();
   box(heritage_culture,2.8,.35,1.6,0,.2,0,pale);
   for (const x of [-1,0,1]) box(heritage_culture,.25,1.65,.25,x,1.15,0,blue);
   box(heritage_culture,2.9,.25,.7,0,2.05,0,gold);
   const heritage_nature = new THREE.Group();
   const mountain=new THREE.Mesh(new THREE.ConeGeometry(1.7,2.6,5),jade); mountain.position.y=1.3; heritage_nature.add(mountain);
-  return {race,music,art,nature,sport,culture,tech,film,festive,heritage_culture,heritage_nature};
+  return {race,music,art,nature,sport,culture,tech,film,festive,bicycle,sailing,surfing,flower,book,food,paw,
+    heritage_culture,heritage_nature};
 }
 
 function geometryData(group) {
