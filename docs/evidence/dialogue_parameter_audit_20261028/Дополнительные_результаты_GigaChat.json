@@ -1,0 +1,477 @@
+{
+  "commit": "3945202472c3a8c13e5f26f73b0114ddc829ef99",
+  "model": "GigaChat-2-Max",
+  "today": "2026-10-28",
+  "complete": true,
+  "planned": 15,
+  "summary": {
+    "PASS": 10,
+    "FAIL": 5,
+    "INCONCLUSIVE": 0
+  },
+  "results": [
+    {
+      "id": "A01",
+      "group": "Страна и уточнения",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "Хочу поехать в Турцию",
+          "reply": "Когда примерно хотите поехать? Можно назвать месяц или время года. Если пока не знаете — так и скажите, предложу идеи без дат и цен.",
+          "kind": "question",
+          "field": null,
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 2016,
+          "chips": [],
+          "state": {
+            "country": "Турция"
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A02",
+      "group": "Страна и уточнения",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "Ищу путешествие в Италию",
+          "reply": "Когда примерно хотите поехать? Можно назвать месяц или время года. Если пока не знаете — так и скажите, предложу идеи без дат и цен.",
+          "kind": "question",
+          "field": null,
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 407,
+          "chips": [],
+          "state": {
+            "country": "Италия"
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A03",
+      "group": "Страна и уточнения",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "Собираюсь в Париж",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 661,
+          "chips": [
+            "Париж"
+          ],
+          "state": {
+            "destination": "Париж"
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A04",
+      "group": "Даты и длительность",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "В Сочи на 4–6 дней",
+          "reply": "Вы планируете от 4 до 6 дней. Какого числа хотите начать поездку? Можно указать дату или диапазон дат.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 663,
+          "chips": [
+            "Сочи",
+            "поездка: 4–6 дней"
+          ],
+          "state": {
+            "destination": "Сочи",
+            "trip_days_min": 4,
+            "trip_days_max": 6
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A05",
+      "group": "Предпочтения и погода",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "В Сочи воздух не выше 28 градусов",
+          "reply": "Порог температуры сохранён. Для подбора сравню его с историческими средними, не с прогнозом.\n\nКогда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 478,
+          "chips": [
+            "Сочи",
+            "воздух до 28 °C"
+          ],
+          "state": {
+            "destination": "Сочи",
+            "air_max_temp": 28.0
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A06",
+      "group": "Бюджет",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "В Сочи всего 120 тысяч рублей, отель до 7 тысяч рублей за ночь",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 931,
+          "chips": [
+            "Сочи",
+            "бюджет 120 000 ₽",
+            "до 7 000 ₽/ночь"
+          ],
+          "state": {
+            "destination": "Сочи",
+            "budget_total": 120000,
+            "budget_night": 7000
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A07",
+      "group": "Предпочтения и погода",
+      "status": "FAIL",
+      "differences": [
+        {
+          "check": "tentative_fields",
+          "expected_contains": [
+            "transport"
+          ],
+          "actual": []
+        }
+      ],
+      "turns": [
+        {
+          "text": "В Сочи возможно полетим самолётом",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 459,
+          "chips": [
+            "Сочи",
+            "самолёт"
+          ],
+          "state": {
+            "destination": "Сочи",
+            "transport": "plane"
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A08",
+      "group": "Путешественники и номера",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "В Сочи с ребёнком пяти месяцев",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 1278,
+          "chips": [
+            "Сочи",
+            "1 ребёнок"
+          ],
+          "state": {
+            "destination": "Сочи",
+            "children": 1,
+            "children_unknown": false
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A09",
+      "group": "Транспорт и багаж",
+      "status": "FAIL",
+      "differences": [
+        {
+          "check": "transport",
+          "expected": "none",
+          "actual": "bus"
+        }
+      ],
+      "turns": [
+        {
+          "text": "В Казань хочу на автобусе",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 968,
+          "chips": [
+            "Казань",
+            "bus",
+            "парковка"
+          ],
+          "state": {
+            "destination": "Казань",
+            "transport": "bus",
+            "hotel_wishes": [
+              "parking"
+            ]
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A10",
+      "group": "Реальные отели",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "В Сочи",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 449,
+          "chips": [
+            "Сочи"
+          ],
+          "state": {
+            "destination": "Сочи"
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        },
+        {
+          "text": "Найди отель Campanile Taverny",
+          "reply": "В сохранённом каталоге не нашёл подходящих записей для этого направления. Можно уточнить название или показать все доступные отели без цен.",
+          "kind": null,
+          "field": null,
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 885,
+          "chips": [
+            "Сочи"
+          ],
+          "state": {
+            "destination": "Сочи"
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A11",
+      "group": "Жильё и условия",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "В Сочи недорогой отель, два отдельных номера",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 1248,
+          "chips": [
+            "Сочи",
+            "номеров: 2",
+            "отель",
+            "недорого"
+          ],
+          "state": {
+            "destination": "Сочи",
+            "rooms": 2,
+            "lodging": "hotel",
+            "economy": true
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A12",
+      "group": "Страна и уточнения",
+      "status": "FAIL",
+      "differences": [
+        {
+          "check": "excluded_countries",
+          "expected_contains": [
+            "Египет"
+          ],
+          "actual": []
+        }
+      ],
+      "turns": [
+        {
+          "text": "Хочу безвизовую поездку в начале марта 2027, кроме Египта",
+          "reply": "Учёл поездку в марте 2027; точные даты ещё не указаны.\n\nВот несколько идей. Это направления для вдохновения: даты, стоимость и время в пути пока не рассчитывал.\nБезвизовый въезд зависит от гражданства и других условий; актуальные требования я не проверял и по визам эти идеи не фильтровал.\n1. Акаба, Иордания — Красное море, Петра\n2. Алматы, Казахстан — Медеу и Шымбулак, Большое Алматинское озеро\n3. Анталья, Турция — всё включено, античные города\nКакое направление интересно? Можно назвать город или попросить ещё варианты.",
+          "kind": "ideas",
+          "field": null,
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 1276,
+          "chips": [
+            "безвизовый въезд: не проверен",
+            "март 2027"
+          ],
+          "state": {
+            "visa_free_requested": true,
+            "month": 3,
+            "year": 2027,
+            "month_part": "early"
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A13",
+      "group": "Транспорт и багаж",
+      "status": "FAIL",
+      "differences": [
+        {
+          "check": "prefer_short_travel",
+          "expected": true,
+          "actual": null
+        }
+      ],
+      "turns": [
+        {
+          "text": "Я боюсь летать, хотелось бы недолго добираться до Сочи",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 804,
+          "chips": [
+            "Сочи"
+          ],
+          "state": {
+            "destination": "Сочи",
+            "flight_concern": true
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A14",
+      "group": "Путешественники и номера",
+      "status": "PASS",
+      "differences": [],
+      "turns": [
+        {
+          "text": "В Казань с детьми, сколько их будет, пока неизвестно",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 1025,
+          "chips": [
+            "Казань"
+          ],
+          "state": {
+            "destination": "Казань",
+            "children_unknown": true
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    },
+    {
+      "id": "A15",
+      "group": "Предпочтения и погода",
+      "status": "FAIL",
+      "differences": [
+        {
+          "check": "sea_min_temp",
+          "expected": 23,
+          "actual": null
+        },
+        {
+          "check": "sea_max_temp",
+          "expected": 27,
+          "actual": null
+        }
+      ],
+      "turns": [
+        {
+          "text": "В Анталию, температура моря от 23 до 27 градусов",
+          "reply": "Когда хотите поехать? Можно назвать месяц или примерные даты.",
+          "kind": "question",
+          "field": "when",
+          "nlu": "llm+rules",
+          "provider_failures_added": 0,
+          "ms": 901,
+          "chips": [
+            "Анталья",
+            "море"
+          ],
+          "state": {
+            "destination": "Анталья",
+            "trip_types": [
+              "sea"
+            ]
+          },
+          "selected_real_hotel": null,
+          "listed_hotel_ids": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1492 @@
+{
+  "today": "2026-10-28",
+  "cases": [
+    {
+      "id": "G01",
+      "group": "Направление и отправление",
+      "turns": [
+        "Хочу съездить в Екатеринбург"
+      ],
+      "eq": {
+        "dest_id": "yekaterinburg"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "G02",
+      "group": "Направление и отправление",
+      "turns": [
+        "Хочу путешествие в Lisbon"
+      ],
+      "eq": {
+        "dest_id": "lisbon"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "G03",
+      "group": "Направление и отправление",
+      "turns": [
+        "В Сочи из Санкт-Петербурга"
+      ],
+      "eq": {
+        "dest_id": "sochi",
+        "origin": "Санкт-Петербург"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "G04",
+      "group": "Направление и отправление",
+      "turns": [
+        "Поеду из Казани в Ярославль"
+      ],
+      "eq": {
+        "dest_id": "yaroslavl",
+        "origin": "Казань"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "G05",
+      "group": "Направление и отправление",
+      "turns": [
+        "Хочу в Амстердам"
+      ],
+      "eq": {
+        "dest_id": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [
+        "Амстердам",
+        "амстердам"
+      ],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "G06",
+      "group": "Направление и отправление",
+      "turns": [
+        "Из Томска в Сочи"
+      ],
+      "eq": {
+        "dest_id": "sochi",
+        "origin": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [
+        "Томск",
+        "томск"
+      ],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D01",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Сочи с 27 ноября по 2 декабря 2026"
+      ],
+      "eq": {
+        "date_from": "2026-11-27",
+        "date_to": "2026-12-02",
+        "nights": 5
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D02",
+      "group": "Даты и длительность",
+      "turns": [
+        "Казань 05.12.2026–10.12.2026"
+      ],
+      "eq": {
+        "date_from": "2026-12-05",
+        "date_to": "2026-12-10",
+        "nights": 5
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D03",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Париж с 30 декабря 2026 по 5 января 2027"
+      ],
+      "eq": {
+        "date_from": "2026-12-30",
+        "date_to": "2027-01-05",
+        "nights": 6
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D04",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Сочи послезавтра"
+      ],
+      "eq": {
+        "date_from": "2026-10-30"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D05",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Казань через две недели"
+      ],
+      "eq": {
+        "date_from": "2026-11-11"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D06",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Сочи в конце января 2027 года"
+      ],
+      "eq": {
+        "month": 1,
+        "year": 2027,
+        "month_part": "late",
+        "date_from": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D07",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Казань весной 2027 года"
+      ],
+      "eq": {
+        "season": "spring",
+        "year": 2027,
+        "date_from": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D08",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Париж на пять ночей"
+      ],
+      "eq": {
+        "nights": 5
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D09",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Сочи на 4 дня"
+      ],
+      "eq": {
+        "trip_days_min": 4,
+        "trip_days_max": 4
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D10",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Сочи с 14 по 10 ноября 2027"
+      ],
+      "eq": {},
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [
+        "дат",
+        "раньше",
+        "период"
+      ],
+      "kind": "question",
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D11",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Сочи с 10 по 14 ноября 2025"
+      ],
+      "eq": {},
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [
+        "дат",
+        "прошл",
+        "период"
+      ],
+      "kind": "question",
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "D12",
+      "group": "Даты и длительность",
+      "turns": [
+        "В Париж в ноябре 2028 на неделю"
+      ],
+      "eq": {
+        "month": 11,
+        "year": 2028,
+        "nights": 7,
+        "date_from": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "P01",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Сочи двое взрослых и двое детей 7 и 11 лет"
+      ],
+      "eq": {
+        "adults": 2,
+        "children": 2
+      },
+      "one_of": {},
+      "includes": {
+        "children_ages": [
+          7,
+          11
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "P02",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Сочи едем втроём"
+      ],
+      "eq": {
+        "party_size": 3,
+        "adults": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "P03",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Казань один взрослый без детей"
+      ],
+      "eq": {
+        "adults": 1,
+        "children": 0
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "P04",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Сочи с ребёнком шести лет и собакой"
+      ],
+      "eq": {
+        "children": 1,
+        "pets": true
+      },
+      "one_of": {},
+      "includes": {
+        "children_ages": [
+          6
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "P05",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Сочи едем я, жена и ребёнок"
+      ],
+      "eq": {
+        "party_size": 3,
+        "children": 1
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "P06",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Париж двое взрослых, ребёнок и два отдельных номера"
+      ],
+      "eq": {
+        "adults": 2,
+        "children": 1,
+        "rooms": 2
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "P07",
+      "group": "Путешественники и номера",
+      "turns": [
+        "В Сочи поедем с детьми, число пока неизвестно"
+      ],
+      "eq": {
+        "children_unknown": true,
+        "children": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "B01",
+      "group": "Бюджет",
+      "turns": [
+        "В Казань бюджет 85 тысяч рублей на всех"
+      ],
+      "eq": {
+        "budget_total": 85000,
+        "budget_per_person": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "B02",
+      "group": "Бюджет",
+      "turns": [
+        "В Сочи до 45 тысяч рублей на человека"
+      ],
+      "eq": {
+        "budget_per_person": 45000,
+        "budget_total": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "B03",
+      "group": "Бюджет",
+      "turns": [
+        "В Париж гостиница до 7500 рублей за ночь"
+      ],
+      "eq": {
+        "budget_night": 7500,
+        "budget_total": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "B04",
+      "group": "Бюджет",
+      "turns": [
+        "В Сочи бюджет от 120 до 150 тысяч рублей"
+      ],
+      "eq": {
+        "budget_total": 150000
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "B05",
+      "group": "Бюджет",
+      "turns": [
+        "В Сочи бюджет около 150к на всю поездку"
+      ],
+      "eq": {
+        "budget_total": 150000
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "B06",
+      "group": "Бюджет",
+      "turns": [
+        "В Париж бюджет до 100 долларов"
+      ],
+      "eq": {
+        "budget_total": null,
+        "budget_per_person": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "B07",
+      "group": "Бюджет",
+      "turns": [
+        "В Париж максимум 1,5 миллиона рублей на всю поездку"
+      ],
+      "eq": {
+        "budget_total": 1500000
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "B08",
+      "group": "Бюджет",
+      "turns": [
+        "В Казань хочется подешевле, точной суммы нет"
+      ],
+      "eq": {
+        "economy": true,
+        "budget_total": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "T01",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "Из Москвы в Казань поедем поездом"
+      ],
+      "eq": {
+        "transport": "train"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "T02",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "Из Казани в Сочи без самолёта"
+      ],
+      "eq": {
+        "transport": "train"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "T03",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "В Сочи на машине, не самолётом и не поездом"
+      ],
+      "eq": {
+        "transport": "none"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "T04",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "В Париж самолётом без пересадок и с багажом"
+      ],
+      "eq": {
+        "transport": "plane",
+        "direct_only": true,
+        "baggage": true
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "T05",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "В Сочи на самолёте, только ручная кладь, без сдаваемого багажа"
+      ],
+      "eq": {
+        "transport": "plane",
+        "baggage": false
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "T06",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "В Сочи, полёт не дольше 6 часов"
+      ],
+      "eq": {
+        "max_travel_hours": 6
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "T07",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "Хочу в Сочи, боюсь летать, но запрета на самолёт нет"
+      ],
+      "eq": {
+        "flight_concern": true,
+        "transport": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "T08",
+      "group": "Транспорт и багаж",
+      "turns": [
+        "Хочу в Сочи, желательно недолго ехать"
+      ],
+      "eq": {
+        "prefer_short_travel": true,
+        "max_travel_hours": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H01",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Сочи отель от четырёх звёзд с завтраком"
+      ],
+      "eq": {
+        "lodging": "hotel",
+        "stars_min": 4,
+        "meal": "breakfast"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H02",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Анталию пять звёзд и всё включено"
+      ],
+      "eq": {
+        "stars_min": 5,
+        "meal": "all_inclusive"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H03",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Сочи гостиница с бассейном и вайфаем, спа не нужно"
+      ],
+      "eq": {},
+      "one_of": {},
+      "includes": {
+        "hotel_wishes": [
+          "pool",
+          "wifi"
+        ]
+      },
+      "excludes": {
+        "hotel_wishes": [
+          "spa"
+        ]
+      },
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H04",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Сочи гостиница с бесплатной отменой"
+      ],
+      "eq": {
+        "free_cancellation": true
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H05",
+      "group": "Жильё и условия",
+      "turns": [
+        "На Алтай со своей палаткой, отель не нужен"
+      ],
+      "eq": {
+        "lodging": "tent"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H06",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Казань отель с кухней и парковкой"
+      ],
+      "eq": {},
+      "one_of": {},
+      "includes": {
+        "hotel_wishes": [
+          "kitchen",
+          "parking"
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H07",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Анталию отель на первой линии у моря"
+      ],
+      "eq": {},
+      "one_of": {},
+      "includes": {
+        "hotel_wishes": [
+          "beach_line"
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H08",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Сочи гостиница с детским клубом и тренажёрным залом"
+      ],
+      "eq": {},
+      "one_of": {},
+      "includes": {
+        "hotel_wishes": [
+          "kids_club",
+          "gym"
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H09",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Сочи с котом"
+      ],
+      "eq": {
+        "pets": true
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "H10",
+      "group": "Жильё и условия",
+      "turns": [
+        "В Париж нужен полупансион"
+      ],
+      "eq": {
+        "meal": "half_board"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W01",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "Летом хочу в горы и на природу, море не интересует"
+      ],
+      "eq": {
+        "season": "summer"
+      },
+      "one_of": {},
+      "includes": {
+        "trip_types": [
+          "mountains",
+          "nature"
+        ]
+      },
+      "excludes": {
+        "trip_types": [
+          "sea",
+          "beach"
+        ]
+      },
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W02",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "Хочу путешествие только по России"
+      ],
+      "eq": {
+        "abroad": false
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W03",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "Хочу за границу, но Турцию исключаем"
+      ],
+      "eq": {
+        "abroad": true
+      },
+      "one_of": {},
+      "includes": {
+        "excluded_countries": [
+          "Турция"
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W04",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "Хочу за границу без визы"
+      ],
+      "eq": {
+        "visa_free_requested": true,
+        "abroad": true
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W05",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "Хочу в Сочи, воздух от 24 до 30 градусов, море от 22 градусов"
+      ],
+      "eq": {
+        "air_min_temp": 24,
+        "air_max_temp": 30,
+        "sea_min_temp": 22
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W06",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "На Байкал в феврале, температура воздуха не ниже минус 5 градусов"
+      ],
+      "eq": {
+        "air_min_temp": -5
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W07",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "Хочу культурный отдых и музеи в феврале"
+      ],
+      "eq": {
+        "month": 2
+      },
+      "one_of": {},
+      "includes": {
+        "trip_types": [
+          "culture"
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W08",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "Возможно поедем втроём в Сочи"
+      ],
+      "eq": {
+        "party_size": 3
+      },
+      "one_of": {},
+      "includes": {
+        "tentative_fields": [
+          "party_size"
+        ]
+      },
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "W09",
+      "group": "Предпочтения и погода",
+      "turns": [
+        "В Сочи вода не теплее 27 градусов"
+      ],
+      "eq": {
+        "sea_max_temp": 27
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C01",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "Из Москвы в Сочи с 5 по 12 декабря 2026 на двоих",
+        "Нет, вылет из Казани"
+      ],
+      "eq": {
+        "origin": "Казань",
+        "dest_id": "sochi",
+        "date_from": "2026-12-05",
+        "date_to": "2026-12-12",
+        "party_size": 2
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C02",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи бюджет 150 тысяч рублей",
+        "Бюджет уменьшаем до 90 тысяч рублей"
+      ],
+      "eq": {
+        "budget_total": 90000,
+        "dest_id": "sochi"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C03",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Казань поездом",
+        "Передумал, полетим самолётом"
+      ],
+      "eq": {
+        "transport": "plane",
+        "dest_id": "kazan"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C04",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи с 5 по 12 декабря 2026",
+        "На два дня позже"
+      ],
+      "eq": {
+        "date_from": "2026-12-07",
+        "date_to": "2026-12-14",
+        "nights": 7
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C05",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи отель с бассейном и завтраком",
+        "Бассейн не нужен, завтрак оставьте"
+      ],
+      "eq": {
+        "meal": "breakfast"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {
+        "hotel_wishes": [
+          "pool"
+        ]
+      },
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C06",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи на двоих",
+        "Передумал, лучше в Казань"
+      ],
+      "eq": {
+        "dest_id": "kazan",
+        "party_size": 2
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C07",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи двое взрослых",
+        "Нет, нас трое взрослых"
+      ],
+      "eq": {
+        "adults": 3
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C08",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи с 5 по 12 декабря 2026",
+        "Поменяй даты на 10–15 декабря 2026"
+      ],
+      "eq": {
+        "date_from": "2026-12-10",
+        "date_to": "2026-12-15",
+        "nights": 5
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C09",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Париж без пересадок",
+        "Можно с пересадкой"
+      ],
+      "eq": {
+        "direct_only": false
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C10",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи с бесплатной отменой",
+        "Отмена больше не важна"
+      ],
+      "eq": {},
+      "one_of": {
+        "free_cancellation": [
+          null,
+          false
+        ]
+      },
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C11",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи воздух от 25 градусов",
+        "Температура больше не важна"
+      ],
+      "eq": {
+        "air_min_temp": null,
+        "dest_id": "sochi"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "C12",
+      "group": "Изменения в диалоге",
+      "turns": [
+        "В Сочи на самолёте с багажом",
+        "Багаж больше не нужен"
+      ],
+      "eq": {
+        "baggage": false,
+        "transport": "plane"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    },
+    {
+      "id": "R01",
+      "group": "Реальные отели",
+      "turns": [
+        "В Париж",
+        "Покажи реальные отели без цен",
+        "1"
+      ],
+      "eq": {},
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": "real_hotel_selected",
+      "field": null,
+      "exact_list_choice": [
+        1,
+        1
+      ],
+      "note": "Выбранная запись должна иметь ID первого объекта ранее показанного списка."
+    },
+    {
+      "id": "R02",
+      "group": "Реальные отели",
+      "turns": [
+        "В Париж",
+        "Покажи реальные отели без цен",
+        "9"
+      ],
+      "eq": {
+        "selected_real_hotel": null
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": null,
+      "field": null,
+      "exact_list_choice": null,
+      "note": "Несуществующий номер не должен выбирать другой отель."
+    },
+    {
+      "id": "R03",
+      "group": "Реальные отели",
+      "turns": [
+        "В Париж",
+        "Найди отель Campanile Taverny",
+        "1"
+      ],
+      "eq": {
+        "selected_real_hotel.name": "Campanile Taverny"
+      },
+      "one_of": {},
+      "includes": {},
+      "excludes": {},
+      "reply_any": [],
+      "kind": "real_hotel_selected",
+      "field": null,
+      "exact_list_choice": null,
+      "note": ""
+    }
+  ]
+}
