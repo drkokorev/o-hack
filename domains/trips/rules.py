@@ -264,6 +264,17 @@ def _shift(t: str) -> int | None:
 def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     t = norm(text)
     data: dict = {}
+    if state.showing == "real_hotels" and state.real_hotels_shown:
+        # A bare number or an exact visible name selects a record, not a new
+        # destination. Do not guess when the same name is listed twice.
+        numeric = re.fullmatch(r"\s*(\d+)\s*[.!)]?\s*", t)
+        if numeric and 1 <= int(numeric.group(1)) <= len(state.real_hotels_shown):
+            return TripUpdate(pick=int(numeric.group(1)))
+        label = re.sub(r"^\s*(?:выбери|выбираю|беру|хочу|отель)\s+", "", t).strip(" .!\t")
+        matches = [i for i, item in enumerate(state.real_hotels_shown, 1)
+                   if norm(item.get("name", "")).strip() == label]
+        if len(matches) == 1:
+            return TripUpdate(pick=matches[0])
     if state.pending_trip_candidate:
         if re.fullmatch(r"\s*(?:новая поездка|новый поиск|новый запрос|начать заново|заново|сначала)\s*[.!]?\s*", t):
             return TripUpdate(resolve_trip_choice="new")
@@ -629,6 +640,10 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["shift_days"] = shift
     if re.search(r"друг\w* отел|ещ[её] отел|покажи отел|другой вариант жиль|все отели|сменить отель", t):
         data["show_hotels"] = True
+    hotel_search = re.fullmatch(r"\s*(?:(?:найди|поищи|ищу|покажи)\s+)?(?:отель|гостиницу|гостиница)\s+(.{3,100}?)\s*[.!]?\s*", text, re.I)
+    if hotel_search and not re.match(r"(?:с|без|где|котор|рядом|нужен|любой|недорог)\b", norm(hotel_search.group(1))):
+        data["search_real_hotels"] = hotel_search.group(1).strip()
+        data.pop("show_hotels", None)
     if (re.search(r"реальн\w*|настоящ\w*|без демо|без выдум|открыт\w* данн", t)
             and re.search(r"отел|гостиниц|жиль", t)):
         data["show_real_hotels"] = True

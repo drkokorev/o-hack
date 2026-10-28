@@ -25,7 +25,7 @@ from core.agent import Agent, Session
 from core.config import get_settings
 from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
-from apps.location import visitor_country
+from apps.location import city_hint, visitor_city, visitor_country
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count
@@ -52,6 +52,7 @@ EXAMPLES = [
 class ChatIn(BaseModel):
     text: str
     session_id: str | None = None
+    detected_city: str | None = None  # untrusted browser hint; never an exact location
 
 
 class ResetIn(BaseModel):
@@ -108,11 +109,14 @@ def understood(state: TripState) -> list[str]:
     """Что агент понял из разговора — короткими плашками."""
     chips = []
     if state.origin:
-        chips.append(f"из: {state.origin}")
+        suffix = " (примерно по IP)" if state.origin_inferred else ""
+        chips.append(f"из: {state.origin}{suffix}")
     if state.dest_id:
         chips.append(BY_ID[state.dest_id].name)
     elif state.destination:
         chips.append(state.destination)
+    if state.selected_real_hotel:
+        chips.append("отель: " + state.selected_real_hotel["name"])
     if state.excluded_countries:
         chips.append("исключены: " + ", ".join(state.excluded_countries))
     if state.visa_free_requested:
@@ -194,6 +198,10 @@ def contextual_suggestions(state: TripState, step) -> list[str]:
         return EXAMPLES
     if kind == "question":
         return ["пока не знаю"] if payload.get("field") in ("when", "duration", "origin", "people", "children") else []
+    if kind == "real_hotels":
+        return [str(i) for i in range(1, len(payload.get("items") or []) + 1)]
+    if kind == "real_hotel_selected":
+        return ["можно с пересадкой", "покажи реальные отели"] if state.direct_only else ["покажи реальные отели"]
     if kind in ("ideas", "destinations"):
         choices = ["покажи ещё"]
         if state.abroad is None and not state.country:
@@ -346,6 +354,15 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         return JSONResponse(visitor_country(request.client.host if request.client else None),
                             headers={"Cache-Control": "no-store"})
 
+    def city_for_request(request: Request) -> dict:
+        local_preview = (os.getenv("ODIN_LOCAL_PREVIEW_IP") == "1" and
+                         request.url.hostname in {"127.0.0.1", "localhost", "::1"})
+        return visitor_city(request.client.host if request.client else None, local_preview=local_preview)
+
+    @app.get("/api/visitor-city")
+    def city_info(request: Request) -> JSONResponse:
+        return JSONResponse(city_for_request(request), headers={"Cache-Control": "no-store"})
+
     @app.get("/api/map/catalog")
     def map_info() -> dict:
         try:
@@ -440,15 +457,27 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         return {"text": transcript, "backend": "gigaam"}
 
     @app.post("/api/chat")
-    def chat(body: ChatIn, response: Response) -> dict:
+    def chat(body: ChatIn, response: Response, request: Request) -> dict:
         started = time.perf_counter()
         session_id, session = sessions.get(body.session_id)
         response.headers["Cache-Control"] = "no-store"
         with session.lock:
+            guessed_origin = None
+            if not session.location_checked:
+                session.location_checked = True
+                location = city_hint(body.detected_city) if body.detected_city else city_for_request(request)
+                if location.get("origin"):
+                    guessed_origin = location["origin"]
+                    session.state.origin = guessed_origin
+                    session.state.origin_inferred = True
+                elif location.get("city_name"):
+                    session.state.ip_city_hint = location["city_name"]
             step = agent.handle(session, body.text)
             state: TripState = session.state  # type: ignore[assignment]
             breaker = getattr(agent.llm, "breaker", None)
             reply = step.reply
+            if guessed_origin and state.origin_inferred and state.origin == guessed_origin:
+                reply = f"Город отправления предположительно {guessed_origin} по IP. Если это не так, напишите другой город.\n\n" + reply
             if session.last_nlu in {"rules", "none"} and breaker and breaker.state in {"degraded", "down"}:
                 reply += "\n\nЯзыковая модель временно недоступна; ответ подготовлен по правилам."
             return {

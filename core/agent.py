@@ -58,6 +58,7 @@ class Session:
     last: Step | None = None
     last_nlu: str = ""  # кто разобрал последнюю реплику: llm | llm+rules | rules | none
     last_notes: list[str] = field(default_factory=list)  # что отброшено из ответа LLM и почему
+    location_checked: bool = False  # один приблизительный результат на сессию, без хранения IP
     lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
 
 

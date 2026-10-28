@@ -2,6 +2,11 @@ const $ = (id) => document.getElementById(id);
 let sessionId = null, busy = false, info = null, conversationStarted = false, imageCredits = {};
 let inspiration = {starters:[], places:[], quick:{}};
 let lastDestination = null;
+// IPinfo receives the visitor's IP; only a city hint is sent to our server.
+const approximateCity = fetch("https://ipinfo.io/json", {cache:"no-store", credentials:"omit", referrerPolicy:"no-referrer"})
+  .then((response) => response.ok ? response.json() : null)
+  .then((data) => typeof data?.city === "string" && data.city.length <= 100 ? data.city : null)
+  .catch(() => null);
 let preferenceData = { saved: {}, hidden: [] };
 try {
   const stored = JSON.parse(localStorage.getItem("odin.places") || "null");
@@ -224,6 +229,24 @@ function comparePackages(cards, items) {
 }
 
 const views = {
+  real_hotels(p) {
+    drawMap({targets: p.items.map((h) => ({name:h.name, lat:h.lat, lon:h.lon}))});
+    return [el("h2", {class:"section-title"}, "Отели из открытого каталога"),
+      el("p", {class:"section-sub"}, "Адреса и названия из Overture Maps. Наличие, цены и условия не проверены."),
+      el("div", {class:"cards"}, p.items.map((h, i) => el("article", {class:"card"},
+        el("div", {class:"kicker"}, `Запись ${i + 1}`), el("h3", {}, h.name),
+        el("p", {}, h.address || "Адрес в каталоге не указан"),
+        el("div", {class:"actions"}, sayBtn("Выбрать отель", String(i + 1), "btn accent")))))];
+  },
+  real_hotel_selected(p) {
+    const h = p.hotel;
+    if (h.lat != null && h.lon != null) drawMap({targets:[{name:h.name,lat:h.lat,lon:h.lon}]});
+    return [el("h2", {class:"section-title"}, "Выбранный отель"),
+      el("article", {class:"card"}, el("h3", {}, h.name),
+        el("p", {}, h.address || "Адрес в каталоге не указан"),
+        el("p", {class:"src"}, "Запись Overture Maps. Цены, наличие и бронирование не подтверждены."),
+        el("div", {class:"actions"}, sayBtn("Другие отели", "покажи реальные отели", "btn ghost")))];
+  },
   place_info(p) {
     const d = p.place;
     drawMap({ targets: [{ name: d.name, lat: d.lat, lon: d.lon }] });
@@ -514,7 +537,8 @@ async function send(text) {
   addMessage("user", text);
   const typing = addMessage("bot", el("span", { class: "typing", role: "status", "aria-label": "Агент думает" }, el("i"), el("i"), el("i")));
   try {
-    const data = await post("/api/chat", { text, session_id: sessionId });
+    const detected = sessionId ? null : await Promise.race([approximateCity, new Promise((resolve) => setTimeout(() => resolve(null), 2000))]);
+    const data = await post("/api/chat", { text, session_id: sessionId, detected_city: detected });
     typing.remove();
     const reply = el("div");
     renderTravelReply(reply, data.reply, (data.payload || {}).kind);

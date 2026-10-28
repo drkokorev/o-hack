@@ -33,7 +33,7 @@ from .world_places import find_world_places
 
 MONTHS_PREP = ["январе", "феврале", "марте", "апреле", "мае", "июне", "июле", "августе", "сентябре",
                "октябре", "ноябре", "декабре"]
-ACTIONS = ("pick", "pick_name", "confirm", "shift_days", "show_hotels", "show_real_hotels", "after_sale", "cheaper", "hesitate", "question",
+ACTIONS = ("pick", "pick_name", "confirm", "shift_days", "show_hotels", "show_real_hotels", "search_real_hotels", "after_sale", "cheaper", "hesitate", "question",
            "wants_ideas", "more", "back", "unknown_origin", "corrected_place", "unsure", "duration_not_given",
            "clear_duration", "payment_method")
 
@@ -113,6 +113,9 @@ class TripsDomain:
             shown = "Показаны варианты поездки: 1. Оптимальный; 2. Экономный; 3. Комфорт"
         elif state.showing == "hotels":
             shown = "Показаны отели: " + "; ".join(f"{i}. {h}" for i, h in enumerate(state.hotel_ids_shown, 1))
+        elif state.showing == "real_hotels":
+            shown = "Показаны записи отелей: " + "; ".join(
+                f"{i}. {h['name']}" for i, h in enumerate(state.real_hotels_shown, 1))
         system = EXTRACTION_PROMPT.format(
             today=today.isoformat(), weekday=WEEKDAYS[today.weekday()], stage=state.stage,
             state=state.params().model_dump_json(exclude_none=True), pending=state.pending_question or "нет",
@@ -251,22 +254,26 @@ class TripsDomain:
             changes["country_conflict"] = None
         if update.unknown_origin:
             changes["unavailable_origin"] = update.unknown_origin
+            if state.origin_inferred:
+                data["origin"] = None
+                changes["origin_inferred"] = False
         elif "origin" in data:
             changes["unavailable_origin"] = None
+            changes["origin_inferred"] = False
         if "destination" in data:
             dest_id = data["destination"] if data["destination"] in BY_ID else find_destination(norm(data["destination"]))
             changes["dest_id"] = dest_id
             data["destination"] = BY_ID[dest_id].name if dest_id else data["destination"]
             if dest_id != state.dest_id:
-                changes.update(hotel_id=None, package=None)
+                changes.update(hotel_id=None, package=None, selected_real_hotel=None, real_hotels_shown=[])
         if data.get("country") and state.dest_id and "destination" not in data:
             if BY_ID[state.dest_id].country != data["country"]:
-                changes.update(dest_id=None, hotel_id=None, package=None)
+                changes.update(dest_id=None, hotel_id=None, package=None, selected_real_hotel=None, real_hotels_shown=[])
                 data["destination"] = None
         if "abroad" in data and "country" not in data and state.country:
             if (state.country != "Россия") != data["abroad"]:
                 data["country"] = None
-        if "origin" in data:
+        if "origin" in data and data["origin"] is not None:
             origin = next((o for o in ORIGIN_BY_NAME if norm(o)[:5] == norm(data["origin"])[:5]), None)
             if origin:
                 data["origin"] = origin
@@ -319,6 +326,7 @@ class TripsDomain:
                     new.suggested = [d for d in new.suggested if d != new.dest_id]
                     new.rejected = sorted(set(new.rejected) | {new.dest_id})
                 new.dest_id = new.destination = new.package = new.hotel_id = None
+                new.selected_real_hotel, new.real_hotels_shown = None, []
                 new.stage = "destination" if new.stage in ("plan", "cart") else new.stage
             elif field in PARAM_FIELDS:
                 setattr(new, field, None)
@@ -406,24 +414,55 @@ class TripsDomain:
                 return Step(f"Минимальная температура {label} выше максимальной. Уточните, пожалуйста, пределы.",
                             payload={"kind": "question"})
 
-        if act.get("show_real_hotels"):
+        if act.get("show_real_hotels") or act.get("search_real_hotels"):
             if not state.dest_id:
                 return Step("Назовите город из каталога, и я покажу записи об объектах размещения без модельных цен и условий.")
-            from .map_catalog import hotels_in_destination
+            from .map_catalog import hotels_in_destination, search_hotels
             try:
-                records = hotels_in_destination(state.dest_id)
+                records = (search_hotels(state.dest_id, act["search_real_hotels"])
+                           if act.get("search_real_hotels") else hotels_in_destination(state.dest_id))
             except (FileNotFoundError, OSError):
                 records = []
             if not records:
-                return Step("В сохранённом каталоге нет доступных записей для этого направления.")
+                return Step("В сохранённом каталоге не нашёл подходящих записей для этого направления. "
+                            "Можно уточнить название или показать все доступные отели без цен.")
+            state.showing, state.real_hotels_shown = "real_hotels", records
             lines = [f"В открытом каталоге Overture Maps (снимок {records[0]['source_release']}) "
                      f"есть такие объекты в районе {BY_ID[state.dest_id].name}:"]
             for number, record in enumerate(records, 1):
                 address = f" — {record['address']}" if record.get("address") else " — адрес не указан"
                 lines.append(f"{number}. {record['name']}{address}")
             lines.append("Актуальность и работа объектов не проверены. Цены, наличие, удобства и бронирование "
-                         "этот открытый снимок не подтверждает.")
-            return Step("\n".join(lines))
+                         "этот открытый снимок не подтверждает. Выберите отель номером или точным названием.")
+            return Step("\n".join(lines), payload={"kind": "real_hotels", "items": records})
+
+        if state.showing == "real_hotels" and act.get("pick"):
+            index = act["pick"] - 1
+            if not 0 <= index < len(state.real_hotels_shown):
+                return Step("Такого номера в списке нет. Выберите номер показанного отеля.",
+                            payload={"kind": "question", "field": "real_hotel"})
+            record = state.real_hotels_shown[index]
+            from .map_catalog import lookup
+            try:
+                current = lookup(record["id"])
+            except (FileNotFoundError, OSError):
+                current = None
+            if (not current or current.get("kind") != "hotel" or
+                    current.get("destination_id") != state.dest_id):
+                return Step("Запись отеля сейчас недоступна или изменилась. Откройте список заново.",
+                            payload={"kind": "question"})
+            model_id = f"{state.dest_id}-h{record['id'].removeprefix('overture:')}"
+            match = next((hotel for hotel in hotels_for(state.dest_id) if hotel.id == model_id), None)
+            state.hotel_id = match.id if match else None
+            state.selected_real_hotel = {"id": record["id"], "name": record["name"],
+                                         "address": record.get("address"), "destination_id": state.dest_id,
+                                         "lat": current.get("lat"), "lon": current.get("lon")}
+            state.showing, state.real_hotels_shown, state.package = None, [], None
+            address = f" Адрес в каталоге: {record['address']}." if record.get("address") else ""
+            return Step(f"Выбрали {record['name']}.{address} Сохранил этот отель в поездке. "
+                        "Открытые данные не подтверждают цены, наличие или условия бронирования. "
+                        "При дальнейших расчётах цены и рейсы останутся демонстрационными.",
+                        payload={"kind": "real_hotel_selected", "hotel": state.selected_real_hotel})
 
         if (act.get("question") and state.stage != "booked" and
                 (not state.dest_id or missing_for_trip(state))):
@@ -494,6 +533,7 @@ class TripsDomain:
             if state.dest_id:
                 state.rejected = sorted(set(state.rejected) | {state.dest_id})
             state.dest_id = state.destination = state.package = state.hotel_id = None
+            state.selected_real_hotel, state.real_hotels_shown = None, []
             if state.dates_assumed:
                 state.date_from = state.date_to = None
             if state.last_view and state.last_view.get("kind") in ("destinations", "ideas"):
@@ -564,6 +604,9 @@ class TripsDomain:
         missing = missing_for_trip(state)
         if missing:
             topic, question = missing
+            if topic == "origin" and state.ip_city_hint and not state.origin:
+                question = (f"По IP город примерно {state.ip_city_hint}, но в демо может не быть отправления оттуда. "
+                            "Напишите город, из которого хотите поехать.")
             if topic in state.skipped_questions:
                 return Step("Пока оставим это открытым. Для расчёта нужны даты, длительность, город отправления "
                             "и число путешественников; можете указать их, когда определитесь.",
@@ -621,17 +664,26 @@ class TripsDomain:
             chosen = self._choose(act, [self._hotel_name(h) for h in state.hotel_ids_shown])
             if chosen is not None:
                 state.hotel_id = state.hotel_ids_shown[chosen]
+                state.selected_real_hotel = None
                 state.package = "optimal"
                 changed = True
         if act.get("show_hotels") or (act.get("more") and state.stage in ("plan", "cart")):
             return self._prefix(self._hotels(state, trip), notes)
 
+        if state.selected_real_hotel and not state.hotel_id:
+            return Step("Выбранный отель есть в открытом каталоге, но его нельзя связать с демонстрационным расчётом. "
+                        "Другой отель не подставляю; можно выбрать другой объект или изменить условия.",
+                        payload={"kind": "question", "reason": "selected_hotel_unavailable"})
         packages, relaxed = make_packages(trip, state.hotel_id)
         if not packages:
             state.stage, state.showing = "plan", None
             reason = relaxed[0] if relaxed else "нет вариантов"
             if "транспорта" in reason:
                 return self._prefix(self._transport_failure(state, trip), notes)
+            if "выбранный отель" in reason:
+                return self._prefix(Step("Выбранный отель не подходит под текущие условия демонстрационного расчёта. "
+                                         "Другой отель не подставляю; можно изменить условия или выбрать другой объект.",
+                                         payload={"kind": "question", "reason": "selected_hotel_unavailable"}), notes)
             return self._prefix(Step("В демонстрационном каталоге нет подходящих отелей при текущих условиях. "
                                      "Можно изменить направление или уточнить требования к размещению; "
                                      "это не означает, что в реальности отелей нет.",
@@ -772,7 +824,10 @@ class TripsDomain:
     def _required_inputs(self, state: TripState) -> tuple[str, int, int, list[str]]:
         if not state.origin or not state.adults:
             raise ValueError("Для расчёта требуются город отправления и число взрослых")
-        assumptions = ["дети не указаны, расчёт пока без детей"] if state.children is None else []
+        assumptions = ([f"город отправления {state.origin} приблизительно определён по IP; его можно изменить"]
+                       if state.origin_inferred else [])
+        if state.children is None:
+            assumptions.append("дети не указаны, расчёт пока без детей")
         return state.origin, state.adults, state.children or 0, assumptions
 
     def _period(self, state: TripState, today: date, dest: Destination | None) -> tuple[date | None, int, list[str]]:

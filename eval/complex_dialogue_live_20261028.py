@@ -38,7 +38,9 @@ def main():
         "six_nights": "6 ночей" in shown,
         "two_travellers": "2 путешественника" in shown,
         "budget_and_plane": "200 000" in shown and "самолёт" in shown,
-        "asks_origin_not_duration": (one.get("payload") or {}).get("field") == "origin",
+        "asks_only_missing_field": (one.get("payload") or {}).get("field") in {"origin", "people"} and
+                                   ((one.get("payload") or {}).get("field") == "origin" or
+                                    any("примерно по IP" in chip for chip in one["understood"])),
         "origin_followup_preserves_trip": (two["trip_summary"]["destination"] == "Париж" and
                                           "из: Москва" in two["understood"] and "6 ночей" in two["understood"]),
         "adults_followup_preserves_budget": (three["trip_summary"]["destination"] == "Париж" and

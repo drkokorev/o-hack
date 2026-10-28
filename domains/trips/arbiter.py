@@ -75,9 +75,16 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     rule_data = rules.model_dump()
     notes: list[str] = []
 
-    service_fields = ("unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
+    service_fields = ("unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
+    if state.showing == "real_hotels":
+        # A model may guess a number for a duplicate or partial name. Only an
+        # exact, unambiguous visible record or a stated number can select it.
+        if data.get("pick") and rules.pick is None:
+            notes.append("pick: выбор из открытого каталога не подтверждён номером или точным названием")
+        data["pick"] = rules.pick
+        data["pick_name"] = None
     for field, value in list(data.items()):
         if value is None or field in service_fields:
             continue
