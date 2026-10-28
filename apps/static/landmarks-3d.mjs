@@ -1,16 +1,7 @@
 /* Small local Three.js models rendered as animated, geographically anchored map markers. */
 import * as THREE from './vendor/three/three.module.js';
 
-export function createLandmarkRenderer(map) {
-  const renderer = new THREE.WebGLRenderer({alpha:true, antialias:true, preserveDrawingBuffer:true, powerPreference:'low-power'});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(160, 160, false);
-  renderer.setClearColor(0x000000, 0);
-  const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-4.8,4.8,4.8,-4.8,0.1,60);
-  camera.position.set(10,8,14); camera.lookAt(0,3.2,0);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x98a8ae, 2.2));
-  const light = new THREE.DirectionalLight(0xffffff, 2); light.position.set(6,12,8); scene.add(light);
+export function createLandmarkModels() {
   const iron = new THREE.MeshStandardMaterial({color:0x3153aa, roughness:0.75, metalness:0.2});
   const lightIron = new THREE.MeshStandardMaterial({color:0x8ba0d4, roughness:0.72});
   const red = new THREE.MeshStandardMaterial({color:0xa94742, roughness:0.82});
@@ -121,6 +112,20 @@ export function createLandmarkRenderer(map) {
   }
   const models = {tower:eiffel(), kremlin:kremlin(), spire:spire(), clocktower:clocktower(),
     colosseum:colosseum(), gate:gate(), pyramids:pyramids(), liberty:liberty()};
+  return models;
+}
+
+export function createLandmarkRenderer(map) {
+  const renderer = new THREE.WebGLRenderer({alpha:true, antialias:true, preserveDrawingBuffer:true, powerPreference:'low-power'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(160, 160, false);
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-4.8,4.8,4.8,-4.8,0.1,60);
+  camera.position.set(10,8,14); camera.lookAt(0,3.2,0);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x98a8ae, 2.2));
+  const light = new THREE.DirectionalLight(0xffffff, 2); light.position.set(6,12,8); scene.add(light);
+  const models = createLandmarkModels();
   Object.values(models).forEach((model) => { model.visible=false; scene.add(model); });
   let targets = [], frame = 0;
   function draw() {

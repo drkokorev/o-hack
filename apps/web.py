@@ -19,16 +19,16 @@ from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from core.agent import Agent, Session
+from core.agent import Agent, Session, Step
 from core.config import get_settings
 from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
 from apps.location import visitor_country
 from domains.trips.domain import TripsDomain
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
-from domains.trips.offers import AMENITIES, MEALS, hotel_count
+from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
 from domains.trips import map_catalog
 from domains.trips.state import TripState
 from apps.voice import LocalVoice, MAX_AUDIO_BYTES
@@ -52,6 +52,8 @@ EXAMPLES = [
 class ChatIn(BaseModel):
     text: str
     session_id: str | None = None
+    map_point_id: str | None = Field(default=None, max_length=200)
+    map_country_code: str | None = Field(default=None, min_length=2, max_length=2)
 
 
 class ResetIn(BaseModel):
@@ -113,6 +115,8 @@ def understood(state: TripState) -> list[str]:
         chips.append(BY_ID[state.dest_id].name)
     elif state.destination:
         chips.append(state.destination)
+    elif state.country:
+        chips.append(state.country)
     if state.excluded_countries:
         chips.append("исключены: " + ", ".join(state.excluded_countries))
     if state.visa_free_requested:
@@ -428,13 +432,75 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         session_id, session = sessions.get(body.session_id)
         response.headers["Cache-Control"] = "no-store"
         with session.lock:
-            step = agent.handle(session, body.text)
+            selected = None
+            if body.map_point_id and body.map_country_code:
+                raise HTTPException(status_code=422, detail="Выберите один объект карты")
+            if body.map_point_id:
+                point = map_catalog.lookup(body.map_point_id)
+                if not point or point["kind"] != "hotel" or not body.map_point_id.startswith("overture:"):
+                    raise HTTPException(status_code=422, detail="Не найден выбранный отель")
+                dest_id = point.get("destination_id")
+                record_id = body.map_point_id.removeprefix("overture:")
+                record = next((item for item in _real().get("hotels", {}).get(dest_id, [])
+                               if item.get("id") == record_id), None)
+                if (dest_id not in BY_ID or not record or
+                    abs(record["lat"] - point["lat"]) > 1e-6 or abs(record["lon"] - point["lon"]) > 1e-6):
+                    raise HTTPException(status_code=422, detail="Отель отсутствует в каталоге подбора")
+                state = session.state
+                selected = {"id": body.map_point_id, "name": point["name"], "accepted": False}
+                if state.order or state.pending_trip_candidate or (state.dest_id and state.dest_id != dest_id):
+                    step = Step("У вас уже есть другая поездка или открытый заказ. Начните новую поездку, "
+                                "затем выберите этот отель на карте.")
+                else:
+                    def pin_hotel(merged: BaseModel) -> None:
+                        if merged.dest_id == dest_id and not merged.act.get("ask_trip_choice"):
+                            merged.hotel_id = f"{dest_id}-h{record_id}"
+                            merged.lodging = "hotel"
+                            merged.package = None
+                            merged.params_changed = True
+                            selected["accepted"] = True
+                    # Only the server's known destination enters NLU. The map
+                    # record's name is display data, not an instruction.
+                    step = agent.handle(session, f"Хочу в {BY_ID[dest_id].name}", after_merge=pin_hotel)
+                    selected["accepted"] = selected["accepted"] and session.state.hotel_id == f"{dest_id}-h{record_id}"
+                    if selected["accepted"]:
+                        step.reply = f"Выбран отель «{point['name']}». Наличие и цена не проверены.\n\n" + step.reply
+                    else:
+                        step.reply = "Не удалось закрепить отель. Уточните направление и выберите его ещё раз.\n\n" + step.reply
+            elif body.map_country_code:
+                code = body.map_country_code.upper()
+                country = map_catalog._countries().get(code)
+                if not country:
+                    raise HTTPException(status_code=422, detail="Страна не найдена")
+                state = session.state
+                selected = {"code": code, "name": country, "accepted": False}
+                if (state.order or state.pending_trip_candidate or
+                    (state.dest_id and BY_ID[state.dest_id].country != country)):
+                    step = Step("У вас уже есть другая поездка или открытый заказ. Начните новую поездку, "
+                                "затем выберите эту страну на карте.")
+                else:
+                    def choose_country(merged: BaseModel) -> None:
+                        if not merged.act.get("ask_trip_choice"):
+                            merged.country = country
+                            merged.country_conflict = None
+                            merged.excluded_countries = [item for item in (merged.excluded_countries or []) if item != country]
+                            merged.params_changed = True
+                            selected["accepted"] = True
+                    step = agent.handle(session, "Хочу поехать", after_merge=choose_country)
+                    selected["accepted"] = selected["accepted"] and session.state.country == country
+                    if selected["accepted"]:
+                        step.reply = f"Выбрана страна: {country}.\n\n" + step.reply
+                    else:
+                        step.reply = "Не удалось выбрать страну. Попробуйте ещё раз.\n\n" + step.reply
+            else:
+                step = agent.handle(session, body.text)
             state: TripState = session.state  # type: ignore[assignment]
             return {
                 "session_id": session_id, "reply": step.reply, "payload": images.decorate(step.payload), "stage": state.stage,
+                "map_selection": selected,
                 "understood": understood(state), "assumptions": state.assumptions, "nlu": session.last_nlu,
                 "suggestions": contextual_suggestions(state, step),
-                "trip_summary": {"destination": BY_ID[state.dest_id].name if state.dest_id else state.destination},
+                "trip_summary": {"destination": BY_ID[state.dest_id].name if state.dest_id else state.destination or state.country},
                 # Never return rejected, untrusted model text to the client.
                 "checked": ["Неподтверждённый параметр отклонён или исправлен."] * len(session.last_notes),
                 "ms": round((time.perf_counter() - started) * 1000),

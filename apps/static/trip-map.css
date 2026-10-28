@@ -1,4 +1,4 @@
-  .trip-map { margin: 24px 0 4px; position: relative; overflow: hidden; font-family: var(--body, system-ui, sans-serif); border: 1px solid var(--line, #d9e2e0);
+  .trip-map { margin: 16px 0 4px; position: relative; overflow: hidden; font-family: var(--body, system-ui, sans-serif); border: 1px solid var(--line, #d9e2e0);
     border-radius: var(--r-lg, 22px); background: radial-gradient(ellipse at 35% 28%, var(--surface, #ffffff), var(--bg, #eef2f1) 78%); }
   .trip-map, .trip-map * { box-sizing: border-box; }
   .trip-map :focus-visible { outline: 2px solid var(--accent, #2346d8); outline-offset: 3px; }
@@ -44,8 +44,13 @@
   .trip-map .map-tools { display: flex; align-items: center; gap: 8px; }
   .trip-map .map-frame .map-scope, .trip-map .map-kind { position: static; min-height: 44px; border: 1px solid var(--line, #d9e2e0);
     border-radius: 12px; background: var(--surface, #fff); color: var(--ink, #0d1b22); font: 500 12px var(--body, system-ui); padding: 0 12px; cursor: pointer; }
-  .trip-map .map-surface { position: relative; height: clamp(300px, 38vh, 380px); overflow: hidden; background: #dcebed; }
+  .trip-map .map-surface { position: relative; height: clamp(420px, 60vh, 640px); overflow: hidden; background: #dcebed; }
   .trip-map .map-canvas { width: 100%; height: 100%; background: radial-gradient(circle at center, #f7faf8 0, #e5f0ed 70%); }
+  .trip-map .globe-hint { position: absolute; left: 20px; bottom: 20px; z-index: 1; display: flex; align-items: center; gap: 10px;
+    color: #385b54; font-size: 12px; font-weight: 600; pointer-events: none; }
+  .trip-map .globe-hint small { display: block; margin-top: 2px; color: #647f78; font-size: 11px; font-weight: 400; }
+  .trip-map .globe-hint-symbol { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #c3d9d2;
+    border-radius: 50%; background: #f6fbf7c9; color: #9c8239; font-size: 15px; }
   .trip-map .map-controls { position: absolute; right: 12px; top: 12px; z-index: 2; display: grid; gap: 6px; }
   .trip-map .map-controls button { width: 44px; height: 44px; border: 1px solid #d8e4df; border-radius: 12px; background: #ffffffed;
     color: #344e49; font: 500 21px var(--body, system-ui); cursor: pointer; }
@@ -57,6 +62,8 @@
     border-radius: 50%; border: 2px solid white; box-shadow: 0 5px 18px #174a432e; cursor: pointer; font: 600 11px var(--body, system-ui); }
   .trip-map .cluster-marker { background: #3152dc; color: white; padding: 0 7px; z-index: 1; }
   .trip-map .event-marker { background: #fff9e8; color: #263c48; gap: 0; z-index: 2; }
+  .trip-map .event-marker.has-3d { width: 64px; height: 64px; border: 0; background: transparent; box-shadow: none; }
+  .trip-map .event-hit-area { width: 64px; height: 64px; }
   .trip-map .event-illustration { display: grid; place-items: center; line-height: 1; }
   .trip-map .event-count { position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px;
     display: grid; place-items: center; padding: 0 4px; border: 2px solid white; border-radius: 50%; background: #d39e36; color: #1d2d28; font-weight: 700; }
@@ -64,8 +71,12 @@
   .trip-map .landmark-marker { z-index: 3; display: grid; justify-items: center; gap: 2px; border: 0; background: transparent; color: #263f88;
     cursor: pointer; padding: 4px; font: 600 11px var(--body, system-ui); filter: drop-shadow(0 2px 3px #fff); }
   .trip-map .landmark-marker svg { width: 30px; height: 36px; padding: 4px; border-radius: 8px; background: #ffffffed; }
-  .trip-map .landmark-marker canvas.landmark-model { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 6px 5px #1c392c50); }
+  .trip-map .landmark-marker canvas.landmark-model { width: 112px; height: 112px; object-fit: contain; filter: drop-shadow(0 6px 5px #1c392c50); }
+  .trip-map .landmark-marker.overview canvas.landmark-model { width: 76px; height: 76px; }
+  .trip-map .landmark-marker .landmark-hit-area { display: block; width: 112px; height: 112px; padding: 0; background: transparent; }
+  .trip-map .landmark-marker.overview .landmark-hit-area { width: 76px; height: 76px; }
   .trip-map .landmark-marker span { padding: 2px 6px; border-radius: 8px; background: #ffffffed; }
+  .trip-map .landmark-marker .landmark-label { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .trip-map .event-marker .event-count { font-size: 10px; }
   .trip-map .target-marker { z-index: 4; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px;
     border: 1px solid #b9c6ff; border-radius: 999px; background: #fff; color: #172a70; box-shadow: 0 5px 18px #163d5240;
@@ -104,10 +115,11 @@
     .trip-map .map-caption { display: none; }
     .trip-map .map-tools { width: 100%; }
     .trip-map .map-kind { flex: 1; }
-    .trip-map .map-surface { height: 340px; }
+    .trip-map .map-surface { height: min(420px, 55vh); min-height: 320px; }
+    .trip-map .globe-hint { left: 12px; bottom: 12px; }
     .trip-map .map-legend { display: none; }
   }
   @media (prefers-reduced-motion: no-preference) {
-    .trip-map .event-marker { animation: map-event-glow 3.5s ease-in-out infinite; }
+    .trip-map .event-marker:not(.has-3d) { animation: map-event-glow 3.5s ease-in-out infinite; }
     @keyframes map-event-glow { 50% { box-shadow: 0 0 0 7px #f5c54a3b, 0 5px 18px #174a432e; } }
   }

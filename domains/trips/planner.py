@@ -208,6 +208,8 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
 
     by_value = sorted(hotels, key=lambda hp: -_hotel_value(hp[0], hp[1], trip))
     pinned = next((hp for hp in hotels if hp[0].id == pinned_hotel), None)
+    if pinned_hotel and pinned is None:
+        return [], ["выбранный отель не подходит под текущие условия или отсутствует в демонстрационном каталоге"]
     def stay_cost(hp: tuple[Hotel, int]) -> int:  # отель вместе с трансферами туда и обратно
         return hp[1] + transfer(hp[0], trip.people, outs[0].mode == "train").price * 2
 

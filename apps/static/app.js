@@ -22,7 +22,13 @@ function el(tag, attrs = {}, ...children) {
 const marks = (cls, items) => el("ul", { class: "marks " + cls }, items.map((t) => typeof t === "string" ? el("li", {}, t) : el("li", { class: t.level }, t.text)));
 const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button", class: cls, onclick: () => send(text || label) }, label);
 
-const tripMap = createTripMap({ container: $("map"), onChoose: (place) => send(`хочу в ${place.name}`),
+const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
+  if (place.kind === "hotel") return send(`Хочу остановиться в «${place.name}»`, {map_point_id:place.id});
+  if (place.kind === "country") return send(`Хочу поехать: ${place.name}`, {map_country_code:place.code});
+  if (place.event) return send(`Хочу поехать на ${place.event} в ${place.name}`);
+  if (place.landmark) return send(`Хочу посетить ${place.landmark}, ${place.name}`);
+  return send(`Хочу поехать: ${place.name}`);
+},
   isFavorite: (point) => Boolean(preferenceData.saved[`point:${point.id}`]), onFavorite: (point) => {
     const key = `point:${point.id}`;
     if (preferenceData.saved[key]) delete preferenceData.saved[key];
@@ -506,7 +512,7 @@ async function post(path, body) {
   if (!r.ok) throw new Error(`Сервер ответил ${r.status}`);
   return r.json();
 }
-async function send(text) {
+async function send(text, selection = {}) {
   if (busy || !text.trim()) return;
   if (voice.isActive()) voice.cancel();
   if (!conversationStarted) $("view").replaceChildren();
@@ -514,7 +520,7 @@ async function send(text) {
   addMessage("user", text);
   const typing = addMessage("bot", el("span", { class: "typing", role: "status", "aria-label": "Агент думает" }, el("i"), el("i"), el("i")));
   try {
-    const data = await post("/api/chat", { text, session_id: sessionId });
+    const data = await post("/api/chat", { text, session_id: sessionId, ...selection });
     typing.remove();
     const reply = el("div");
     renderTravelReply(reply, data.reply, (data.payload || {}).kind);
@@ -543,8 +549,31 @@ $("reset").addEventListener("click", async () => {
   if (sessionId) await post("/api/reset", { session_id: sessionId }).catch(() => {});
   voice.cancel(); sessionId = null; $("log").replaceChildren(); $("view").replaceChildren(); $("say").textContent = ""; start();
 });
-Promise.all([fetch("/api/info").then((r) => r.json()), fetch("/static/land.geojson").then((r) => r.json()),
-  fetch("/static/img/credits.json").then((r) => r.ok ? r.json() : {}).catch(() => ({})),
-  fetch("/static/inspiration.json").then((r) => r.ok ? r.json() : null).catch(() => null)])
-  .then(([i, l, credits, prompts]) => { info = i; imageCredits = credits; inspiration = prompts || inspiration; tripMap.setData(i, l); start(); })
-  .catch(() => addMessage("bot", "Сервер недоступен."));
+async function initialise() {
+  const load = async (url) => {
+    const response = await fetch(url, {cache: "no-store"});
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  };
+  try {
+    const [i, l, credits, prompts] = await Promise.all([
+      load("/api/info"), load("/static/land.geojson"),
+      load("/static/img/credits.json").catch(() => ({})),
+      load("/static/inspiration.json").catch(() => null),
+    ]);
+    $("startup-error")?.remove();
+    info = i; imageCredits = credits; inspiration = prompts || inspiration;
+    tripMap.setData(i, l); start();
+  } catch (_) {
+    tripMap.unavailable();
+    $("startup-error")?.remove();
+    const retry = el("button", {type:"button", class:"startup-retry", onclick: () => {
+      retry.disabled = true;
+      initialise();
+    }}, "Повторить");
+    const message = addMessage("bot", el("div", {role:"status"},
+      el("span", {}, "Не удалось подключиться. Проверьте, что приложение запущено."), retry));
+    message.id = "startup-error";
+  }
+}
+initialise();

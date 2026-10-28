@@ -87,7 +87,7 @@ class Agent:
     def new_session(self) -> Session:
         return Session(state=self.domain.state_model())
 
-    def handle(self, session: Session, text: str) -> Step:
+    def handle(self, session: Session, text: str, *, after_merge: Callable[[BaseModel], None] | None = None) -> Step:
         # Reject instead of truncating: a document/card number cut at the limit
         # could otherwise evade inspection and be sent partially to the model.
         if len(text) > MAX_INPUT_CHARS:
@@ -114,6 +114,8 @@ class Agent:
                         "Расскажите о поездке или уточните, что хотите изменить."), payload=previous.payload)
         else:
             session.state = self.domain.merge(session.state, update)
+            if after_merge is not None:
+                after_merge(session.state)
             step = self.domain.step(session.state)
             if self.nlg and step.facts and getattr(self.domain, "allow_nlg", True):
                 step.reply = self._rephrase(step)

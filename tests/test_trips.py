@@ -128,6 +128,12 @@ def test_overnight_train_moves_hotel_check_in_and_warns_about_long_road():
     assert any(kind == "risk" and "в дороге" in text for kind, text in pkg.checks)
 
 
+def test_missing_selected_hotel_is_not_replaced():
+    trip = Trip(MOSCOW, BY_ID["sochi"], date(2027, 6, 11), date(2027, 6, 18), 2, 0)
+    packages, reasons = make_packages(trip, "sochi-h-nonexistent")
+    assert not packages and "выбранный отель" in reasons[0]
+
+
 def test_pets_and_budget_constraints():
     trip = Trip(MOSCOW, BY_ID["sochi"], date(2026, 11, 10), date(2026, 11, 17), 2, 0, pets=True, budget=200_000)
     packages, _ = make_packages(trip)

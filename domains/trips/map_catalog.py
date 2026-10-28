@@ -184,11 +184,17 @@ def clusters(kind: str, west: float, south: float, east: float, north: float, zo
     tables, clauses, values = _conditions(kind, west, south, east, north, country_code, destination_id)
     cell = 360.0 / (2 ** zoom)
     where = " WHERE " + " AND ".join(clauses) if clauses else ""
-    sql = ("SELECT CAST((p.lon+180.0)/? AS INTEGER) x, CAST((p.lat+90.0)/? AS INTEGER) y, "
-           "COUNT(*) n, AVG(p.lat) lat, AVG(p.lon) lon FROM " + tables + where + " GROUP BY x,y ORDER BY x,y")
+    # Averages may land in the sea or in an unrelated country. Anchor each
+    # group to one actual member so its marker and zoom target are a real
+    # coordinate from the filtered source, not an invented location.
+    sql = ("SELECT grouped.x,grouped.y,grouped.n,p.lat,p.lon,p.id representative_id FROM ("
+           "SELECT CAST((p.lon+180.0)/? AS INTEGER) x, CAST((p.lat+90.0)/? AS INTEGER) y, "
+           "COUNT(*) n, MIN(p.rowid) representative FROM " + tables + where +
+           " GROUP BY x,y) grouped JOIN point p ON p.rowid=grouped.representative ORDER BY grouped.x,grouped.y")
     with _connection(path) as db:
         version = json.loads(db.execute("SELECT value FROM metadata WHERE key='source_digest'").fetchone()[0])
         rows = db.execute(sql, [cell, cell, *values]).fetchall()
     return {"catalog_version": version, "kind": kind, "zoom": zoom, "cell_degrees": cell,
             "items": [{"id": f"{row['x']}:{row['y']}", "count": row["n"],
-                       "lat": row["lat"], "lon": row["lon"]} for row in rows]}
+                       "lat": row["lat"], "lon": row["lon"],
+                       "representative_id": row["representative_id"]} for row in rows]}
