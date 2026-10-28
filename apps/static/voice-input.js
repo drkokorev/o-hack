@@ -81,7 +81,7 @@
   }
 
   // One control starts/stops dictation when the field is empty and sends edited text otherwise.
-  window.createVoiceInput = ({ input, button, status, holdToTalk = false }) => {
+  window.createVoiceInput = ({ input, button, microphone = null, status, holdToTalk = false }) => {
     const BrowserRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const icons = {
       mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-3 0h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -105,6 +105,11 @@
       button.classList.toggle("recording", Boolean(current) && phase !== "processing");
       button.dataset.listening = String(Boolean(current) && phase === "listening");
       if (cancelButton) cancelButton.hidden = !current;
+      if (microphone) {
+        microphone.innerHTML = current ? icons.stop : icons.mic;
+        microphone.setAttribute("aria-label", current ? "Остановить диктовку" : "Начать диктовку");
+        microphone.classList.toggle("recording", Boolean(current));
+      }
     }
     function hint() {
       if (current || holdToTalk) return;
@@ -214,7 +219,7 @@
           try {
             const stream = await navigator.mediaDevices.getUserMedia({audio:true});
             stream.getTracks().forEach((track)=>track.stop());
-            message("Микрофон готов. Удерживайте стрелку или выберите «Начать диктовку» в меню.");
+            message(microphone ? "Микрофон готов. Нажмите на него, чтобы начать диктовку." : "Микрофон готов. Удерживайте стрелку или выберите «Начать диктовку» в меню.");
           } catch (_) { message("Доступ к микрофону не получен. Текстовый ввод работает."); }
         };
         if (!dialog.open) dialog.showModal();
@@ -252,6 +257,7 @@
       document.addEventListener("visibilitychange",()=>{if(document.hidden){clearTimeout(holdTimer);pressed=false;if(current)cancel();}});
       window.addEventListener("pagehide",cancel);
     }
+    if (microphone) microphone.addEventListener("click", () => current ? toggle() : begin("toggle"));
     input.addEventListener("input", update);
     update(); if(!holdToTalk)message("Проверяю доступность голосового ввода…"); checkBackend();
     return { toggle, begin, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };

@@ -26,9 +26,15 @@ function el(tag, attrs = {}, ...children) {
 }
 const marks = (cls, items) => el("ul", { class: "marks " + cls }, items.map((t) => typeof t === "string" ? el("li", {}, t) : el("li", { class: t.level }, t.text)));
 const sayBtn = (label, text, cls = "btn ghost") => el("button", { type: "button", class: cls, onclick: () => send(text || label) }, label);
+const destinationBtn = (label, place, cls = "btn ghost") => el("button", {type:"button", class:cls,
+  onclick:()=>send(`Хочу в ${place.name}`, {destination_id:place.id})}, label);
 
 const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
   if (place.kind === "hotel") return send(`Хочу остановиться в «${place.name}»`, {map_point_id:place.id});
+  const known = (info?.places || []).find(item => item.id === place.id ||
+    (item.name === place.name && Number.isFinite(place.lat) && Number.isFinite(place.lon) &&
+      Math.hypot(item.lat-place.lat,item.lon-place.lon)<0.01));
+  if (known && !place.event && !place.landmark) return send(`Хочу в ${known.name}`, {destination_id:known.id});
   if (place.kind === "country") return send(`Хочу поехать: ${place.name}`, {map_country_code:place.code});
   if (place.kind === "city") return send(`Хочу поехать: ${place.name}${place.country_name ? `, ${place.country_name}` : ""}`,
     {map_city_id:place.id});
@@ -44,26 +50,30 @@ const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
   } });
 const drawMap = (options = {}) => tripMap.draw(options);
 const preferences = createPreferences(tripMap);
-const voice = createVoiceInput({input:$("text"), button:$("send"), status:$("voice-status"), holdToTalk:true});
+const voice = createVoiceInput({input:$("text"), button:$("send"), microphone:$("mic-button"), status:$("voice-status"), holdToTalk:true});
 let lastData = null, latestTurn = null, editing = false;
 const experience = createExperience({send, reset:resetConversation, undo:undoTurn, edit:editTurn,
   isBusy:()=>busy, voice, ideas:renderWelcome});
+const tripStorage = createTripStorage();
+const journeyUI = createJourneyUI({fill:experience.fill, onTransfer:changeTransfer});
+experience.showChat = () => journeyUI.show("chat", false);
+experience.showIdeas = () => {renderWelcome();journeyUI.show("results");};
 
 function renderHead(data) {
   const p = (data && data.payload) || {};
   const trip = p.trip || (p.order && { origin_code: p.order.origin_code, dest_code: p.order.dest_code, origin: p.order.origin, dest: p.order.dest });
   if (p.kind === "order") { $("head").replaceChildren(); return; }
-  if (trip && trip.dest_code) {
+  if (trip && trip.dest) {
     $("head").replaceChildren(el("div", { class: "route" },
-      el("div", { class: "codes" }, trip.origin_code, el("i", {}, "→"), trip.dest_code),
-      el("div", { class: "names" }, [trip.origin + " — " + trip.dest, trip.dates, trip.people].filter(Boolean).join(" · "))));
+      el("h1", {class:"route-title"}, el("span", {}, trip.origin), el("span", {"aria-hidden":"true",class:"route-arrow"}, "→"), el("span", {}, trip.dest)),
+      el("p", { class: "names" }, [trip.dates, trip.people].filter(Boolean).join(" · "))));
   } else if (data && (data.understood || []).length) {
-    const title = data.stage === "destination" ? "Подбираю направление" : "Уточняю поездку";
+    const title = ["ideas","destinations"].includes(p.kind) ? "Куда отправимся?" : "Уточним вашу поездку";
     $("head").replaceChildren(el("div", { class: "hero" }, el("h1", {}, title)));
   } else {
     $("head").replaceChildren(el("div", { class: "hero" },
-      el("h1", {}, "Куда хочется?"),
-      el("p", {}, "Выберите место на глобусе. Или просто расскажите, чего хочется.")));
+      el("h1", {}, "Соберём вашу поездку"),
+      el("p", {}, "Отель, дорога и трансферы — по вашим пожеланиям.")));
   }
 }
 
@@ -79,6 +89,11 @@ function renderConditions(data) {
   $("condition-change").hidden = !changed;
   $("condition-change").textContent = changed ? `${lastDestination} → ${destination}` : "";
   lastDestination = destination;
+  const summary=data?.trip_summary || {};
+  const dates=summary.date_from && summary.date_to ? `${summary.date_from.slice(8)}.${summary.date_from.slice(5,7)}–${summary.date_to.slice(8)}.${summary.date_to.slice(5,7)}` : null;
+  $("trip-summary-line").textContent=[destination,dates,summary.nights ? `${summary.nights} ночей` : null,
+    summary.adults ? `${summary.adults} взр.${summary.children ? ` + ${summary.children} дет.` : ""}` : null,
+    summary.budget_total ? `до ${new Intl.NumberFormat("ru-RU").format(summary.budget_total)} ₽` : null].filter(Boolean).join(" · ") || "Уточняем условия";
   $("conditions").replaceChildren(...understood.map((c) => el("span", { class: "chip" }, c)),
     ...assumed.map((a) => el("span", { class: "chip assumed", title: "Предположение — можно уточнить в чате" }, a)));
 
@@ -159,11 +174,12 @@ function renderWelcome() {
     if (!place || !picture) return null;
     return el("article", {class:"inspire-card"}, photo(picture, {alt:place.name}),
       el("button", {type:"button", class:"inspire-select", "data-sound":sound, "aria-label":`Выбрать ${place.name}`,
-        onclick:() => send(`хочу в ${place.name}`)}, el("span", {}, label), el("strong", {}, place.name), el("i", {"aria-hidden":"true"}, "↗")));
+        onclick:() => send(`Хочу в ${place.name}`, {destination_id:place.id})}, el("span", {}, label), el("strong", {}, place.name), el("i", {"aria-hidden":"true"}, "↗")));
   }).filter(Boolean);
   if (!cards.length) { $("view").replaceChildren(); return; }
   $("view").replaceChildren(el("section", {class:"inspiration"}, el("div", {class:"inspiration-head"},
     el("h2", {}, "Для вдохновения"), el("span", {}, "С чего начнём?")), el("div", {class:"inspiration-grid"}, cards)));
+  journeyUI.update({payload:{kind:"ideas",items:cards}});
 }
 
 function photo(img, opts = {}) {
@@ -208,17 +224,70 @@ const legLine = (leg) => {
 };
 const timelineEl = (items) => el("ol", { class: "timeline" }, items.map((t) => el("li", { class: t.level }, el("time", {}, t.t), el("span", {}, t.label))));
 const tripRoute = (t) => ({ origin: { name: t.origin, lat: t.origin_lat, lon: t.origin_lon }, targets: [{ name: t.dest, lat: t.lat, lon: t.lon }] });
+const detailBlock = (title, ...children) => el("details", {class:"compact-details"}, el("summary",{},title), ...children);
+const shortLeg = leg => leg.mode === "train" ? "Поезд" : leg.stops ? `Перелёт с пересадкой: ${leg.via}` : "Прямой перелёт";
+function cancellation(hotel) {
+  if (!hotel.free_cancel_days) return "Невозвратный тариф";
+  const when=new Date(hotel.date_in+"T00:00:00Z");when.setUTCDate(when.getUTCDate()-hotel.free_cancel_days);
+  return `Бесплатная отмена до ${new Intl.DateTimeFormat("ru-RU",{day:"numeric",month:"short",timeZone:"UTC"}).format(when)}`;
+}
+function legDetails(leg, from, to) {
+  return el("div",{}, el("p",{},`${from} → ${to}`), el("p",{},`${leg.carrier} · ${leg.number} · ${leg.seat_class}`),
+    el("p",{},`${leg.depart} → ${leg.arrive} · ${leg.duration}`),
+    el("p",{},leg.stops ? `Пересадка: ${leg.via}, ${leg.layover}` : "Без пересадок"),
+    el("p",{},leg.mode === "train" ? "Правила багажа нужно уточнить у перевозчика" : leg.baggage ? "Багаж включён" : "Без багажа"),
+    el("strong",{class:"component-price"},leg.price," за всех"));
+}
+function hotelDetails(hotel) {
+  return el("div",{},el("p",{},`${hotel.name} · ${hotel.stars}★ · ${hotel.rating}`),
+    el("p",{},`${hotel.dates} · ${hotel.meal}`),
+    el("p",{},`Заезд с ${hotel.check_in} · выезд до ${hotel.check_out || "уточняется"}`),
+    el("p",{},cancellation(hotel)),
+    el("p",{},hotel.beach_km != null ? `${hotel.beach_km} км до пляжа` : `${hotel.center_km} км до центра`),
+    el("div",{class:"tags"},(hotel.amenities||[]).map(name=>el("span",{class:"tag"},name))),
+    el("strong",{class:"component-price"},hotel.price," за проживание"),hotelSource(hotel));
+}
+function transferDetails(transfer, editable = false) {
+  const parts=[el("p",{},`${transfer.price} за всех · обе стороны`)];
+  for (const [key,title] of [["in","До отеля"],["out","Обратно к отправлению"]]) {
+    const leg=transfer[key];if(!leg)continue;
+    parts.push(el("div",{class:"transfer-leg"},el("h4",{},title),el("p",{},`${leg.from} → ${leg.to}`),
+      el("p",{},`${leg.pickup} → ${leg.arrive} · ${leg.minutes}`),el("p",{},leg.note),
+      el("p",{},`${leg.price} · ${leg.people}`)));
+  }
+  if(transfer.arrival_buffer) parts.push(el("p",{class:"detail-note"},`После прибытия заложено ${transfer.arrival_buffer} на выход. Обратно — ${transfer.departure_buffer} до отправления. Место встречи и детские кресла требуют уточнения.`));
+  if(editable) {
+    const select=el("select",{id:"transfer-kind","aria-label":"Тип трансфера"},
+      ...[["auto","Подобрать автоматически"],["taxi","Индивидуальный / минивэн"],["shuttle","Групповой"]].map(([value,label])=>el("option",{value,selected:value===(transfer.preference||"auto")},label)));
+    select.onchange=async()=>{select.disabled=true;await changeTransfer(select.value);if(select.isConnected)select.disabled=false;};
+    parts.push(el("label",{for:"transfer-kind"},"Тип трансфера в обе стороны"),select,el("p",{class:"detail-note"},"Цена и время пересчитаются. Отель и билеты сохранятся."),el("p",{id:"transfer-status",role:"status"}));
+  }
+  return el("div",{},...parts);
+}
+function packageDetails(k, trip) {
+  return detailBlock("Состав и маршрут",el("div",{class:"package-details"},
+    detailBlock("Туда",legDetails(k.out,trip.origin,trip.dest)),
+    detailBlock("Проживание",hotelDetails(k.hotel)),
+    detailBlock("Трансферы · обе стороны",transferDetails(k.transfer)),
+    detailBlock("Обратно",legDetails(k.back,trip.dest,trip.origin)),
+    detailBlock("Поездка по часам",timelineEl(k.timeline)),
+    detailBlock("Проверки и компромиссы",marks("why",k.why),marks("",k.checks),marks("trade",k.tradeoffs))));
+}
 function comparePackages(cards, items) {
   if (items.length < 2) return cards;
   const optionAttrs = (item) => { const key = "hotel:" + String(item.hotel.id || item.hotel.name);
     return {"data-option-key":key, hidden:preferenceData.hidden.includes(key)}; };
+  const fields=[["Стоимость за всех", x=>x.total],["Отель",x=>x.hotel.name],["Питание",x=>x.hotel.meal],
+    ["Отмена отеля",x=>cancellation(x.hotel)],["Туда",x=>legLine(x.out)],["Обратно",x=>legLine(x.back)],
+    ["Трансфер в обе стороны",x=>`${x.transfer.price} · ${x.transfer.note} · ${x.transfer.minutes}`],
+    ["Компромиссы",x=>(x.tradeoffs||[]).join("; ")||"—"]];
+  const common=fields.filter(([label,get])=>["Питание","Туда","Обратно"].includes(label)&&items.every(x=>get(x)===get(items[0])));
   const table = el("div", {class:"compare-scroll", hidden:true, tabindex:"0", role:"region", "aria-label":"Сравнение вариантов"},
+    common.length ? el("p",{class:"compare-common"},"Во всех вариантах: "+common.map(([label,get])=>`${label.toLowerCase()} — ${get(items[0])}`).join("; ")) : null,
     el("table", {class:"compare-table"},
       el("thead", {}, el("tr", {}, el("th", {scope:"col"}, "Параметр"),
         ...items.map((item, i) => el("th", {scope:"col", ...optionAttrs(item)}, item.title || `Вариант ${i+1}`)))),
-      el("tbody", {}, ...[["Демо-стоимость", (x) => x.total], ["Размещение", (x) => x.hotel.name],
-        ["Питание", (x) => x.hotel.meal], ["Туда", (x) => legLine(x.out)], ["Обратно", (x) => legLine(x.back)],
-        ["Компромиссы", (x) => (x.tradeoffs || []).join("; ") || "—"]].map(([label, get]) =>
+      el("tbody", {}, ...fields.filter(field=>!common.includes(field)).map(([label, get]) =>
           el("tr", {}, el("th", {scope:"row"}, label), ...items.map((item) => el("td", optionAttrs(item), get(item))))),
         el("tr", {}, el("th", {scope:"row"}, "Выбор"), ...items.map((item, i) =>
           el("td", optionAttrs(item), sayBtn("Выбрать", `беру ${i+1} вариант`, "btn ghost")))))));
@@ -267,7 +336,7 @@ const views = {
         gallery(d.gallery?.length ? d.gallery : savedDestinationPhotos(d.id), { alt: d.name }),
         el("div", { class: "kicker" }, `${i + 1} · ${d.country}`), el("h3", {}, d.name),
         el("div", { class: "tags" }, d.highlights.slice(0, 3).map((h) => el("span", { class: "tag" }, h))),
-        el("div", { class: "actions" }, sayBtn("Хочу сюда", `давай ${d.name}`, "btn accent")))))];
+        el("div", { class: "actions" }, destinationBtn("Хочу сюда", d, "btn accent")))))];
   },
   tent_transport(p) {
     drawMap(tripRoute(p.trip));
@@ -305,50 +374,47 @@ const views = {
         gallery(d.gallery || [d.image], { alt: d.name }),
         el("div", { class: "kicker" }, el("span", {}, `${i + 1} · ${d.country}`), i === 0 ? el("b", {}, "Лучше всего подходит") : null),
         el("h3", {}, d.name),
-        el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, d.visa ? `виза (демо): ${d.visa}` : "по России")),
+        el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, "за всю поездку на всех")),
+        d.visa ? el("details", {class:"compact-details visa-details"}, el("summary", {}, "Условия въезда · требуют проверки"), el("p", {}, `Демо-справка: ${d.visa}. Актуальные требования зависят от гражданства и не проверены.`)) : null,
         el("dl", { class: "facts" }, el("dt", {}, "Климат в среднем"), el("dd", {}, d.weather || "—"),
           el("dt", {}, "Дорога"), el("dd", {}, `${d.mode === "train" ? "поезд" : d.stops ? "с пересадкой" : "прямой рейс"}, ${d.travel}`)),
         marks("why", d.reasons.filter((r) => !/^(перелёт|поезд)/.test(r))),
         d.risks.filter((r) => !r.startsWith("виза")).length ? marks("", d.risks.filter((r) => !r.startsWith("виза")).map((t) => ({ level: "warn", text: t }))) : null,
         el("div", { class: "tags" }, d.highlights.map((h) => el("span", { class: "tag" }, h))),
-        el("div", { class: "actions" }, sayBtn(`Выбрать ${d.name}`, `давай ${d.name}`, i === 0 ? "btn accent" : "btn ghost")))))];
+        el("div", { class: "actions" }, destinationBtn(`Выбрать ${d.name}`, d, i === 0 ? "btn accent" : "btn ghost")))))];
   },
   packages(p) {
     drawMap(tripRoute(p.trip));
     const out = [];
-    if (p.notice) out.push(el("p", { class: "notice" }, p.notice));
-    if (p.diff && p.diff.length) out.push(el("p", { class: "notice" }, "Пересобрал план: " + p.diff.join("; ") + "."));
-    if (p.relaxed && p.relaxed.length) out.push(el("p", { class: "notice" }, "Чтобы что-то нашлось, я " + p.relaxed.join(", ") + "."));
-    out.push(gallery(p.trip.gallery || [p.trip.image], { cls: "cover", alt: p.trip.dest,
-      over: el("div", { class: "over" }, el("b", {}, p.trip.dest), el("span", {}, p.trip.weather ? `${p.trip.dates} · климат в среднем: ${p.trip.weather}` : p.trip.dates)) }));
-    if (p.calendar && p.calendar.length > 3) {
-      const prices = p.calendar.map((d) => d.price), lo = Math.min(...prices), hi = Math.max(...prices);
-      out.push(el("h2", { class: "section-title" }, "Когда выгоднее ехать"),
-        el("p", { class: "section-sub" }, `Дорога туда и обратно на человека по дате заезда, поездка на ${p.trip.dates.match(/\((.*)\)/)?.[1] || "те же ночи"}. Зелёные — самые выгодные дни.`),
-        el("div", { class: "cal", role: "group", "aria-label": "Демонстрационные цены по датам" }, p.calendar.map((d) => el("button", {
-          type: "button", class: [d.cheap ? "cheap" : "", d.chosen ? "chosen" : ""].join(" "), title: `${d.day} ${d.month}: ${d.label}`,
-          onclick: () => d.chosen || send(`с ${d.day} ${d.month}`) },
-          el("span", {}, d.wd), el("b", {}, String(d.day)),
-          el("span", { class: "bar", style: `height:${(6 + 22 * (d.price - lo) / Math.max(hi - lo, 1)).toFixed(0)}px` }),
-          el("span", { "data-rub-price": d.price }, d.label)))));
+    if(p.notice)out.push(el("p",{class:"notice"},p.notice));
+    if(p.diff?.length)out.push(el("p",{class:"notice"},"Пересобрал план: "+p.diff.join("; ")+"."));
+    if(p.relaxed?.length)out.push(el("p",{class:"notice"},"Чтобы что-то нашлось, я "+p.relaxed.join(", ")+"."));
+    const packageCards=el("div",{class:"cards"},p.items.map((k,i)=>el("article",{class:"card package-card"+(i===0?" best":"")},
+      photo(k.hotel.image,{alt:k.hotel.name,badge:"иллюстрация отеля"}),
+      el("div",{class:"kicker"},el("span",{},`Вариант ${i+1}`),i===0?el("b",{},"Рекомендую"):null),
+      el("h3",{},k.title),el("div",{class:"price num"},k.total,el("small",{},`${p.trip.people} · вся поездка`)),
+      el("p",{class:"package-hotel"},`${k.hotel.name} · ${k.hotel.stars}★`),
+      el("p",{class:"detail-note"},`${k.hotel.meal} · ${shortLeg(k.out)} · трансферы включены`),
+      el("p",{class:"cancellation-summary"},cancellation(k.hotel)),
+      marks("why",k.why.filter(t=>!t.includes(k.hotel.name)&&!/(?:завтрак|полупансион|всё включено|бесплатная отмена|перелёт без пересадок)/i.test(t)).slice(0,2)),
+      k.tradeoffs.length?marks("trade",k.tradeoffs.slice(0,1)):null,
+      k.checks.some(c=>c.level==="risk")?marks("",k.checks.filter(c=>c.level==="risk")):null,
+      el("div",{class:"actions"},sayBtn("Выбрать",`беру ${i+1} вариант`,i===0?"btn accent":"btn ghost")),
+      packageDetails(k,p.trip))));
+    out.push(el("h2",{class:"section-title"},p.items.length>1?`${p.items.length} варианта вашей поездки`:"Ваша поездка"),
+      el("p",{class:"section-sub"},`${p.trip.dates} · ${p.trip.people}. В сумме: дорога, отель и трансферы. Цены и условия — демо.`),
+      comparePackages(packageCards,p.items));
+    if(p.calendar?.length>3) {
+      const prices=p.calendar.map(d=>d.price),lo=Math.min(...prices),hi=Math.max(...prices);
+      const calendar=detailBlock("Если сдвинуть даты",el("p",{class:"section-sub"},"Стоимость дороги туда и обратно на одного человека. Отель и трансферы здесь не включены."),
+        el("div",{class:"cal",role:"group","aria-label":"Демонстрационные цены по датам"},p.calendar.map(d=>el("button",{
+          type:"button",class:[d.cheap?"cheap":"",d.chosen?"chosen":""].join(" "),title:`${d.day} ${d.month}: ${d.label}`,
+          onclick:()=>d.chosen||send(`с ${d.day} ${d.month}`)},el("span",{},d.wd),el("b",{},String(d.day)),
+          el("span",{class:"bar",style:`height:${(6+22*(d.price-lo)/Math.max(hi-lo,1)).toFixed(0)}px`}),el("span",{"data-rub-price":d.price},d.label)))));
+      calendar.classList.add("calendar-details");out.push(calendar);
     }
-    const packageCards = el("div", { class: "cards" }, p.items.map((k, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
-        photo(k.hotel.image, { alt: k.hotel.name, badge: "иллюстрация отеля" }),
-        el("div", { class: "kicker" }, el("span", {}, `Вариант ${i + 1}`), i === 0 ? el("b", {}, "Рекомендую") : null),
-        el("h3", {}, k.title),
-        el("div", { class: "price num" }, k.total, el("small", {}, p.trip.people)),
-        el("dl", { class: "facts" },
-          el("dt", {}, "Туда"), el("dd", {}, legLine(k.out)),
-          el("dt", {}, "Обратно"), el("dd", {}, legLine(k.back)),
-          el("dt", {}, "Отель"), el("dd", {}, `${k.hotel.name}, ${k.hotel.stars}★, ${k.hotel.rating} · ${k.hotel.meal} · ${k.hotel.dates}`, hotelSource(k.hotel))),
-        el("div", {}, el("h4", {}, "Почему подходит"), marks("why", k.why.slice(1, 6))),
-        k.tradeoffs.length ? el("div", {}, el("h4", {}, "Чем жертвуем"), marks("trade", k.tradeoffs.slice(0, 4))) : null,
-        el("div", {}, el("h4", {}, "Поездка по часам"), timelineEl(k.timeline)),
-        k.checks.some((c) => c.level !== "ok") ? el("div", {}, el("h4", {}, "Обратите внимание"), marks("", k.checks.filter((c) => c.level !== "ok"))) : null,
-        el("div", { class: "actions" }, sayBtn("Выбрать вариант", `беру ${i + 1} вариант`, i === 0 ? "btn accent" : "btn ghost")))));
-    out.push(el("h2", { class: "section-title" }, p.items.length > 1 ? `${p.items.length} способа поехать` : "Ваша поездка"),
-      el("p", { class: "section-sub" }, `${p.trip.weather ? "Климат — средние за 2022–2025 годы, не прогноз: " + p.trip.weather + ". " : ""}Демо-цены и расписание смоделированы; наличие не проверялось.`),
-      comparePackages(packageCards, p.items));
+    out.push(detailBlock("Фото направления и климат",gallery(p.trip.gallery||[p.trip.image],{cls:"cover",alt:p.trip.dest}),
+      el("p",{class:"detail-note"},`Климат — средние за 2022–2025 годы, не прогноз: ${p.trip.weather||"нет данных"}.`)));
     return out;
   },
   hotels(p) {
@@ -365,26 +431,29 @@ const views = {
   },
   cart(p) {
     drawMap(tripRoute(p.trip));
-    const k = p.package;
-    const rows = [
-      [`Туда · ${k.out.carrier} ${k.out.number}`, `${k.out.depart} → ${k.out.arrive}`, k.out.price],
-      [`Отель · ${k.hotel.name}, ${k.hotel.stars}★`, `${k.hotel.dates}, ${k.hotel.meal}, заезд с ${k.hotel.check_in}`, k.hotel.price],
-      ["Трансферы", `${k.transfer.note}, ${k.transfer.minutes} в одну сторону`, k.transfer.price],
-      [`Обратно · ${k.back.carrier} ${k.back.number}`, `${k.back.depart} → ${k.back.arrive}`, k.back.price],
+    const k=p.package;
+    const rows=[
+      ["Туда",`${k.out.carrier} ${k.out.number}`,k.out.price],
+      ["Проживание",`${k.hotel.name} · ${k.hotel.dates}`,k.hotel.price],
+      ["Трансферы",`${k.transfer.note} · обе стороны`,k.transfer.price],
+      ["Обратно",`${k.back.carrier} ${k.back.number}`,k.back.price]
     ];
-    return [
-      p.diff && p.diff.length ? el("p", { class: "notice" }, "Пересобрал корзину: " + p.diff.join("; ") + ".") : null,
-      el("h2", { class: "section-title" }, `Корзина · ${k.title}`),
-      el("p", { class: "section-sub" }, "Перед оплатой проверил, что всё стыкуется."),
-      el("div", { class: "split" },
-        el("article", { class: "card" },
-          el("table", { class: "receipt" }, rows.map(([a, b, c]) => el("tr", {}, el("td", {}, el("div", {}, a), el("small", {}, b)), el("td", {}, c))),
-            el("tr", { class: "total" }, el("td", {}, "Итого"), el("td", {}, p.total))),
-          el("div", { class: "actions" }, el("button", { type: "button", class: "btn accent", onclick: () => send("да, оформляй") }, "Выбрать способ оплаты"),
-            sayBtn("К вариантам", "нет, вернуться к вариантам"))),
-        el("article", { class: "card" }, photo(k.hotel.image, { alt: k.hotel.name, badge: "иллюстрация отеля" }),
-          el("h4", {}, "Поездка по часам"), timelineEl(k.timeline),
-          el("h4", {}, "Состыковки"), marks("", k.checks)))];
+    const component=(title,content,action)=>el("section",{class:"trip-component"},el("h3",{},title),content,action||null);
+    return [p.diff?.length?el("p",{class:"notice"},"Обновил поездку: "+p.diff.join("; ")+"."):null,
+      el("h2",{class:"section-title"},`Ваша поездка · ${k.title.toLowerCase()}`),
+      el("p",{class:"section-sub"},`${p.trip.dates} · ${p.trip.people}. Раскройте детали или измените нужную часть.`),
+      el("div",{class:"component-layout"},
+        el("article",{class:"card basket-total"},
+          el("table",{class:"receipt"},el("tbody",{},rows.map(([a,b,c])=>el("tr",{},el("td",{},el("div",{},a),el("small",{},b)),el("td",{},c))),
+            el("tr",{class:"total"},el("td",{},"Итого"),el("td",{},p.total)))),
+          el("p",{class:"detail-note"},"Демо-расчёт за всех. Реальная бронь и списание не выполняются."),
+          el("div",{class:"actions"},sayBtn("Выбрать способ оплаты","да, оформляй","btn accent"),sayBtn("К вариантам","нет, вернуться к вариантам"))),
+        el("div",{class:"trip-components"},
+          component("Туда",legDetails(k.out,p.trip.origin,p.trip.dest),el("button",{type:"button",class:"text-button",onclick:()=>experience.openCondition("transport")},"Изменить дорогу")),
+          component("Проживание",hotelDetails(k.hotel),sayBtn("Другие отели","покажи другие отели","text-button")),
+          component("Трансферы",transferDetails(k.transfer,true)),
+          component("Обратно",legDetails(k.back,p.trip.dest,p.trip.origin)),
+          detailBlock("Поездка по часам и состыковки",timelineEl(k.timeline),marks("",k.checks))))];
   },
   payment(p) {
     drawMap(tripRoute(p.trip));
@@ -405,7 +474,7 @@ const views = {
       el("article", { class: "pass" },
         el("div", { class: "main" },
           photo(o.image, { alt: o.dest }),
-          el("div", { class: "route" }, el("div", { class: "codes" }, o.origin_code, el("i", {}, "→"), o.dest_code)),
+          el("div", { class: "route" }, el("h3", {class:"route-title"}, o.origin, " → ", o.dest)),
           el("dl", { class: "facts" }, el("dt", {}, "Туда"), el("dd", {}, o.out), el("dt", {}, "Обратно"), el("dd", {}, o.back),
             el("dt", {}, "Отель"), el("dd", {}, `${o.hotel} · ${o.hotel_dates || ""}`), el("dt", {}, "Отмена"), el("dd", {}, cancel)),
           p.requests && p.requests.length ? el("div", {}, el("h4", {}, "Запросы в отель"), marks("why", p.requests)) : null,
@@ -420,6 +489,8 @@ const views = {
 
 function addMessage(role, content, meta) {
   const m = el("div", { class: `msg ${role}` }, content, meta ? el("span", { class: "meta" }, meta) : null);
+  m.dataset.text=typeof content === "string" ? content : content.textContent;
+  m.dataset.role=role;
   $("log").append(m); preferences.apply();
   requestAnimationFrame(()=>{const scroll=$("conversation-scroll");scroll.scrollTop=scroll.scrollHeight;}); return m;
 }
@@ -453,11 +524,11 @@ function renderSuggest(data) {
     const starters = [
       ["К морю", "Хочу к морю, пока не знаю куда. Предложи идеи без дат.", "sea"],
       ["В горы", "Хочу в горы, пока не знаю куда. Предложи идеи без дат.", "alpine"],
-      ["Пока не знаю", null, null]
+      ["Помоги выбрать", null, null]
     ];
     $("suggest").replaceChildren(...starters.map(([label,text,mood]) => el("button", {type:"button",onclick:()=>{
-      if(text){experience.setMood(mood);send(text);}else{experience.showIdeas();showMoodChoices();}
-    }},label)),el("button",{type:"button",class:"example-link",onclick:()=>experience.openExamples()},"Посмотреть примеры запросов ↗"));
+      if(text){experience.setMood(mood);send(text);}else{experience.showIdeas();}
+    }},label)));
     return;
   }
   const payload = typeof data === "object" ? data.payload || {} : {};
@@ -534,12 +605,14 @@ function render(data) {
   }
   decorateOptions(p);
   preferences.apply(); experience.update(data);
+  journeyUI.update(data);
 }
 async function post(path, body) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!r.ok) {
     const detail=await r.json().catch(()=>({}));
-    throw new Error(typeof detail.detail === "string" ? detail.detail : "Не удалось отправить. Текст сохранён — попробуйте ещё раз.");
+    const error=new Error(typeof detail.detail === "string" ? detail.detail : "Не удалось отправить. Текст сохранён — попробуйте ещё раз.");
+    error.status=r.status;throw error;
   }
   return r.json();
 }
@@ -552,6 +625,7 @@ function showMoodChoices() {
 }
 function setBusy(value) {
   busy=value; $("send").disabled=value; $("undo").disabled=value || !lastData?.can_undo;
+  $("mic-button").disabled=value;
   $("reset").disabled=value; $("conditions-edit").disabled=value;
 }
 function editTurn(turn) {
@@ -566,6 +640,67 @@ function attachEdit(turn,data) {
   turn.user.classList.add("latest-user");
   turn.user.append(el("button",{type:"button",class:"message-edit text-button",onclick:()=>editTurn(turn)},"Изменить"));
 }
+function saveTrip() {
+  if(!sessionId || !lastData)return;
+  const messages=[...$("log").querySelectorAll(".msg")].filter(node=>!node.querySelector(".typing"))
+    .map(node=>({role:node.dataset.role,text:node.dataset.text||"",kind:node.dataset.kind||""}));
+  const saved=tripStorage.write({session_id:sessionId,revision:lastData.revision,messages,
+    draft:$("text").value,editing,panel:journeyUI.panel()});
+  $("save-status").hidden=false;
+  $("save-status").textContent=saved ? "Поездка сохранена в этой вкладке" : "Браузер не разрешил сохранить поездку";
+}
+async function restoreTrip() {
+  const saved=tripStorage.read();if(!saved)return false;
+  let data;
+  try {data=await post("/api/session",{session_id:saved.session_id});}
+  catch(error){
+    if(error.status===404){tripStorage.clear();addMessage("bot","Прошлая сессия завершилась. Начнём новую поездку.");return false;}
+    throw error;
+  }
+  const records=Array.isArray(saved.messages)?saved.messages.slice(-60):[];
+  $("log").replaceChildren();let user=null,bot=null;
+  for(const record of records){
+    if(!["user","bot"].includes(record.role)||typeof record.text!=="string")continue;
+    let content=record.text.slice(0,20000);
+    if(record.role==="bot"){content=el("div");renderTravelReply(content,record.text.slice(0,20000),record.kind||"");}
+    const node=addMessage(record.role,content);node.dataset.text=record.text.slice(0,20000);node.dataset.kind=record.kind||"";
+    if(record.role==="user"){user=node;bot=null;}else if(user)bot=node;
+  }
+  conversationStarted=Boolean(user)||Boolean(data.understood?.length);
+  render(data);
+  if(saved.revision===data.revision && user && bot){
+    latestTurn={text:user.dataset.text,user,bot};attachEdit(latestTurn,data);
+    journeyUI.addResultLink(bot);
+  }else{
+    const reply=el("div");renderTravelReply(reply,data.reply,data.payload?.kind);
+    const latest=addMessage("bot",reply);latest.dataset.text=data.reply;latest.dataset.kind=data.payload?.kind||"";
+    journeyUI.addResultLink(latest);latestTurn=null;
+  }
+  $("text").value=typeof saved.draft==="string"?saved.draft.slice(0,4000):"";
+  $("text").dispatchEvent(new Event("input",{bubbles:true}));
+  editing=Boolean(saved.editing && latestTurn && data.can_undo);$("edit-banner").hidden=!editing;
+  journeyUI.show(["chat","results","map"].includes(saved.panel)?saved.panel:"chat",false);
+  saveTrip();return true;
+}
+async function changeTransfer(kind) {
+  if(busy||!sessionId||!lastData)return;
+  setBusy(true);
+  const label={auto:"Подобрать трансфер автоматически",taxi:"Индивидуальный трансфер",shuttle:"Групповой трансфер"}[kind];
+  try{
+    const data=await post("/api/trip/transfer",{session_id:sessionId,revision:lastData.revision,kind});
+    const user=addMessage("user",label),reply=el("div");renderTravelReply(reply,data.reply,data.payload?.kind);
+    const bot=addMessage("bot",reply);bot.dataset.text=data.reply;bot.dataset.kind=data.payload?.kind||"";
+    latestTurn={text:label,user,bot};editing=false;$("edit-banner").hidden=true;
+    render(data);journeyUI.addResultLink(bot);journeyUI.show("results",false);saveTrip();
+    $("say").textContent="Трансферы, время и общая сумма обновлены.";
+  }catch(error){
+    $("say").textContent=error.message;
+    if($("transfer-status"))$("transfer-status").textContent=error.message;
+    if($("transfer-kind"))$("transfer-kind").value=lastData.payload.package.transfer.preference||"auto";
+  }finally{setBusy(false);}
+}
+$("text").addEventListener("input",()=>saveTrip());
+window.addEventListener("pagehide",()=>saveTrip());
 async function send(text, selection = {}) {
   if(busy || !text.trim()) return;
   if(voice.isActive()) voice.cancel();
@@ -579,12 +714,15 @@ async function send(text, selection = {}) {
     const detected = sessionId ? null : await Promise.race([approximateCity, new Promise((resolve) => setTimeout(() => resolve(null), 2000))]);
     const data=await post(replacing ? "/api/chat/edit" : "/api/chat",{text,session_id:sessionId,revision:lastData?.revision,...selection,detected_city:detected});
     typing.remove();
-    if(replacing){replacing.bot.remove();user.replaceChildren(text);}
+    if(replacing){replacing.bot.remove();user.replaceChildren(text);user.dataset.text=text;}
     const reply=el("div"); renderTravelReply(reply,data.reply,(data.payload||{}).kind);
     const bot=addMessage("bot",reply);
+    bot.dataset.text=data.reply;bot.dataset.kind=data.payload?.kind || "";
     latestTurn={text,user,bot}; editing=false; $("edit-banner").hidden=true;
     render(data); attachEdit(latestTurn,data); $("say").textContent="";
+    journeyUI.addResultLink(bot);
     experience.showChat();
+    saveTrip();
     return true;
   } catch(error) {
     typing.remove(); if(!replacing)user.remove();
@@ -603,27 +741,30 @@ async function undoTurn() {
     $("edit-banner").hidden=true;
     conversationStarted=Boolean($("log").querySelector(".user"));
     render(data);experience.fill(text);voice.clearStatus();
+    saveTrip();
     $("voice-status").hidden=false;$("voice-status").textContent="Последняя реплика отменена. Можно исправить и отправить снова.";
   } catch(error){addMessage("bot",error.message);} finally {setBusy(false);}
 }
-function greet(){addMessage("bot","Расскажите о поездке — можно начать с желания или описать всё сразу.");}
+function greet(){addMessage("bot","Расскажите, какой отдых хочется. Подберём отель, дорогу и трансферы — можно начать с пары слов.");}
 function start(){conversationStarted=false;lastDestination=null;lastData=null;latestTurn=null;editing=false;
   $("map").hidden=false;renderStages("start");renderHead(null);renderConditions(null);renderSaved();renderSuggest("start");
-  $("view").replaceChildren();drawMap({});experience.reset();greet();}
+  $("view").replaceChildren();drawMap({});experience.reset();journeyUI.update(null);journeyUI.show("chat",false);greet();}
 $("ask").addEventListener("submit",(event)=>{
   event.preventDefault();if(busy)return;
   if(voice.isActive()){voice.toggle();return;}
   const text=$("text").value.trim();
-  if(!text){$("voice-status").hidden=false;$("voice-status").textContent="Удерживайте стрелку для диктовки или напишите сообщение.";$("text").focus();return;}
+  if(!text){$("voice-status").hidden=false;$("voice-status").textContent="Напишите сообщение или нажмите микрофон.";$("text").focus();return;}
   experience.fill("");voice.clearStatus();send(text);
 });
 async function resetConversation(){
   if(busy)return;voice.cancel();setBusy(true);
   try {if(sessionId)await post("/api/reset",{session_id:sessionId});
-    sessionId=null;$("log").replaceChildren();$("view").replaceChildren();$("say").textContent="";start();
+    tripStorage.clear();sessionId=null;$("save-status").hidden=true;$("log").replaceChildren();$("view").replaceChildren();$("say").textContent="";start();
   }catch(error){addMessage("bot","Не удалось начать новую поездку. Попробуйте ещё раз.");}finally{setBusy(false);}
 }
 async function initialise() {
+  setBusy(true);
+  let ready = false;
   const load = async (url) => {
     const response = await fetch(url, {cache: "no-store"});
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -637,7 +778,9 @@ async function initialise() {
     ]);
     $("startup-error")?.remove();
     info = i; imageCredits = credits; inspiration = prompts || inspiration;
-    tripMap.setData(i, l); experience.configureExamples(i); start();
+    tripMap.setData(i, l); experience.configureExamples(i); $("log").replaceChildren();start();
+    if (!(await restoreTrip())) journeyUI.firstVisit();
+    ready = true;
   } catch (_) {
     tripMap.unavailable();
     $("startup-error")?.remove();
@@ -648,6 +791,6 @@ async function initialise() {
     const message = addMessage("bot", el("div", {role:"status"},
       el("span", {}, "Не удалось подключиться. Проверьте, что приложение запущено."), retry));
     message.id = "startup-error";
-  }
+  } finally {setBusy(!ready);}
 }
 initialise();

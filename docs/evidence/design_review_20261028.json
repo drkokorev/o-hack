@@ -1,0 +1,237 @@
+{
+  "base_commit": "65e525bfbb200b11f9f38f01490808df8511bcc3",
+  "date": "2026-10-28",
+  "backend": {
+    "all_passed": 576,
+    "seconds": 70.78,
+    "focused_passed": 13
+  },
+  "browser": {
+    "checks": [
+      "first visit opens introduction",
+      "tour explains globe",
+      "tour explains trip parts",
+      "example prefills composer",
+      "example is not sent automatically",
+      "tour stays dismissed after reload",
+      "compact useful title",
+      "three short starter wishes",
+      "fresh chat fits viewport {\"viewport\":320,\"document\":320}",
+      "globe fits viewport {\"viewport\":320,\"document\":320}",
+      "globe accessible 320",
+      "fresh chat fits viewport {\"viewport\":390,\"document\":390}",
+      "globe fits viewport {\"viewport\":390,\"document\":390}",
+      "globe accessible 390",
+      "fresh chat fits viewport {\"viewport\":768,\"document\":768}",
+      "globe fits viewport {\"viewport\":768,\"document\":768}",
+      "globe accessible 768",
+      "inspiration opens on request",
+      "inspiration fits viewport {\"viewport\":390,\"document\":390}",
+      "destinations fits viewport {\"viewport\":390,\"document\":390}",
+      "Antalya button opens three packages",
+      "catalog action avoids false personal-data warning",
+      "packages fits viewport {\"viewport\":390,\"document\":390}",
+      "packages fits viewport {\"viewport\":320,\"document\":320}",
+      "comparison fits viewport {\"viewport\":320,\"document\":320}",
+      "comparison available 320",
+      "packages fits viewport {\"viewport\":768,\"document\":768}",
+      "comparison fits viewport {\"viewport\":768,\"document\":768}",
+      "comparison available 768",
+      "packages fits viewport {\"viewport\":1440,\"document\":1440}",
+      "comparison fits viewport {\"viewport\":1440,\"document\":1440}",
+      "comparison available 1440",
+      "both transfer directions available inside package",
+      "basket has four trip components",
+      "change road opens transport condition",
+      "group transfer applied",
+      "transfer keeps selected hotel",
+      "transfer keeps outward tickets",
+      "transfer keeps return tickets",
+      "transfer changes total",
+      "basket fits viewport {\"viewport\":320,\"document\":320}",
+      "basket fits viewport {\"viewport\":390,\"document\":390}",
+      "basket fits viewport {\"viewport\":768,\"document\":768}",
+      "basket fits viewport {\"viewport\":1440,\"document\":1440}",
+      "refresh never replays chat request",
+      "refresh restores conversation",
+      "refresh restores draft",
+      "refresh restores total",
+      "refresh restores transfer selection",
+      "new trip resets conversation",
+      "new trip clears saved session",
+      "Russian city route replaces IATA heading",
+      "long Russian route fits viewport {\"viewport\":390,\"document\":390}",
+      "reduced motion respected"
+    ],
+    "widths": [
+      {
+        "name": "fresh chat",
+        "viewport": 320,
+        "document": 320
+      },
+      {
+        "name": "globe",
+        "viewport": 320,
+        "document": 320
+      },
+      {
+        "name": "fresh chat",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "name": "globe",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "name": "fresh chat",
+        "viewport": 768,
+        "document": 768
+      },
+      {
+        "name": "globe",
+        "viewport": 768,
+        "document": 768
+      },
+      {
+        "name": "inspiration",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "name": "destinations",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "name": "packages",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "name": "packages",
+        "viewport": 320,
+        "document": 320
+      },
+      {
+        "name": "comparison",
+        "viewport": 320,
+        "document": 320
+      },
+      {
+        "name": "packages",
+        "viewport": 768,
+        "document": 768
+      },
+      {
+        "name": "comparison",
+        "viewport": 768,
+        "document": 768
+      },
+      {
+        "name": "packages",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "name": "comparison",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "name": "basket",
+        "viewport": 320,
+        "document": 320
+      },
+      {
+        "name": "basket",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "name": "basket",
+        "viewport": 768,
+        "document": 768
+      },
+      {
+        "name": "basket",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "name": "long Russian route",
+        "viewport": 390,
+        "document": 390
+      }
+    ],
+    "heights": [
+      671,
+      671,
+      671
+    ],
+    "totalBefore": "Итого\t118 140 ₽",
+    "totalAfter": "Итого\t117 080 ₽"
+  },
+  "recovery": {
+    "checks": [
+      "real globe surface and models loaded",
+      "globe still rotates by dragging",
+      "landmark remains selectable",
+      "visible microphone explains permission first",
+      "permission does not start hidden recording",
+      "microphone preserves typed draft",
+      "dictation does not send automatically",
+      "reload restores edit mode",
+      "reload restores unsent edit",
+      "restored edit replaces the original turn",
+      "restored edit updates origin",
+      "undo works after another reload",
+      "failed restore blocks accidental replacement with new session",
+      "failed restore keeps saved session",
+      "retry restores existing conversation",
+      "expired session explains new start",
+      "expired session removes stale saved state",
+      "no browser JavaScript errors"
+    ],
+    "globe": {
+      "center": [
+        33.692434,
+        35.216071
+      ],
+      "zoom": 1.65,
+      "projection": "globe",
+      "earth": true,
+      "models": [
+        "tower",
+        "sport",
+        "spire"
+      ]
+    },
+    "errors": [],
+    "voice": "explicit recognition and permission doubles"
+  },
+  "initial_findings": [
+    {
+      "document_width": 354,
+      "result": "FAIL",
+      "issue": "Basket overflow at 320px",
+      "resolved": true
+    },
+    {
+      "result": "FAIL",
+      "issue": "Harness reset saved session again on pagehide",
+      "resolved": true
+    },
+    {
+      "result": "FAIL",
+      "issue": "Harness expected llm instead of valid llm+rules",
+      "resolved": true
+    }
+  ],
+  "limitations": [
+    "Voice recognition and permission used explicit doubles",
+    "No checkout or payment",
+    "Session state remains in process memory"
+  ]
+}

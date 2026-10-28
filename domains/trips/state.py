@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -66,6 +66,7 @@ class TripState(TripParams):
     """Состояние диалога: пожелания плюс то, что ведёт код агента."""
 
     stage: str = "start"                 # start | destination | plan | cart | payment | booked
+    transfer_kind: Literal["taxi", "shuttle"] | None = None  # explicit UI choice; not inferred by the LLM
     suggested: list[str] = Field(default_factory=list)       # id предложенных направлений
     seen: list[str] = Field(default_factory=list)            # все показанные в этом подборе — «ещё» листает дальше
     dest_id: str | None = None           # выбранное направление
