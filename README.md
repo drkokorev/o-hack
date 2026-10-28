@@ -8,12 +8,14 @@
 ## Быстрый старт
 
 ```bash
-git clone git@github.com:ostrovok-hackathon-2026/iskusstvennyi-praim.git
+git clone --branch codex/integrated-experience-20261028 git@github.com:ostrovok-hackathon-2026/iskusstvennyi-praim.git
 cd iskusstvennyi-praim
 cp .env.example .env   # необязательно: без ключа LLM агент работает на правилах
 docker compose up --build
 # открыть http://localhost:8080
 ```
+
+Если исходники получены ZIP-архивом, распакуйте его и выполните `docker compose up --build` в распакованной папке.
 
 Попробуйте: «В Сочи из Москвы с 5 по 12 декабря вдвоём» → на вопрос о составе ответьте «2 взрослых» → «беру 1 вариант» → «да, оформляй» → «оплата СБП» → «да, подтверждаю». Или опишите отдых без точных дат: агент уточнит их или предложит идеи без расчёта стоимости.
 
