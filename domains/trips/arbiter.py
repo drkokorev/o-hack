@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 
 from .geo import BY_ID
-from .rules import find_destination, time_expression_not_place
+from .rules import find_destination, match_origin, time_expression_not_place
 from .state import TripState, TripUpdate
 from .textparse import norm
 
@@ -120,7 +120,8 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         notes.append(f"pick_name={data['pick_name']!r}: нет в тексте")
         data["pick_name"] = None
 
-    if data.get("origin") and not rules.origin and norm(data["origin"])[:4] not in t:
+    if (data.get("origin") and not rules.origin and norm(data["origin"])[:4] not in t and
+            match_origin(t) != data["origin"]):  # «пинза» — опечатка в названии, модель поняла верно
         notes.append("origin: в реплике нет указанного моделью города отправления")
         data["origin"] = None
 

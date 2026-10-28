@@ -19,7 +19,7 @@
     "id": "H03_unsupported_departure",
     "family": "unknown origin disclosure",
     "turns": [
-      {"text": "В Сочи из Якутска 5–10 июля 2027 двое взрослых", "state": {"origin": null}, "reply_any": ["якутск"]}
+      {"text": "В Сочи из Урюпинска 5–10 июля 2027 двое взрослых", "state": {"origin": null}, "reply_any": ["урюпинск"]}
     ]
   },
   {

@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from functools import lru_cache
 from datetime import date, timedelta
+from difflib import get_close_matches
 
 from .geo import BY_ID, DESTINATIONS, ORIGINS
 from .state import TripState, TripUpdate
@@ -217,7 +218,41 @@ def match_origin(fragment: str) -> str | None:
     if best:
         return best
     head = " ".join(words)
-    return next((v for k, v in _ORIGIN_ALIASES.items() if head.startswith(k)), None)
+    alias = next((v for k, v in _ORIGIN_ALIASES.items() if head.startswith(k)), None)
+    return alias or _fuzzy_origin(words)
+
+
+def _close(word: str, options, cutoff: float | None = None):
+    """Опечатка в названии: «пинза» → «пенза», «сачи» → «сочи». Первая буква должна совпасть,
+    короткие слова — строже; так «дачи» не станет «Сочи»."""
+    if len(word) < 4:
+        return None
+    cutoff = cutoff or (0.75 if len(word) <= 5 else 0.8)
+    found = get_close_matches(word, [o for o in options if o[:1] == word[:1]], n=1, cutoff=cutoff)
+    return found[0] if found else None
+
+
+@lru_cache(maxsize=1)
+def _origin_forms() -> dict[str, str]:
+    forms = {}
+    for o in ORIGINS:
+        forms[norm(o.name)] = o.name
+        if o.gen:
+            forms[norm(o.gen)] = o.name
+    return forms
+
+
+def _fuzzy_origin(words: list[str]) -> str | None:
+    """Только для слов, которых нет в словаре: «пинза», «сартов»; «дома» или «двое» городом не станут."""
+    from core.privacy import _morph
+
+    if not words or any(p.is_known for p in _morph().parse(words[0])):
+        return None
+    forms = _origin_forms()
+    for n in (3, 2, 1):
+        if len(words) >= n and (hit := _close(" ".join(words[:n]), forms)):
+            return forms[hit]
+    return None
 
 
 def _find_origin(t: str) -> str | None:
