@@ -9,19 +9,21 @@ button { touch-action:manipulation; }
 button:disabled { cursor:default; opacity:.4; }
 :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .shell { grid-template-columns:minmax(0,1fr) 430px 108px; grid-template-rows:72px 1fr; min-height:100dvh; padding:0; }
-header.top { height:72px; padding:0 32px; gap:24px; background:var(--atmosphere); border-bottom:0; backdrop-filter:none; z-index:10; }
+header.top { height:72px; padding:0 32px; gap:24px; background:var(--surface); border-bottom:1px solid var(--line); backdrop-filter:none; z-index:10; }
 .logo { font-family:var(--display); font-weight:800; font-size:21px; letter-spacing:-.03em; color:var(--accent); text-decoration:none; }
-.logo span { display:inline-block; color:var(--accent); background:#fff; border-radius:4px; padding:2px 1px; margin:0 1px; transform:rotate(-7deg); }
-.brand-note { color:var(--ink); font-size:13px; }
+.logo span { display:inline-block; color:var(--accent); background:var(--sun); border-radius:4px; padding:2px 1px; margin:0 1px; transform:rotate(-7deg); }
+.brand-note { color:var(--muted); font-size:13px; }
 .preferences { margin-left:auto; gap:8px; }
-.language-pill { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 12px; font-size:13px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
-.preferences select { min-height:44px; padding:0 10px; max-width:100px; border-radius:12px; font-size:13px; }
+.language-pill { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 12px; font-size:13px; border:1px solid transparent; border-radius:12px; background:var(--bg); }
+.preferences select { min-height:44px; padding:0 10px; max-width:100px; border:1px solid transparent; border-radius:12px; font-size:13px; background:var(--bg); }
 .icon-button { width:44px; height:44px; min-width:44px; padding:0; display:grid; place-items:center; border:1px solid transparent; border-radius:12px; background:transparent; color:var(--ink); cursor:pointer; font:500 24px/1 var(--body); text-decoration:none; }
 .icon-button:hover { background:var(--accent-soft); color:var(--accent); }
-.preferences .sound-toggle { width:44px; height:44px; border:1px solid var(--line); background:var(--surface); }
+.preferences .sound-toggle { width:44px; height:44px; border:1px solid transparent; background:var(--bg); }
 .mobile-map { display:none; }
-main.board { min-width:0; padding:34px 30px 18px; display:flex; flex-direction:column; align-self:start;
-  background:linear-gradient(to bottom,var(--atmosphere) 0,var(--atmosphere) 190px,var(--bg) 190px); }  /* салатовый первый экран, как у Островка */
+main.board { min-width:0; padding:24px 30px 18px; display:flex; flex-direction:column; align-self:start; background:var(--bg); }
+/* Салатовая карточка, как поисковый блок на главной Островка: заголовок сверху, белые кнопки карты снизу */
+main.board #head { background:var(--atmosphere); border-radius:24px 24px 0 0; padding:30px 30px 6px; }
+main.board #head:empty { display:none; }
 .hero h1 { font:700 clamp(32px,3vw,46px)/1.12 var(--display); letter-spacing:-.03em; color:#000; max-width:24ch; }
 .hero p { font-size:14px; margin-top:10px; max-width:54ch; line-height:1.6; }
 .hero .eyebrow { display:block; margin-bottom:14px; }
@@ -132,9 +134,11 @@ form.composer { flex:none; padding:14px 18px 14px; border-top:0; background:var(
 .inspiration { margin-top:24px; }
 .inspiration-head h2 { font:500 20px/1.3 var(--display); letter-spacing:-.035em; }
 .inspire-card { border-radius:18px; }
-.trip-map { margin-top:24px; background:transparent; border:0; border-radius:24px; }
+.trip-map { margin-top:0; background:transparent; border:0; border-radius:0; overflow:visible; }
 .trip-map .map-frame { background:transparent; }
-.trip-map .map-head { padding:0 0 12px; justify-content:flex-end; }
+.trip-map .map-head { padding:14px 30px 26px; justify-content:flex-start; background:var(--atmosphere); border-radius:0 0 24px 24px; }
+main.board #head:empty + .trip-map .map-head { border-radius:24px; }
+.trip-map .map-surface { margin-top:16px; border-radius:24px; }
 .trip-map .map-caption { display:none; }
 .trip-map .map-surface { height:clamp(360px,57vh,630px); border-radius:24px; background:var(--atmosphere); }
 .trip-map .map-canvas { background:radial-gradient(ellipse at 38% 28%,var(--surface) 0%,color-mix(in srgb,var(--bg) 50%,var(--atmosphere)) 58%,var(--atmosphere) 100%); }
