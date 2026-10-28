@@ -95,10 +95,13 @@ def _value(raw: str, unit: str) -> set[int]:
 # ---------- значения модели со ссылкой на реплику (evidence) ----------
 # Модель главная в понимании: значение принимаем, если её дословная ссылка есть в реплике (с опечатками)
 # и подтверждает значение. Действия (оформить, оплатить, отменить, выбрать) — по-прежнему только с правилами.
+# Требования к отелю и дороге (питание, удобства, животные, багаж, «без пересадок») — только через правила:
+# «завтрак и бассейн есть?» — вопрос, а не требование, правила это различают
 _EVIDENCE_FIELDS = {"destination", "origin", "month", "date_from", "date_to", "nights", "adults", "children",
-                    "budget_total", "budget_night", "max_travel_hours", "trip_types", "transport", "meal", "lodging",
-                    "pets", "direct_only", "hotel_wishes", "abroad", "economy", "baggage", "stars_min", "party_size"}
-_ADULT_WORDS = r"взр|чел|друз|жен|муж|супруг|подруг|парн|девушк|коллег|один|одна|\bсам\b|\bсама\b"
+                    "budget_total", "budget_night", "max_travel_hours", "trip_types", "transport", "lodging",
+                    "abroad", "economy", "stars_min", "party_size"}
+# «С женой», «вдвоём», «с друзьями» возраст не подтверждают — агент уточнит про детей (решение команды)
+_ADULT_WORDS = r"взр|один|одна|\bсам\b|\bсама\b"
 
 
 def _quote_in(quote: str, t: str) -> bool:
@@ -114,7 +117,6 @@ def _quote_in(quote: str, t: str) -> bool:
 
 
 _WEEKS = r"(?:(\d|две|два|три|пару)\s*)?\bнед(?:ел\w*|\b)"
-_PARTNER = r"(?:\bс|\bи)\s+(?:мо\w+\s+)?(?:жен|муж|супруг|девушк|парн|подруг|друг)"
 
 
 def _quote_numbers(q: str) -> set[int]:
@@ -151,8 +153,8 @@ def _backed(field: str, value, quote: str | None, t: str) -> bool:
         numbers = _quote_numbers(q)
         if field == "nights":
             return value in numbers or value + 1 in numbers  # «11 дней» — 10 ночей
-        if field == "adults":  # «втроём» возраст не подтверждает — решение команды; «я и жена» — двое взрослых
-            return (value in numbers and bool(re.search(_ADULT_WORDS, q))) or (value == 2 and bool(re.search(_PARTNER, q)))
+        if field == "adults":
+            return value in numbers and bool(re.search(_ADULT_WORDS, q))
         if field == "children":
             return value in numbers or (value == 1 and bool(re.search(r"реб|сын|доч|малыш", q)))
         return value in numbers
@@ -171,8 +173,6 @@ def _grounded(field: str, value, t: str, state: TripState, rules: TripUpdate) ->
              if not re.search(r"(?:через|спустя|за)\s+$", t[:m.start()])]  # «через 3 дня» — дата, а не длительность
     if field == "nights":
         spans += [m.group(0) for m in re.finditer(_WEEKS + r"|полтор\w* недел\w*", t)]
-    if field == "adults":
-        spans += [m.group(0) for m in re.finditer(r"^\s*(?:я|мы)\s+" + _PARTNER, t)]
     return any(_backed(field, value, span, t) for span in spans)
 
 

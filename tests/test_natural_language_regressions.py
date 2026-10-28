@@ -223,7 +223,8 @@ def test_model_values_with_evidence_win_where_rules_do_not_understand():
                        evidence={"origin": "из пинзы", "destination": "в стамбл", "nights": "11 дн",
                                  "adults": "мы с женой", "month": "в нояюре"})
     result, _ = arbitrate(TripState(), text, model, rule_extract(TripState(), text, TODAY))
-    assert (result.origin, result.nights, result.adults, result.month) == ("Пенза", 10, 2, 11)
+    assert (result.origin, result.nights, result.month) == ("Пенза", 10, 11)
+    assert result.adults is None  # «с женой» возраст не подтверждает — агент уточнит про детей
     assert result.destination in ("Стамбул", "istanbul")
 
 

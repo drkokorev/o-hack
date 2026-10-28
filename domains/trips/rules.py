@@ -789,7 +789,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     elif (re.search(r"^\s*(?:я|мы)\s+(?:и|с)\s+(?:моя\s+|мой\s+|моей\s+|моим\s+)?(?:жен\w*|муж\w*|девушк\w*|парн\w*|"
                     r"подруг\w*|друг\w*|сестр\w*|брат\w*|мам\w*|пап\w*)\s*[.!]?\s*$", t)
           and "adults" not in data and "party_size" not in data):
-        data["adults"] = 2
+        # ответ на «сколько взрослых?» — двое взрослых; иначе двое путешественников без подтверждённого возраста
+        data["adults" if state.pending_question == "people" else "party_size"] = 2
     if state.pending_question in ("duration", "people", "children"):
         answer = re.fullmatch(r"\s*(\d+|один|одна|двое|два|две|трое|три|четверо|четыре|пятеро|пять)"
                               r"\s*(?:(ноч\w*|н|сут\w*|дн\w*|д|день|дня)|взр\w*|чел\w*|дет(?:ей|и)|реб[её]н\w*)?\s*[.!]?\s*", t)
