@@ -42,6 +42,13 @@
   .trip-map .map-caption b { display: block; color: var(--ink, #0d1b22); font-size: 15px; }
   .trip-map .map-caption small { display: block; color: var(--muted, #5d6f75); font-size: 12px; margin-top: 2px; }
   .trip-map .map-tools { display: flex; align-items: center; gap: 8px; }
+  .trip-map .map-style { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--line, #d9e2e0);
+    border-radius: 999px; background: var(--bg, #fff); }
+  .trip-map .map-style button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent;
+    color: var(--muted, #53665e); font: inherit; font-size: 14px; cursor: pointer; }
+  .trip-map .map-style button[aria-pressed="true"] { background: var(--accent, #19645d); color: #fff; }
+  .trip-map .map-style button:disabled { opacity: .45; cursor: not-allowed; }
+  .trip-map .map-style button:focus-visible { outline: 2px solid var(--accent, #19645d); outline-offset: 2px; }
   .trip-map .map-frame .map-scope, .trip-map .map-kind { position: static; min-height: 44px; border: 1px solid var(--line, #d9e2e0);
     border-radius: 12px; background: var(--surface, #fff); color: var(--ink, #0d1b22); font: 500 12px var(--body, system-ui); padding: 0 12px; cursor: pointer; }
   .trip-map .map-surface { position: relative; height: clamp(460px, 63vh, 680px); overflow: hidden; background: #081d26; }
@@ -141,7 +148,7 @@
   @media (max-width: 700px) {
     .trip-map .map-head { padding: 10px 12px; }
     .trip-map .map-caption { display: none; }
-    .trip-map .map-tools { width: 100%; }
+    .trip-map .map-tools { width: 100%; flex-wrap: wrap; }
     .trip-map .map-kind { flex: 1; }
     .trip-map .map-surface { height: min(420px, 55vh); min-height: 320px; }
     .trip-map .globe-hint { left: 12px; bottom: 12px; }

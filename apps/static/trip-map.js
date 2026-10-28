@@ -82,6 +82,28 @@
       onchange: (e) => { kind = e.target.value; renderLandmarks(); renderEvents(); schedule(); } },
       Object.entries(KINDS).map(([id, title]) => node("option", { value: id }, title)));
     const scope = node("button", { type: "button", class: "map-scope", hidden:true, onclick: () => world() }, "К глобусу");
+    // Вид глобуса: снимок Земли (NASA Blue Marble) или схематичная карта; выбор помнит браузер
+    const STYLE_KEY = "odin.globeStyle";
+    let globeStyle = "satellite";
+    try { if (localStorage.getItem(STYLE_KEY) === "map") globeStyle = "map"; } catch (_) { /* приватный режим */ }
+    const styleButtons = {
+      satellite: node("button", { type: "button", "aria-pressed": String(globeStyle === "satellite"), onclick: () => setGlobeStyle("satellite") }, "Спутник"),
+      map: node("button", { type: "button", "aria-pressed": String(globeStyle === "map"), onclick: () => setGlobeStyle("map") }, "Карта"),
+    };
+    const styleSwitch = node("div", { class: "map-style", role: "group", "aria-label": "Вид глобуса" },
+      styleButtons.satellite, styleButtons.map);
+    function setGlobeStyle(next) {
+      if (next === "satellite" && !earthReady) next = "map";
+      globeStyle = next;
+      try { localStorage.setItem(STYLE_KEY, next); } catch (_) { /* не сохраняем — не страшно */ }
+      Object.entries(styleButtons).forEach(([id, button]) => button.setAttribute("aria-pressed", String(id === next)));
+      styleButtons.satellite.disabled = !earthReady;
+      styleButtons.satellite.title = earthReady ? "" : "Снимок Земли не загрузился";
+      if (!map || !map.getLayer("land")) return;
+      const satellite = next === "satellite";
+      if (map.getLayer("earth-imagery")) map.setLayoutProperty("earth-imagery", "visibility", satellite ? "visible" : "none");
+      map.setPaintProperty("land", "fill-opacity", satellite ? ["interpolate", ["linear"], ["zoom"], 0, .055, 3.5, .055, 5, 1] : 1);
+    }
     const zoomBy = (delta) => map && map.easeTo({zoom: Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + delta)),
       duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650, easing: (t) => 1 - Math.pow(1-t, 3)});
     const controls = node("div", { class: "map-controls" },
@@ -133,7 +155,7 @@
     }
     const head = node("div", { class: "map-head" }, node("div", { class: "map-caption" },
       node("b", {}, "Исследуйте мир"), node("small", {}, "Крупные места — сразу, остальные — при приближении")),
-      node("div", { class: "map-tools" }, filter, scope));
+      node("div", { class: "map-tools" }, styleSwitch, filter, scope));
     const body = node("div", { class: "map-frame" }, head, surface,
       node("div", { class: "map-status-row" }, status,
         node("span", { class: "map-legend" }, "Места рядом объединены · все объекты в списке ниже")),
@@ -751,7 +773,8 @@
           "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.75,5,0.6,7,0]});
         earthPreparation.then(async (prepared) => {
           if (map && prepared) earthReady = Boolean(await prepared.module.addEarthSurface(map,prepared.image));
-        }).catch(() => { /* Existing vector globe remains available offline. */ });
+          setGlobeStyle(globeStyle);
+        }).catch(() => setGlobeStyle("map"));  // без снимка остаётся векторный глобус
         mapReady = true;
         map.on("movestart", (event) => {
           if (event.originalEvent) userMoved = true;
@@ -810,7 +833,7 @@
         map.once("moveend", () => openPoint(point.id, point.lat, point.lon));
         map.flyTo({center:[point.lon,point.lat], zoom:12, duration:matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 800});
       },
-      getView() { return map ? {center:map.getCenter().toArray(), zoom:map.getZoom(), projection:map.getProjection()?.type || null, earth:earthReady, models:three?.getLoadedModels() || []} : null; },
+      getView() { return map ? {center:map.getCenter().toArray(), zoom:map.getZoom(), projection:map.getProjection()?.type || null, earth:earthReady, style:globeStyle, models:three?.getLoadedModels() || []} : null; },
       retry() { if (map) schedule(); },
       unavailable() { showStatus("Не удалось загрузить карту. Повторите подключение.", true); },
     };
