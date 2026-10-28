@@ -2,7 +2,7 @@
 # Полный живой прогон с моделью из .env: связь → тесты → сценарии → ответы и утечки → диалоги → симуляция.
 #     make live            # или: sh eval/live_all.sh
 # Результаты — eval/live_<дата>/ (журнал run.log и JSON каждого этапа) плюс отчёты eval/report.md,
-# eval/answers_report.md, eval/report_simulate.md. Расходует токены модели: ~15–25 минут, несколько сотен запросов.
+# eval/answers_report.md, eval/report_simulate.json. Расходует токены модели: ~15–25 минут, несколько сотен запросов.
 set -u
 PY=${PY:-.venv/bin/python}
 OUT=eval/live_$(date +%Y%m%d_%H%M)
@@ -23,7 +23,8 @@ run() {  # шаг: печать в журнал, время, код выхода
 
 run "Связь с моделью" "$PY" -m tools.llm_check || { echo "Модель недоступна — дальше не идём"; exit 1; }
 run "Автономные тесты" "$PY" -m pytest -q
-run "Сценарии: правила, модель, сбои модели" "$PY" -m eval.run --modes rules,llm,chaos
+run "Сценарии команды: правила и модель" "$PY" -m eval.compare_models --models rules "${LLM_MODEL:-GigaChat-2-Max}" \
+    --output "$OUT/guided.json"
 run "Ответы модели, RAG, утечки" "$PY" -m eval.answers_live
 run "Диалоги (отложенная выборка)" "$PY" -m eval.dialogue_20261027 --set holdout --model --pace-seconds 1 \
     --output "$OUT/dialogue_holdout.json"

@@ -126,3 +126,33 @@ def test_out_of_range_month_and_year_from_model_are_rejected():
         TripUpdate(month=13)
     with pytest.raises(ValidationError):
         TripUpdate(year=10000)
+
+
+# ---------- найдено живым прогоном с моделью (eval.simulate, 28.10) ----------
+
+@pytest.mark.parametrize("phrase", ["долго лететь не хотим", "не хотим долго лететь", "далеко лететь не готовы"])
+def test_long_flight_reluctance_is_a_preference_not_a_ban_on_planes(phrase):
+    update = rule_extract(TripState(), f"Хотим на море в ноябре, {phrase}", TODAY)
+    assert update.prefer_short_travel is True and update.transport is None
+
+
+@pytest.mark.parametrize("phrase", ["Всё отлично, бронируй этот вариант", "Нормально уже, бронируйте",
+                                    "Всё отлично, оформляйте заказ.", "Хорошо, оформляй"])
+def test_approval_before_booking_verb_confirms(phrase):
+    assert rule_extract(TripState(), phrase, TODAY).confirm is True
+
+
+def test_named_dates_win_over_relative_shift_in_same_phrase():
+    update = rule_extract(TripState(), "Давай сдвинем на два дня позже, с 12 по 17 декабря", TODAY)
+    assert (update.date_from, update.date_to) == (date(2026, 12, 12), date(2026, 12, 17))
+    assert update.shift_days is None and update.trip_days_min is None
+
+
+def test_cart_accepts_booking_after_approval_words():
+    agent = Agent(TripsDomain(), None, today=lambda: TODAY)
+    session = agent.new_session()
+    agent.handle(session, "Казань из Москвы 13–15 ноября 2026 двое взрослых")
+    agent.handle(session, "беру первый")
+    assert session.state.stage == "cart"
+    agent.handle(session, "Всё отлично, бронируй этот вариант")
+    assert session.state.stage == "payment"

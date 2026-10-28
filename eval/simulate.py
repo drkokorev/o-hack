@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import time
 from dataclasses import replace
 from datetime import date
@@ -24,7 +25,7 @@ from core.llm import build_llm
 from domains.trips.domain import TripsDomain
 
 HERE = Path(__file__).parent
-MAX_TURNS = 10
+MAX_TURNS = 14  # с выбором и подтверждением демо-оплаты
 
 PERSONAS = [
     {"id": "family_sea", "first": "Привет! Хотим с мужем и сыном 6 лет куда-нибудь на море в ноябре, бюджет тысяч 250, "
@@ -95,15 +96,18 @@ def main() -> None:
     results, complete = [], True
     for p in PERSONAS:
         s = agent.new_session()
-        transcript, text, failed = [], p["first"], False
+        transcript, replies, text, failed, last = [], [], p["first"], False, False
         for _ in range(MAX_TURNS):
             started = time.perf_counter()
             step = agent.handle(s, text)
+            replies.append(step.reply)  # путешественник видит ответ целиком — вопрос об оплате стоит в конце
             transcript.append({"user": text, "agent": step.reply[:600], "stage": s.state.stage, "nlu": s.last_nlu,
                                "checked": s.last_notes, "ms": round((time.perf_counter() - started) * 1000)})
+            if last:
+                break
             msgs = [{"role": "system", "content": USER_PROMPT.format(goal=p["goal"])}]
-            for t in transcript:
-                msgs += [{"role": "assistant", "content": t["user"]}, {"role": "user", "content": t["agent"]}]
+            for t, reply in zip(transcript, replies):
+                msgs += [{"role": "assistant", "content": t["user"]}, {"role": "user", "content": reply}]
             try:
                 text = user.complete(msgs).strip()
             except Exception as err:  # провайдер упал — честно останавливаемся
@@ -112,6 +116,9 @@ def main() -> None:
                 break
             if text.upper().startswith("СТОП"):
                 break
+            # «Оформляйте. СТОП» — реплика агенту и конец разговора; само «СТОП» агенту не отправляем
+            text, last = re.subn(r"[\s.!]*\bСТОП\W*$", "", text)
+            last = bool(last)
         problems = check(p["check"], s.state) if not failed else ["прогон прерван"]
         results.append({"id": p["id"], "ok": not problems, "problems": problems, "turns": len(transcript),
                         "transcript": transcript})

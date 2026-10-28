@@ -56,6 +56,9 @@ _PLACE_QUESTIONS = frozenset({"sights", "areas", "food", "safety", "local_transp
 CONFIRM_STRONG = (r"^(да\b(?!\s*нет)|оформля|оформи|бронир|оплачива|оплати|покупа|купи|куплю|подтвержда|согласн|верно|"
                   r"всё верно|все верно|бер[уё]м?\b|давай оформ|давай брон|давай бер|давай куп|давайте оформ|"
                   r"хочу (купить|оформить|забронировать)|можно оформ)")
+_LONG_TRAVEL = r"(?:долго|далеко|подолгу|много\s+час\w*|по\s+\d+\s+час\w*)\s+(?:лететь|летать|ехать|добираться)"
+# «Всё отлично, бронируй», «Нормально уже, оформляйте» — одобрение перед глаголом оформления
+_CONFIRM_LEAD = r"^(?:(?:всё|все|ну|да|хорошо|отлично|нормально|супер|окей|ок|ладно|прекрасно|класс|уже|тогда|так|в общем|вс[её] устраивает|подходит)[\s,.!—-]*)+"
 CONFIRM_SHORT = r"^(ок|окей|ага|угу|конечно|давай|давайте|го|поехали|отлично|супер)[.!]*$"
 ORDINALS = {"перв": 1, "втор": 2, "трет": 3, "четв": 4, "пят": 5}
 _OFFSET_WORDS = {"день": 1, "дня": 1, "дней": 1, "сутки": 1, "неделю": 7, "недели": 7}
@@ -370,8 +373,14 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
             data.setdefault("clear", []).append("destination")  # «не на море, а в горы» — прежнее направление не подходит
 
     shift = _shift(t)
+    overridden_shift = False
     known_in = None if data.get("new_search") else state.date_from
-    d_in, d_out = (None, None) if shift is not None else parse_dates(text, today, known_in)
+    d_in, d_out = parse_dates(text, today, known_in)
+    if shift is not None and not (d_in and d_out):
+        d_in, d_out = None, None
+    elif shift is not None:
+        shift = None  # «на два дня позже, с 12 по 17» — названные даты точнее сдвига
+        overridden_shift = True
     if d_in:
         data["date_from"] = d_in
     if d_out:
@@ -553,14 +562,16 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     m = re.search(r"(?:не (?:больше|более|дольше)|до|максимум)\s+(\d+)\s*(?:час|ч\b)", t)
     if m:
         data["max_travel_hours"] = float(m.group(1))
-    elif re.search(r"без долг\w+ (перел[её]т|дорог)|недалеко|не очень далеко|близко лететь|недолго лететь", t):
+    elif re.search(r"без долг\w+ (перел[её]т|дорог)|недалеко|не очень далеко|близко лететь|недолго лететь|"
+                   + _LONG_TRAVEL + r"\s+не\s+(?:хоч|хот|готов|буд|люб)|не\s+(?:\w+\s+)?" + _LONG_TRAVEL, t):
         data["prefer_short_travel"] = True
     if re.search(r"время\s+в\s+пути\s+не\s+важ|дорога\s+не\s+важ|убери\w*\s+ограничени\w*\s+(?:по\s+)?времени", t):
         data.setdefault("clear", []).extend(["max_travel_hours", "prefer_short_travel"])
+    # «долго лететь не хотим» — про длительность, а не отказ от самолёта
     no_plane = re.search(r"\bбез\s+(?:самол[её]т|перел[её]т|авиаперел[её]т)|"
                          r"\bне\s+(?:(?:хочу|буду|готов\w*)\s+)?(?:лететь|летать|полететь|самол[её]том)|"
                          r"\b(?:лететь|летать|полететь)\s+не\s+(?:буду|будем|хочу|хотим|могу|можем)|"
-                         r"\b(?:самол[её]т|перел[её]т)\w*\s+не\s+(?:подходит|нужен|хочу)", t)
+                         r"\b(?:самол[её]т|перел[её]т)\w*\s+не\s+(?:подходит|нужен|хочу)", re.sub(_LONG_TRAVEL, "", t))
     no_train = re.search(r"\bбез\s+поезд(?!к)|\bне\s+поезд(?!к)", t)
     fear_flying = re.search(r"(?:боюсь|боимся|страшно|опасаюсь)\s+(?:летать|лететь|полет(?:а|е)ть|перел[её]т\w*)", t)
     if fear_flying and not no_plane:
@@ -643,10 +654,14 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     elif re.search(CONFIRM_NO, stripped):
         data["confirm"] = False
     elif "?" not in text and not data.get("pick") and (re.search(CONFIRM_STRONG, stripped)
+                                                       or re.search(CONFIRM_STRONG, re.sub(_CONFIRM_LEAD, "", stripped))
                                                        or re.fullmatch(CONFIRM_SHORT, stripped)):
         data["confirm"] = True
     if shift is not None:
         data["shift_days"] = shift
+    if overridden_shift:  # «два дня» в «на два дня позже» — не длительность поездки
+        data.pop("trip_days_min", None)
+        data.pop("trip_days_max", None)
     if re.search(r"друг\w* отел|ещ[её] отел|покажи отел|другой вариант жиль|все отели|сменить отель", t):
         data["show_hotels"] = True
     hotel_search = re.fullmatch(r"\s*(?:(?:найди|поищи|ищу|покажи)\s+)?(?:отель|гостиницу|гостиница)\s+(.{3,100}?)\s*[.!]?\s*", text, re.I)
