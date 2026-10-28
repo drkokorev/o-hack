@@ -434,12 +434,12 @@ function renderSuggest(data) {
   }
   const question = typeof data === "object" ? String(data.reply || "").split("?")[0].toLowerCase() : "";
   if (payload.kind === "question" && (["when", "dates", "date_from", "date_to"].includes(payload.field) ||
-      (String(data.reply || "").includes("?") && /когда|дат[ыу]|месяц|время года/.test(question)))) {
+      (!payload.field && String(data.reply || "").includes("?") && /когда|дат[ыу]|месяц|время года/.test(question)))) {
     $("suggest").replaceChildren(dateControls(), el("button", {type:"button", onclick:() => send("пока не знаю")}, "Пока не знаю"));
     return;
   }
   if (payload.kind === "question" && (payload.field === "origin" ||
-      (String(data.reply || "").includes("?") && /откуда|город отправления|город вылета/.test(question)))) {
+      (!payload.field && String(data.reply || "").includes("?") && /откуда|город отправления|город вылета/.test(question)))) {
     $("suggest").replaceChildren(locationChoice()); return;
   }
   if (payload.kind === "question" && payload.field === "duration") {
