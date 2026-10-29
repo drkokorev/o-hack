@@ -1,4 +1,4 @@
-/* Local or browser voice recognition; dictation is always reviewed before sending. */
+/* GigaAM on the application server; the transcript can be reviewed before sending. */
 (() => {
   "use strict";
 
@@ -89,7 +89,6 @@
   // dedicated (chat): a separate microphone next to «Send» — click to record, click again to review the text,
   // or press «Send» while recording to transcribe and send at once (finish()).
   window.createVoiceInput = ({ input, button, status, dedicated = false }) => {
-    const BrowserRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const icons = {
       mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-3 0h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
       arrow: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -134,15 +133,14 @@
         message(backend.status === "ready" ? "Голос распознаётся на сервере приложения (до 20 секунд)." :
           "Модель голоса загружается или недоступна; текстовый ввод работает.");
       } else {
-        message(BrowserRecognition && window.isSecureContext ?
-          "Аудио может отправляться сервису распознавания браузера." : "Голосовой ввод недоступен; можно написать сообщение.");
+        message("Голосовой ввод недоступен; можно написать сообщение.");
       }
     }
     async function checkBackend() {
       try {
         const response = await fetch("/api/voice", { cache: "no-store" });
-        backend = response.ok ? await response.json() : { backend: "browser" };
-      } catch (_) { backend = { backend: "browser" }; }
+        backend = response.ok ? await response.json() : { backend: "off", status: "unavailable" };
+      } catch (_) { backend = { backend: "off", status: "unavailable" }; }
       hint();
       if (backend.backend === "gigaam" && backend.status === "loading") setTimeout(checkBackend, 4000);
     }
@@ -159,15 +157,13 @@
         return;
       }
       if (!backend) { message("Проверяю доступность голосового ввода. Попробуйте ещё раз."); return; }
-      const useLocal = backend.backend === "gigaam";
-      const Recognition = useLocal ? LocalRecognition : BrowserRecognition;
-      const available = window.isSecureContext && Recognition && (!useLocal ||
-        (backend.status === "ready" && navigator.mediaDevices?.getUserMedia && (window.AudioContext || window.webkitAudioContext)));
+      const available = window.isSecureContext && backend.backend === "gigaam" &&
+        backend.status === "ready" && navigator.mediaDevices?.getUserMedia && (window.AudioContext || window.webkitAudioContext);
       if (!available) {
         message("Голосовой ввод недоступен в этом браузере или соединении; можно написать сообщение.");
         return;
       }
-      const recognition = new Recognition();
+      const recognition = new LocalRecognition();
       recognition.onlevel = showLevel;
       current = recognition; phase = "starting"; update();
       recognition.lang = "ru-RU"; recognition.continuous = false;
@@ -216,8 +212,7 @@
         try { recognition.stop(); } catch (_) { /* onstart will stop it once ready */ }
       };
       try {
-        message(useLocal ? "Включаю микрофон. Звук распознаётся на сервере приложения." :
-          "Включаю микрофон. Аудио может отправляться сервису браузера.");
+        message("Включаю микрофон. Звук распознаётся на сервере приложения.");
         recognition.start();
         limit = setTimeout(() => { if (current === recognition) { recognition.limited = true; recognition.requestStop(); } }, 20000);
       } catch (_) {
@@ -225,13 +220,13 @@
       }
     }
     function begin() {
-      if (button.disabled || current) return;
+      if (button.disabled) return;
+      if (current) { toggle(); return; }
       if (!backend) { message("Голос ещё загружается. Попробуйте через секунду."); return; }
-      if (dedicated && disclosedBackend !== backend.backend) {
+      if (backend.backend === "gigaam" && backend.status === "ready" && disclosedBackend !== backend.backend) {
         const dialog = document.getElementById("voice-dialog");
-        document.getElementById("voice-disclosure").textContent = backend.backend === "gigaam"
-          ? "Аудио будет отправлено на сервер приложения для распознавания."
-          : "Аудио может передаваться сервису распознавания вашего браузера.";
+        document.getElementById("voice-disclosure").textContent =
+          "Аудио будет отправлено на сервер приложения для распознавания GigaAM. Не диктуйте документы, платёжные данные и секреты.";
         document.getElementById("voice-dismiss").onclick = () => dialog.close();
         document.getElementById("voice-allow").onclick = () => {
           dialog.close(); disclosedBackend = backend.backend;
@@ -245,10 +240,10 @@
     }
     if (dedicated) {
       button.addEventListener("click", () => { if (current) { if (phase !== "processing") current.requestStop(); } else begin(); });
-      document.addEventListener("keydown",(event)=>{if(event.key==="Escape" && current){event.preventDefault();cancel();}});
-      document.addEventListener("visibilitychange",()=>{if(document.hidden && current)cancel();});
-      window.addEventListener("pagehide",cancel);
     }
+    document.addEventListener("keydown",(event)=>{if(event.key==="Escape" && current){event.preventDefault();cancel();}});
+    document.addEventListener("visibilitychange",()=>{if(document.hidden && current)cancel();});
+    window.addEventListener("pagehide",cancel);
     input.addEventListener("input", update);
     // Stop recording, wait for the transcript, then call done() — «Send» pressed while dictating.
     function finish(done) {

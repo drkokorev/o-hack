@@ -2,3 +2,6 @@
 apps/static/vendor/maplibre/*.mjs -text
 apps/static/vendor/maplibre/*.css -text
 apps/static/vendor/three/*.js -text whitespace=-blank-at-eol,-space-before-tab
+# The embedding loader verifies these bytes against manifest.json on every platform.
+domains/trips/models/e5_small/tokenizer.json -text
+domains/trips/models/e5_small/model_int8.onnx.part-* -text

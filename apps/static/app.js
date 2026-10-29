@@ -2,10 +2,10 @@ const $ = (id) => document.getElementById(id);
 let sessionId = null, busy = false, info = null, conversationStarted = false, imageCredits = {};
 let inspiration = {starters:[], places:[], quick:{}};
 let lastDestination = null;
-// IPinfo receives the visitor's IP; only a city hint is sent to our server.
-const approximateCity = fetch("https://ipinfo.io/json", {cache:"no-store", credentials:"omit", referrerPolicy:"no-referrer"})
+// Optional local database on our server; never query an external IP service.
+const approximateCity = fetch("/api/visitor-city", {cache:"no-store", credentials:"same-origin", referrerPolicy:"no-referrer"})
   .then((response) => response.ok ? response.json() : null)
-  .then((data) => typeof data?.city === "string" && data.city.length <= 100 ? data.city : null)
+  .then((data) => typeof data?.city_name === "string" && data.city_name.length <= 100 ? data.city_name : null)
   .catch(() => null);
 let preferenceData = { saved: {}, hidden: [] };
 try {

@@ -12,10 +12,12 @@
 <header>О<span>!</span>дин запрос <small> · помощник по поездкам</small></header>
 <main id="log" aria-live="polite"><div class="message">Привет! Расскажите, куда или как хотите отдохнуть. Если пока не знаете — подскажу.</div></main>
 <form id="form">
-  <details class="privacy"><summary>Как обрабатываются данные</summary><p>Перед отправкой текста поставщику модели сервис скрывает распознанные личные данные. Если в тексте остались признаки чувствительных данных, сообщение обрабатывается локально. Фильтр может пропустить часть сведений. Аудио обрабатывается выбранным способом распознавания. Для приблизительного определения города IP-адрес может передаваться сервису <a href="https://ipinfo.io/" target="_blank" rel="noopener">IPinfo</a>.</p></details>
+  <details class="privacy"><summary>Как обрабатываются данные</summary><p>Перед отправкой текста поставщику модели сервис скрывает распознанные личные данные. Фильтр может пропустить часть сведений: для демо используйте вымышленные данные. Голос распознаётся GigaAM на сервере приложения. Внешние сервисы распознавания и определения города по IP автоматически не вызываются.</p></details>
   <p id="voice-status" class="voice-status" role="status" aria-live="polite" hidden></p>
   <div class="entry"><input id="text" autocomplete="off" placeholder="Опишите поездку…" aria-label="Сообщение помощнику" disabled><button class="send" aria-label="Отправить" disabled>↑</button></div>
+  <nav class="legal-links" aria-label="Документы сервиса"><a href="/terms" target="_blank" rel="noopener noreferrer">Условия использования</a><a href="/privacy" target="_blank" rel="noopener noreferrer">Конфиденциальность</a></nav>
 </form>
+<dialog class="voice-disclosure" id="voice-dialog" aria-labelledby="voice-title"><h2 id="voice-title">Голосовой ввод</h2><p id="voice-disclosure"></p><p>До 20 секунд. Текст можно исправить перед отправкой.</p><p><a href="/privacy" target="_blank" rel="noopener noreferrer">Как обрабатываются данные</a></p><div class="actions"><button type="button" id="voice-dismiss">Пока текстом</button><button type="button" id="voice-allow">Продолжить</button></div></dialog>
 <script src="/static/voice-input.js"></script>
 <script src="/static/reply-text.js"></script>
 <script src="/static/widget.js"></script>

@@ -54,6 +54,6 @@
     finally { busy = false; form.querySelector("button").disabled = false; voice.update(); input.focus(); }
   }
   form.addEventListener("submit", (event) => { event.preventDefault();
-    if (voice.isActive() || !input.value.trim()) voice.toggle(); else { voice.clearStatus(); send(input.value); }
+    if (voice.isActive() || !input.value.trim()) voice.begin(); else { voice.clearStatus(); send(input.value); }
   });
   input.disabled = false; form.querySelector("button").disabled = false; voice.update();

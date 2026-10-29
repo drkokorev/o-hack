@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
@@ -35,6 +35,7 @@ from domains.trips import map_catalog
 from domains.trips.state import TripState
 from domains.trips.world_places import find_world_places
 from apps.voice import LocalVoice, MAX_AUDIO_BYTES
+from apps.legal import render_document
 
 log = logging.getLogger(__name__)
 STATIC = Path(__file__).parent / "static"
@@ -383,6 +384,23 @@ def build_app(agent: Agent | None = None) -> FastAPI:
     def index() -> FileResponse:
         return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
+    def document(kind: str) -> HTMLResponse:
+        return HTMLResponse(render_document(kind, llm_provider=settings.llm_provider,
+                            llm_enabled=agent.llm is not None, session_ttl_seconds=sessions.ttl_seconds),
+                            headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+                                     "Referrer-Policy": "no-referrer",
+                                     "Content-Security-Policy": "default-src 'none'; style-src 'self'; "
+                                     "font-src 'self'; img-src 'self' data:; base-uri 'none'; "
+                                     "form-action 'none'; frame-ancestors 'self'"})
+
+    @app.get("/terms", response_class=HTMLResponse, include_in_schema=False)
+    def terms() -> HTMLResponse:
+        return document("terms")
+
+    @app.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+    def privacy() -> HTMLResponse:
+        return document("privacy")
+
     @app.get("/health")
     def health() -> dict:
         if require_models and voice.status != "ready":
@@ -395,9 +413,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                             headers={"Cache-Control": "no-store"})
 
     def city_for_request(request: Request) -> dict:
-        local_preview = (os.getenv("ODIN_LOCAL_PREVIEW_IP") == "1" and
-                         request.url.hostname in {"127.0.0.1", "localhost", "::1"})
-        return visitor_city(request.client.host if request.client else None, local_preview=local_preview)
+        return visitor_city(request.client.host if request.client else None)
 
     @app.get("/api/visitor-city")
     def city_info(request: Request) -> JSONResponse:
@@ -474,7 +490,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
     @app.get("/api/voice")
     def voice_info(response: Response) -> dict:
         response.headers["Cache-Control"] = "no-store"
-        return {"backend": "gigaam" if voice.model_dir else "browser", "status": voice.status,
+        return {"backend": "gigaam" if voice.model_dir else "off", "status": voice.status,
                 "max_seconds": 20}
 
     @app.post("/api/voice/transcribe")

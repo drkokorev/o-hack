@@ -74,7 +74,7 @@ def test_explicit_rules_mode_works_without_models(monkeypatch):
     with TestClient(build_app()) as client:
         assert client.get("/health").json() == {"status": "ok"}
         assert client.get("/api/info").json()["llm"] is None
-        assert client.get("/api/voice").json()["backend"] == "browser"
+        assert client.get("/api/voice").json()["backend"] == "off"
 
 
 def test_provider_failure_discloses_the_rules_fallback():
