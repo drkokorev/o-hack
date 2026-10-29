@@ -2,11 +2,11 @@
   "base_commit": "4d215d97a5a6513618bd7274d62779beed559156",
   "branch": "codex/dialogue-architecture-20261029",
   "final_suite": {
-    "passed": 860,
+    "passed": 862,
     "failed": 0,
     "warnings": 4,
-    "seconds": 175.86,
-    "evidence": "pytest.xml"
+    "summary": "862 passed, 4 warnings in 107.06s (0:01:47)",
+    "evidence": "pytest_current_ui.xml"
   },
   "tests": [
     {
@@ -150,6 +150,15 @@
       "runner": "python -m pytest",
       "mode": "rules",
       "snapshot": "final"
+    },
+    {
+      "phase": "combined current trip-sentence UI",
+      "result": "PASS",
+      "summary": "862 passed, 4 warnings in 107.06s (0:01:47)",
+      "runner": "python -m pytest -q --tb=short",
+      "mode": "rules",
+      "source_commit": "8531ebde98c48ca6c5640996e2310ff36a248e8f",
+      "failures": []
     }
   ],
   "model_probes": [
@@ -242,9 +251,10 @@
     }
   ],
   "browser": {
-    "evidence": "browser_events.json",
-    "checks": 10,
-    "errors": []
+    "evidence": "browser_events_current_ui.json",
+    "checks": 12,
+    "errors": [],
+    "source_commit": "8531ebde98c48ca6c5640996e2310ff36a248e8f"
   },
   "limitations": [
     "No Docker build or deployment",
@@ -256,5 +266,24 @@
   "diagnostics": [
     "Initial diagnostic console could not print the ruble sign under cp1251; UTF-8 enabled; JSON had already been saved",
     "Initial standard git fetch referenced a deleted narrow branch; explicit main/artemiy fetch succeeded"
-  ]
+  ],
+  "tested_code_commit": "8531ebde98c48ca6c5640996e2310ff36a248e8f",
+  "integrated_upstream_commit": "6693512c4a6dba729084f57032ee568af529b303",
+  "pre_ui_suite": {
+    "passed": 860,
+    "failed": 0,
+    "warnings": 4,
+    "seconds": 175.86,
+    "evidence": "pytest.xml"
+  },
+  "browser_before_current_ui": {
+    "evidence": "browser_events.json",
+    "checks": 10,
+    "errors": []
+  },
+  "secret_scan": {
+    "scope": "new/changed source, reports and evidence",
+    "result": "PASS",
+    "method": "credential-pattern and private-path scan plus review; not a proof that all possible secrets are detectable"
+  }
 }

@@ -1,0 +1,25 @@
+{
+  "kind": "real_browser_event_flow",
+  "model": "rules",
+  "checks": [
+    "short event fills city and full travel range",
+    "sentence displays selected dates",
+    "calendar prefills the same dates",
+    "calendar explains the event context",
+    "reload restores event and dates without resending",
+    "mobile compact summary shows city",
+    "mobile expands editable dates",
+    "long season asks visiting days without a months-long stay",
+    "long event fills the date field with its known period",
+    "long event period remains visible in calendar",
+    "long event does not prefill a complete long stay",
+    "no browser script errors"
+  ],
+  "errors": [],
+  "short_event": "design-dubai",
+  "short_dates": [
+    "2026-11-03",
+    "2026-11-09"
+  ],
+  "long_event": "global-village"
+}
