@@ -39,12 +39,7 @@
         this.source = this.context.createMediaStreamSource(stream);
         this.processor = this.context.createScriptProcessor(4096, 1, 1);
         this.processor.onaudioprocess = (event) => {
-          const data = event.inputBuffer.getChannelData(0);
-          if (!this.stopped) {
-            this.chunks.push(new Float32Array(data));
-            let sum = 0; for (let i = 0; i < data.length; i += 4) sum += data[i] * data[i];
-            this.onlevel?.(Math.sqrt(sum / (data.length / 4)));
-          }
+          if (!this.stopped) this.chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
           event.outputBuffer.getChannelData(0).fill(0);
         };
         this.source.connect(this.processor); this.processor.connect(this.context.destination);
@@ -85,10 +80,8 @@
     abort() { this.cancelled = true; this.stopped = true; this.controller?.abort(); this.cleanup(); this.chunks = []; this.onend?.(); }
   }
 
-  // Default (widget): one control starts/stops dictation when the field is empty and sends edited text otherwise.
-  // dedicated (chat): a separate microphone next to «Send» — click to record, click again to review the text,
-  // or press «Send» while recording to transcribe and send at once (finish()).
-  window.createVoiceInput = ({ input, button, status, dedicated = false, holdButton = null }) => {
+  // One control starts/stops dictation when the field is empty and sends edited text otherwise.
+  window.createVoiceInput = ({ input, button, microphone = null, status, holdToTalk = false }) => {
     const BrowserRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const icons = {
       mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-3 0h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -96,41 +89,30 @@
       stop: '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg>',
     };
     let backend = null, current = null, phase = "idle", limit = null, ticker = null;
-    let startedAt = 0;
-    let disclosedBackend = null, after = null;
-    // Полоска уровня звука во время записи (как в Claude): последние значения громкости столбиками
-    const wave = dedicated ? document.getElementById("voice-wave") : null, BARS = 28;
-    if (wave) wave.replaceChildren(...Array.from({ length: BARS }, () => document.createElement("i")));
-    let levels = [];
-    const showLevel = (value) => {
-      if (!wave) return;
-      levels = [...levels, Math.min(1, value * 9)].slice(-BARS);
-      [...wave.children].forEach((bar, i) => {
-        const v = levels[i - (BARS - levels.length)];
-        bar.style.height = v === undefined ? "" : `${Math.max(3, Math.round(v * 22))}px`;
-      });
-    };
-    const setWave = (on) => { if (wave) { wave.hidden = !on; input.classList.toggle("dictating", on); if (!on) { levels = []; showLevel(0); levels = []; } } };
-    const cancelButton = dedicated ? document.getElementById("voice-cancel") : null;
+    let pressed = false, held = false, pointerId = null, holdTimer = null, suppressUntil = 0, mode = "toggle", startedAt = 0;
+    let disclosedBackend = null;
+    const cancelButton = holdToTalk || microphone ? document.getElementById("voice-cancel") : null;
     const notifyAudio = (recording) => document.dispatchEvent(new CustomEvent("odin:recording", {detail:{recording}}));
     const message = (text) => { status.textContent = text; status.hidden = !text; };
     function update() {
       const hasText = Boolean(input.value.trim());
-      button.innerHTML = current ? icons.stop : (dedicated || !hasText ? icons.mic : icons.arrow);
-      const label = current ? (phase === "processing" ? "Распознаю речь" :
-        dedicated ? "Остановить запись и вставить текст" : "Остановить запись") :
-        dedicated || !hasText ? "Голосовой ввод" : "Отправить";
+      button.innerHTML = current ? (phase === "listening" && mode === "hold" ? icons.mic : icons.stop) :
+        (holdToTalk || microphone || hasText ? icons.arrow : icons.mic);
+      const label = current ? (phase === "processing" ? "Распознаю речь" : "Остановить запись") :
+        holdToTalk ? "Отправить сообщение. Удерживайте для диктовки" : microphone ? "Отправить сообщение" : hasText ? "Отправить" : "Голосовой ввод";
       button.setAttribute("aria-label", label);
       button.title = label;
       button.classList.toggle("recording", Boolean(current) && phase !== "processing");
-      setWave(Boolean(current));
-      if (wave) wave.classList.toggle("processing", phase === "processing");
       button.dataset.listening = String(Boolean(current) && phase === "listening");
-      if (holdButton) holdButton.dataset.listening = button.dataset.listening;
       if (cancelButton) cancelButton.hidden = !current;
+      if (microphone) {
+        microphone.innerHTML = current ? icons.stop : icons.mic;
+        microphone.setAttribute("aria-label", current ? "Остановить диктовку" : "Начать диктовку");
+        microphone.classList.toggle("recording", Boolean(current));
+      }
     }
     function hint() {
-      if (current || dedicated) return;
+      if (current || holdToTalk || microphone) return;
       if (backend?.backend === "gigaam") {
         message(backend.status === "ready" ? "Голос распознаётся на сервере приложения (до 20 секунд)." :
           "Модель голоса загружается или недоступна; текстовый ввод работает.");
@@ -148,8 +130,8 @@
       if (backend.backend === "gigaam" && backend.status === "loading") setTimeout(checkBackend, 4000);
     }
     function cancel() {
-      clearTimeout(limit); clearInterval(ticker); limit = null;
-      after = null; notifyAudio(false);
+      clearTimeout(limit); clearInterval(ticker); clearTimeout(holdTimer); limit = null;
+      pressed = false; held = false; notifyAudio(false);
       const recognition = current; current = null; phase = "idle";
       if (recognition) { try { recognition.abort(); } catch (_) { /* already stopped */ } }
       update(); message(""); hint();
@@ -169,7 +151,6 @@
         return;
       }
       const recognition = new Recognition();
-      recognition.onlevel = showLevel;
       current = recognition; phase = "starting"; update();
       recognition.lang = "ru-RU"; recognition.continuous = false;
       recognition.interimResults = false; recognition.maxAlternatives = 1;
@@ -179,8 +160,7 @@
         if (stopRequested) { try { recognition.stop(); } catch (_) {} return; }
         phase = "listening"; update();
         startedAt = performance.now(); notifyAudio(true);
-        const finishHint = dedicated ? "■ — вставить текст, ↵ — сразу отправить" : "нажмите стрелку, чтобы закончить";
-        const tick = () => message(`Запись ${Math.min(20,Math.floor((performance.now()-startedAt)/1000))} / 20 с · ${finishHint}`);
+        const tick = () => message(`Запись ${Math.min(20,Math.floor((performance.now()-startedAt)/1000))} / 20 с · ${mode === "hold" ? "отпустите, чтобы закончить" : "нажмите стрелку, чтобы закончить"}`);
         tick(); ticker = setInterval(tick, 250);
       };
       recognition.onresult = (event) => {
@@ -193,7 +173,7 @@
           lastFinal = i;
         }
         input.dispatchEvent(new Event("input", { bubbles: true }));
-        if (!after) message((recognition.limited ? "Достигнут лимит 20 секунд. " : "") +
+        message((recognition.limited ? "Достигнут лимит 20 секунд. " : "") +
           "Текст добавлен. Проверьте его и нажмите «Отправить».");
       };
       recognition.onerror = (event) => {
@@ -206,9 +186,7 @@
       recognition.onend = () => {
         if (current !== recognition) return;
         clearTimeout(limit); clearInterval(ticker); limit = null; current = null; phase = "idle"; notifyAudio(false); update();
-        const then = after; after = null;
         if (!failed && lastFinal < 0) message("Речь не распознана. Попробуйте ещё раз или напишите сообщение.");
-        else if (!failed && then) then();
       };
       recognition.requestStop = () => {
         if (stopRequested) return;
@@ -225,79 +203,68 @@
         current = null; phase = "idle"; clearInterval(ticker); notifyAudio(false); update(); message("Не удалось начать запись. Можно написать сообщение.");
       }
     }
-    function begin() {
+    async function begin(requestedMode = "toggle") {
       if (button.disabled || current) return;
+      mode = requestedMode;
       if (!backend) { message("Голос ещё загружается. Попробуйте через секунду."); return; }
-      if (dedicated && disclosedBackend !== backend.backend) {
+      if ((holdToTalk || microphone) && disclosedBackend !== backend.backend) {
         const dialog = document.getElementById("voice-dialog");
         document.getElementById("voice-disclosure").textContent = backend.backend === "gigaam"
           ? "Аудио будет отправлено на сервер приложения для распознавания."
           : "Аудио может передаваться сервису распознавания вашего браузера.";
         document.getElementById("voice-dismiss").onclick = () => dialog.close();
-        document.getElementById("voice-allow").onclick = () => {
+        document.getElementById("voice-allow").onclick = async () => {
           dialog.close(); disclosedBackend = backend.backend;
           if (!navigator.mediaDevices?.getUserMedia) { message("Микрофон недоступен. Можно написать сообщение."); return; }
-          toggle();  // разрешение браузера спросит сама запись
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+            stream.getTracks().forEach((track)=>track.stop());
+            message(microphone ? "Микрофон готов. Нажмите на него, чтобы начать диктовку." : "Микрофон готов. Удерживайте стрелку или выберите «Начать диктовку» в меню.");
+          } catch (_) { message("Доступ к микрофону не получен. Текстовый ввод работает."); }
         };
         if (!dialog.open) dialog.showModal();
         return;
       }
+      if (requestedMode === "hold" && !pressed) return;
       toggle();
     }
-    if (dedicated) {
-      button.addEventListener("click", () => { if (current) { if (phase !== "processing") current.requestStop(); } else begin(); });
-      if (holdButton) {
-        let timer = null, pressed = false, held = false, pointerId = null, suppressClick = false;
-        const startHold = () => {
-          if (holdButton.disabled || current) return;
-          pressed = true; held = false;
-          timer = setTimeout(() => { if (pressed) { held = true; begin(); } }, 350);
-        };
-        const finishHold = (cancelled = false) => {
-          clearTimeout(timer); pressed = false;
-          if (held) {
-            suppressClick = true;
-            setTimeout(() => { suppressClick = false; }, 100);
-            if (current && cancelled) cancel();
-            else if (current && phase !== "processing") current.requestStop();
-          }
-          held = false; pointerId = null;
-        };
-        holdButton.addEventListener("pointerdown", (event) => {
-          if (event.button !== 0) return;
-          pointerId = event.pointerId; holdButton.setPointerCapture?.(pointerId); startHold();
-        });
-        holdButton.addEventListener("pointerup", (event) => {
-          if (event.pointerId !== pointerId) return;
-          const rect = holdButton.getBoundingClientRect();
-          const outside = event.clientX < rect.left - 12 || event.clientX > rect.right + 12 ||
-                          event.clientY < rect.top - 12 || event.clientY > rect.bottom + 12;
-          finishHold(outside);
-        });
-        holdButton.addEventListener("pointercancel", () => finishHold(true));
-        holdButton.addEventListener("keydown", (event) => {
-          if (event.key === " " && !event.repeat) startHold();
-        });
-        holdButton.addEventListener("keyup", (event) => {
-          if (event.key === " " && pressed) { if (held) event.preventDefault(); finishHold(); }
-        });
-        holdButton.addEventListener("click", (event) => {
-          if (suppressClick) { suppressClick = false; event.preventDefault(); event.stopImmediatePropagation(); }
-        }, true);
-        document.addEventListener("visibilitychange", () => { if (document.hidden) finishHold(true); });
-      }
+    if (holdToTalk) {
+      button.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0 || button.disabled || current) return;
+        pressed = true; held = false; pointerId = event.pointerId;
+        button.setPointerCapture?.(pointerId);
+        holdTimer = setTimeout(()=>{if(pressed){held=true;suppressUntil=performance.now()+1000;begin("hold");}},350);
+      });
+      button.addEventListener("pointerup", (event) => {
+        if(event.pointerId !== pointerId) return;
+        clearTimeout(holdTimer); pressed=false;
+        const rect=button.getBoundingClientRect();
+        const outside=event.clientX<rect.left-12 || event.clientX>rect.right+12 || event.clientY<rect.top-12 || event.clientY>rect.bottom+12;
+        if(held || outside) {
+          suppressUntil=performance.now()+600;
+          if(current && outside) cancel();
+          else if(current && phase === "starting") { cancel(); message("Микрофон готовится. Попробуйте удержать стрелку ещё раз."); }
+          else if(current && phase === "listening") current.requestStop();
+        }
+        held=false;pointerId=null;
+      });
+      button.addEventListener("pointercancel",()=>{clearTimeout(holdTimer);pressed=false;suppressUntil=performance.now()+600;if(current)cancel();});
+      button.addEventListener("click",(event)=>{
+        if(event.detail > 0 && performance.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation();}
+      },true);
+      button.addEventListener("contextmenu",(event)=>event.preventDefault());
       document.addEventListener("keydown",(event)=>{if(event.key==="Escape" && current){event.preventDefault();cancel();}});
-      document.addEventListener("visibilitychange",()=>{if(document.hidden && current)cancel();});
+      document.addEventListener("visibilitychange",()=>{if(document.hidden){clearTimeout(holdTimer);pressed=false;if(current)cancel();}});
       window.addEventListener("pagehide",cancel);
     }
+    if (microphone) microphone.addEventListener("click", () => current ? toggle() : begin("toggle"));
     input.addEventListener("input", update);
-    // Stop recording, wait for the transcript, then call done() — «Send» pressed while dictating.
-    function finish(done) {
-      if (!current) { done(); return; }
-      after = done;
-      if (phase !== "processing") current.requestStop();
+    if (microphone && !holdToTalk) {
+      document.addEventListener("keydown",event=>{if(event.key==="Escape"&&current){event.preventDefault();cancel();}});
+      document.addEventListener("visibilitychange",()=>{if(document.hidden&&current)cancel();});
+      window.addEventListener("pagehide",cancel);
     }
-    update(); if(!dedicated)message("Проверяю доступность голосового ввода…"); checkBackend();
-    return { toggle, begin, finish, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };
+    update(); if(!holdToTalk&&!microphone)message("Проверяю доступность голосового ввода…"); checkBackend();
+    return { toggle, begin, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };
   };
 })();

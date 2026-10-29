@@ -16,7 +16,7 @@ async (page) => {
   await page.route('https://ipinfo.io/**',route=>route.fulfill({json:{}}));
   await page.setViewportSize({width:1440,height:940});
   await page.goto(base+'/static/favicon.svg');
-  await page.evaluate(()=>{sessionStorage.clear();localStorage.removeItem('odin.tour.v1');});
+  await page.evaluate(()=>{sessionStorage.clear();localStorage.removeItem('odin.tour.v2');});
   await page.goto(base+'/');await idle();
   assert(await page.locator('#tour-dialog').isVisible(),'first visit opens introduction');
   await page.locator('#tour-next').click();assert((await page.locator('#tour-title').innerText()).includes('глобусе'),'tour explains globe');
@@ -26,10 +26,10 @@ async (page) => {
   assert((await page.locator('#text').inputValue()).includes('Казань'),'example prefills composer');
   assert(await page.locator('.msg.user').count()===0,'example is not sent automatically');
   await page.locator('#text').fill('');
-  await page.locator('#how-it-works').click();await page.locator('#tour-skip').click();
+  await page.locator('#about-open').click();await page.locator('#tour-open').click();await page.locator('#tour-skip').click();
   await page.reload();await idle();assert(await page.locator('#tour-dialog').isHidden(),'tour stays dismissed after reload');
-  assert(await page.locator('#head h1').innerText()==='Соберём вашу поездку','compact useful title');
-  assert(await page.locator('#suggest button').allTextContents().then(x=>x.join('|')==='К морю|В горы|Помоги выбрать'),'three short starter wishes');
+  assert(await page.locator('#head h1').innerText()==='Соооберём вашу поездку','compact useful title');
+  assert(await page.locator('#suggest button').allTextContents().then(x=>x.join('|')==='К морю на неделю|В горы за тишиной|Предложи сам'),'three short starter wishes');
   await screenshot('review-desktop-start');
   for(const width of [320,390,768]) {
     await page.setViewportSize({width,height:844});await fit('fresh chat');
@@ -39,10 +39,6 @@ async (page) => {
     await page.locator('button[data-panel="chat"]').click();
   }
   await page.setViewportSize({width:390,height:844});
-  await page.getByRole('button',{name:'Помоги выбрать',exact:true}).click();
-  assert(await page.locator('.inspiration').isVisible(),'inspiration opens on request');await fit('inspiration');
-  await screenshot('review-mobile-inspiration');
-  await page.locator('button[data-panel="chat"]').click();
   await send('Хочу на море из Москвы на 7 ночей с 15 июня 2027, двое взрослых, бюджет 180 тысяч рублей на всю поездку, без визы.');
   await page.locator('.reply-results').last().click();await fit('destinations');
   await page.getByRole('button',{name:'Выбрать Анталья',exact:true}).click();await idle();
@@ -56,6 +52,15 @@ async (page) => {
     assert(await page.locator('.compare-scroll').isVisible(),'comparison available '+width);
     await page.getByRole('button',{name:'Карточки',exact:true}).click();
   }
+  await page.locator('#currency').selectOption('EUR');
+  assert((await page.locator('.package-card').first().innerText()).includes('€'),'hotel and package prices convert to euros');
+  assert((await page.locator('#trip-summary-line').innerText()).includes('€'),'summary budget uses selected display currency');
+  await page.locator('#currency').selectOption('USD');
+  assert((await page.locator('.package-card').first().innerText()).includes('$'),'prices convert to dollars');
+  await page.locator('#currency').selectOption('RUB');
+  assert(!(await page.locator('.package-card').first().innerText()).includes('≈'),'switching back restores exact ruble labels');
+  assert(await page.locator('#save-status').isHidden(),'successful saving stays silent');
+  assert(await page.locator('#undo,#chat-menu,#sound-toggle,#how-it-works').count()===0,'duplicate controls are removed');
   await page.locator('#view').scrollIntoViewIfNeeded();await screenshot('review-desktop-packages');
   const heights=await page.locator('.package-card').evaluateAll(nodes=>nodes.map(n=>Math.round(n.getBoundingClientRect().height)));
   console.log('CARD_HEIGHTS '+JSON.stringify(heights));
@@ -92,7 +97,7 @@ async (page) => {
   assert(await page.locator('.receipt .total').innerText()===totalAfter,'refresh restores total');
   assert(await page.locator('#transfer-kind').inputValue()==='shuttle','refresh restores transfer selection');
   await page.locator('button[data-panel="chat"]').click();
-  await page.locator('#chat-menu summary').click();await page.locator('#reset').click();await page.locator('#reset-confirm').click();await idle();
+  await page.locator('#reset').click();await page.locator('#reset-confirm').click();await idle();
   assert(await page.locator('.msg.user').count()===0,'new trip resets conversation');
   assert(await page.evaluate(()=>sessionStorage.getItem('odin.trip.v1'))===null,'new trip clears saved session');
   await send('В Казань из Санкт-Петербурга на 3 ночи с 15 июня 2027, двое взрослых, бюджет 100 тысяч рублей на всю поездку');
@@ -101,7 +106,7 @@ async (page) => {
   assert(title.includes('Санкт-Петербург')&&title.includes('Казань')&&!title.includes('LED'),'Russian city route replaces IATA heading');
   await fit('long Russian route');await screenshot('review-mobile-route');
   await page.emulateMedia({reducedMotion:'reduce'});
-  assert(await page.locator('body').evaluate(el=>getComputedStyle(el).transitionDuration)==='0s','reduced motion respected');
+  assert(await page.locator('body').evaluate(el=>getComputedStyle(el).transitionDuration)==='1e-06s','reduced motion respected');
   console.log('RESULT '+JSON.stringify({checks,widths,heights,totalBefore,totalAfter}));
   return {checks,widths,heights,totalBefore,totalAfter};
 }

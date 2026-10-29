@@ -3,11 +3,12 @@ window.createJourneyUI = ({fill, onTransfer}) => {
   const $ = id => document.getElementById(id);
   let active = "chat", hasResults = false, resultCount = 0, tourStep = 0;
   const steps = [
-    {title:"Начните с желания", text:"Напишите пару слов или сразу опишите поездку. Можно начать с кнопок «К морю» и «В горы».", example:"В Казань из Санкт-Петербурга на выходные вдвоём, до 70 тысяч рублей. Хочется гулять по центру."},
-    {title:"Выбирайте на глобусе", text:"Вращайте и приближайте глобус. Нажмите на город, достопримечательность или событие, чтобы начать подбор. Когда поездка выбрана, здесь появится её маршрут."},
-    {title:"Соберите поездку под себя", text:"Сравните варианты, раскройте отель, дорогу и трансферы. Изменяйте условия в чате. При обновлении вкладки текущая поездка восстановится, пока сессия активна."}
+    {title:"Начните с желания", text:"Напишите пару слов или сразу опишите поездку. Например: «К морю на неделю» или «На выходные в новый город».", example:"На выходные в Казань вдвоём. Хочется гулять по центру и жить рядом."},
+    {title:"Выбирайте на глобусе", text:"Вращайте и приближайте глобус. Нажмите на видимую метку. Число на точке означает группу: приблизьте её, чтобы увидеть места внутри. Когда поездка выбрана, здесь появится её маршрут."},
+    {title:"Соберите поездку под себя", text:"Сравните варианты, раскройте отель, дорогу и трансферы. Город отправления подскажем по IP, если получится. Его и другие условия можно изменить над чатом. Поездка сохраняется в этой вкладке."}
   ];
   const scrollTo = target => requestAnimationFrame(() => {
+    if(target==="head"){window.scrollTo({top:0,behavior:"instant"});return;}
     const node = $(target); if (!node) return;
     node.scrollIntoView({block:"start", behavior:matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"});
     if (target === "view") node.focus({preventScroll:true});
@@ -46,7 +47,7 @@ window.createJourneyUI = ({fill, onTransfer}) => {
     button.textContent = resultCount ? `Посмотреть ${resultCount} ${resultCount === 1 ? "вариант" : resultCount < 5 ? "варианта" : "вариантов"}` : "Посмотреть поездку";
     button.onclick=()=>show("results"); message.append(button);
   }
-  function markTourSeen() { try { localStorage.setItem("odin.tour.v1", "seen"); } catch (_) {} }
+  function markTourSeen() { try { localStorage.setItem("odin.tour.v2", "seen"); } catch (_) {} }
   function paintTour() {
     const step=steps[tourStep];
     $("tour-counter").textContent=`${tourStep+1} из ${steps.length}`;
@@ -61,13 +62,12 @@ window.createJourneyUI = ({fill, onTransfer}) => {
   $("tour-skip").onclick=()=>{$("tour-dialog").close();markTourSeen();};
   $("tour-dialog").addEventListener("close",markTourSeen);
   $("tour-example").onclick=()=>{$("tour-dialog").close();markTourSeen();show("chat",false);fill(steps[0].example);};
-  $("tour-open").onclick=()=>{document.getElementById("chat-menu").open=false;openTour();};
-  $("how-it-works").onclick=openTour;
+  $("tour-open").onclick=()=>{document.getElementById("about-dialog").close();openTour();};
   document.querySelectorAll("button[data-panel]").forEach(button=>button.onclick=()=>show(button.dataset.panel));
   $("results-jump").onclick=()=>show("results");
   $("mobile-map").onclick=()=>show(active==="chat" ? "map" : "chat");
   return {show,update,addResultLink,openTour,
-    firstVisit:()=>{let seen=false;try{seen=Boolean(localStorage.getItem("odin.tour.v1"));}catch(_){}if(!seen)openTour();},
+    firstVisit:()=>{let seen=false;try{seen=Boolean(localStorage.getItem("odin.tour.v2"));}catch(_){}if(!seen)openTour();},
     panel:()=>active,
     transfer:kind=>onTransfer(kind)};
 };

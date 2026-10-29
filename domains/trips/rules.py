@@ -401,7 +401,9 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         return TripUpdate(unsure=True, wants_ideas=True if state.pending_question == "when" and not state.dest_id
                           and not state.search_scope else None)
     if delegated and not state.dest_id and not state.pending_question and state.stage in {"start", "destination"}:
-        return TripUpdate(wants_ideas=True)
+        return TripUpdate(unsure=True, wants_ideas=True, without_dates=True)
+    if re.search(r"(?<!не )\bбез\s+(?:конкретн\w*\s+)?дат(?:ы)?\b", t):
+        data["without_dates"] = True
     if state.pending_question == "multi_hotel" and re.search(r"сравн|на одни даты|одинаков\w* дат", t):
         return TripUpdate(search_scope="hotel_only")
     if state.pending_question == "multi_hotel" and re.search(r"по очереди|поочередно|сначала|разные даты", t):
@@ -613,7 +615,7 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
                  r"(?:денег|деньги)\s+(?:мало|не\s*много|в\s+обрез)|бюджет\s+(?:маленьк|небольш|низк)|"
                  r"(?:маленьк\w*|небольш\w*)\s+бюджет", t) and not state.last_plan:
         data["economy"] = True
-    if re.search(r"отдох|поехать|съездить|отпуск|путешеств|куда|поездк|\bтур\b|развеяться|выбраться|посоветуй|идеи", t):
+    if re.search(r"отдох|отдых|поехать|съездить|отпуск|путешеств|куда|поездк|\bтур\b|развеяться|выбраться|посоветуй|\bиде(?:и|й|ю|я)\b", t):
         data["wants_ideas"] = True
     for field, pattern in (
         ("scenic_views", r"красив\w*\s+(?:вид|пейзаж)\w*|живописн\w*\s+(?:вид|пейзаж)\w*|панорамн\w*\s+вид\w*"),

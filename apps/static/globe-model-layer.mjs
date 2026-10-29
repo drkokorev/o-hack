@@ -5,113 +5,6 @@ import * as THREE from './vendor/three/three.module.js';
 import {GLTFLoader} from './vendor/three/GLTFLoader.js';
 import {createLandmarkModels} from './landmarks-3d.mjs?v=globe-20261028-32';
 
-function makeEventModels() {
-  const material = (color) => new THREE.MeshStandardMaterial({color});
-  const red = material(0xb96e5d), blue = material(0x859c94), gold = material(0xc9a56e);
-  const dark = material(0x304748), jade = material(0x9caf96), pale = material(0xe9deca);
-  const box = (group, w, h, d, x, y, z, mat) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
-    mesh.position.set(x,y,z); group.add(mesh); return mesh;
-  };
-  const wheel = (group, x, z) => {
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(.46,.46,.32,12), dark);
-    mesh.rotation.x = Math.PI / 2; mesh.position.set(x,.48,z); group.add(mesh);
-  };
-  const race = new THREE.Group();
-  box(race,3.4,.38,.65,0,.62,0,red); box(race,1.35,.32,.82,-.1,.95,0,red);
-  box(race,.65,.25,.5,-.25,1.18,0,dark); box(race,.3,.18,2.05,-1.65,.55,0,red);
-  box(race,.3,.18,1.85,1.65,.65,0,red);
-  for (const x of [-1.1,1.1]) for (const z of [-.86,.86]) wheel(race,x,z);
-  const music = new THREE.Group();
-  box(music,.2,2.8,.2,.8,1.75,0,blue); box(music,1.2,.27,.24,.3,3,0,blue);
-  for (const [x,y] of [[-.15,.6],[.8,1.0]]) {
-    const n=new THREE.Mesh(new THREE.SphereGeometry(.5,12,8),blue); n.scale.set(1,.65,.6); n.position.set(x,y,0); music.add(n);
-  }
-  const art = new THREE.Group();
-  const palette = new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,.24,20),pale);
-  palette.position.y=1.2; palette.rotation.x=.35; art.add(palette);
-  for (const [x,z,mat] of [[-.7,0,red],[0,-.7,blue],[.7,0,gold],[0,.7,jade]]) {
-    const spot=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),mat); spot.position.set(x,1.4,z); art.add(spot);
-  }
-  const nature = new THREE.Group();
-  box(nature,.35,1.5,.35,0,.75,0,dark);
-  const crown=new THREE.Mesh(new THREE.ConeGeometry(1.1,2.2,7),jade); crown.position.y=2.2; nature.add(crown);
-  const sport = new THREE.Group();
-  const ball=new THREE.Mesh(new THREE.SphereGeometry(1.1,16,12),pale); ball.position.y=1.3; sport.add(ball);
-  box(sport,1.5,.25,1.5,0,.15,0,blue);
-  const culture = new THREE.Group();
-  for (const x of [-.7,.7]) box(culture,.32,1.8,.32,x,1,0,blue);
-  box(culture,2,.25,.55,0,1.95,0,gold);
-  const roof=new THREE.Mesh(new THREE.ConeGeometry(1.35,.8,4),red); roof.rotation.y=Math.PI/4; roof.position.y=2.5; culture.add(roof);
-  const tech = new THREE.Group();
-  box(tech,1.8,1.8,.3,0,1.15,0,blue); box(tech,1.3,1.3,.1,0,1.15,.2,pale);
-  const film = new THREE.Group();
-  box(film,2,.95,.3,0,1,0,dark); box(film,2,.3,.35,0,1.75,0,pale);
-  const festive = new THREE.Group();
-  box(festive,1.7,1.5,1.4,0,.75,0,red); box(festive,.2,1.6,1.5,0,.8,0,gold); box(festive,1.8,.2,.2,0,1.55,0,gold);
-  const segment = (group, from, to, radius, mat) => {
-    const start = new THREE.Vector3(...from), end = new THREE.Vector3(...to), delta=end.clone().sub(start);
-    const rod = new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),8),mat);
-    rod.position.copy(start).add(end).multiplyScalar(.5);
-    rod.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize()); group.add(rod);
-  };
-  const bicycle = new THREE.Group();
-  for (const x of [-1.15,1.15]) {
-    const tyre = new THREE.Mesh(new THREE.TorusGeometry(.66,.1,8,20),dark);
-    tyre.position.set(x,.76,0); bicycle.add(tyre);
-  }
-  for (const [a,b] of [[[-1.15,.76,0],[0,1.55,0]],[[0,1.55,0],[.15,.76,0]],
-    [[.15,.76,0],[-1.15,.76,0]],[[0,1.55,0],[.8,1.55,0]],[[.8,1.55,0],[1.15,.76,0]],
-    [[.15,.76,0],[.8,1.55,0]]]) segment(bicycle,a,b,.065,red);
-  box(bicycle,.5,.12,.23,-.1,1.72,0,dark); box(bicycle,.35,.1,.25,.85,1.72,0,dark);
-  const sailing = new THREE.Group();
-  box(sailing,3,.35,.95,0,.27,0,blue); segment(sailing,[0,.42,0],[0,3.2,0],.08,dark);
-  const sailShape=new THREE.Shape(); sailShape.moveTo(.08,.6); sailShape.lineTo(.08,2.95); sailShape.lineTo(1.3,.6); sailShape.closePath();
-  const sail=new THREE.Mesh(new THREE.ShapeGeometry(sailShape),pale); sailing.add(sail);
-  const surfing = new THREE.Group();
-  const board=new THREE.Mesh(new THREE.CapsuleGeometry(.34,2.6,4,10),gold);
-  board.rotation.z=Math.PI/2; board.position.y=.42; board.scale.z=.45; surfing.add(board);
-  const wave=new THREE.Mesh(new THREE.TorusGeometry(1,.16,8,16,Math.PI),blue);
-  wave.rotation.x=Math.PI/2; wave.position.y=.17; surfing.add(wave);
-  const flower = new THREE.Group();
-  segment(flower,[0,.2,0],[0,2.1,0],.12,jade);
-  for (let i=0;i<6;i++) {
-    const angle=i*Math.PI/3, petal=new THREE.Mesh(new THREE.SphereGeometry(.35,10,7),red);
-    petal.position.set(Math.cos(angle)*.52,2.2+Math.sin(angle)*.52,0); flower.add(petal);
-  }
-  const flowerCenter=new THREE.Mesh(new THREE.SphereGeometry(.32,10,7),gold); flowerCenter.position.y=2.2; flower.add(flowerCenter);
-  const book = new THREE.Group();
-  box(book,1.1,1.55,.22,-.57,1,0,blue); box(book,1.1,1.55,.22,.57,1,0,red);
-  box(book,.1,1.62,.28,0,1,.05,gold);
-  const food = new THREE.Group();
-  const plate=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.05,.16,20),pale); plate.position.y=.25; food.add(plate);
-  const meal=new THREE.Mesh(new THREE.SphereGeometry(.62,12,8),red); meal.scale.y=.5; meal.position.y=.58; food.add(meal);
-  segment(food,[1.35,.15,0],[1.35,2.1,0],.09,dark); box(food,.45,.1,.15,1.35,2.05,0,dark);
-  const paw = new THREE.Group();
-  const pad=new THREE.Mesh(new THREE.SphereGeometry(.7,12,8),gold); pad.scale.set(1,.7,.4); pad.position.y=1; paw.add(pad);
-  for (const [x,y] of [[-.85,1.8],[-.3,2.15],[.3,2.15],[.85,1.8]]) {
-    const toe=new THREE.Mesh(new THREE.SphereGeometry(.3,10,6),gold); toe.position.set(x,y,0); paw.add(toe);
-  }
-  const heritage_culture = new THREE.Group();
-  box(heritage_culture,2.8,.35,1.6,0,.2,0,pale);
-  for (const x of [-1,0,1]) box(heritage_culture,.25,1.65,.25,x,1.15,0,blue);
-  box(heritage_culture,2.9,.25,.7,0,2.05,0,gold);
-  const heritage_nature = new THREE.Group();
-  const mountain=new THREE.Mesh(new THREE.ConeGeometry(1.7,2.6,5),jade); mountain.position.y=1.3; heritage_nature.add(mountain);
-  const models={race,music,art,nature,sport,culture,tech,film,festive,bicycle,sailing,surfing,flower,book,food,paw,
-    heritage_culture,heritage_nature};
-  // One restrained base ties event categories together visually.
-  for (const [name,group] of Object.entries(models)) {
-    if (name==='race' || name.startsWith('heritage_')) continue;
-    for (const child of group.children) child.position.y+=.22;
-    const base=new THREE.Mesh(new THREE.CylinderGeometry(1.65,1.78,.22,24),dark);base.position.y=.11;group.add(base);
-    const rim=new THREE.Mesh(new THREE.TorusGeometry(1.65,.06,6,24),gold);rim.rotation.x=Math.PI/2;rim.position.y=.24;group.add(rim);
-  }
-  return models;
-}
-
-// Convert scene meshes into a small set of WebGL buffers. The original UVs and
-// textures are retained; positions are normalized around the actual anchor.
 function geometryData(group, kind, imported=false) {
   if (imported && kind==='race') group.rotation.set(.30,.65,0);
   if (imported && kind==='film') group.rotation.y=Math.PI/2;
@@ -174,9 +67,8 @@ function geometryData(group, kind, imported=false) {
 
 export function createGlobeModelLayer(map, lib, onModelState=()=>{}) {
   const assetFiles={tower:'eiffel-tower.glb',spire:'burj-khalifa.glb',clocktower:'big-ben.glb',
-    colosseum:'colosseum.glb',liberty:'statue-liberty.glb',race:'formula-car.glb',
-    film:'event-film.glb',art:'event-art.glb',music:'event-music.glb',sport:'event-sport.glb'};
-  const geometries={...createLandmarkModels({illustrationsOnly:true}), ...makeEventModels()};
+    colosseum:'colosseum.glb',liberty:'statue-liberty.glb'};
+  const geometries={...createLandmarkModels({illustrationsOnly:true})};
   // For supplied models show an accessible small marker while loading, rather
   // than constructing a crude temporary 3D model and then swapping it abruptly.
   for (const name of [...Object.keys(assetFiles),'heritage_culture','heritage_nature']) delete geometries[name];
@@ -249,8 +141,9 @@ export function createGlobeModelLayer(map, lib, onModelState=()=>{}) {
     const p=gl.createProgram(); gl.attachShader(p,vs); gl.attachShader(p,fs); gl.linkProgram(p);
     gl.deleteShader(vs); gl.deleteShader(fs);
     if (!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
-    programs.set(desc.variantName,p); return p;
+    p._uniforms={};p._attributes={};programs.set(desc.variantName,p); return p;
   }
+  function attribute(gl,p,name) {return p._attributes[name] ??= gl.getAttribLocation(p,name);}
   function install(gl,name,items) {
     for (const piece of buffers.get(name) || []) gl.deleteBuffer(piece.buffer);
     buffers.set(name,items.map((piece)=>{
@@ -281,15 +174,15 @@ export function createGlobeModelLayer(map, lib, onModelState=()=>{}) {
     },
     render(gl,args) {
       const p=program(gl,args.shaderData),projection=args.defaultProjectionData;
-      gl.useProgram(p); const u=(name)=>gl.getUniformLocation(p,name);
+      gl.useProgram(p); const u=(name)=>(p._uniforms[name] ??= gl.getUniformLocation(p,name));
       gl.uniformMatrix4fv(u('u_projection_fallback_matrix'),false,projection.fallbackMatrix);
       gl.uniformMatrix4fv(u('u_projection_matrix'),false,projection.mainMatrix);
       gl.uniform4f(u('u_projection_tile_mercator_coords'),...projection.tileMercatorCoords);
       gl.uniform4f(u('u_projection_clipping_plane'),...projection.clippingPlane);
       gl.uniform1f(u('u_projection_transition'),projection.projectionTransition);
       gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
-      const aPosition=gl.getAttribLocation(p,'a_position'),aNormal=gl.getAttribLocation(p,'a_normal');
-      const aColor=gl.getAttribLocation(p,'a_color'),aUV=gl.getAttribLocation(p,'a_uv');
+      const aPosition=attribute(gl,p,'a_position'),aNormal=attribute(gl,p,'a_normal');
+      const aColor=attribute(gl,p,'a_color'),aUV=attribute(gl,p,'a_uv');
       for (const a of [aPosition,aNormal,aColor,aUV]) gl.enableVertexAttribArray(a);
       const center=map.getCenter(), rad=Math.PI/180, phi=center.lat*rad, lambda=center.lng*rad;
       const view=[Math.cos(phi)*Math.cos(lambda),Math.cos(phi)*Math.sin(lambda),Math.sin(phi)];
@@ -299,11 +192,11 @@ export function createGlobeModelLayer(map, lib, onModelState=()=>{}) {
         const targetBuffers=buffers.get(target.kind); if (!targetBuffers || state(target.kind)==='loading' || state(target.kind)==='failed') continue;
         const coord=lib.MercatorCoordinate.fromLngLat([target.lon,target.lat]);
         const facing=Math.sin(phi)*Math.sin(target.lat*rad)+Math.cos(phi)*Math.cos(target.lat*rad)*Math.cos((target.lon-center.lng)*rad);
-        if (facing<=.40) continue;
+        if (facing<=.60) continue;
         const lean=target.kind==='pyramids' ? 1.0 : target.kind==='spire' ? .8 : .58;
         // Shrink gently near the limb instead of letting large objects project
         // into empty space or vanish while they are still on the visible side.
-        const horizonFactor=Math.max(.02,Math.min(1,(facing-.40)/.20));
+        const horizonFactor=1;
         const scale=scaleFor(target,parts.get(target.kind).dimensions,lean)*horizonFactor;
         const lat=target.lat*rad,lon=target.lon*rad;
         const up=[Math.cos(lat)*Math.cos(lon),Math.cos(lat)*Math.sin(lon),Math.sin(lat)];

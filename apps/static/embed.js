@@ -15,15 +15,15 @@
   frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
   frame.hidden = true;
   Object.assign(frame.style, { width: "min(390px, calc(100vw - 32px))", height: "min(620px, calc(100dvh - 100px))",
-    border: "1px solid #e5e5e5", borderRadius: "24px", background: "white", boxShadow: "0 18px 60px #2d313733" });
+    border: "1px solid #d9e2e0", borderRadius: "22px", background: "white", boxShadow: "0 18px 60px #081c2633" });
   const toggle = document.createElement("button");
   toggle.type = "button";
   toggle.textContent = "Помочь с поездкой";
   toggle.setAttribute("aria-expanded", "false");
   toggle.setAttribute("aria-label", "Открыть помощника по поездкам");
   Object.assign(toggle.style, { border: "0", borderRadius: "999px", padding: "14px 20px", minHeight: "48px",
-    background: "#0e41d2", color: "white", font: "600 15px system-ui, sans-serif", cursor: "pointer",
-    boxShadow: "0 8px 24px #0e41d244" });
+    background: "#2346d8", color: "white", font: "600 15px system-ui, sans-serif", cursor: "pointer",
+    boxShadow: "0 8px 24px #152d8e44" });
   toggle.addEventListener("click", () => {
     frame.hidden = !frame.hidden;
     if (frame.hidden && frame.contentWindow) frame.contentWindow.postMessage({ type: "odin-widget-hidden" }, service);

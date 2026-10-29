@@ -104,6 +104,7 @@ class TripState(TripParams):
     real_hotels_shown: list[dict] = Field(default_factory=list)  # источник и ID именно показанных записей
     split_displayed: list[dict] = Field(default_factory=list)  # exact pair IDs and demo prices shown to user
     selected_real_hotel: dict | None = None  # выбранная запись открытого каталога
+    selected_event: dict | None = None  # проверенная сервером причина поездки, не даты проживания
     assumptions: list[str] = Field(default_factory=list)     # что агент предположил сам
     last_plan: dict | None = None        # краткая сводка прошлого плана — для «что изменилось»
     order: dict | None = None            # оформленный заказ
@@ -170,6 +171,7 @@ class TripUpdate(TripParams):
     place_country: str | None = Field(None, description="Страна для уточнения географического названия (служебное поле правил)")
     corrected_place: str | None = Field(None, description="Исходное написание места, исправленное по опечатке (служебное поле правил)")
     unsure: bool | None = Field(None, description="true, если человек пока не знает ответ на уточняющий вопрос")
+    without_dates: bool | None = Field(None, description="Пользователь прямо попросил идеи без дат; определяется правилами")
     duration_not_given: bool | None = Field(None, description="true, если человек говорит, что не называл длительность")
     clear_duration: bool | None = Field(None, description="true, если человек явно отказался от прежней короткой длительности")
     payment_method: str | None = Field(None, description="Демонстрационный способ оплаты: card | sbp")

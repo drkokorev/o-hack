@@ -56,6 +56,24 @@ def test_suggested_buttons_actually_work_for_the_question_that_shows_them():
         assert result.payload["kind"] == "ideas" and result.payload["items"]
 
 
+def test_start_suggestion_explicitly_without_dates_gives_ideas_immediately():
+    agent = make_agent()
+    session = agent.new_session()
+    result = agent.handle(session, "Предложи сам несколько разных идей для отдыха, пока без дат.")
+    assert result.payload["kind"] == "ideas" and result.payload["items"]
+    assert session.state.date_from is None and session.state.month is None
+
+
+def test_start_without_dates_does_not_discard_an_explicit_month_or_negation():
+    agent = make_agent()
+    session = agent.new_session()
+    agent.handle(session, "Предложи идеи пока без дат, но в июне")
+    assert session.state.month == 6
+    assert "when" not in session.state.skipped_questions
+    update = rule_extract(TripState(), "Предложи идеи не без дат", TODAY)
+    assert update.without_dates is None
+
+
 def test_explicit_month_is_not_discarded_with_a_suggestion_request():
     result = rule_extract(TripState(pending_question="when"), "предложи сам, но в июне", TODAY)
     assert result.month == 6 and result.unsure is None

@@ -1,0 +1,74 @@
+// Actual DOM/camera checks; no fabricated geographic or commercial responses.
+async(page)=>{
+  const checks=[], errors=[], network=[];
+  const assert=(ok,name)=>{if(!ok)throw new Error(name);checks.push(name);console.log('PASS '+name);};
+  page.on('pageerror',e=>errors.push(e.message));
+  page.on('response',r=>{if(r.url().includes('tiles.openfreemap.org'))network.push({status:r.status(),url:r.url().split('?')[0]});});
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.setViewportSize({width:1440,height:960});
+  const base = new URL(page.url()).origin;
+  await page.goto(base + '/static/favicon.svg');
+  await page.evaluate(()=>{sessionStorage.clear();localStorage.setItem('odin.tour.v2','seen');localStorage.setItem('odin.theme','light');localStorage.setItem('odin.globe','earth');});
+  await page.route('https://ipinfo.io/**',route=>route.fulfill({json:{city:'Moscow'}}));
+  await page.goto(base + '/');
+  await page.waitForFunction(()=>!document.querySelector('#send').disabled&&tripMap.getView()?.models.includes('tower'),null,{timeout:40000});
+  await page.waitForTimeout(1500);
+  assert(await page.locator('#send').getAttribute('aria-label')==='Отправить сообщение','separate send arrow remains send control');
+  assert(await page.locator('#voice-status').isHidden(),'voice disclosure does not clutter the composer');
+  assert(await page.locator('.maplibregl-cooperative-gesture-screen').count()===0,'no Control+scroll overlay');
+  assert(await page.locator('#map .map-list,#map .map-footer').count()===0,'long catalogs and credits are outside the globe');
+  const before=await page.evaluate(()=>tripMap.getView());
+  await page.screenshot({path:'output/playwright/globe-realistic-light.png'});
+  await page.getByRole('button',{name:'Рисованный',exact:true}).click();await page.waitForTimeout(800);
+  assert(await page.evaluate(()=>tripMap.getView().mode==='atlas'&&tripMap.getView().projection==='globe'),'drawn mode keeps real globe projection');
+  assert(await page.locator('.globe-geography-label:visible').count()>0,'geographic labels fit visible globe');
+  const labels=await page.locator('.globe-geography-label:visible').allTextContents();
+  await page.screenshot({path:'output/playwright/globe-drawn-light.png'});
+  await page.locator('#theme-toggle').click();await page.waitForTimeout(400);
+  assert(await page.locator('#theme-toggle svg circle').count()===1,'dark theme displays a sun icon');
+  await page.screenshot({path:'output/playwright/globe-drawn-dark.png'});
+  await page.locator('#theme-toggle').click();
+  await page.locator('.map-kind').selectOption('city');
+  await page.waitForSelector('.cluster-marker:visible',{timeout:25000});
+  const cluster=page.locator('.cluster-marker:visible').first();
+  assert(await cluster.count()>0,'city groups are visible and interactive');
+  const groupLabel=await cluster.getAttribute('aria-label');
+  await cluster.click();
+  await page.waitForSelector('.cluster-expansion',{state:'attached',timeout:15000});
+  assert(await page.locator('.cluster-expansion line').count()>0,'group expansion connects real child coordinates');
+  await page.screenshot({path:'output/playwright/globe-cluster-expansion.png'});
+  await page.waitForTimeout(1600);
+  assert(await page.locator('.cluster-expansion').count()===0,'expansion decoration clears automatically');
+  // A public map API used by saved places navigates to a real existing hotel area.
+  await page.evaluate(()=>tripMap.showPoint({id:'geonames:2988507',lat:48.8584,lon:2.2945}));
+  await page.waitForFunction(()=>tripMap.getView().zoom>=11.9,null,{timeout:15000});
+  await page.waitForFunction(()=>tripMap.getView().detail==='ready',null,{timeout:45000});
+  await page.waitForTimeout(1200);
+  assert(network.some(r=>r.status===200&&r.url.includes('/planet')),'real street tiles load at city scale');
+  await page.screenshot({path:'output/playwright/globe-city-streets.png'});
+  await page.getByRole('button',{name:'К глобусу',exact:true}).click();await page.waitForTimeout(1400);
+  for(const width of [390,320,768]){
+    await page.setViewportSize({width,height:844});await page.reload();
+    await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+    await page.locator('[data-panel="map"]').click();
+    await page.waitForFunction(()=>tripMap.getView()?.earth===true && tripMap.getView()?.models.includes('tower'),null,{timeout:45000});
+    await page.waitForTimeout(900);
+    const dimensions=await page.evaluate(()=>({width:document.documentElement.scrollWidth,viewport:innerWidth,view:tripMap.getView(),canvas:document.querySelector('.map-canvas').clientWidth}));
+    assert(dimensions.width<=dimensions.viewport,'mobile globe fits '+width);
+    if(width===390)await page.screenshot({path:'output/playwright/globe-mobile.png'});
+  }
+  await page.setViewportSize({width:1440,height:960});await page.reload();
+  await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+  await page.locator('#text').fill('В Казань на выходные вдвоём');await page.locator('#ask').evaluate(f=>f.requestSubmit());
+  await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+  assert((await page.locator('#conditions').textContent()).includes('Москва (примерно по IP)'),'IP origin appears as editable assumption');
+  assert(!(await page.locator('.msg.bot').last().innerText()).includes('по IP'),'IP hint is not repeated in chat');
+  await page.locator('#all-conditions').evaluate(e=>e.open=true);
+  await page.locator('#conditions button').filter({hasText:'Москва'}).click();
+  assert(await page.locator('#condition-field').inputValue()==='origin','IP city chip opens origin editor');
+  await page.locator('#condition-value').fill('Казани');await page.locator('#condition-form').evaluate(f=>f.requestSubmit());
+  await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+  assert((await page.locator('#conditions').textContent()).includes('из: Казань'),'manual origin replaces IP assumption');
+  assert(errors.length===0,'no JavaScript exceptions');
+  return {checks,labels,before,groupLabel,tiles:network.length,errors};
+}

@@ -40,7 +40,7 @@ export async function addEarthSurface(map, imageOrUrl) {
     indices[ix++]=top;indices[ix++]=top+1;indices[ix++]=northPoleStart+x;
     indices[ix++]=x;indices[ix++]=southPoleStart+x;indices[ix++]=x+1;
   }
-  const programs=new Map(); let buffer, indexBuffer, texture, style='satellite';
+  const programs=new Map(), locations=new Map(); let buffer, indexBuffer, texture, style='satellite';
   function compile(gl,type,src) {
     const shader=gl.createShader(type); gl.shaderSource(shader,src); gl.compileShader(shader);
     if (!gl.getShaderParameter(shader,gl.COMPILE_STATUS)) throw Error(gl.getShaderInfoLog(shader));
@@ -77,22 +77,23 @@ export async function addEarthSurface(map, imageOrUrl) {
           float ice=smoothstep(.5,.75,lum)*(1.0-smoothstep(.06,.18,source.r-source.b));
           float desert=smoothstep(.27,.45,lum)*smoothstep(.08,.22,source.r-source.b)*(1.0-ice);
           float forest=1.0-smoothstep(.07,.2,lum);
-          vec3 land=mix(vec3(.62,.85,.40),vec3(.36,.70,.27),forest);
-          land=mix(land,vec3(.96,.87,.80),desert);
+          vec3 land=mix(vec3(.67,.84,.48),vec3(.39,.64,.34),forest);
+          land=mix(land,vec3(.91,.86,.71),desert);
           land=mix(land,vec3(.97,.98,1.0),ice);
           float shallow=smoothstep(.04,.13,source.g+source.b*.5);
-          vec3 water=mix(vec3(.10,.47,.88),vec3(.33,.72,.97),shallow);
+          vec3 water=mix(vec3(.16,.47,.72),vec3(.37,.68,.85),shallow);
           float diffuse=max(0.0,dot(normal,u_light));
           color=mix(water,land,continent)*(.80+.24*diffuse);
           vec3 halfway=normalize(u_light+u_view);
-          color+=vec3(1.0)*pow(max(0.0,dot(normal,halfway)),36.0)*.22;   // глянцевый блик
-          color=mix(color,vec3(.80,.92,1.0),rim*.45);                     // светлый край атмосферы
+          color+=vec3(1.0)*pow(max(0.0,dot(normal,halfway)),36.0)*.07;   // глянцевый блик
+          color=mix(color,vec3(.80,.92,1.0),rim*.25);                     // светлый край атмосферы
         }
         fragColor=vec4(color,u_alpha);
       }`);
     const program=gl.createProgram(); gl.attachShader(program,vs); gl.attachShader(program,fs); gl.linkProgram(program);
     gl.deleteShader(vs); gl.deleteShader(fs);
     if (!gl.getProgramParameter(program,gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(program));
+    locations.set(program,{uniforms:new Map(),attributes:Object.fromEntries(['a_position','a_uv','a_normal','a_pole'].map(name=>[name,gl.getAttribLocation(program,name)]))});
     programs.set(description.variantName,program); return program;
   }
   map.addLayer({id:'earth-imagery',type:'custom',
@@ -121,7 +122,7 @@ export async function addEarthSurface(map, imageOrUrl) {
       const alpha=Math.max(0,Math.min(1,(5-map.getZoom())/1.5));
       if (!alpha) return;
       const p=getProgram(gl,args.shaderData), projection=args.defaultProjectionData;
-      gl.useProgram(p); const u=(name)=>gl.getUniformLocation(p,name);
+      gl.useProgram(p); const cached=locations.get(p); const u=(name)=>{if(!cached.uniforms.has(name))cached.uniforms.set(name,gl.getUniformLocation(p,name));return cached.uniforms.get(name);};
       gl.uniformMatrix4fv(u('u_projection_fallback_matrix'),false,projection.fallbackMatrix);
       gl.uniformMatrix4fv(u('u_projection_matrix'),false,projection.mainMatrix);
       gl.uniform4f(u('u_projection_tile_mercator_coords'),...projection.tileMercatorCoords);
@@ -138,7 +139,7 @@ export async function addEarthSurface(map, imageOrUrl) {
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture); gl.uniform1i(u('u_earth'),0);
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); gl.disable(gl.DEPTH_TEST);
       gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-      const pos=gl.getAttribLocation(p,'a_position'), uv=gl.getAttribLocation(p,'a_uv'), normal=gl.getAttribLocation(p,'a_normal'), pole=gl.getAttribLocation(p,'a_pole');
+      const pos=cached.attributes['a_position'], uv=cached.attributes['a_uv'], normal=cached.attributes['a_normal'], pole=cached.attributes['a_pole'];
       gl.enableVertexAttribArray(pos); gl.enableVertexAttribArray(uv); gl.enableVertexAttribArray(normal); gl.enableVertexAttribArray(pole);
       gl.vertexAttribPointer(pos,2,gl.FLOAT,false,32,0); gl.vertexAttribPointer(uv,2,gl.FLOAT,false,32,8);
       gl.vertexAttribPointer(normal,3,gl.FLOAT,false,32,16); gl.vertexAttribPointer(pole,1,gl.FLOAT,false,32,28);
@@ -146,7 +147,7 @@ export async function addEarthSurface(map, imageOrUrl) {
       gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       gl.disableVertexAttribArray(pos); gl.disableVertexAttribArray(uv); gl.disableVertexAttribArray(normal); gl.disableVertexAttribArray(pole);
     },
-    onRemove(_map,gl) { gl.deleteBuffer(buffer); gl.deleteBuffer(indexBuffer); gl.deleteTexture(texture); programs.forEach((p)=>gl.deleteProgram(p)); programs.clear(); },
+    onRemove(_map,gl) { gl.deleteBuffer(buffer); gl.deleteBuffer(indexBuffer); gl.deleteTexture(texture); programs.forEach((p)=>gl.deleteProgram(p)); programs.clear(); locations.clear(); },
   },'land');
   map.setPaintProperty('land','fill-opacity',['interpolate',['linear'],['zoom'],0,.055,3.5,.055,5,1]);
   map.addLayer({id:'country-outlines',type:'line',source:'countries',
@@ -156,13 +157,6 @@ export async function addEarthSurface(map, imageOrUrl) {
   return {
     setStyle(next) {
       style=next;
-      const scheme=next==='map';
-      map.setPaintProperty('land','fill-color',scheme ? '#b5e08a' : '#b4cfae');
-      map.setPaintProperty('land','fill-outline-color',scheme ? '#c9a3cf' : '#8aaf9c');
-      map.setPaintProperty('ocean','background-color',scheme ? '#62b6ef' : '#c4dfe1');
-      map.setPaintProperty('country-outlines','line-color',scheme ? '#b07fbf' : '#d6ead7');
-      map.setPaintProperty('country-outlines','line-opacity',scheme
-        ? ['interpolate',['linear'],['zoom'],0,.18,4,.35,8,.7] : ['interpolate',['linear'],['zoom'],0,.28,5,.4,8,.18]);
       map.triggerRepaint();
     },
   };

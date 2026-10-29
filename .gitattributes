@@ -4,3 +4,5 @@ apps/static/vendor/maplibre/*.css -text
 apps/static/vendor/three/*.js -text whitespace=-blank-at-eol,-space-before-tab
 # Tokenizer is checked against the upstream byte-level SHA-256 on all platforms.
 domains/trips/models/e5_small/tokenizer.json -text
+# ONNX shards are binary even when a shard contains no NUL bytes; never apply CRLF conversion.
+domains/trips/models/e5_small/model_int8.onnx.part-* -text -diff

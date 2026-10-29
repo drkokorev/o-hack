@@ -336,6 +336,9 @@ class TripsDomain:
                 group_conflict = False
         defer_when_for_ideas = False
         deferred_question = state.pending_question if update.unsure else None
+        if (update.without_dates and not state.dest_id and not state.search_scope and
+                not (state.date_from or state.month or data.get("date_from") or data.get("month"))):
+            state.skipped_questions = sorted(set(state.skipped_questions) | {"when"})
         if state.pending_question:
             # If the person cannot answer (or changes the subject), don't keep asking
             # the same question on every turn. New information can still fill the field.
@@ -363,6 +366,10 @@ class TripsDomain:
         if update.unknown_place and "destination" not in data:
             data["destination"] = update.unknown_place
         changes: dict = {"group_conflict": group_conflict}
+        if ((update.destination is not None and update.destination not in {state.destination, state.dest_id})
+                or (update.country is not None and update.country != state.country)
+                or update.unknown_place is not None):
+            changes["selected_event"] = None
         if update.destination is not None or update.unknown_place is not None:
             changes["map_place"] = None
         if update.place_country:

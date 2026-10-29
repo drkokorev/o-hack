@@ -5,12 +5,12 @@
   const staticRoot = scriptUrl ? new URL(".", scriptUrl) : new URL("/static/", location.href);
   const asset = (path) => {
     const url = new URL(path, staticRoot);
-    if (!path.startsWith("vendor/")) url.searchParams.set("v", "globe-20261028-32");
+    if (!path.startsWith("vendor/")) url.searchParams.set("v", "design-20261029-54");
     return url.href;
   };
   const ORIGIN = staticRoot.origin;
   const fmt = new Intl.NumberFormat("ru-RU");
-  const KINDS = { all: "Всё на глобусе", attraction: "Достопримечательности", event: "События", city: "Города", hotel: "Размещение",
+  const KINDS = { all: "Все места", attraction: "Что посмотреть", event: "События", city: "Города", hotel: "Размещение",
     airport: "Аэропорты", beach: "Пляжи", camping: "Кемпинги" };
   const KIND_NAMES = { city: "Населённый пункт", hotel: "Объект размещения",
     airport: "Аэропорт", beach: "Пляж", camping: "Кемпинг" };
@@ -65,82 +65,45 @@
   window.createTripMap = function createTripMap({ container, onChoose, onFavorite, isFavorite, apiBase = ORIGIN }) {
     const api = (path) => new URL(path, apiBase).href;
     let info = null, land = null, lib = null, map = null, catalog = null, countries = null, countryNames = new Map();
-    let events = [], landmarks = [], settings = {}, eventChecked = null, eventIcon = () => node("span", {"aria-hidden":"true"}, "✦");
-    let options = {}, kind = "all", controller = null;
+    let events = [], landmarks = [], settings = {}, eventChecked = null;
+    let options = {}, kind = "all", controller = null, resetViewPending = false;
+    let globeMode='earth', earthSurface=null, basemap=null, imageCredits={}, eventWindow='soon';
+    try { if(localStorage.getItem('odin.globe')==='atlas') globeMode='atlas'; } catch (_) {}
+    const theme=()=>document.documentElement.dataset.theme==='dark'?'dark':'light';
     let sequence = 0, detailSequence = 0, timer = 0, userMoved = false, manualCountry = null, initialCountry = null;
-    let clusterMarkers = [], eventMarkers = [], landmarkMarkers = [], targetMarkers = [], records = new Map(), currentItems = [], visibleEvents = [], visibleLandmarks = [], listShown = 40;
-    let earth = null;
+    let clusterMarkers = [], eventMarkers = [], landmarkMarkers = [], targetMarkers = [], records = new Map(), currentItems = [], visibleEvents = [], visibleLandmarks = [];
     let popup = null, popupObserver = null, mapReady = false, earthReady = false, fallback = null, loadComplete = false, three = null, threeLoading = false;
     const holder = node("div", { class: "map-canvas", "aria-label": "Глобус с местами и событиями" });
     const worldCenter = () => Array.isArray(settings.world_center) && settings.world_center.length === 2 &&
       settings.world_center.every(Number.isFinite) ? settings.world_center : [0, 0];
     const overviewZoom = () => {
-      const value = settings.world_zoom?.[matchMedia("(max-width: 700px)").matches ? "mobile" : "desktop"];
-      return Number.isFinite(value) ? value : 1;
+      // Fit the complete sphere to the available surface, including short laptops.
+      const width = holder?.clientWidth || container.clientWidth || 600;
+      const height = holder?.clientHeight || 500;
+      return Math.max(-.3, Math.min(2, Math.log2(Math.min(width - 56, height - 76) / 170)));
     };
     const status = node("span", { class: "map-status", role: "status", "aria-live": "polite" }, "Загружаем карту…");
     const filter = node("select", { class: "map-kind", "aria-label": "Тип мест",
-      onchange: (e) => { kind = e.target.value; renderLandmarks(); renderEvents(); schedule(); } },
+      onchange: (e) => { kind = e.target.value; eventPeriod.hidden=kind!=="event"; renderLandmarks(); renderEvents(); schedule(); } },
       Object.entries(KINDS).map(([id, title]) => node("option", { value: id }, title)));
+    const modeSwitch=node('div',{class:'globe-modes',role:'group','aria-label':'Вид глобуса'},
+      ...[['earth','Реалистичный'],['atlas','Рисованный']].map(([id,label])=>node('button',{type:'button','data-globe-mode':id,'aria-pressed':globeMode===id,onclick:()=>setGlobeMode(id)},label)));
+    const eventPeriod=node('select',{class:'map-event-period','aria-label':'Когда проходят события',hidden:true,onchange:e=>{eventWindow=e.target.value;renderEvents();schedule();}},
+      node('option',{value:'soon'},'В ближайшие 3 месяца'),node('option',{value:'all'},'Весь календарь'));
+    function setGlobeMode(value) {
+      globeMode=value;surface.dataset.globe=value;
+      try {localStorage.setItem('odin.globe',value);} catch (_) {}
+      for(const button of modeSwitch.children)button.setAttribute('aria-pressed',String(button.dataset.globeMode===value));
+      if(map){earthSurface?.setStyle(value==='atlas'?'map':'satellite');basemap?.set(theme(),globeMode);renderGeography();map.triggerRepaint();}
+    }
     const scope = node("button", { type: "button", class: "map-scope", hidden:true, onclick: () => world() }, "К глобусу");
-    // Вид глобуса: снимок Земли (NASA Blue Marble) или схематичная карта; выбор помнит браузер
-    const STYLE_KEY = "odin.globeStyle";
-    let globeStyle = "satellite";
-    try { if (localStorage.getItem(STYLE_KEY) === "map") globeStyle = "map"; } catch (_) { /* приватный режим */ }
-    const styleButtons = {
-      satellite: node("button", { type: "button", "aria-pressed": String(globeStyle === "satellite"), onclick: () => setGlobeStyle("satellite") }, "Спутник"),
-      map: node("button", { type: "button", "aria-pressed": String(globeStyle === "map"), onclick: () => setGlobeStyle("map") }, "Карта"),
-    };
-    const styleSwitch = node("div", { class: "map-style", role: "group", "aria-label": "Вид глобуса" },
-      styleButtons.satellite, styleButtons.map);
-    function setGlobeStyle(next) {
-      if (next === "satellite" && !earthReady) next = "map";
-      globeStyle = next;
-      try { localStorage.setItem(STYLE_KEY, next); } catch (_) { /* не сохраняем — не страшно */ }
-      Object.entries(styleButtons).forEach(([id, button]) => button.setAttribute("aria-pressed", String(id === next)));
-      styleButtons.satellite.disabled = !earthReady;
-      styleButtons.satellite.title = earthReady ? "" : "Снимок Земли не загрузился";
-      surface.classList.toggle("map-scheme", next === "map");
-      if (!map || !earth) return;
-      earth.setStyle(next);
-      map.setSky({"sky-color":"#000000", "horizon-color": next === "map" ? "#9fd4ff" : "#7fb8e0", "fog-color":"#000000",
-        "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.9,5,0.5,7,0]});
-      renderContinents();
-    }
-    // Подписи континентов и океанов в духе Apple Maps — только на виде «Карта» и только на общем плане
-    const CONTINENTS = [["ЕВРОПА",15,52],["АЗИЯ",95,48],["АФРИКА",20,5],["СЕВЕРНАЯ АМЕРИКА",-100,47],
-      ["ЮЖНАЯ АМЕРИКА",-60,-15],["АВСТРАЛИЯ",134,-25],["АНТАРКТИДА",30,-80]];
-    const OCEANS = [["Тихий океан",-150,5],["Атлантический океан",-35,20],["Индийский океан",78,-20],
-      ["Северный Ледовитый океан",20,82]];
-    let continentMarkers = [];
-    function renderContinents() {
-      const show = map && globeStyle === "map" && map.getZoom() < 3.4;
-      if (!show) { continentMarkers.forEach((m) => m.remove()); continentMarkers = []; return; }
-      if (continentMarkers.length) return;
-      continentMarkers = [...CONTINENTS.map(([name, lon, lat]) => [name, lon, lat, "continent-label"]),
-        ...OCEANS.map(([name, lon, lat]) => [name, lon, lat, "ocean-label"])].map(([name, lon, lat, cls]) =>
-        new lib.Marker({ element: node("span", { class: cls, "aria-hidden": "true" }, name), anchor: "center",
-          opacityWhenCovered: 0 }).setLngLat([lon, lat]).addTo(map));
-    }
     const zoomBy = (delta) => map && map.easeTo({zoom: Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + delta)),
       duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650, easing: (t) => 1 - Math.pow(1-t, 3)});
     const controls = node("div", { class: "map-controls" },
-      node("button", { type: "button", "aria-label": "Приблизить карту", onclick: () => zoomBy(0.7) }, "+"),
-      node("button", { type: "button", "aria-label": "Отдалить карту", onclick: () => zoomBy(-0.7) }, "−"));
-    const search = node("input", { type: "search", placeholder: "Поиск в видимой области",
-      "aria-label": "Найти место в видимой области", oninput: () => { listShown = 40; renderList(); } });
-    const itemsList = node("div", { class: "map-list-items" });
-    const more = node("button", { class: "map-more", type: "button",
-      onclick: () => { listShown += 40; renderList(); } }, "Показать ещё");
-    const list = node("details", { class: "map-list" }, node("summary", {}, "Все места и события в области"),
-      search, itemsList, more);
+      node("button", { type: "button", "aria-label": "Приблизить карту", onclick: () => zoomBy(0.7) }, window.odinIcon("plus")),
+      node("button", { type: "button", "aria-label": "Отдалить карту", onclick: () => zoomBy(-0.7) }, window.odinIcon("minus")));
     const detailList = node("div", { class: "map-choice", hidden: true, role: "region",
       "aria-label": "Несколько объектов рядом" });
-    const legacySelect = node("select", { "aria-label": "Выбрать направление из списка",
-      onchange: (e) => {
-        const place = (info && info.places || []).find((p) => p.id === e.target.value);
-        if (place) chooseLegacy(place);
-      } });
     const footer = node("div", { class: "map-footer" },
       node("div", {class:"map-credits"}, node("span", {}, "Открытые данные · наличие не проверено"),
         node("details", {}, node("summary", {}, "Источники изображения и моделей"),
@@ -151,38 +114,33 @@
           node("p", {}, "Биг-Бен: ", safeLink("https://sketchfab.com/3d-models/clock-tower-big-ben-9a1c691fac774bcca4e2ba565c4c9d9b", "ManySince910"),
             "; Колизей: ", safeLink("https://sketchfab.com/3d-models/colosseum-a416564e36fb450594c45b1bce119188", "Vladyslav Holhanov"),
             "; Статуя Свободы: ", safeLink("https://sketchfab.com/3d-models/statue-of-liberty-bronze-model-5b9aa58d51624f01b9009b52379bf18a", "jerryfisher"),
-            "; ", safeLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0"), ". Модели упрощены и адаптированы для карты."),
-          node("p", {}, "События: кинохлопушка — ", safeLink("https://sketchfab.com/3d-models/film-clapperboard-free-3d-model-c5c798aa23024b868f7653229911b915", "Quince Creative"),
-            "; палитра — ", safeLink("https://sketchfab.com/3d-models/color-palette-82e2019ab9754e208dadc9f0a23e7161", "Alberto"),
-            "; ноты — ", safeLink("https://sketchfab.com/3d-models/musical-notes-8e1f180f69a84941921bd8b90d424e23", "Gustavo.Fabi"),
-            "; мяч — ", safeLink("https://sketchfab.com/3d-models/low-poly-cartoon-football-ball-free-259ba8af81484d19861fd5d70e9f5fcc", "chroma3d"),
-            "; ", safeLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0"), ". Модели адаптированы для карты."),
-          node("p", {}, "Модель гоночного автомобиля: ", safeLink("https://github.com/ahacker-1/apex-formula-2026", "apex-formula-2026, Avi Hacker"),
-            ", Apache 2.0, адаптация масштаба и освещения."))));
-    list.insertBefore(node("label", {class:"map-destination-picker"}, "Направления", legacySelect), search);
-    list.insertBefore(node("p", {class:"map-empty"}, "Места в видимой области"), search);
+            "; ", safeLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0"), ". Модели упрощены и адаптированы для карты."))));
     const hintTitle=node("span", {}, "Вращайте глобус"),hintDetail=node("small", {}, "Нажмите на место или событие");
-    const surface = node("div", { class: "map-surface map-space" }, holder, controls,
+    const surface = node("div", { class: "map-surface" }, holder, controls,
       node("div", {class:"globe-hint", "aria-hidden":"true"},
         node("span", {class:"globe-hint-symbol"}, "✦"),node("span", {},hintTitle,hintDetail)));
     function updateHint() {
       const detailed=map && map.getZoom()>=6;
       surface.classList.toggle("map-detailed",Boolean(detailed));
-      hintTitle.textContent=detailed ? "Схематичная карта" : "Вращайте глобус";
-      hintDetail.textContent=detailed ? "Нажмите на точку, чтобы узнать о месте" : "Нажмите на место или событие";
+      hintTitle.textContent=detailed ? "Исследуйте город" : "Вращайте глобус";
+      hintDetail.textContent=detailed ? "Выберите видимую метку" : "Приближайте, чтобы открыть больше мест";
     }
     const head = node("div", { class: "map-head" }, node("div", { class: "map-caption" },
       node("b", {}, "Исследуйте мир"), node("small", {}, "Крупные места — сразу, остальные — при приближении")),
-      node("div", { class: "map-tools" }, styleSwitch, filter, scope));
+      modeSwitch, node("div", { class: "map-tools" }, eventPeriod, filter, scope));
     const body = node("div", { class: "map-frame" }, head, surface,
       node("div", { class: "map-status-row" }, status,
         node("span", { class: "map-legend" }, "Места рядом объединены · все объекты в списке ниже")),
-      detailList, list, footer);
+      detailList);
+    document.getElementById("map-source-details")?.replaceChildren(footer);
+    surface.dataset.globe=globeMode;
+    const mapNotice=node('button',{type:'button',class:'map-tiles-notice',hidden:true,onclick:()=>{map?.triggerRepaint();basemap?.set(theme(),globeMode);}},'Улицы не загрузились. Приблизьте ещё раз или проверьте сеть.');
+    surface.append(mapNotice, node('button',{type:'button',class:'map-source-button',onclick:()=>document.getElementById('about-dialog').showModal()},'Источники карты'));
     container.classList.add("trip-map");
     container.replaceChildren(body);
 
     function showStatus(text, error = false) {
-      status.textContent = text;
+      status.textContent = error || /первые 2 000|не загруз|недоступ/i.test(text) ? text : "";
       status.classList.toggle("error", error);
     }
     function clearMarkers(markers) {
@@ -227,7 +185,7 @@
       const center = map.getCenter(), radians = Math.PI / 180;
       const a = center.lat * radians, b = lat * radians;
       // Items only leave as they approach the planet's far side.
-      return Math.sin(a) * Math.sin(b) + Math.cos(a) * Math.cos(b) * Math.cos((lon - center.lng) * radians) > 0.40;
+      return Math.sin(a) * Math.sin(b) + Math.cos(a) * Math.cos(b) * Math.cos((lon - center.lng) * radians) > 0.60;
     }
     function closePopup() {
       if (popupObserver) popupObserver.disconnect();popupObserver=null;
@@ -259,17 +217,6 @@
         popupObserver=new ResizeObserver(()=>requestAnimationFrame(keepInMap));popupObserver.observe(box);
       }
     }
-    function fillLegacySelect() {
-      legacySelect.replaceChildren(node("option", { value: "", disabled: true, selected: true }, "Выбрать из списка"),
-        ...(info && info.places || []).slice().sort((a, b) => a.name.localeCompare(b.name, "ru"))
-          .map((p) => node("option", { value: p.id }, p.name)));
-    }
-    function chooseLegacy(place) {
-      detailList.hidden = false;
-      detailList.replaceChildren(node("b", {}, place.name),
-        node("button", { type: "button", onclick: () => { detailList.hidden = true; onChoose(place); } }, "Хочу сюда"));
-      detailList.querySelector("button").focus();
-    }
     function sourceText(point) {
       const meta = (catalog && catalog.sources || {})[point.source] || {};
       const name = point.source_name || meta.name || "Источник не указан";
@@ -295,8 +242,8 @@
           const favorite = node("button", {type:"button", class:"map-favorite", "aria-pressed":String(Boolean(isFavorite?.(point))),
             "aria-label":`В избранное: ${point.name || "место"}`, onclick:() => {
               const saved = onFavorite(point); favorite.setAttribute("aria-pressed",String(saved));
-              favorite.textContent = saved ? "♥ В избранном" : "♡ В избранное";
-            } }, isFavorite?.(point) ? "♥ В избранном" : "♡ В избранное");
+              favorite.replaceChildren(window.odinIcon("heart",saved),saved ? " В избранном" : " В избранное");
+            } }, window.odinIcon("heart",Boolean(isFavorite?.(point))),isFavorite?.(point) ? " В избранном" : " В избранное");
           content.append(favorite);
         }
       } else if (point.kind === "camping") {
@@ -339,18 +286,32 @@
         }));
       detailList.querySelector("button")?.focus();
     }
+    function eventPhoto(event) {
+      // An actual organiser image can be supplied with explicit credit. Otherwise
+      // use an existing licensed photograph of this exact city, never an artist substitute.
+      if(event.image?.src && event.image?.credit && event.image?.page &&
+        /^\/static\//.test(event.image.src)) return {...event.image,kind:'event'};
+      const city=(info?.places||[]).find(p=>p.name===event.city);
+      const key=city && `dest/${city.id}.jpg`,credit=key && imageCredits[key];
+      return credit ? {src:asset(`img/${key}`),credit:`${credit.author} · ${credit.license}`,page:credit.page,kind:'city'} : null;
+    }
+    function eventName(event) {return event.short_name || event.name.replace(/^Формула-1: Гран-при · /,'F1 · ').replace(/^Фестиваль /,'');}
+    function monogram(event) {return eventName(event).split(/\s+/).slice(0,2).map(x=>x[0]).join('').toLocaleUpperCase('ru-RU');}
     function eventContent(event) {
-      return node("div", { class: "map-pop" }, node("div", { class: "map-pop-kind" }, `Событие · ${event.category}`),
-        node("strong", {}, event.name), node("p", {}, `${event.city}, ${event.country}`),
-        node("p", {}, event.dates), node("p", { class: "map-note" },
-          `${event.location_note || "Метка показывает город."} Билеты не проверены.`),
-        event.status_note ? node("p", { class: "map-note" }, event.status_note) : null,
-        node("p", { class: "map-source" }, `Источник: ${event.source} · проверено ${eventChecked}`),
-        node("div", { class: "map-pop-links" }, safeLink(event.url, "Источник ↗")),
-        node("button", { type: "button", class: "map-choose", "data-sound":"select",
-          onclick: () => { closePopup(); onChoose({ kind:"event", id:event.id, name:event.city, event:event.name,
-            lat:event.lat, lon:event.lon }); } }, "Хочу на событие"),
-        node("button", {type:"button",class:"map-inspect",onclick:()=>focusOn(event.lon,event.lat)}, "Посмотреть ближе"));
+      const photo=eventPhoto(event);
+      const content=node('div',{class:'map-pop event-story'},
+        photo ? node('figure',{class:'event-photo'},node('img',{src:photo.src,alt:photo.kind==='city'?`Город события — ${event.city}`:event.name,decoding:'async',onerror:e=>{e.target.parentElement.hidden=true;}}),
+          node('figcaption',{},photo.kind==='city'?'Город события':'Фото события')) : node('div',{class:'event-poster','aria-hidden':'true'},node('span',{},monogram(event)),node('small',{},event.category)),
+        node('div',{class:'map-pop-kind'},event.category),node('strong',{},event.name),
+        node('p',{class:'event-when'},event.dates),node('p',{class:'event-location'},`${event.city}, ${event.country}`),
+        event.description ? node('p',{class:'event-story-copy'},event.description) : null,
+        node('button',{type:'button',class:'map-choose','data-sound':'select',onclick:()=>{closePopup();onChoose({kind:'event',id:event.id,name:event.city,event:event.name,start:event.start,end:event.end,lat:event.lat,lon:event.lon});}},'Хочу на событие'),
+        node('details',{class:'event-source'},node('summary',{},'Место, билеты и источник'),
+          node('p',{},`${event.location_note || 'Метка показывает город, не вход на площадку.'} Билеты не проверены.`),
+          event.status_note ? node('p',{},event.status_note):null,
+          node('p',{},`Проверено ${eventChecked} · `,safeLink(event.url,event.source)),
+          photo ? node('p',{},'Фото: ',safeLink(photo.page,photo.credit)):null));
+      return content;
     }
     function landmarkIcon(kind) {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -428,19 +389,22 @@
         }).catch(() => { /* Accessible markers remain if 3D is unavailable. */ });
       }
       const models=[],rect=holder.getBoundingClientRect(), occupied=[], selected=[];
+      const landmarkCap=map.getZoom()<3 ? 4 : map.getZoom()<6 ? 7 : 12;
+      const eventAnchors=kind==='all' ? events.filter(e=>e.end>=new Date().toISOString().slice(0,10)&&onVisibleHemisphere(e.lon,e.lat)).slice(0,24).map(e=>map.project([e.lon,e.lat])) : [];
       for (const place of landmarks) {
         if (!onVisibleHemisphere(place.lon, place.lat)) continue;
         const position=map.project([place.lon,place.lat]);
         if (position.x<0 || position.x>rect.width || position.y<0 || position.y>rect.height) continue;
         visibleLandmarks.push(place);
-        // At world scale these locations remain in the list. Their close-up
-        // markers appear after zooming in, as explained in the map legend.
+        // Small heritage markers appear only when their surroundings are legible.
         if (place.heritage && map.getZoom()<3) continue;
         const size=place.heritage ? 38 : rect.width<500 ? 58 : 68;
         const box={left:position.x-size/2,right:position.x+size/2,top:position.y-size,bottom:position.y+(place.heritage ? 4 : 28)};
         const overlapping=occupied.find((item)=>box.left<item.box.right+4 && box.right>item.box.left-4 &&
           box.top<item.box.bottom+4 && box.bottom>item.box.top-4);
         if (overlapping) {overlapping.group.push(place);continue;}
+        if (kind==='all' && selected.length>=2 && eventAnchors.some(p=>Math.hypot(position.x-p.x,position.y-p.y)<90)) continue;
+        if(selected.length>=landmarkCap) continue;
         const item={place,group:[place],box};occupied.push(item);selected.push(item);
       }
       const previous=new Map(landmarkMarkers.map((marker)=>[marker._odinKey,marker]));
@@ -463,7 +427,7 @@
         button.setAttribute("aria-label",place.heritage ? place.name : `${label}: ${place.name}`);
         button.querySelector('.landmark-label').textContent=label;
         updateLandmarkBadge(marker);
-        button.hidden=button.classList.contains('maplibregl-marker-covered');
+        button.hidden=button.classList.contains('maplibregl-marker-covered');button.inert=button.hidden || map.isMoving();
         next.push(marker);if (!place.heritage && !button.hidden) models.push({kind:place.icon,lon:place.lon,lat:place.lat});
       }
       for (const marker of previous.values()) marker.remove();
@@ -473,120 +437,144 @@
     }
     function renderEvents() {
       if (!map || !lib) return;
-      for (const marker of landmarkMarkers) {marker._odinState.events=[];updateLandmarkBadge(marker);}
-      if (!["all", "event"].includes(kind)) {
-        clearMarkers(eventMarkers);visibleEvents=[];if (three) three.setEvents([]);renderList();return;
-      }
-      const today=new Date().toISOString().slice(0,10),rect=holder.getBoundingClientRect();
-      const occupied=[...targetMarkers,...landmarkMarkers].map((marker)=>marker.getElement())
-        .filter((el)=>!el.hidden && getComputedStyle(el).opacity!=="0").map(visualBounds);
-      occupied.push(...[...controls.querySelectorAll("button")].map((button)=>button.getBoundingClientRect()));
-      const groups=[],models=[];visibleEvents=[];
-      for (const event of events) {
-        if (event.end<today || !onVisibleHemisphere(event.lon,event.lat)) continue;
+      for(const marker of landmarkMarkers){marker._odinState.events=[];updateLandmarkBadge(marker);}
+      if(!['all','event'].includes(kind)){clearMarkers(eventMarkers);visibleEvents=[];return;}
+      const now=new Date(),today=now.toISOString().slice(0,10);
+      const horizon=new Date(now.getTime()+92*86400000).toISOString().slice(0,10);
+      const rect=holder.getBoundingClientRect(),zoom=map.getZoom();
+      const occupied=[...targetMarkers,...landmarkMarkers].map(m=>m.getElement()).filter(el=>!el.hidden).map(visualBounds);
+      occupied.push(...[...controls.children].map(b=>b.getBoundingClientRect()));
+      const groups=[];visibleEvents=[];
+      for(const event of events){
+        if(event.end<today || (eventWindow==='soon' && event.start>horizon) || !onVisibleHemisphere(event.lon,event.lat))continue;
         const pos=map.project([event.lon,event.lat]);
-        if (pos.x<10 || pos.y<10 || pos.x>rect.width-10 || pos.y>rect.height-10) continue;
+        if(pos.x<24||pos.y<50||pos.x>rect.width-24||pos.y>rect.height-55)continue;
         visibleEvents.push(event);
-        let group=groups.find((candidate)=>Math.hypot(candidate.x-pos.x,candidate.y-pos.y)<55);
-        if (!group) {group={x:pos.x,y:pos.y,events:[]};groups.push(group);}
+        let group=groups.find(g=>Math.hypot(g.x-pos.x,g.y-pos.y)<(zoom<3?64:zoom<6?52:36));
+        if(!group){group={x:pos.x,y:pos.y,events:[]};groups.push(group);}
         group.events.push(event);
       }
-      groups.sort((a,b)=>Math.hypot(a.x-rect.width/2,a.y-rect.height/2)-Math.hypot(b.x-rect.width/2,b.y-rect.height/2));
-      const previous=new Map(eventMarkers.map((marker)=>[marker._odinKey,marker])),next=[];
-      for (const entry of groups) {
-        const group=entry.events;group.sort((a,b)=>a.start.localeCompare(b.start));
-        const first=group[0],key=String(first.id);let marker=previous.get(key);
-        if (!marker) {
-          const state={events:group};
-          const button=node("button", {class:"event-marker has-3d model-pending",type:"button","data-sound":"event",
-            onclick:(event)=>{
-              event.stopPropagation();const current=state.events,first=current[0];
-              if (current.length===1) {makePopup(first.lon,first.lat,eventContent(first));return;}
-              const content=node("div", {class:"map-pop"},node("strong", {},"События на этом участке"),
-                ...current.map((event)=>node("button", {type:"button",class:"map-event-row",
-                  onclick:()=>makePopup(event.lon,event.lat,eventContent(event))}, `${event.city} · ${event.name} · ${event.dates}`)));
-              makePopup(first.lon,first.lat,content);
-            }},
-            node("span", {class:"event-hit-area", "aria-hidden":"true"},node("span", {class:"event-model-fallback"},eventIcon(first.icon))),
-            node("span", {class:"event-count",hidden:true}),node("span", {class:"event-label",hidden:true}));
-          marker=new lib.Marker({element:button,anchor:"bottom",opacityWhenCovered:0}).setLngLat([first.lon,first.lat]).addTo(map);
-          marker._odinKey=key;marker._odinState=state;marker._odinModel=first.icon;
-        } else {previous.delete(key);marker._odinState.events=group;}
-        const button=marker.getElement();button.hidden=false;button.inert=false;
-        button.setAttribute("aria-label",group.length===1 ? `Событие: ${first.name}, ${first.city}` : `События: ${group.length}`);
-        const count=button.querySelector('.event-count');count.hidden=group.length===1;count.textContent=group.length>1 ? String(group.length) : '';
-        const label=button.querySelector('.event-label');label.hidden=false;
-        const eventLabels={art:'Искусство',bicycle:'Велоспорт',book:'Книги',culture:'Культура',festive:'Праздник',
-          film:'Кино',flower:'Цветы',food:'Еда',music:'Музыка',nature:'Природа',paw:'Животные',
-          sailing:'Парусный спорт',sport:'Спорт',surfing:'Сёрфинг',tech:'Технологии'};
-        label.textContent=first.icon==='race' ? (first.name.startsWith('Формула-1') ? 'Формула-1' : 'Автогонки') : (eventLabels[first.icon] || 'Событие');
-        const eventBox=visualBounds(button);
-        next.push(marker);placeWithoutOverlap(marker,occupied,rect);
-        if (button.hidden) {
-          const nearby=landmarkMarkers.find((candidate)=>{
-            const el=candidate.getElement();if (el.hidden) return false;
-            const box=visualBounds(el);
-            return eventBox.left<box.right+4 && eventBox.right>box.left-4 &&
-              eventBox.top<box.bottom+4 && eventBox.bottom>box.top-4;
-          });
-          if (nearby) {nearby._odinState.events.push(...group);updateLandmarkBadge(nearby);}
-        }
-        if (three && !button.hidden && !button.classList.contains('maplibregl-marker-covered'))
-          models.push({kind:first.icon,lon:first.lon,lat:first.lat,event:true});
+      for(const group of groups)group.events.sort((a,b)=>a.start.localeCompare(b.start)||a.id.localeCompare(b.id));
+      groups.sort((a,b)=>a.events[0].start.localeCompare(b.events[0].start)||a.events[0].id.localeCompare(b.events[0].id));
+      const cap=zoom<3? (rect.width<500?3:5):zoom<6?8:12;
+      const previous=new Map(eventMarkers.map(m=>[m._odinKey,m])),next=[];
+      for(const entry of groups){
+        if(next.filter(m=>!m.getElement().hidden).length>=cap)break;
+        const first=entry.events[0],key=first.id;let marker=previous.get(key);
+        if(!marker){
+          const state={events:entry.events};
+          const photo=eventPhoto(first);
+          const button=node('button',{class:'event-marker event-medallion',type:'button','data-sound':'event',onclick:e=>{
+            e.stopPropagation();if(map.isMoving())return;
+            const group=state.events,lead=group[0];
+            if(group.length===1){makePopup(lead.lon,lead.lat,eventContent(lead));return;}
+            const content=node('div',{class:'map-pop event-group'},node('div',{class:'map-pop-kind'},`${group.length} событий рядом`),node('strong',{},'Повод для поездки'),
+              node('button',{type:'button',class:'map-inspect',onclick:()=>{closePopup();map.easeTo({center:[lead.lon,lead.lat],zoom:Math.min(13,map.getZoom()+2),duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:650});}},'Приблизить события'),
+              ...group.slice(0,3).map(ev=>node('button',{type:'button',class:'map-event-row',onclick:()=>makePopup(ev.lon,ev.lat,eventContent(ev))},node('b',{},eventName(ev)),node('small',{},`${ev.city} · ${ev.dates}`))),
+              group.length>3 ? node('details',{class:'event-source'},node('summary',{},`Ещё событий: ${group.length-3}`),...group.slice(3).map(ev=>node('button',{type:'button',class:'map-event-row',onclick:()=>makePopup(ev.lon,ev.lat,eventContent(ev))},node('b',{},eventName(ev)),node('small',{},ev.dates)))) : null);
+            makePopup(lead.lon,lead.lat,content);
+          }},node('span',{class:'event-portrait','aria-hidden':'true'},node('span',{class:'event-monogram'},monogram(first)),photo?node('img',{src:photo.src,alt:'',decoding:'async',onerror:e=>e.target.remove()}):null),
+          node('span',{class:'event-count',hidden:true}),node('span',{class:'event-label'},eventName(first)));
+          marker=new lib.Marker({element:button,anchor:'bottom',opacityWhenCovered:0}).setLngLat([first.lon,first.lat]).addTo(map);
+          marker._odinKey=key;marker._odinState=state;
+        }else{previous.delete(key);marker._odinState.events=entry.events;}
+        const button=marker.getElement();button.hidden=false;
+        button.setAttribute('aria-label',entry.events.length>1?`${first.city}: ${entry.events.length} событий, ${eventName(first)}`:`Событие: ${first.name}, ${first.city}`);
+        const count=button.querySelector('.event-count');count.hidden=entry.events.length===1;count.textContent='+'+(entry.events.length-1);
+        button.hidden=true;button.inert=true;next.push(marker);
       }
-      for (const marker of previous.values()) marker.remove();
-      eventMarkers=next;
-      if (three) three.setEvents(models);
-      refreshModelStates();renderList();
+      for(const marker of previous.values())marker.remove();eventMarkers=next;
+      // MapLibre positions a new DOM marker on the next render. Measure after it,
+      // otherwise an initially unpositioned label is incorrectly hidden forever.
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        if(map.isMoving() || eventMarkers!==next)return;
+        const taken=[...targetMarkers,...landmarkMarkers].map(m=>m.getElement()).filter(el=>!el.hidden).map(visualBounds);
+        taken.push(...[...controls.children].map(b=>b.getBoundingClientRect()));
+        const area=holder.getBoundingClientRect();
+        for(const marker of next){const el=marker.getElement();el.hidden=false;placeWithoutOverlap(marker,taken,area);el.inert=el.hidden;}
+        renderGeography();
+      }));
+    }
+    const geography = [
+      ['Европа',15,54,false],['Азия',95,46,false],['Африка',20,0,false],
+      ['Северная Америка',-103,45,false],['Южная Америка',-60,-18,false],['Австралия',134,-25,false],
+      ['Тихий океан',-150,5,true],['Атлантический океан',-35,8,true],['Индийский океан',78,-23,true]
+    ];
+    let geographyMarkers=[];
+    function renderGeography() {
+      if(!map || !lib)return;
+      if(!geographyMarkers.length)geographyMarkers=geography.map(([name,lon,lat,ocean])=>new lib.Marker({element:node('span',{class:'globe-geography-label'+(ocean?' ocean-label':''),'aria-hidden':'true'},name),anchor:'center',opacityWhenCovered:0}).setLngLat([lon,lat]).addTo(map));
+      const rect=holder.getBoundingClientRect();
+      const occupied=[...landmarkMarkers,...eventMarkers,...clusterMarkers,...targetMarkers].map(m=>m.getElement()).filter(e=>!e.hidden).map(visualBounds);
+      for(const marker of geographyMarkers){
+        const el=marker.getElement(), p=marker.getLngLat();
+        el.hidden=globeMode!=='atlas'||map.getZoom()>3.2||map.isMoving()||!onVisibleHemisphere(p.lng,p.lat);
+        if(el.hidden)continue;
+        const center=map.getCenter(),r=Math.PI/180;
+        const facing=Math.sin(center.lat*r)*Math.sin(p.lat*r)+Math.cos(center.lat*r)*Math.cos(p.lat*r)*Math.cos((p.lng-center.lng)*r);
+        if(facing<(el.textContent.length>14?.76:.65)){el.hidden=true;continue;}
+        requestAnimationFrame(()=>{
+          if(map.isMoving()||globeMode!=='atlas')return;
+          el.hidden=false;
+          placeWithoutOverlap(marker,occupied,{left:rect.left+22,right:rect.right-22,top:rect.top+24,bottom:rect.bottom-50});
+        });
+      }
+    }
+    let expansion=null, expansionOverlay=null, expansionTimer=0;
+    function clearExpansion(){if(expansionOverlay)expansionOverlay.remove();expansionOverlay=null;clearTimeout(expansionTimer);}
+    function expandGroup(item){
+      clearExpansion();closePopup();
+      expansion={lon:item.lon,lat:item.lat,bounds:item.cellBounds,count:item.count};
+      map.easeTo({center:[item.lon,item.lat],zoom:Math.min(13,map.getZoom()+2.1),duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:700,easing:t=>1-Math.pow(1-t,3)});
+    }
+    function revealExpansion(items){
+      if(!expansion)return;
+      const parent=expansion;expansion=null;
+      if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+      const area=holder.getBoundingClientRect(),from=map.project([parent.lon,parent.lat]);
+      const children=items.filter(item=>!parent.bounds||(item.lon>=parent.bounds[0]&&item.lon<=parent.bounds[2]&&item.lat>=parent.bounds[1]&&item.lat<=parent.bounds[3]))
+        .map(item=>map.project([item.lon,item.lat])).filter(p=>p.x>20&&p.y>20&&p.x<area.width-20&&p.y<area.height-30).slice(0,16);
+      if(!children.length)return;
+      clearExpansion();
+      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('cluster-expansion');svg.setAttribute('viewBox',`0 0 ${area.width} ${area.height}`);svg.setAttribute('aria-hidden','true');
+      const shape=(type,attrs)=>{const el=document.createElementNS(svg.namespaceURI,type);for(const [key,value]of Object.entries(attrs))el.setAttribute(key,String(value));svg.append(el);return el;};
+      shape('circle',{cx:from.x,cy:from.y,r:18,class:'cluster-origin-ring'}).animate([{opacity:.8},{opacity:0,r:32}],{duration:700,fill:'forwards'});
+      children.forEach((to,i)=>{
+        const length=Math.hypot(to.x-from.x,to.y-from.y),line=shape('line',{x1:from.x,y1:from.y,x2:to.x,y2:to.y});
+        line.style.strokeDasharray=String(length);line.animate([{strokeDashoffset:length,opacity:.65},{strokeDashoffset:0,opacity:.65},{strokeDashoffset:0,opacity:0}],{duration:1050,delay:i*18,fill:'both'});
+        const dot=shape('circle',{cx:to.x,cy:to.y,r:7});dot.animate([{opacity:0},{opacity:.85,offset:.35},{opacity:0}],{duration:1100,delay:i*18,fill:'both'});
+      });
+      holder.append(svg);expansionOverlay=svg;expansionTimer=setTimeout(clearExpansion,1500);
     }
     function renderClusters(items) {
       clearMarkers(clusterMarkers);
-      // At the world scale the globe is for discovery; the full cluster list
-      // is still available below and clusters appear as the user zooms in.
+      // At world scale prefer a few discovery markers; show groups on approach.
       if (map.getZoom() < 2.8 && kind === "all") return;
       const rect = holder.getBoundingClientRect();
       const occupied = [...eventMarkers, ...targetMarkers, ...landmarkMarkers].map((marker) => marker.getElement())
         .filter((el) => !el.hidden && getComputedStyle(el).opacity !== "0").map(visualBounds);
       occupied.push(...[...controls.querySelectorAll("button")].map((button) => button.getBoundingClientRect()));
       for (const item of items) {
+        if(!onVisibleHemisphere(item.lon,item.lat)||clusterMarkers.length>=24) continue;
         const pos = map.project([item.lon, item.lat]);
         if (pos.x < 28 || pos.y < 28 || pos.x > rect.width - 28 || pos.y > rect.height - 28) continue;
         const button = node("button", { type: "button", class: "cluster-marker",
           "aria-label": `Мест в группе: ${fmt.format(item.count)}. Приблизить`,
-          onclick: (event) => { event.stopPropagation(); map.easeTo({ center: [item.lon, item.lat], zoom: Math.min(13, map.getZoom() + 2.1),
-            duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700 }); } },
+          onclick: (event) => { event.stopPropagation(); if(!map.isMoving())expandGroup(item); } },
           fmt.format(item.count));
         const marker = new lib.Marker({ element: button, anchor: "center", opacityWhenCovered: 0 })
           .setLngLat([item.lon, item.lat]).addTo(map);
-        clusterMarkers.push(marker);
-        placeWithoutOverlap(marker, occupied, rect);
+        marker._odinItem=item;button.hidden=true;button.inert=true;clusterMarkers.push(marker);
       }
-    }
-    function renderList() {
-      const query = search.value.trim().toLocaleLowerCase("ru-RU");
-      const matched = currentItems.filter((item) => !query ||
-        (item.name || KIND_NAMES[item.kind] || "").toLocaleLowerCase("ru-RU").includes(query));
-      const matchedEvents = visibleEvents.filter((event) => !query ||
-        `${event.city} ${event.name}`.toLocaleLowerCase("ru-RU").includes(query));
-      const matchedLandmarks = visibleLandmarks.filter((place) => !query ||
-        `${place.city || ""} ${place.country || ""} ${place.name}`.toLocaleLowerCase("ru-RU").includes(query));
-      itemsList.replaceChildren(...matchedEvents.map((event) => node("button", {type:"button", class:"map-list-row",
-        onclick:() => makePopup(event.lon, event.lat, eventContent(event))},
-        `${event.city} · ${event.name} · ${event.dates}`, node("small", {}, "Событие"))),
-        ...matchedLandmarks.map((place) => node("button", {type:"button", class:"map-list-row",
-          onclick:() => makePopup(place.lon, place.lat, landmarkContent(place))},
-          `${place.city || place.country} · ${place.name}`, node("small", {}, "Место"))),
-        ...matched.slice(0, listShown).map((item) => {
-        if (item.count != null) return node("button", { type: "button", class: "map-list-row",
-          onclick: () => map.easeTo({ center: [item.lon, item.lat], zoom: Math.min(13, map.getZoom() + 2.1) }) },
-          `Группа · ${fmt.format(item.count)} мест`);
-        return node("button", { type: "button", class: "map-list-row",
-          onclick: () => { map.jumpTo({ center: [item.lon, item.lat] }); openPoint(item.id, item.lat, item.lon); } },
-          item.name || KIND_NAMES[item.kind] || "Место", node("small", {}, KIND_NAMES[item.kind] || ""));
+      const pending=clusterMarkers;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        if(map.isMoving()||clusterMarkers!==pending)return;
+        const taken=[...eventMarkers,...targetMarkers,...landmarkMarkers].map(m=>m.getElement()).filter(e=>!e.hidden).map(visualBounds);
+        taken.push(...[...controls.children].map(e=>e.getBoundingClientRect()));
+        const area=holder.getBoundingClientRect();
+        for(const marker of pending){const el=marker.getElement();el.hidden=false;placeWithoutOverlap(marker,taken,area);el.inert=el.hidden;}
+        renderGeography();revealExpansion(pending.filter(m=>!m.getElement().hidden).map(m=>m._odinItem));
       }));
-      more.hidden = matched.length <= listShown;
-      if (!matched.length && !matchedEvents.length && !matchedLandmarks.length) itemsList.append(node("p", { class: "map-empty" },
-        loadComplete ? "Нет мест в этой области." : "Загрузка ещё не завершена."));
     }
     function queryParams(bounds, extra) {
       return new URLSearchParams({ kind, west: String(bounds.west), south: String(bounds.south),
@@ -605,12 +593,12 @@
       controller = new AbortController();
       const signal = controller.signal, own = ++sequence, bounds = boundsFor(map);
       const individual = map.getZoom() >= 10 && bounds.span <= 2 && bounds.north - bounds.south <= 2;
-      detailList.hidden = true; loadComplete = false; listShown = 40;
+      detailList.hidden = true; loadComplete = false;
       showStatus("Загружаем места…");
       try {
         if (kind === "event" || kind === "attraction") {
           clearMarkers(clusterMarkers); setPoints([]); currentItems = []; loadComplete = true;
-          renderList();
+
           showStatus(kind === "event" ? `События в видимой части глобуса: ${visibleEvents.length}` :
             map.getZoom() >= 10 ? "Отдалите глобус, чтобы увидеть достопримечательности" :
               "Приблизьте глобус, чтобы увидеть больше мест");
@@ -623,7 +611,8 @@
           if (own !== sequence) return;
           if (data.catalog_version !== catalog.catalog_version) { await reloadCatalog(); return; }
           currentItems = data.items; loadComplete = true;
-          renderClusters(data.items); renderList();
+          data.items.forEach(item=>{const [x,y]=item.id.split(':').map(Number),size=data.cell_degrees;item.cellBounds=[x*size-180,y*size-90,(x+1)*size-180,(y+1)*size-90];});
+          renderClusters(data.items);
           const total = data.items.reduce((sum, item) => sum + item.count, 0);
           showStatus(map.getZoom() < 2.8 && kind === "all" ? "Откройте место или событие на глобусе" :
             `${fmt.format(total)} записей в области · приблизьте группу`);
@@ -636,20 +625,22 @@
             if (data.catalog_version !== catalog.catalog_version) { await reloadCatalog(); return; }
             currentItems.push(...data.items);
             pages++;
-            if (pages % 2 === 0 || data.next_cursor == null) {
-              setPoints(currentItems); renderList();
+            if (pages === 2 || data.next_cursor == null) {
+              setPoints(currentItems);
               showStatus(`${fmt.format(currentItems.length)} мест${data.next_cursor == null ? "" : " · загружаем ещё…"}`);
             }
             if (data.next_cursor != null && data.next_cursor <= cursor) throw new Error("Invalid cursor");
             cursor = data.next_cursor;
-          } while (cursor != null);
-          loadComplete = true; renderList();
+          } while (cursor != null && pages < 2);
+          loadComplete = cursor == null;
+          if(!loadComplete) showStatus('Показаны первые 2 000 мест. Приблизьте карту или уточните тип.');
+          renderGeography();revealExpansion(currentItems);
         }
       } catch (error) {
         if (error.name === "AbortError" || own !== sequence) return;
         loadComplete = false;
         showStatus("Не все места загружены. Двигайте карту или повторите.", true);
-        renderList();
+
       }
     }
     async function reloadCatalog() {
@@ -678,7 +669,7 @@
       else initialCountry = code;
       const center = countryCenter(code);
       if (map && center && (force || !userMoved)) map.easeTo({ center,
-        zoom: matchMedia("(max-width: 700px)").matches ? 0.9 : 1.7, duration: 0 });
+        zoom: overviewZoom(), duration: 0 });
     }
     function renderRoute() {
       if (!mapReady || !map.getSource("trip-route")) return;
@@ -740,28 +731,27 @@
         const earthPreparation = import(asset("globe-earth.mjs")).then(async (module) => ({
           module, image: await module.prepareEarthImage(asset("assets/earth-blue-marble-200410.jpg")),
         })).catch(() => null);
-        const [module, mapCatalog, shapes, eventData, landmarkData, iconModule, mapSettings, heritageData, countryData] = await Promise.all([
+        const [module, mapCatalog, shapes, eventData, landmarkData, mapSettings, heritageData, countryData] = await Promise.all([
           import(asset("vendor/maplibre/maplibre-gl.mjs")),
           json(api("/api/map/catalog")), json(asset("countries.geojson")),
           json(asset("events.json")).catch(() => ({ events: [], checked_at: null })),
           json(asset("landmarks.json")).catch(() => ({landmarks:[]})),
-          import(asset("event-icons.mjs")).catch(() => null),
           json(asset("map-settings.json")).catch(() => ({})),
           json(asset("heritage.json")).catch(() => ({sites:[]})),
           json(api("/api/map/countries")).catch(() => ({items:[]})),
         ]);
         lib = module; catalog = mapCatalog; countries = shapes;
+        imageCredits=await json(asset('img/credits.json')).catch(()=>({}));
         settings = mapSettings;
         events = eventData.events || []; eventChecked = eventData.checked_at || "дата неизвестна";
         countryNames = new Map((countryData.items || []).map((item) => [item.code,item.name]));
         landmarks = [...(landmarkData.landmarks || []), ...(heritageData.sites || []).map((item) => ({...item,heritage:true}))]
           .filter((p) => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lon));
-        if (iconModule) eventIcon = iconModule.eventIcon;
         map = new lib.Map({
           container: holder, center: countryCenter(manualCountry || initialCountry) || worldCenter(), zoom: overviewZoom(),
-          canvasContextAttributes: {antialias: true},
-          minZoom: 0.5, maxZoom: 16, attributionControl: false, cooperativeGestures: true,
-          style: { version: 8,
+          canvasContextAttributes: {antialias: true}, pixelRatio:Math.min(devicePixelRatio||1,matchMedia("(max-width:700px)").matches?1.5:2),
+          minZoom: -0.3, maxZoom: 16, attributionControl: false, cooperativeGestures: false,
+          style: { version: 8, glyphs:"https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
             sources: {
               countries: { type: "geojson", data: shapes },
               "catalog-points": { type: "geojson", data: { type: "FeatureCollection", features: [] } },
@@ -790,27 +780,43 @@
         map.setSky({"sky-color":"#071b25", "horizon-color":"#396b70", "fog-color":"#0a2530",
           "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.75,5,0.6,7,0]});
         earthPreparation.then(async (prepared) => {
-          if (map && prepared) earth = await prepared.module.addEarthSurface(map,prepared.image);
-          earthReady = Boolean(earth);
-          setGlobeStyle(globeStyle);
-        }).catch(() => setGlobeStyle("map"));  // без снимка остаётся векторный глобус
+          if (map && prepared) {earthSurface=await prepared.module.addEarthSurface(map,prepared.image);earthReady=Boolean(earthSurface);earthSurface?.setStyle(globeMode==='atlas'?'map':'satellite');}
+        }).catch(() => { /* Existing vector globe remains available offline. */ });
+        const {installBasemap}=await import(asset('globe-basemap.mjs'));
+        basemap=installBasemap(map,state=>{mapNotice.hidden=state!=='error';surface.dataset.tiles=state;});
+        basemap.set(theme(),globeMode);
+        map.addControl(new lib.AttributionControl({compact:true}),'bottom-right');
+        document.addEventListener('odin:theme',()=>basemap.set(theme(),globeMode));
         mapReady = true;
+        let fittedZoom=holder.clientWidth>0?map.getZoom():null;
+        const resizeObserver=new ResizeObserver(()=>requestAnimationFrame(()=>{
+          if(!map || !holder.clientWidth || !holder.clientHeight)return;
+          map.resize();
+          if(resetViewPending){
+            resetViewPending=false;fittedZoom=overviewZoom();map.jumpTo({center:worldCenter(),zoom:fittedZoom});
+          } else if(!options.origin && !options.targets?.length && (fittedZoom===null || (!userMoved && Math.abs(map.getZoom()-fittedZoom)<.08))){
+            fittedZoom=overviewZoom();map.jumpTo({zoom:fittedZoom});
+          }
+        }));
+        resizeObserver.observe(holder);
+        map.on('remove',()=>resizeObserver.disconnect());
         map.on("movestart", (event) => {
-          if (event.originalEvent) userMoved = true;
+          if (event.originalEvent) {userMoved = true;expansion=null;clearExpansion();}
+          geographyMarkers.forEach(m=>m.getElement().hidden=true);
           closePopup();
           // Old markers can overlap while the camera moves; keep their visuals
           // but make only the freshly laid-out markers interactive.
-          [...clusterMarkers, ...eventMarkers].forEach((marker) => { marker.getElement().inert = true; });
+          [...clusterMarkers, ...eventMarkers, ...landmarkMarkers, ...targetMarkers].forEach((marker) => { marker.getElement().inert = true; });
           if (controller) controller.abort();
           detailSequence++;
           sequence++;
         });
         const syncScope = () => {
-          const center=map.getCenter(), base=worldCenter();
-          const longitude=Math.abs(((center.lng-base[0]+540)%360)-180);
-          scope.hidden=map.getZoom()<=overviewZoom()+.05 && longitude<.5 && Math.abs(center.lat-base[1])<.5;
+          scope.hidden=map.getZoom()<=overviewZoom()+.1 && !options.targets?.length;
         };
-        map.on("moveend", () => { syncScope(); updateHint(); renderLandmarks(); renderEvents(); renderContinents(); schedule(); });
+        function syncTargetVisibility(){for(const marker of targetMarkers){const p=marker.getLngLat(),el=marker.getElement();el.hidden=!onVisibleHemisphere(p.lng,p.lat);el.inert=el.hidden||map.isMoving();}}
+        map.on('move',()=>{for(const marker of [...landmarkMarkers,...eventMarkers,...targetMarkers,...clusterMarkers]){const p=marker.getLngLat();if(!onVisibleHemisphere(p.lng,p.lat))marker.getElement().hidden=true;}});
+        map.on("moveend", () => { syncScope(); updateHint();syncTargetVisibility(); renderLandmarks(); renderEvents(); renderGeography(); schedule(); });
         syncScope();
         map.on("click", "catalog-points", (event) => {
           const features = map.queryRenderedFeatures(event.point, { layers: ["catalog-points"] });
@@ -820,16 +826,14 @@
           if (map.queryRenderedFeatures(event.point, {layers:["catalog-points"]}).length) return;
           const feature=event.features?.[0], code=feature?.properties?.code;
           const name=countryNames.get(code); if (!name) return;
-          makePopup(event.lngLat.lng,event.lngLat.lat,node("div", {class:"map-pop"},
-            node("div", {class:"map-pop-kind"}, "Страна"), node("strong", {}, name),
-            node("p", {class:"map-question"}, "Хотите поехать сюда?"),
-            node("button", {type:"button",class:"map-choose",onclick:() => {
-              closePopup(); onChoose({kind:"country",code,name,lat:event.lngLat.lat,lon:event.lngLat.lng});
-            }}, "Хочу сюда")));
+          // A blank region is a navigation target, never an invisible destination.
+          if(map.getZoom()>=9)return;
+          closePopup();
+          map.easeTo({center:[event.lngLat.lng,event.lngLat.lat],zoom:Math.min(10,map.getZoom()+2),duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:700});
         });
         map.on("mouseenter", "catalog-points", () => { holder.style.cursor = "pointer"; });
         map.on("mouseleave", "catalog-points", () => { holder.style.cursor = ""; });
-        updateHint(); fillLegacySelect(); renderLandmarks(); renderEvents(); renderRoute(); schedule();
+        updateHint();  renderLandmarks(); renderEvents(); renderGeography(); renderRoute(); schedule();
       } catch (_) {
         if (map) { map.remove(); map = null; }
         await legacyFallback("Подробный каталог карты недоступен.");
@@ -837,22 +841,29 @@
     }
     return {
       setData(catalogue, geography) {
-        info = catalogue; land = geography; fillLegacySelect();
+        info = catalogue; land = geography;
         if (!map && !fallback) init();
         else if (fallback) fallback.setData(catalogue, geography);
       },
       draw(next = {}) {
         options = next;
+        if (options.origin || options.targets?.length) resetViewPending=false;
         if (fallback) drawFallback(next);
         else if (mapReady) renderRoute();
       },
       setCountry(code, force = false) { setCountry(code, force); },
+      reset() {
+        options={};userMoved=false;kind='all';filter.value='all';eventWindow='soon';eventPeriod.value='soon';eventPeriod.hidden=true;
+        closePopup();expansion=null;clearExpansion();
+        resetViewPending=true;
+        if(mapReady) requestAnimationFrame(()=>{renderRoute();if(holder.clientWidth&&holder.clientHeight){resetViewPending=false;map.resize();world();}});
+      },
       showPoint(point) {
         if (!map || !Number.isFinite(point.lat) || !Number.isFinite(point.lon)) return;
         map.once("moveend", () => openPoint(point.id, point.lat, point.lon));
         map.flyTo({center:[point.lon,point.lat], zoom:12, duration:matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 800});
       },
-      getView() { return map ? {center:map.getCenter().toArray(), zoom:map.getZoom(), projection:map.getProjection()?.type || null, earth:earthReady, style:globeStyle, models:three?.getLoadedModels() || []} : null; },
+      getView() { return map ? {center:map.getCenter().toArray(), zoom:map.getZoom(), projection:map.getProjection()?.type || null, earth:earthReady, mode:globeMode, detail:basemap?.getState()||"idle", theme:theme(), models:three?.getLoadedModels() || []} : null; },
       retry() { if (map) schedule(); },
       unavailable() { showStatus("Не удалось загрузить карту. Повторите подключение.", true); },
     };
