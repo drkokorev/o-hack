@@ -36,7 +36,7 @@ def test_city_is_a_visible_assumption_and_explicit_correction_wins(monkeypatch):
     with TestClient(web.build_app(agent)) as client:
         first = client.post("/api/chat", json={"text": "хочу в Париж"}).json()
         assert "по IP" not in first["reply"]
-        assert "из: Москва (примерно по IP)" in first["understood"]
+        assert "из: Москва" in first["understood"]
         second = client.post("/api/chat", json={"text": "из Казани", "session_id": first["session_id"]}).json()
         assert "из: Казань" in second["understood"]
         assert not any("по IP" in chip for chip in second["understood"])
@@ -59,7 +59,7 @@ def test_browser_city_hint_works_behind_a_local_proxy_and_manual_city_wins(monke
     agent = Agent(TripsDomain(), None)
     with TestClient(web.build_app(agent)) as client:
         first = client.post("/api/chat", json={"text": "в Париж", "detected_city": "Moscow"}).json()
-        assert "из: Москва (примерно по IP)" in first["understood"] and not calls
+        assert "из: Москва" in first["understood"] and not calls
         second = client.post("/api/chat", json={"text": "из Казани", "session_id": first["session_id"]}).json()
         assert "из: Казань" in second["understood"]
 

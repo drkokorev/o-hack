@@ -5,7 +5,7 @@
   const staticRoot = scriptUrl ? new URL(".", scriptUrl) : new URL("/static/", location.href);
   const asset = (path) => {
     const url = new URL(path, staticRoot);
-    if (!path.startsWith("vendor/")) url.searchParams.set("v", "design-20261029-54");
+    if (!path.startsWith("vendor/")) url.searchParams.set("v", "refine-3");
     return url.href;
   };
   const ORIGIN = staticRoot.origin;
@@ -87,7 +87,7 @@
       onchange: (e) => { kind = e.target.value; eventPeriod.hidden=kind!=="event"; renderLandmarks(); renderEvents(); schedule(); } },
       Object.entries(KINDS).map(([id, title]) => node("option", { value: id }, title)));
     const modeSwitch=node('div',{class:'globe-modes',role:'group','aria-label':'Вид глобуса'},
-      ...[['earth','Реалистичный'],['atlas','Рисованный']].map(([id,label])=>node('button',{type:'button','data-globe-mode':id,'aria-pressed':globeMode===id,onclick:()=>setGlobeMode(id)},label)));
+      ...[['earth','Географическая'],['atlas','Дизайнерская']].map(([id,label])=>node('button',{type:'button','data-globe-mode':id,'aria-pressed':globeMode===id,onclick:()=>setGlobeMode(id)},label)));
     const eventPeriod=node('select',{class:'map-event-period','aria-label':'Когда проходят события',hidden:true,onchange:e=>{eventWindow=e.target.value;renderEvents();schedule();}},
       node('option',{value:'soon'},'В ближайшие 3 месяца'),node('option',{value:'all'},'Весь календарь'));
     function setGlobeMode(value) {
@@ -135,7 +135,7 @@
     document.getElementById("map-source-details")?.replaceChildren(footer);
     surface.dataset.globe=globeMode;
     const mapNotice=node('button',{type:'button',class:'map-tiles-notice',hidden:true,onclick:()=>{map?.triggerRepaint();basemap?.set(theme(),globeMode);}},'Улицы не загрузились. Приблизьте ещё раз или проверьте сеть.');
-    surface.append(mapNotice, node('button',{type:'button',class:'map-source-button',onclick:()=>document.getElementById('about-dialog').showModal()},'Источники карты'));
+    surface.append(mapNotice);
     container.classList.add("trip-map");
     container.replaceChildren(body);
 
@@ -181,7 +181,7 @@
       button.hidden = true;
     }
     function onVisibleHemisphere(lon, lat) {
-      if (!map || map.getProjection().type !== "globe") return true;
+      if (!map || map.getProjection()?.type !== "globe") return true;
       const center = map.getCenter(), radians = Math.PI / 180;
       const a = center.lat * radians, b = lat * radians;
       // Items only leave as they approach the planet's far side.
@@ -249,7 +249,7 @@
       } else if (point.kind === "camping") {
         content.append(node("p", { class: "map-note" }, "Условия размещения не проверены."));
       } else if (point.kind === "airport") {
-        content.append(node("p", { class: "map-note" }, "Рейсы и билеты не проверены."));
+        content.append(node("p", { class: "map-note" }, "Аэропорт отмечен как ориентир. Отдельный выбор аэропорта пока не поддерживается; город вылета можно изменить в условиях поездки."));
       }
       content.append(node("p", { class: "map-source" }, source.name, " · ", source.details));
       const links = node("div", { class: "map-pop-links" },
@@ -304,8 +304,15 @@
           node('figcaption',{},photo.kind==='city'?'Город события':'Фото события')) : node('div',{class:'event-poster','aria-hidden':'true'},node('span',{},monogram(event)),node('small',{},event.category)),
         node('div',{class:'map-pop-kind'},event.category),node('strong',{},event.name),
         node('p',{class:'event-when'},event.dates),node('p',{class:'event-location'},`${event.city}, ${event.country}`),
-        event.description ? node('p',{class:'event-story-copy'},event.description) : null,
-        node('button',{type:'button',class:'map-choose','data-sound':'select',onclick:()=>{closePopup();onChoose({kind:'event',id:event.id,name:event.city,event:event.name,start:event.start,end:event.end,lat:event.lat,lon:event.lon});}},'Хочу на событие'),
+        node('p',{class:'event-story-copy'},event.description || ({
+          race:'Добавьте гоночный уик-энд к поездке и оставьте время на сам город.',
+          sport:'Совместите поездку с большим спортивным событием.',
+          music:'Постройте поездку вокруг музыки, а между выступлениями откройте город.',
+          film:'Совместите кинопрограмму с прогулками по городу.',
+          art:'Выберите искусство как повод познакомиться с городом.',
+          culture:'Добавьте событие к прогулкам и знакомству с городом.'
+        }[event.icon] || 'Сделайте это событие поводом для небольшой поездки.')),
+        node('button',{type:'button',class:'map-choose',onclick:()=>{closePopup();onChoose({kind:'event',id:event.id,name:event.city,event:event.name,start:event.start,end:event.end,lat:event.lat,lon:event.lon});}},'Хочу на событие'),
         node('details',{class:'event-source'},node('summary',{},'Место, билеты и источник'),
           node('p',{},`${event.location_note || 'Метка показывает город, не вход на площадку.'} Билеты не проверены.`),
           event.status_note ? node('p',{},event.status_note):null,
@@ -345,7 +352,7 @@
         node("div", { class: "map-pop-links" }, safeLink(place.url, place.heritage ? "ЮНЕСКО ↗" : "Официальный сайт ↗"),
           place.heritage ? safeLink("https://creativecommons.org/licenses/by-sa/4.0/", "CC BY-SA 4.0 ↗") : null),
         node("p", {class:"map-question"}, "Хотите посетить это место?"),
-        node("button", { type: "button", class: "map-choose", "data-sound":"select", onclick: () => {
+        node("button", { type: "button", class: "map-choose", onclick: () => {
           closePopup(); onChoose({ kind:place.heritage ? "heritage" : "landmark", name:place.city || place.country,
             landmark:place.name, country:place.country, lat:place.lat, lon:place.lon });
         } }, place.city ? "Выбрать город" : "Обсудить место"),
@@ -416,7 +423,7 @@
           const state={place,group:item.group,events:[]};
           const visual=node("span", {class:"landmark-hit-area", "aria-hidden":"true"},
             node("span", {class:"landmark-fallback"}, landmarkIcon(place.icon)));
-          const button=node("button", {class:"landmark-marker model-pending",type:"button","data-sound":"select",
+          const button=node("button", {class:"landmark-marker model-pending",type:"button",
             onclick:(event)=>{event.stopPropagation();makePopup(state.place.lon,state.place.lat,landmarkContent(state.place,state.group,state.events));}},
             visual,node("span", {class:"landmark-label"}),node("span", {class:"landmark-count",hidden:true}));
           marker=new lib.Marker({element:button,anchor:"bottom",opacityWhenCovered:0}).setLngLat([place.lon,place.lat]).addTo(map);
@@ -464,7 +471,7 @@
         if(!marker){
           const state={events:entry.events};
           const photo=eventPhoto(first);
-          const button=node('button',{class:'event-marker event-medallion',type:'button','data-sound':'event',onclick:e=>{
+          const button=node('button',{class:'event-marker event-medallion',type:'button',onclick:e=>{
             e.stopPropagation();if(map.isMoving())return;
             const group=state.events,lead=group[0];
             if(group.length===1){makePopup(lead.lon,lead.lat,eventContent(lead));return;}
@@ -559,9 +566,10 @@
         const pos = map.project([item.lon, item.lat]);
         if (pos.x < 28 || pos.y < 28 || pos.x > rect.width - 28 || pos.y > rect.height - 28) continue;
         const button = node("button", { type: "button", class: "cluster-marker",
-          "aria-label": `Мест в группе: ${fmt.format(item.count)}. Приблизить`,
-          onclick: (event) => { event.stopPropagation(); if(!map.isMoving())expandGroup(item); } },
+          "aria-label": item.count===1 ? "Открыть место" : `Мест в группе: ${fmt.format(item.count)}. Приблизить`,
+          onclick: (event) => { event.stopPropagation(); if(!map.isMoving()){if(item.count===1)openPoint(item.representative_id,item.lat,item.lon);else expandGroup(item);} } },
           fmt.format(item.count));
+        button.classList.toggle("singleton",item.count===1);
         const marker = new lib.Marker({ element: button, anchor: "center", opacityWhenCovered: 0 })
           .setLngLat([item.lon, item.lat]).addTo(map);
         marker._odinItem=item;button.hidden=true;button.inert=true;clusterMarkers.push(marker);
@@ -676,7 +684,7 @@
       const origin = options.origin, targets = options.targets || [];
       clearMarkers(targetMarkers);
       for (const place of targets.filter((t) => t.name && Number.isFinite(t.lat) && Number.isFinite(t.lon))) {
-        const button = node("button", {class:"target-marker", type:"button", "data-sound":"select", "aria-label":`Выбрать ${place.name}`,
+        const button = node("button", {class:"target-marker", type:"button", "aria-label":`Выбрать ${place.name}`,
           onclick:() => onChoose(place)}, node("span", {class:"target-dot", "aria-hidden":"true"}), place.name);
         targetMarkers.push(new lib.Marker({element:button, anchor:"bottom", opacityWhenCovered:0})
           .setLngLat([place.lon, place.lat]).addTo(map));
@@ -764,9 +772,9 @@
               { id: "trip-route", type: "line", source: "trip-route",
                 paint: { "line-color": "#19645d", "line-width": 2, "line-dasharray": [2, 2] } },
               { id: "catalog-points", type: "circle", source: "catalog-points",
-                paint: { "circle-radius": 5, "circle-color": [
+                paint: { "circle-radius": 7, "circle-color": [
                   "match", ["get", "kind"], "hotel", "#19645d", "city", "#477b68",
-                  "airport", "#a56630", "camping", "#96794c", "beach", "#dba92b", "#19645d"],
+                  "airport", "#0e41d2", "camping", "#96794c", "beach", "#dba92b", "#19645d"],
                   "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } },
             ],
           },
@@ -780,13 +788,18 @@
         map.setSky({"sky-color":"#071b25", "horizon-color":"#396b70", "fog-color":"#0a2530",
           "atmosphere-blend":["interpolate",["linear"],["zoom"],0,0.75,5,0.6,7,0]});
         earthPreparation.then(async (prepared) => {
-          if (map && prepared) {earthSurface=await prepared.module.addEarthSurface(map,prepared.image);earthReady=Boolean(earthSurface);earthSurface?.setStyle(globeMode==='atlas'?'map':'satellite');}
+          if (map && prepared) {earthSurface=await prepared.module.addEarthSurface(map,prepared.image);earthReady=Boolean(earthSurface);earthSurface?.setStyle(globeMode==='atlas'?'map':'satellite');basemap?.setEarthReady(earthReady);}
         }).catch(() => { /* Existing vector globe remains available offline. */ });
         const {installBasemap}=await import(asset('globe-basemap.mjs'));
         basemap=installBasemap(map,state=>{mapNotice.hidden=state!=='error';surface.dataset.tiles=state;});
-        basemap.set(theme(),globeMode);
-        map.addControl(new lib.AttributionControl({compact:true}),'bottom-right');
+        basemap.set(theme(),globeMode);basemap.setEarthReady(earthReady);
+
         document.addEventListener('odin:theme',()=>basemap.set(theme(),globeMode));
+        map.on('webglcontextlost',()=>{earthReady=false;mapReady=false;showStatus('Восстанавливаем глобус…');});
+        map.on('webglcontextrestored',()=>setTimeout(()=>{
+          try{earthSurface?.restore();three?.restore();earthReady=Boolean(earthSurface);mapReady=true;basemap.setEarthReady(earthReady);renderRoute();renderLandmarks();renderEvents();schedule();map.triggerRepaint();}
+          catch(_){basemap.setEarthReady(false);showStatus('Поверхность восстанавливается. Карта доступна.',true);}
+        },100));
         mapReady = true;
         let fittedZoom=holder.clientWidth>0?map.getZoom():null;
         const resizeObserver=new ResizeObserver(()=>requestAnimationFrame(()=>{
@@ -818,12 +831,12 @@
         map.on('move',()=>{for(const marker of [...landmarkMarkers,...eventMarkers,...targetMarkers,...clusterMarkers]){const p=marker.getLngLat();if(!onVisibleHemisphere(p.lng,p.lat))marker.getElement().hidden=true;}});
         map.on("moveend", () => { syncScope(); updateHint();syncTargetVisibility(); renderLandmarks(); renderEvents(); renderGeography(); schedule(); });
         syncScope();
-        map.on("click", "catalog-points", (event) => {
-          const features = map.queryRenderedFeatures(event.point, { layers: ["catalog-points"] });
+        map.on("click", (event) => {
+          const features = map.queryRenderedFeatures([[event.point.x-14,event.point.y-14],[event.point.x+14,event.point.y+14]], { layers: ["catalog-points"] });
           if (features.length) showOverlapping(features, event.lngLat);
         });
         map.on("click", "land", (event) => {
-          if (map.queryRenderedFeatures(event.point, {layers:["catalog-points"]}).length) return;
+          if (map.queryRenderedFeatures([[event.point.x-14,event.point.y-14],[event.point.x+14,event.point.y+14]], {layers:["catalog-points"]}).length) return;
           const feature=event.features?.[0], code=feature?.properties?.code;
           const name=countryNames.get(code); if (!name) return;
           // A blank region is a navigation target, never an invisible destination.
@@ -863,7 +876,7 @@
         map.once("moveend", () => openPoint(point.id, point.lat, point.lon));
         map.flyTo({center:[point.lon,point.lat], zoom:12, duration:matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 800});
       },
-      getView() { return map ? {center:map.getCenter().toArray(), zoom:map.getZoom(), projection:map.getProjection()?.type || null, earth:earthReady, mode:globeMode, detail:basemap?.getState()||"idle", theme:theme(), models:three?.getLoadedModels() || []} : null; },
+      getView() { return map ? {center:map.getCenter().toArray(), zoom:map.getZoom(), projection:map.getProjection()?.type || null, earth:earthReady, surfaceLayer:Boolean(map.getLayer('earth-imagery')), modelLayer:Boolean(map.getLayer('discovery-3d')), mode:globeMode, detail:basemap?.getState()||"idle", theme:theme(), models:three?.getLoadedModels() || []} : null; },
       retry() { if (map) schedule(); },
       unavailable() { showStatus("Не удалось загрузить карту. Повторите подключение.", true); },
     };

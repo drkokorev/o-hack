@@ -6,7 +6,7 @@ export const palettes = {
   dark: {ocean:'#142c40',land:'#283b43',park:'#314d44',water:'#18384d',building:'#3a4d54',road:'#56676c',edge:'#26383f',major:'#88947a',text:'#e7eff4',halo:'#22333e',border:'#5e7880',route:'#aac3ff'},
 };
 export function installBasemap(map, onState) {
-  let installed=false, theme='light', mode='earth', failed=false;
+  let installed=false, theme='light', mode='earth', failed=false,earthReady=false;
   const min=4;
   const fade=['interpolate',['linear'],['zoom'],4,0,5,1];
   const font=['Noto Sans Regular'];
@@ -32,7 +32,7 @@ export function installBasemap(map, onState) {
     map.setPaintProperty('ocean','background-color',p.ocean);
     map.setPaintProperty('land','fill-color',p.land);
     map.setPaintProperty('land','fill-outline-color',p.border);
-    map.setPaintProperty('land','fill-opacity',['interpolate',['linear'],['zoom'],0,.025,3.5,.025,5,1]);
+    map.setPaintProperty('land','fill-opacity',earthReady?['interpolate',['linear'],['zoom'],0,.025,3.5,.025,5,1]:1);
     map.setPaintProperty('trip-route','line-color',p.route);
     if (map.getLayer('country-outlines')) map.setPaintProperty('country-outlines','line-color',p.border);
     const backdrop=theme==='dark'?'#17191d':'#f5f6f8';
@@ -62,5 +62,5 @@ export function installBasemap(map, onState) {
   map.on('zoomend',ensure);
   map.on('sourcedata',e=>{if(e.sourceId==='atlas-tiles'&&e.isSourceLoaded){failed=false;onState('ready');}});
   map.on('error',e=>{if(e.sourceId==='atlas-tiles'||/openfreemap/.test(String(e.error?.message))){failed=true;onState('error');}});
-  return {set(nextTheme,nextMode){theme=nextTheme;mode=nextMode;paint();ensure();},getState(){return !installed?'idle':failed?'error':map.isSourceLoaded('atlas-tiles')?'ready':'loading';}};
+  return {setEarthReady(ready){earthReady=ready;paint();},set(nextTheme,nextMode){theme=nextTheme;mode=nextMode;paint();ensure();},getState(){return !installed?'idle':failed?'error':map.isSourceLoaded('atlas-tiles')?'ready':'loading';}};
 }

@@ -179,13 +179,14 @@ def candidate_hotels(trip: Trip) -> tuple[list[tuple[Hotel, int]], list[str]]:
     return [], notes
 
 
-def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Package], list[str]]:
+def make_packages(trip: Trip, pinned_hotel: str | None = None, *, hidden_hotels=(), preferred_hotels=()) -> tuple[list[Package], list[str]]:
     outs = [leg for leg in transport_options(trip.origin, trip.dest, trip.date_in, trip.mode) if _leg_ok(leg, trip)]
     backs = [leg for leg in transport_options(trip.origin, trip.dest, trip.date_out, trip.mode)
              if _leg_ok(leg, trip)]
     if not outs or not backs:
         return [], ["нет подходящего транспорта на эти даты"]
     hotels, relaxed = candidate_hotels(trip)
+    hotels = [hp for hp in hotels if hp[0].id not in hidden_hotels]
     if not hotels:
         return [], ["нет отелей, которые принимают ваши условия"]
 
@@ -207,7 +208,7 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
     fast_out = min(outs, key=comfort_key)
     fast_back = min(backs, key=comfort_key)
 
-    by_value = sorted(hotels, key=lambda hp: -_hotel_value(hp[0], hp[1], trip))
+    by_value = sorted(hotels, key=lambda hp: (hp[0].id not in preferred_hotels, -_hotel_value(hp[0], hp[1], trip)))
     pinned = next((hp for hp in hotels if hp[0].id == pinned_hotel), None)
     if pinned_hotel and pinned is None:
         return [], ["выбранный отель не подходит под текущие условия или отсутствует в демонстрационном каталоге"]

@@ -96,8 +96,9 @@ export async function addEarthSurface(map, imageOrUrl) {
     locations.set(program,{uniforms:new Map(),attributes:Object.fromEntries(['a_position','a_uv','a_normal','a_pole'].map(name=>[name,gl.getAttribLocation(program,name)]))});
     programs.set(description.variantName,program); return program;
   }
-  map.addLayer({id:'earth-imagery',type:'custom',
+  const layer={id:'earth-imagery',type:'custom',
     onAdd(_map,gl) {
+      programs.clear();locations.clear();
       buffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
       gl.bufferData(gl.ARRAY_BUFFER,values,gl.STATIC_DRAW);
       indexBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);
@@ -119,6 +120,7 @@ export async function addEarthSurface(map, imageOrUrl) {
       gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
     },
     render(gl,args) {
+      if(gl.isContextLost()||!args.shaderData||!args.defaultProjectionData)return;
       const alpha=Math.max(0,Math.min(1,(5-map.getZoom())/1.5));
       if (!alpha) return;
       const p=getProgram(gl,args.shaderData), projection=args.defaultProjectionData;
@@ -148,13 +150,14 @@ export async function addEarthSurface(map, imageOrUrl) {
       gl.disableVertexAttribArray(pos); gl.disableVertexAttribArray(uv); gl.disableVertexAttribArray(normal); gl.disableVertexAttribArray(pole);
     },
     onRemove(_map,gl) { gl.deleteBuffer(buffer); gl.deleteBuffer(indexBuffer); gl.deleteTexture(texture); programs.forEach((p)=>gl.deleteProgram(p)); programs.clear(); locations.clear(); },
-  },'land');
+  };map.addLayer(layer,'land');
   map.setPaintProperty('land','fill-opacity',['interpolate',['linear'],['zoom'],0,.055,3.5,.055,5,1]);
   map.addLayer({id:'country-outlines',type:'line',source:'countries',
     paint:{'line-color':'#d6ead7','line-opacity':['interpolate',['linear'],['zoom'],0,.28,5,.4,8,.18],
       'line-width':['interpolate',['linear'],['zoom'],0,.5,5,1,10,.6]}},'trip-route');
   // Вид поверхности: «satellite» — снимок как есть, «map» — схематичная карта по тем же природным зонам
   return {
+    restore(){if(!map.getLayer(layer.id))map.addLayer(layer,'land');else layer.onAdd(map,map.getCanvas().getContext('webgl2'));map.triggerRepaint();},
     setStyle(next) {
       style=next;
       map.triggerRepaint();

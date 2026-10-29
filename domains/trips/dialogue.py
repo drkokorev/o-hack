@@ -59,7 +59,7 @@ def missing_for_trip(state: TripState) -> tuple[str, str] | None:
 
 def ideas(state: TripState, *, exclude_shown: bool = False) -> Step:
     """Ideas never pretend to know dates, departure city, price or journey time."""
-    excluded = set(state.rejected) | (set(state.seen) if exclude_shown else set())
+    excluded = set(state.rejected) | set(state.ui_preferences.get("hidden",[])) | (set(state.seen) if exclude_shown else set())
     requested = set(state.trip_types or [])
     places = [d for d in DESTINATIONS if d.id not in excluded and
               (state.abroad is None or d.abroad == state.abroad) and
@@ -76,6 +76,7 @@ def ideas(state: TripState, *, exclude_shown: bool = False) -> Step:
     month = state.date_from.month if state.date_from else state.month
     if thresholds and month:
         places = [d for d in places if matches_history(climate(d.id, month), **thresholds) is True]
+    places.sort(key=lambda d: d.id not in state.ui_preferences.get("saved",[]))
     places = places[:3]
     if not places:
         if thresholds and month:

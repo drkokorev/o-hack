@@ -15,7 +15,6 @@ header.top { height:72px; padding:0 32px; gap:24px; background:var(--bg); border
 .preferences select { min-height:44px; padding:0 10px; max-width:100px; border-radius:12px; font-size:13px; }
 .icon-button { width:44px; height:44px; min-width:44px; padding:0; display:grid; place-items:center; border:1px solid transparent; border-radius:12px; background:transparent; color:var(--ink); cursor:pointer; font:500 24px/1 var(--body); text-decoration:none; }
 .icon-button:hover { background:var(--accent-soft); color:var(--accent); }
-.preferences .sound-toggle { width:44px; height:44px; border:1px solid var(--line); background:var(--surface); }
 .mobile-map { display:none; }
 main.board { min-width:0; padding:34px 30px 18px; display:flex; flex-direction:column; align-self:start; }
 .hero h1 { font:500 clamp(30px,2.9vw,43px)/1.22 var(--display); letter-spacing:-.055em; max-width:24ch; }
@@ -149,7 +148,6 @@ form.composer { flex:none; padding:14px 18px 14px; border-top:0; background:var(
   .preferences { order:0; width:auto; gap:2px; margin-left:auto; }
   .language-pill { display:none; }
   .preferences select { flex:none; max-width:74px; border:0; background:transparent; font-size:12px; padding:0 4px; }
-  .preferences .sound-toggle { border:0; background:transparent; min-width:40px; width:40px; }
   .mobile-map { display:block; min-height:44px; padding:0 10px; border:1px solid var(--line); border-radius:12px; background:var(--surface); font-size:12px; cursor:pointer; }
   main.board { display:none; padding:24px 16px; }
   body.show-map main.board { display:flex; }

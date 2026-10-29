@@ -13,6 +13,7 @@ import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
+from datetime import date, timedelta
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
@@ -52,6 +53,14 @@ EXAMPLES = [
 ]
 
 
+class DateRangeIn(BaseModel):
+    start: date
+    end: date
+
+class PreferencesIn(BaseModel):
+    saved: list[str] = Field(default_factory=list, max_length=100)
+    hidden: list[str] = Field(default_factory=list, max_length=100)
+
 class ChatIn(BaseModel):
     text: str
     session_id: str | None = None
@@ -60,6 +69,8 @@ class ChatIn(BaseModel):
     map_city_id: str | None = Field(default=None, max_length=200)
     destination_id: str | None = Field(default=None, max_length=100)
     event_id: str | None = Field(default=None, max_length=160)
+    date_range: DateRangeIn | None = None
+    preferences: PreferencesIn | None = None
     detected_city: str | None = None  # untrusted browser hint; never an exact location
 
 
@@ -142,8 +153,7 @@ def understood(state: TripState) -> list[str]:
     """Что агент понял из разговора — короткими плашками."""
     chips = []
     if state.origin:
-        suffix = " (примерно по IP)" if state.origin_inferred else ""
-        chips.append(f"из: {state.origin}{suffix}")
+        chips.append(f"из: {state.origin}")
     if state.dest_id:
         chips.append(BY_ID[state.dest_id].name)
     elif state.destination:
@@ -460,11 +470,19 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         breaker = getattr(agent.llm, "breaker", None)
         return {"llm": settings.llm_model if agent.llm is not None else None,
                 "llm_state": breaker.state if breaker else "off",
-                "destinations": len(DESTINATIONS),
+                "today": agent.today().isoformat(), "destinations": len(DESTINATIONS),
                 "hotels": hotel_count(),
                 "places": [{"id": d.id, "name": d.name, "lat": d.lat, "lon": d.lon} for d in DESTINATIONS],
                 "origins": [{"name": o.name, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
                 "examples": EXAMPLES, "stages": [{"key": k, "title": t} for k, t in STAGES]}
+
+    @app.get("/api/weather")
+    def weather(destination_id: str, start: date, end: date):
+        from apps.weather import forecast
+        destination=BY_ID.get(destination_id)
+        if destination is None or end <= start or (end-start).days>365:
+            raise HTTPException(status_code=422, detail="Проверьте направление и даты")
+        return forecast(destination,start,end,agent.today())
 
     @app.get("/api/voice")
     def voice_info(response: Response) -> dict:
@@ -586,10 +604,20 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                 elif location.get("city_name"):
                     session.state.ip_city_hint = location["city_name"]
             previous = chat_navigation.snapshot(session)
+            if body.preferences is not None:
+                session.state.ui_preferences={key:[v for v in values if len(v)<=200] for key,values in body.preferences.model_dump().items()}
             selected = None
-            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id, body.destination_id, body.event_id)) > 1:
+            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id, body.destination_id, body.event_id, body.date_range)) > 1:
                 raise HTTPException(status_code=422, detail="Выберите один объект карты")
-            if body.event_id:
+            if body.date_range:
+                dates=body.date_range
+                if dates.start<agent.today() or dates.end<=dates.start or (dates.end-dates.start).days>365 or dates.end>agent.today()+timedelta(days=731):
+                    raise HTTPException(status_code=422,detail="Выберите будущие даты и возвращение позже отправления")
+                candidate=agent.domain.merge(session.state.model_copy(deep=True),TripUpdate(date_from=dates.start,date_to=dates.end,nights=(dates.end-dates.start).days))
+                step=agent.domain.step(candidate)
+                session.state=candidate
+                session.last,session.last_nlu,session.last_notes=step,'action',[]
+            elif body.event_id:
                 step, selected = choose_event(agent, session, body.event_id)
             elif body.destination_id:
                 dest = BY_ID.get(body.destination_id)

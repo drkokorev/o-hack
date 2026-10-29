@@ -1,12 +1,13 @@
 /* Navigation and a short optional introduction; the map keeps its own camera. */
 window.createJourneyUI = ({fill, onTransfer}) => {
   const $ = id => document.getElementById(id);
-  let active = "chat", hasResults = false, resultCount = 0, tourStep = 0;
+  let active = "chat", hasResults = false, resultCount = 0, tourStep = 0, currentKind="";
   const steps = [
-    {title:"Начните с желания", text:"Напишите пару слов или сразу опишите поездку. Например: «К морю на неделю» или «На выходные в новый город».", example:"На выходные в Казань вдвоём. Хочется гулять по центру и жить рядом."},
+    {title:"С кем, куда и когда?", text:"Опишите, с кем, где и когда вы хотели бы побыть. Можно начать с желания — остальное уточним вместе.", example:"На выходные в Казань вдвоём. Хочется гулять по центру и жить рядом."},
     {title:"Выбирайте на глобусе", text:"Вращайте и приближайте глобус. Нажмите на видимую метку. Число на точке означает группу: приблизьте её, чтобы увидеть места внутри. Когда поездка выбрана, здесь появится её маршрут."},
     {title:"Соберите поездку под себя", text:"Сравните варианты, раскройте отель, дорогу и трансферы. Город отправления подскажем по IP, если получится. Его и другие условия можно изменить над чатом. Поездка сохраняется в этой вкладке."}
   ];
+  if(window.ODIN_EMBED)steps.splice(1,1);
   const scrollTo = target => requestAnimationFrame(() => {
     if(target==="head"){window.scrollTo({top:0,behavior:"instant"});return;}
     const node = $(target); if (!node) return;
@@ -15,6 +16,7 @@ window.createJourneyUI = ({fill, onTransfer}) => {
   });
   function show(tab, scroll = true) {
     if (tab === "results" && !hasResults) return;
+    if(window.ODIN_EMBED && tab === "map")return;
     active = tab;
     document.body.dataset.panel = tab;
     document.body.classList.toggle("show-map", tab !== "chat");
@@ -27,7 +29,7 @@ window.createJourneyUI = ({fill, onTransfer}) => {
     if (scroll && tab !== "chat") scrollTo(tab === "results" ? "view" : "head");
   }
   function update(data) {
-    const p = data?.payload || {};
+    const p = data?.payload || {};currentKind=p.kind||"";
     hasResults = ["ideas","destinations","packages","hotels","cart","payment","order","real_hotels","real_hotel_selected","place_info","tent_transport","tent_cart","tent_order"].includes(p.kind);
     resultCount = p.items?.length || 0;
     const cart = ["cart","payment","order","tent_cart","tent_order"].includes(p.kind);
@@ -44,8 +46,9 @@ window.createJourneyUI = ({fill, onTransfer}) => {
     if (!hasResults || !message) return;
     const button = document.createElement("button");
     button.type="button"; button.className="btn accent reply-results";
-    button.textContent = resultCount ? `Посмотреть ${resultCount} ${resultCount === 1 ? "вариант" : resultCount < 5 ? "варианта" : "вариантов"}` : "Посмотреть поездку";
-    button.onclick=()=>show("results"); message.append(button);
+    const linkKind=currentKind;
+    button.textContent = currentKind==="cart"?"Перейти к оплате":currentKind==="payment"?"Выбрать способ оплаты":resultCount ? `Посмотреть ${resultCount} ${resultCount === 1 ? "вариант" : resultCount < 5 ? "варианта" : "вариантов"}` : "Посмотреть поездку";
+    button.onclick=()=>{if(linkKind==="cart"&&currentKind==="cart")send("да, оформляй");show("results");}; message.append(button);
   }
   function markTourSeen() { try { localStorage.setItem("odin.tour.v2", "seen"); } catch (_) {} }
   function paintTour() {

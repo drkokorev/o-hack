@@ -717,7 +717,7 @@ class TripsDomain:
             return Step("Выбранный отель есть в открытом каталоге, но его нельзя связать с демонстрационным расчётом. "
                         "Другой отель не подставляю; можно выбрать другой объект или изменить условия.",
                         payload={"kind": "question", "reason": "selected_hotel_unavailable"})
-        packages, relaxed = make_packages(trip, state.hotel_id)
+        packages, relaxed = make_packages(trip, state.hotel_id, hidden_hotels={v[6:] for v in state.ui_preferences.get("hidden",[]) if v.startswith("hotel:")}, preferred_hotels={v[6:] for v in state.ui_preferences.get("saved",[]) if v.startswith("hotel:")})
         if not packages:
             state.stage, state.showing = "plan", None
             reason = relaxed[0] if relaxed else "нет вариантов"
@@ -867,8 +867,7 @@ class TripsDomain:
     def _required_inputs(self, state: TripState) -> tuple[str, int, int, list[str]]:
         if not state.origin or not state.adults:
             raise ValueError("Для расчёта требуются город отправления и число взрослых")
-        assumptions = ([f"город отправления {state.origin} приблизительно определён по IP; его можно изменить"]
-                       if state.origin_inferred else [])
+        assumptions = []
         if state.children is None:
             assumptions.append("дети не указаны, расчёт пока без детей")
         return state.origin, state.adults, state.children or 0, assumptions
@@ -953,8 +952,8 @@ class TripsDomain:
         if not exclude_shown:
             state.seen = []
         excluded_countries = {d.id for d in DESTINATIONS if d.country in (state.excluded_countries or [])}
-        exclude = set(state.rejected) | excluded_countries | (set(state.seen) | set(state.suggested) if exclude_shown else set())
-        common = dict(trip_types=list(state.trip_types or []), abroad=state.abroad, pets=bool(state.pets),
+        exclude = set(state.rejected) | set(state.ui_preferences.get("hidden",[])) | excluded_countries | (set(state.seen) | set(state.suggested) if exclude_shown else set())
+        common = dict(limit=12 if state.ui_preferences.get("saved") else 3, trip_types=list(state.trip_types or []), abroad=state.abroad, pets=bool(state.pets),
                       mode=state.transport, meal=state.meal, stars_min=state.stars_min, window=window,
                       baggage_required=bool(state.baggage), direct_only=bool(state.direct_only),
                       free_cancellation=bool(state.free_cancellation), budget_night=state.budget_night,
@@ -965,7 +964,7 @@ class TripsDomain:
                         max_hours=state.max_travel_hours, exclude=exclude or None, economy=bool(state.economy), **common)
         if not items and exclude_shown and state.seen:  # показали всё подходящее — начинаем подборку заново
             state.seen = []
-            exclude = set(state.rejected) | excluded_countries | set(state.suggested)
+            exclude = set(state.rejected) | set(state.ui_preferences.get("hidden",[])) | excluded_countries | set(state.suggested)
             items = suggest(ORIGIN_BY_NAME[origin_name], start, nights, adults, children, budget=state.budget_total,
                             max_hours=state.max_travel_hours, exclude=exclude or None, economy=bool(state.economy),
                             **common)
@@ -990,6 +989,8 @@ class TripsDomain:
             return Step("По всем указанным условиям в демонстрационных данных ничего не нашлось. "
                         "Какие условия можно изменить: направление, бюджет или время в пути?",
                         payload={"kind": "question"})
+        items.sort(key=lambda item: item.dest.id not in state.ui_preferences.get("saved",[]))
+        items=items[:3]
         state.stage, state.showing = "destination", "destinations"
         state.suggested = [s.dest.id for s in items]
         state.seen = sorted(set(state.seen) | set(state.suggested))
@@ -1031,7 +1032,7 @@ class TripsDomain:
         from .planner import _hotel_value, candidate_hotels
 
         hotels, relaxed = candidate_hotels(trip)
-        ranked = sorted(hotels, key=lambda hp: -_hotel_value(hp[0], hp[1], trip))[:5]
+        ranked = sorted([hp for hp in hotels if "hotel:"+hp[0].id not in state.ui_preferences.get("hidden",[])], key=lambda hp: ("hotel:"+hp[0].id not in state.ui_preferences.get("saved",[]), -_hotel_value(hp[0], hp[1], trip)))[:5]
         if not ranked:
             state.showing, state.hotel_ids_shown = None, []
             reason = ("В демонстрационном каталоге нет объектов для этого направления."

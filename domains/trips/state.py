@@ -79,6 +79,7 @@ class TripState(TripParams):
     ip_city_hint: str | None = None  # город вне списка доступных отправлений
     real_hotels_shown: list[dict] = Field(default_factory=list)  # источник и ID именно показанных записей
     selected_real_hotel: dict | None = None  # выбранная запись открытого каталога
+    ui_preferences: dict = Field(default_factory=dict)  # bounded browser preferences; never override hard trip constraints
     selected_event: dict | None = None  # проверенная сервером причина поездки, не даты проживания
     assumptions: list[str] = Field(default_factory=list)     # что агент предположил сам
     last_plan: dict | None = None        # краткая сводка прошлого плана — для «что изменилось»

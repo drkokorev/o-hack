@@ -168,11 +168,13 @@ export function createGlobeModelLayer(map, lib, onModelState=()=>{}) {
   }
   const layer={id:'discovery-3d',type:'custom',renderingMode:'3d',
     onAdd(_map,gl) {
+      buffers.clear();programs.clear();textures.clear();removed=false;
       glContext=gl;
       for (const [name,items] of parts) install(gl,name,items);
       requestAssets([...landmarks,...events]);
     },
     render(gl,args) {
+      if(gl.isContextLost()||!args.shaderData||!args.defaultProjectionData)return;
       const p=program(gl,args.shaderData),projection=args.defaultProjectionData;
       gl.useProgram(p); const u=(name)=>(p._uniforms[name] ??= gl.getUniformLocation(p,name));
       gl.uniformMatrix4fv(u('u_projection_fallback_matrix'),false,projection.fallbackMatrix);
@@ -232,6 +234,7 @@ export function createGlobeModelLayer(map, lib, onModelState=()=>{}) {
   };
   map.addLayer(layer);
   return {
+    restore(){if(!map.getLayer(layer.id))map.addLayer(layer);else layer.onAdd(map,map.getCanvas().getContext('webgl2'));map.triggerRepaint();},
     setLandmarks(next) {landmarks=next;requestAssets(next);if (glContext) map.triggerRepaint();},
     setEvents(next) {events=next;requestAssets(next);if (glContext) map.triggerRepaint();},
     getLoadedModels() {return [...loaded];},

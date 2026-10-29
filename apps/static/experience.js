@@ -34,6 +34,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   }
   function openCondition(key = "other") {
     if (isBusy()) return;
+    if(key==="dates"){openDates();return;}
     byId("condition-field").value = key;
     fillCondition(); show("conditions-dialog"); byId("condition-value").focus();
   }
