@@ -42,7 +42,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   }
   function openCondition(key = "other", currentText = null) {
     if (isBusy()) return;
-    if(key==="dates"){openDates();return;}
+    if(key==="dates"){openDates(['flight_only','train_only'].includes(summary.search_scope));return;}
     byId("condition-field").value = key;
     fillCondition();
     if(currentText !== null) byId("condition-value").value=currentText;

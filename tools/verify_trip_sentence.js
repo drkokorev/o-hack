@@ -26,6 +26,8 @@ async page => {
     await say('Хочу в Анталью из Москвы с 12 августа по 12 сентября 2027, 2 взрослых');
     const initial = latest.trip_summary;
     const sentence = await page.locator('#trip-summary-line').innerText();
+    ok(await page.locator('#board > #trip-context').count()===1,'desktop conditions sit above map and results, outside the chat');
+    ok(await page.locator('#head .route-title').isHidden(),'duplicate route heading is not displayed');
     ok(sentence.includes('из Москвы') && sentence.includes('в Анталью') && sentence.includes('2027') && sentence.includes('31 ночь'),'original request is one sentence, with year and inflected city names');
     ok(await page.locator('#conditions .chip').count()===0 && await page.locator('#condition-highlights button').count()===0,'primary values are not repeated as wishes');
     ok(await page.locator('[data-trip-field]').count()===6,'six editable fields are directly reachable');
@@ -83,7 +85,8 @@ async page => {
     await page.locator('#trip-context').screenshot({path:'output/playwright/trip-sentence-detail.png'});
     await page.setViewportSize({width:390,height:844});
     samples.mobileHeight=(await page.locator('#trip-context').boundingBox()).height;
-    ok(samples.mobileHeight<=250 && await noOverflow(),'390 px mobile has no horizontal overflow and summary is at most 250 px');
+    ok(samples.mobileHeight<=100 && await noOverflow(),'390 px mobile summary is collapsed and fits within 100 px');
+    await page.locator('#trip-context-toggle').click();
     await field('budget').click();ok(await page.locator('#condition-value').isVisible(),'mobile opens field editor');await page.keyboard.press('Escape');
     await page.screenshot({path:'output/playwright/trip-sentence-mobile.png'});
     await page.locator('#theme-toggle').click();

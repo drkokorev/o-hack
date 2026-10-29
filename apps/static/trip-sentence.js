@@ -1,3 +1,43 @@
+/* One physical summary moves with the active panel; fields are never duplicated. */
+window.createTripContextLayout = () => {
+  const panel=document.getElementById('trip-context'), board=document.getElementById('board');
+  const chatAnchor=document.createComment('trip conditions in chat');
+  panel.before(chatAnchor);
+  const body=document.createElement('div');body.id='trip-context-body';
+  body.append(...panel.childNodes);panel.append(body);
+  const toggle=document.createElement('button');toggle.type='button';toggle.id='trip-context-toggle';
+  toggle.setAttribute('aria-controls',body.id);
+  const label=document.createElement('span'), preview=document.createElement('span');
+  label.className='trip-context-label';preview.className='trip-context-preview';
+  toggle.append(label,preview);panel.prepend(toggle);
+  let expanded=false;
+  function place(){
+    const compact=window.ODIN_EMBED||matchMedia('(max-width:900px)').matches;
+    const inBoard=!compact||['results','map'].includes(document.body.dataset.panel);
+    const focus=panel.contains(document.activeElement)?document.activeElement:null;
+    if(inBoard&&panel.parentElement!==board)board.prepend(panel);
+    else if(!inBoard&&panel.parentElement!==chatAnchor.parentElement)chatAnchor.after(panel);
+    panel.classList.toggle('is-compact',compact);
+    toggle.hidden=!compact;body.hidden=compact&&!expanded;
+    toggle.setAttribute('aria-expanded',String(expanded));
+    label.textContent=expanded?'Свернуть условия':'Условия поездки';
+    preview.hidden=expanded;
+    if(focus&&focus!==document.activeElement)(body.hidden?toggle:focus).focus({preventScroll:true});
+  }
+  toggle.onclick=()=>{expanded=!expanded;place();};
+  window.addEventListener('resize',place);
+  place();
+  return {update(data){
+    const s=data?.trip_summary||{};
+    const route=[s.origin,s.destination].filter(Boolean).join(' → ');
+    const dates=panel.querySelector('[data-trip-field="dates"]');
+    preview.textContent=[route,s.date_from&&dates?dates.textContent:null].filter(Boolean).join(' · ')||'Уточняем детали';
+    toggle.title=preview.textContent;
+    if(!data)expanded=false;
+    place();
+  }};
+};
+
 /* One readable sentence; values remain server-owned and each opens its own editor. */
 window.createTripSentence = ({container, onEdit}) => {
   const plural = (n, one, few, many) => n % 10 === 1 && n % 100 !== 11 ? one :

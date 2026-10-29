@@ -57,6 +57,7 @@ const experience = createExperience({send:sendTripChange, reset:resetConversatio
 const tripStorage = createTripStorage();
 const journeyUI = createJourneyUI({fill:experience.fill, onTransfer:changeTransfer});
 const tripSentence = createTripSentence({container:$("trip-sentence-text"), onEdit:key=>experience.openCondition(key)});
+const tripContextLayout = createTripContextLayout();
 experience.showChat = () => journeyUI.show("chat", false);
 experience.showIdeas = () => {renderWelcome();journeyUI.show("results");};
 
@@ -93,6 +94,7 @@ function renderConditions(data) {
   lastDestination = destination;
   const extra = tripSentence.render(data, info);
   renderTripWishes({values:extra, assumptions:assumed, onEdit:(key,text)=>experience.openCondition(key,text), busy});
+  tripContextLayout.update(data);
 
 }
 
