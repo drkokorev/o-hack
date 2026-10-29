@@ -6,37 +6,14 @@ from core.agent import Step
 from .geo import DESTINATIONS, destination_has_tag
 from .campgrounds import campground_hint
 from .state import TripState
+from .policy_resources import dialogue_policy
 from .climate import climate
 from .temperature import TEMP_FIELDS, matches_history
 
 
 # Fields that can answer each outstanding question. Shared by state updates and
 # the question policy so a side comment is not mistaken for an answer.
-QUESTION_INPUT_FIELDS = {
-    "when": {"month", "season", "date_from"},
-    "transfer_date": {"transfer_date"},
-    "flight_date": {"date_from"},
-    "duration": {"nights", "date_to", "trip_days_min", "trip_days_max"},
-    "origin": {"origin"},
-    "destination": {"destination"},
-    "people": {"adults", "party_size"},
-    "passengers": {"adults", "party_size"},
-    "children": {"children"},
-    "children_ages": {"children_ages"},
-    "children_age_unit": {"children_ages"},
-    "rooms": {"rooms"},
-    "budget": {"budget_total", "budget_per_person", "budget_night"},
-    "room_allocation": {"room_allocations", "rooms"},
-    "split_stays": {"split_stays"},
-    "split_choice": {"split_choice"},
-    "transfer_route": {"transfer_from", "transfer_to"},
-    "transfer_direction": {"transfer_direction"},
-    "transfer_time": {"transfer_time"},
-    "flight_direction": {"flight_direction"},
-    "multi_hotel": {"search_scope"},
-    "lodging": {"lodging"},
-    "transport": {"transport"},
-}
+QUESTION_INPUT_FIELDS = {key: set(spec.input_fields) for key, spec in dialogue_policy().questions.items()}
 
 
 def missing_for_trip(state: TripState) -> tuple[str, str] | None:

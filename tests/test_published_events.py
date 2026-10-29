@@ -30,7 +30,11 @@ def test_published_event_reaches_trip_options(event):
         assert first.status_code == 200
         initial = first.json()
         assert initial['trip_summary']['destination'] == event['city']
-        assert initial['trip_summary']['date_from'] is None
+        if initial['trip_summary']['date_from']:
+            assert initial['trip_summary']['date_from'] == max(TODAY, date.fromisoformat(event['start'])).isoformat()
+            assert initial['trip_summary']['date_to'] == (date.fromisoformat(event['end']) + timedelta(days=1)).isoformat()
+        else:
+            assert initial['trip_summary']['date_to'] is None
         origin = 'Санкт-Петербурга' if dest.id == 'moscow' else 'Москвы'
         start = max(TODAY+timedelta(days=15), date.fromisoformat(event['start']))
         end = start+timedelta(days=3)

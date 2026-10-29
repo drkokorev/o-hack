@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "text_and_image_files": 54,
+  "method": "Credential-pattern/private-path scan; three browser screenshots visually inspected",
+  "external_keys_copied": false,
+  "raw_model_output_exported": false,
+  "real_user_dialogues_exported": false
+}

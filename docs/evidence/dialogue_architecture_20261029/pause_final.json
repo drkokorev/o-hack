@@ -1,0 +1,19 @@
+{
+  "kind": "synthetic_exploratory_probe",
+  "mode": "live",
+  "model": "GigaChat-2-Max",
+  "planned": 1,
+  "completed": 1,
+  "passed": 1,
+  "cases": [
+    {
+      "id": "no_fake_confirmation",
+      "input": "Выглядит хорошо, но ничего пока не оформляй",
+      "pass": true,
+      "problems": [],
+      "nlu": "rules",
+      "reply": "Хорошо, продолжим, когда будете готовы. Условия текущей поездки остаются в этом чате.",
+      "seconds": 1.28
+    }
+  ]
+}

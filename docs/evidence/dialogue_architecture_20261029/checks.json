@@ -1,0 +1,289 @@
+{
+  "base_commit": "4d215d97a5a6513618bd7274d62779beed559156",
+  "branch": "codex/dialogue-architecture-20261029",
+  "final_suite": {
+    "passed": 862,
+    "failed": 0,
+    "warnings": 4,
+    "summary": "862 passed, 4 warnings in 107.06s (0:01:47)",
+    "evidence": "pytest_current_ui.xml"
+  },
+  "tests": [
+    {
+      "phase": "base + first 18 regression cases",
+      "result": "FAIL",
+      "summary": "15 failed, 3 passed in 3.10s",
+      "failures": [
+        "FAILED tests/test_conversation_policy.py::test_meta_turn_answers_in_context_without_mutation[\\u0421\\u043f\\u0430\\u0441\\u0438\\u0431\\u043e-\\u043f\\u043e\\u0436\\u0430\\u043b\\u0443\\u0439\\u0441\\u0442\\u0430]",
+        "FAILED tests/test_conversation_policy.py::test_meta_turn_answers_in_context_without_mutation[\\u0427\\u0442\\u043e \\u0442\\u044b \\u0443\\u043c\\u0435\\u0435\\u0448\\u044c?-\\u043c\\u043e\\u0433\\u0443]",
+        "FAILED tests/test_conversation_policy.py::test_meta_turn_answers_in_context_without_mutation[\\u041f\\u043e\\u0447\\u0435\\u043c\\u0443 \\u0442\\u0435\\u0431\\u0435 \\u043d\\u0443\\u0436\\u043d\\u044b \\u0434\\u0430\\u0442\\u044b?-\\u0434\\u0430\\u0442]",
+        "FAILED tests/test_conversation_policy.py::test_meta_turn_answers_in_context_without_mutation[\\u041d\\u0435 \\u043f\\u043e\\u043d\\u044f\\u043b \\u0432\\u043e\\u043f\\u0440\\u043e\\u0441-\\u043d\\u0430\\u043f\\u0440\\u0438\\u043c\\u0435\\u0440]",
+        "FAILED tests/test_conversation_policy.py::test_meta_turn_answers_in_context_without_mutation[\\u0422\\u044b \\u043c\\u0435\\u043d\\u044f \\u043d\\u0435 \\u043f\\u043e\\u043d\\u044f\\u043b-\\u043f\\u043e\\u043f\\u0440\\u0430\\u0432]",
+        "FAILED tests/test_conversation_policy.py::test_meta_turn_answers_in_context_without_mutation[\\u0421\\u043f\\u0430\\u0441\\u0438\\u0431\\u043e, \\u0432\\u0435\\u0440\\u043d\\u0443\\u0441\\u044c \\u043f\\u043e\\u0437\\u0436\\u0435-\\u043f\\u0440\\u043e\\u0434\\u043e\\u043b\\u0436]",
+        "FAILED tests/test_conversation_policy.py::test_meta_turn_answers_in_context_without_mutation[\\u042d\\u0442\\u043e \\u043d\\u0430\\u0441\\u0442\\u043e\\u044f\\u0449\\u0438\\u0435 \\u0446\\u0435\\u043d\\u044b?-\\u0434\\u0435\\u043c\\u043e\\u043d\\u0441\\u0442\\u0440\\u0430\\u0446]",
+        "FAILED tests/test_conversation_policy.py::test_meta_turn_answers_in_context_without_mutation[\\u0427\\u0442\\u043e \\u0442\\u044b \\u0443\\u0436\\u0435 \\u0437\\u043d\\u0430\\u0435\\u0448\\u044c \\u043e \\u043c\\u043e\\u0435\\u0439 \\u043f\\u043e\\u0435\\u0437\\u0434\\u043a\\u0435?-\\u043a\\u0430\\u0437\\u0430\\u043d\\u044c]",
+        "FAILED tests/test_conversation_policy.py::test_exploration_does_not_commit_a_choice[\\u0410 \\u0435\\u0441\\u043b\\u0438 \\u043d\\u0430 \\u043f\\u043e\\u0435\\u0437\\u0434\\u0435?]",
+        "FAILED tests/test_conversation_policy.py::test_exploration_does_not_commit_a_choice[\\u041c\\u043e\\u0436\\u043d\\u043e \\u043b\\u0438 \\u0434\\u043e\\u0431\\u0440\\u0430\\u0442\\u044c\\u0441\\u044f \\u043f\\u043e\\u0435\\u0437\\u0434\\u043e\\u043c?]",
+        "FAILED tests/test_conversation_policy.py::test_exploration_does_not_commit_a_choice[\\u0410 \\u0447\\u0442\\u043e \\u043d\\u0430\\u0441\\u0447\\u0451\\u0442 \\u0413\\u0440\\u0443\\u0437\\u0438\\u0438?]",
+        "FAILED tests/test_conversation_policy.py::test_exploration_does_not_commit_a_choice[\\u042f \\u043d\\u0435 \\u0432\\u044b\\u0431\\u0438\\u0440\\u0430\\u043b \\u0413\\u0440\\u0443\\u0437\\u0438\\u044e, \\u043f\\u0440\\u043e\\u0441\\u0442\\u043e \\u0441\\u043f\\u0440\\u043e\\u0441\\u0438\\u043b]",
+        "FAILED tests/test_conversation_policy.py::test_short_followup_keeps_question_topic_without_changing_trip",
+        "FAILED tests/test_conversation_policy.py::test_budget_basis_correction_reuses_only_explicit_existing_amount",
+        "FAILED tests/test_conversation_policy.py::test_unknown_turn_does_not_repeat_a_generated_answer_as_a_new_question"
+      ],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "conversation implementation, first run",
+      "result": "FAIL",
+      "summary": "1 failed, 17 passed in 3.52s",
+      "failures": [
+        "FAILED tests/test_conversation_policy.py::test_short_followup_keeps_question_topic_without_changing_trip"
+      ],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "first targeted suite",
+      "result": "PASS",
+      "summary": "93 passed, 4 warnings in 31.33s",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "inventory extraction and compatibility",
+      "result": "FAIL",
+      "summary": "2 failed, 55 passed, 4 warnings in 54.20s",
+      "failures": [
+        "FAILED tests/test_trips.py::test_greeting_when_nothing_is_known - AssertionEr...",
+        "FAILED tests/test_trips.py::test_rebuild_keeps_hotel_and_reports_diff - Asser..."
+      ],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "second targeted suite",
+      "result": "PASS",
+      "summary": "187 passed, 4 warnings in 37.60s",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "first full suite",
+      "result": "FAIL",
+      "summary": "3 failed, 833 passed, 4 warnings in 134.43s (0:02:14)",
+      "failures": [
+        "FAILED tests/test_dialogue_privacy_20261028.py::test_rejected_input_does_not_replace_last_actionable_question",
+        "FAILED tests/test_map_catalog.py::test_map_city_outside_catalog_keeps_exact_point",
+        "FAILED tests/test_privacy_masking_20261028.py::test_clean_system_instructions_remain_unchanged"
+      ],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "compatibility corrections",
+      "result": "PASS",
+      "summary": "185 passed, 4 warnings in 59.13s",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "full suite before fresh input probes",
+      "result": "PASS",
+      "summary": "837 passed, 4 warnings in 173.93s (0:02:53)",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "currency and family constraints",
+      "result": "PASS",
+      "summary": "120 passed, 4 warnings in 17.26s",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "full suite with input constraints",
+      "result": "PASS",
+      "summary": "852 passed, 4 warnings in 125.64s (0:02:05)",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "pause reply",
+      "result": "PASS",
+      "summary": "33 passed, 4 warnings in 4.22s",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "first event integration",
+      "result": "PASS",
+      "summary": "42 passed, 4 warnings in 14.45s",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "intermediate tree; exact tree not retained"
+    },
+    {
+      "phase": "final combined code",
+      "result": "PASS",
+      "summary": "860 passed, 4 warnings in 175.86s (0:02:55)",
+      "failures": [],
+      "runner": "python -m pytest",
+      "mode": "rules",
+      "snapshot": "final"
+    },
+    {
+      "phase": "combined current trip-sentence UI",
+      "result": "PASS",
+      "summary": "862 passed, 4 warnings in 107.06s (0:01:47)",
+      "runner": "python -m pytest -q --tb=short",
+      "mode": "rules",
+      "source_commit": "8531ebde98c48ca6c5640996e2310ff36a248e8f",
+      "failures": []
+    }
+  ],
+  "model_probes": [
+    {
+      "evidence": "live_semantics_initial.json",
+      "planned": 8,
+      "completed": 8,
+      "passed": 7,
+      "model": "GigaChat-2-Max",
+      "modes": [
+        "llm",
+        "llm",
+        "llm+rules",
+        "llm",
+        "llm+rules",
+        "llm",
+        "llm",
+        "llm+rules"
+      ],
+      "scope": "development/exploratory synthetic cases; not an independent quality estimate"
+    },
+    {
+      "evidence": "live_semantics_final.json",
+      "planned": 8,
+      "completed": 8,
+      "passed": 8,
+      "model": "GigaChat-2-Max",
+      "modes": [
+        "llm",
+        "llm",
+        "llm+rules",
+        "llm",
+        "llm+rules",
+        "llm",
+        "llm",
+        "llm+rules"
+      ],
+      "scope": "development/exploratory synthetic cases; not an independent quality estimate"
+    },
+    {
+      "evidence": "live_travel_probe.json",
+      "planned": 10,
+      "completed": 10,
+      "passed": 7,
+      "model": "GigaChat-2-Max",
+      "modes": [
+        "llm+rules",
+        "llm+rules",
+        "llm+rules",
+        "llm",
+        "llm+rules",
+        "llm",
+        "llm+rules",
+        "llm+rules",
+        "llm+rules",
+        "llm+rules"
+      ],
+      "scope": "development/exploratory synthetic cases; not an independent quality estimate"
+    },
+    {
+      "evidence": "live_travel_final.json",
+      "planned": 10,
+      "completed": 10,
+      "passed": 10,
+      "model": "GigaChat-2-Max",
+      "modes": [
+        "rules",
+        "llm+rules",
+        "llm+rules",
+        "llm",
+        "llm+rules",
+        "llm",
+        "llm+rules",
+        "llm+rules",
+        "llm+rules",
+        "llm+rules"
+      ],
+      "scope": "development/exploratory synthetic cases; not an independent quality estimate"
+    },
+    {
+      "evidence": "pause_final.json",
+      "planned": 1,
+      "completed": 1,
+      "passed": 1,
+      "model": "GigaChat-2-Max",
+      "modes": [
+        "rules"
+      ],
+      "scope": "development/exploratory synthetic cases; not an independent quality estimate"
+    }
+  ],
+  "browser": {
+    "evidence": "browser_events_current_ui.json",
+    "checks": 12,
+    "errors": [],
+    "source_commit": "8531ebde98c48ca6c5640996e2310ff36a248e8f"
+  },
+  "limitations": [
+    "No Docker build or deployment",
+    "No real booking/payment or supplier availability check",
+    "Synthetic development inputs only",
+    "Existing public map index and installed dependencies reused",
+    "Browser: preload warning for existing earth image; no script errors"
+  ],
+  "diagnostics": [
+    "Initial diagnostic console could not print the ruble sign under cp1251; UTF-8 enabled; JSON had already been saved",
+    "Initial standard git fetch referenced a deleted narrow branch; explicit main/artemiy fetch succeeded"
+  ],
+  "tested_code_commit": "8531ebde98c48ca6c5640996e2310ff36a248e8f",
+  "integrated_upstream_commit": "6693512c4a6dba729084f57032ee568af529b303",
+  "pre_ui_suite": {
+    "passed": 860,
+    "failed": 0,
+    "warnings": 4,
+    "seconds": 175.86,
+    "evidence": "pytest.xml"
+  },
+  "browser_before_current_ui": {
+    "evidence": "browser_events.json",
+    "checks": 10,
+    "errors": []
+  },
+  "secret_scan": {
+    "scope": "new/changed source, reports and evidence",
+    "result": "PASS",
+    "method": "credential-pattern and private-path scan plus review; not a proof that all possible secrets are detectable"
+  }
+}

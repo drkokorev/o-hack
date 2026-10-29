@@ -32,7 +32,7 @@ _QUESTION = re.compile(r"\b(?:можно\s+ли|есть\s+ли|какие|ка�
 def local_only(text: str) -> bool:
     value = norm(text)
     return bool(_PREG.search(value) or _OLDER.search(value) or
-                re.search(r"\b(?:ребенк\w*|ребенок|детям|малыш\w*|младен\w*|сын\w*|дочк\w*|дочер\w*)\b[^.!?;]{0,30}\b\d{1,3}\b", value) or
+                re.search(r"\b(?:ребенк\w*|ребенок|дети|детей|детям|малыш\w*|младен\w*|сын\w*|дочк\w*|дочер\w*)\b[^.!?;]{0,30}\b\d{1,3}\b", value) or
                 re.search(r"\b(?:ребен\w*|сын\w*|доч\w*|несовершеннолетн\w*)\b[^.!?;]{0,60}\bбез\s+(?:взросл\w*|сопровожд\w*)", value))
 
 

@@ -24,7 +24,7 @@ window.createTripContextLayout = () => {
     const dates=panel.querySelector('[data-trip-field="dates"]');
     const people=panel.querySelector('[data-trip-field="people"]');
     const budget=panel.querySelector('[data-trip-field="budget"]');
-    const known=[route,s.date_from&&dates?dates.textContent:null,s.adults&&people?people.textContent:null,s.budget_total&&budget?budget.textContent:null].filter(Boolean);
+    const known=[route,(s.date_from||s.selected_event)&&dates?dates.textContent:null,s.adults&&people?people.textContent:null,s.budget_total&&budget?budget.textContent:null].filter(Boolean);
     preview.textContent=known.join(' · ')||(data?.understood||[]).slice(0,2).join(' · ')||'Ваши пожелания';
     toggle.title=preview.textContent;if(!data)expanded=false;paint();
   }};
@@ -87,10 +87,11 @@ window.createTripSentence = ({container, onEdit}) => {
     }
     const start = date(s.date_from, s.date_from?.slice(0, 4) !== s.date_to?.slice(0, 4)), end = date(s.date_to);
     if (scope !== 'transfer_only') {
-      const dates = start && end ? `${date(s.date_from, s.date_from.slice(0,4)!==s.date_to.slice(0,4), true)} — ${date(s.date_to, true, true)}` : s.date_from ? `с ${date(s.date_from, true, true)}` : 'когда?';
-      if (s.date_from) put(', ', 'dates', dates, 'Даты поездки');
+      const dates = start && end ? `${date(s.date_from, s.date_from.slice(0,4)!==s.date_to.slice(0,4), true)} — ${date(s.date_to, true, true)}` : s.date_from ? `с ${date(s.date_from, true, true)}` : s.selected_event ? `событие: ${s.selected_event.dates}; выбрать дни` : 'когда?';
+      if (s.date_from || s.selected_event) put(', ', 'dates', dates, 'Даты поездки', !s.date_from);
       if (start && end) remove(`${start} — ${end}`);
       else if (s.date_from) remove(`начало: ${date(s.date_from)}`);
+      else if (s.selected_event) remove(`период события: ${s.selected_event.dates}`);
       if (s.nights && !['flight_only', 'train_only'].includes(scope)) {
         const nights = `${s.nights} ${plural(s.nights, 'ночь', 'ночи', 'ночей')}`;
         put(' ', 'duration', `на ${nights}`, 'Длительность'); remove(nights);

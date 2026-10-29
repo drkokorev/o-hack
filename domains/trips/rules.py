@@ -424,7 +424,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     if removed_pets and not re.search(r"\bбез\s+(?:животн|питомц)\w*", norm(text)):
         remaining = sorted(set(state.pet_types or []) - removed_pets)
         party.update(pets=bool(remaining), pet_types=remaining or None)
-    return parsed.model_copy(update=party) if party else parsed
+    from .input_constraints import validate_input
+    return validate_input(state, text, parsed.model_copy(update=party) if party else parsed)
 
 
 def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:

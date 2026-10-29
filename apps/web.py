@@ -204,6 +204,8 @@ def understood(state: TripState) -> list[str]:
                      f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]} {state.date_to.year}")
     elif state.date_from:
         chips.append(f"начало: {state.date_from.day} {MONTHS_GEN[state.date_from.month - 1]} {state.date_from.year}")
+    elif state.selected_event:
+        chips.append('период события: ' + state.selected_event['dates'])
     elif state.month:
         chips.append(MONTHS_NOM[state.month - 1] + (f" {state.year}" if state.year else ""))
     if state.trip_days_min:

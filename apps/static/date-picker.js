@@ -1,5 +1,5 @@
 /* Shared range picker. One complete range is one server update. */
-window.openTripDates = ({start, end, today, onSelect, single=false}) => {
+window.openTripDates = ({start, end, today, onSelect, single=false, event=null}) => {
   document.getElementById('date-picker-dialog')?.remove();
   const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const parse=s=>new Date(`${s}T12:00:00`), min=today||iso(new Date()), max=iso(new Date(parse(min).getFullYear()+2,parse(min).getMonth(),parse(min).getDate()));
@@ -9,6 +9,11 @@ window.openTripDates = ({start, end, today, onSelect, single=false}) => {
   dialog.innerHTML='<button type="button" class="dialog-close icon-button" aria-label="Закрыть календарь">×</button><h2>Когда поедем?</h2><p class="range-hint" aria-live="polite"></p><div class="month-nav"><button type="button" class="icon-button previous" aria-label="Предыдущий месяц">‹</button><span></span><button type="button" class="icon-button next" aria-label="Следующий месяц">›</button></div><div class="months"></div><p class="date-picker-note">Выберите день начала и день возвращения.</p>';
   const fmt=new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long'});
   if(single)dialog.querySelector('.date-picker-note').textContent='Выберите день поездки.';
+  if(event){
+    const context=document.createElement('p');context.className='date-picker-event';
+    context.textContent=`${event.name}: ${event.dates}. Выберите дни вашей поездки.`;
+    dialog.querySelector('h2').after(context);
+  }
   function paint(){
     dialog.querySelector('.range-hint').textContent=single?'Дата поездки':selectingEnd?`${fmt.format(parse(from))} → выберите возвращение`:from&&to?`${fmt.format(parse(from))} — ${fmt.format(parse(to))}`:'Сначала — день начала поездки';
     dialog.querySelector('.previous').disabled=month.getFullYear()===parse(min).getFullYear()&&month.getMonth()<=parse(min).getMonth();
