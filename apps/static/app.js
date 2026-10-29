@@ -50,7 +50,7 @@ const tripMap = createTripMap({ container: $("map"), onChoose: (place) => {
   } });
 const drawMap = (options = {}) => tripMap.draw(options);
 const preferences = createPreferences(tripMap);
-const voice = createVoiceInput({input:$("text"), button:$("mic"), status:$("voice-status"), dedicated:true});
+const voice = createVoiceInput({input:$("text"), button:$("mic"), holdButton:$("send"), status:$("voice-status"), dedicated:true});
 let lastData = null, latestTurn = null, editing = false;
 const experience = createExperience({send, reset:resetConversation, undo:undoTurn, edit:editTurn,
   isBusy:()=>busy, voice, ideas:renderWelcome});
@@ -540,7 +540,10 @@ function renderSuggest(data) {
   const question = typeof data === "object" ? String(data.reply || "").split("?")[0].toLowerCase() : "";
   if (payload.kind === "question" && (["when", "dates", "date_from", "date_to", "transfer_date", "flight_date"].includes(payload.field) ||
       (!payload.field && String(data.reply || "").includes("?") && /когда|дат[ыу]|месяц|время года/.test(question)))) {
-    $("suggest").replaceChildren(dateControls(["transfer_date", "flight_date"].includes(payload.field)), el("button", {type:"button", onclick:() => send("пока не знаю")}, "Пока не знаю"));
+    const choices = Array.isArray(data.suggestions) && data.suggestions.length ? data.suggestions : ["пока не знаю"];
+    const buttons = choices.filter((text) => typeof text === "string" && text.trim()).map((text) =>
+      el("button", {type:"button", onclick:() => send(text)}, text[0].toUpperCase() + text.slice(1)));
+    $("suggest").replaceChildren(dateControls(["transfer_date", "flight_date"].includes(payload.field)), ...buttons);
     return;
   }
   if (payload.kind === "question" && (payload.field === "origin" ||
@@ -630,7 +633,7 @@ function showMoodChoices() {
 }
 function setBusy(value) {
   busy=value; $("send").disabled=value; $("undo").disabled=value || !lastData?.can_undo;
-  $("mic-button").disabled=value;
+  $("mic").disabled=value;
   $("reset").disabled=value; $("conditions-edit").disabled=value;
 }
 function editTurn(turn) {

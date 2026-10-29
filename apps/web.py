@@ -171,6 +171,10 @@ def understood(state: TripState) -> list[str]:
         chips.append("безвизовый въезд: не проверен")
     for t in state.trip_types or []:
         chips.append(TAG_NAMES.get(t, t))
+    if state.scenic_views:
+        chips.append("красивые виды: не проверены")
+    if state.relaxed_walks:
+        chips.append("спокойные прогулки: не проверены")
     if state.search_scope == "transfer_only":
         pass  # do not display a stay's dates as a transfer booking
     elif state.date_from and state.date_to:
@@ -255,6 +259,8 @@ def contextual_suggestions(state: TripState, step) -> list[str]:
             return ["в одну сторону", "туда и обратно"]
         if payload.get("field") == "multi_hotel":
             return ["сравнить", "по очереди"]
+        if payload.get("field") == "when" and not state.dest_id and not state.search_scope:
+            return ["предложи сам", "пока не знаю"]
         return ["пока не знаю"] if payload.get("field") in ("when", "duration", "origin", "people", "children") else []
     if kind == "service_results" and state.pending_question == "split_choice":
         return [str(i) for i in range(1, len(state.split_displayed) + 1)]

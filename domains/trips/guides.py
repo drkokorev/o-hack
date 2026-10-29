@@ -19,7 +19,7 @@ import math
 import re
 import threading
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
@@ -29,8 +29,8 @@ SOURCE = "Wikivoyage"
 
 # Тема вопроса → разделы статьи, где ответ вероятнее всего
 TOPIC_TAGS = {
-    "visa": ("arrive",), "sights": ("see", "do"), "areas": ("areas", "sleep"), "food": ("eat", "drink"),
-    "safety": ("safety",), "local_transport": ("transport",), "travel": ("arrive", "transport"),
+    "visa": ("arrive",), "sights": ("see", "do", "areas"), "areas": ("areas", "sleep"), "food": ("eat", "drink"),
+    "safety": ("safety",), "local_transport": ("transport", "arrive"), "travel": ("arrive", "transport"),
     "transfer": ("arrive", "transport"), "beach": ("do", "see"), "weather": ("about",), "about": ("about",),
     "shopping": ("buy",), "nightlife": ("drink",),
 }
@@ -262,6 +262,125 @@ def search(query: str, dest: str | None = None, topic: str | None = None, k: int
         c = index.chunks[i]
         out.append(Snippet(c["dest"], c["section"], c["text"], c["url"], index.titles.get(c["dest"], c["dest"]),
                            c.get("lang", "ru"), round(float(score), 3), c.get("tag", "other")))
+    return out
+
+
+# Generic question words do not by themselves prove that a passage answers a
+# specific question. In particular, a section called "Еда" is not evidence
+# that it contains information about a requested dish, diet or language.
+_GENERIC_QUERY_WORDS = frozenset(stem(w) for w in tokens(
+    "где куда что чем как какой какая какие какое можно ли лучше хороший хороший ли "
+    "посоветуй посоветуйте расскажи расскажите скажи скажите подскажи подскажите "
+    "нужен нужна стоит стоит ли есть найти поискать пойти сходить посетить посмотреть "
+    "интересное интересного заняться попробовать поесть покушать перекусить пообедать "
+    "поужинать завтракать обедать ужинать еда еду еды пища кухня кухню местная местной "
+    "ресторан рестораны кафе заведение места место город городе районе район районов "
+    "остановиться проживать жить переночевать добраться доехать попасть покататься удивить "
+    "передвигаться ездить пользоваться транспорт "
+    "общественный местный безопасность безопасно опасно опасность турист туристы туристам "
+    "достопримечательности достопримечательность музеи музей магазин магазины покупки купить "
+    "сувениры привезти домой подарок ночной жизнь вечером потанцевать клуб клубы бар бары "
+    "туда здесь там тут пожалуйста хочется хочу интересно мне нам поездка поездке "
+    "where what how when which is are can should does do to in at from on of for as it a the i we "
+    "places place city town local good best eat food restaurant restaurants cafe cafes gift avoid "
+    "see visit stay travel transport get around safety safe dangerous tourists shopping buy nightlife"
+))
+_QUERY_ALIASES = {
+    "sushi": ("суши",), "суши": ("sushi",),
+    "metro": ("метро",), "метро": ("metro",),
+    "ночью": ("ночь", "ночное", "суток"),
+    "pickpockets": ("карманные", "карманников"), "pickpocket": ("карманные", "карманников"),
+    "недорого": ("дешево", "дешевых"), "подешевле": ("дешево", "дешевых"),
+    "лыжах": ("горнолыжный", "лыжи"),
+}
+
+
+def _question_part(query: str) -> str:
+    """Drop unrelated clauses before a question in a longer trip request."""
+    parts = [part.strip() for part in re.split(r"[.!?;]+", query) if part.strip()]
+    if not parts:
+        return query
+    part = parts[-1]
+    matches = list(re.finditer(r"\b(?:где|куда|что|чем|как|where|what|how)\b", part, re.I))
+    return part[matches[-1].start():] if matches else part
+
+
+def _specific_words(query: str, dest: str) -> list[str]:
+    from .geo import BY_ID
+
+    place = BY_ID.get(dest)
+    place_words = {stem(w) for w in tokens((place.name if place else "") + " " + dest)}
+    return list(dict.fromkeys(w for w in tokens(_question_part(query))
+                              if stem(w) not in _GENERIC_QUERY_WORDS and stem(w) not in place_words))
+
+
+def has_specific_terms(query: str, dest: str) -> bool:
+    return bool(_specific_words(query, dest))
+
+
+def _one_typo(left: str, right: str) -> bool:
+    """One insertion, deletion, substitution or adjacent swap; reject short words."""
+    if min(len(left), len(right)) < 5 or left[:2] != right[:2] or abs(len(left) - len(right)) > 1:
+        return False
+    if len(left) == len(right):
+        differing = [i for i, (a, b) in enumerate(zip(left, right)) if a != b]
+        return (len(differing) == 1 or len(differing) == 2 and differing[1] == differing[0] + 1 and
+                left[differing[0]] == right[differing[1]] and left[differing[1]] == right[differing[0]])
+    shorter, longer = sorted((left, right), key=len)
+    i = 0
+    while i < len(shorter) and shorter[i] == longer[i]:
+        i += 1
+    return shorter[i:] == longer[i + 1:]
+
+
+def _matches_word(word: str, text: str) -> bool:
+    targets = (word, *_QUERY_ALIASES.get(word, ()))
+    for candidate in tokens(text):
+        for target in targets:
+            if stem(candidate) == stem(target):
+                return True
+            # A single small spelling variation is useful for names, but short
+            # words and unrelated prefixes must not become asserted facts.
+            if _one_typo(target, candidate):
+                return True
+    return False
+
+
+def _evidence_window(text: str, words: list[str]) -> str | None:
+    """Return one or two adjacent sentences containing every specific word."""
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    for i, sentence in enumerate(sentences):
+        for window in (sentence, " ".join(sentences[i:i + 2])):
+            if len(window) <= 700 and all(_matches_word(word, window) for word in words):
+                return window
+    return None
+
+
+def search_grounded(query: str, dest: str, topic: str, k: int = 4) -> list[Snippet]:
+    """Retrieve topic snippets without substituting a generic answer for a specific request.
+
+    For named items and qualifiers we require nearby text evidence. This is an
+    intentionally conservative check, not proof of semantic entailment; when
+    the corpus cannot substantiate a request we return no answer.
+    """
+    words = _specific_words(query, dest)
+    # A text match alone cannot establish a dietary exclusion or medical claim.
+    if topic == "food" and words and re.search(r"\b(?:без|не содержит|аллерги\w*)\b", query, re.I):
+        return []
+    see_first = topic == "sights" and bool(re.search(r"посмотр|посет|достопримеч|what\s+(?:to|can i)\s+see", query, re.I))
+    found = search(_question_part(query), dest=dest, topic=topic, k=1000 if words or see_first else k,
+                   min_score=0.0 if words else 0.15)
+    if see_first:
+        found.sort(key=lambda s: s.tag != "see")
+    if not words:
+        return found[:k]
+    out = []
+    for snippet in found:
+        evidence = _evidence_window(snippet.text, words)
+        if evidence:
+            out.append(replace(snippet, text=evidence))
+            if len(out) >= k:
+                break
     return out
 
 

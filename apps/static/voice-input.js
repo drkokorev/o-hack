@@ -88,7 +88,7 @@
   // Default (widget): one control starts/stops dictation when the field is empty and sends edited text otherwise.
   // dedicated (chat): a separate microphone next to «Send» — click to record, click again to review the text,
   // or press «Send» while recording to transcribe and send at once (finish()).
-  window.createVoiceInput = ({ input, button, status, dedicated = false }) => {
+  window.createVoiceInput = ({ input, button, status, dedicated = false, holdButton = null }) => {
     const BrowserRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const icons = {
       mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-3 0h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -126,6 +126,7 @@
       setWave(Boolean(current));
       if (wave) wave.classList.toggle("processing", phase === "processing");
       button.dataset.listening = String(Boolean(current) && phase === "listening");
+      if (holdButton) holdButton.dataset.listening = button.dataset.listening;
       if (cancelButton) cancelButton.hidden = !current;
     }
     function hint() {
@@ -245,6 +246,46 @@
     }
     if (dedicated) {
       button.addEventListener("click", () => { if (current) { if (phase !== "processing") current.requestStop(); } else begin(); });
+      if (holdButton) {
+        let timer = null, pressed = false, held = false, pointerId = null, suppressClick = false;
+        const startHold = () => {
+          if (holdButton.disabled || current) return;
+          pressed = true; held = false;
+          timer = setTimeout(() => { if (pressed) { held = true; begin(); } }, 350);
+        };
+        const finishHold = (cancelled = false) => {
+          clearTimeout(timer); pressed = false;
+          if (held) {
+            suppressClick = true;
+            setTimeout(() => { suppressClick = false; }, 100);
+            if (current && cancelled) cancel();
+            else if (current && phase !== "processing") current.requestStop();
+          }
+          held = false; pointerId = null;
+        };
+        holdButton.addEventListener("pointerdown", (event) => {
+          if (event.button !== 0) return;
+          pointerId = event.pointerId; holdButton.setPointerCapture?.(pointerId); startHold();
+        });
+        holdButton.addEventListener("pointerup", (event) => {
+          if (event.pointerId !== pointerId) return;
+          const rect = holdButton.getBoundingClientRect();
+          const outside = event.clientX < rect.left - 12 || event.clientX > rect.right + 12 ||
+                          event.clientY < rect.top - 12 || event.clientY > rect.bottom + 12;
+          finishHold(outside);
+        });
+        holdButton.addEventListener("pointercancel", () => finishHold(true));
+        holdButton.addEventListener("keydown", (event) => {
+          if (event.key === " " && !event.repeat) startHold();
+        });
+        holdButton.addEventListener("keyup", (event) => {
+          if (event.key === " " && pressed) { if (held) event.preventDefault(); finishHold(); }
+        });
+        holdButton.addEventListener("click", (event) => {
+          if (suppressClick) { suppressClick = false; event.preventDefault(); event.stopImmediatePropagation(); }
+        }, true);
+        document.addEventListener("visibilitychange", () => { if (document.hidden) finishHold(true); });
+      }
       document.addEventListener("keydown",(event)=>{if(event.key==="Escape" && current){event.preventDefault();cancel();}});
       document.addEventListener("visibilitychange",()=>{if(document.hidden && current)cancel();});
       window.addEventListener("pagehide",cancel);

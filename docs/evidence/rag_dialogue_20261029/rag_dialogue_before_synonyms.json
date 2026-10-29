@@ -1,0 +1,434 @@
+{
+  "mode": "bm25+e5",
+  "total": 44,
+  "question_recognized": 36,
+  "top1": 18,
+  "top3": 18,
+  "results": [
+    {
+      "dest": "budva",
+      "query": "что посмотреть в старом городе",
+      "topics": [
+        "sights"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "budva",
+      "query": "где перекусить недорого",
+      "topics": [
+        "food"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "budva",
+      "query": "как добраться из аэропорта",
+      "topics": [
+        "local_transport"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "budva",
+      "query": "куда съездить на день из города",
+      "topics": [],
+      "top1": false,
+      "top3": false,
+      "reason": "not_recognized"
+    },
+    {
+      "dest": "sochi",
+      "query": "в каком районе лучше жить у моря",
+      "topics": [
+        "areas"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "sochi",
+      "query": "как ездить по городу без машины",
+      "topics": [
+        "local_transport"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "sochi",
+      "query": "где покататься на лыжах",
+      "topics": [
+        "sights"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "sochi",
+      "query": "водопады и ущелья рядом",
+      "topics": [],
+      "top1": false,
+      "top3": false,
+      "reason": "not_recognized"
+    },
+    {
+      "dest": "istanbul",
+      "query": "что попробовать из местной еды",
+      "topics": [
+        "food"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "istanbul",
+      "query": "не опасно ли гулять вечером",
+      "topics": [
+        "safety"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "istanbul",
+      "query": "как пользоваться общественным транспортом",
+      "topics": [
+        "local_transport"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "istanbul",
+      "query": "главные мечети и дворцы",
+      "topics": [],
+      "top1": false,
+      "top3": false,
+      "reason": "not_recognized"
+    },
+    {
+      "dest": "tokyo",
+      "query": "what to see in Tokyo",
+      "topics": [
+        "sights"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "tokyo",
+      "query": "is the metro convenient",
+      "topics": [
+        "local_transport"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "tokyo",
+      "query": "где поесть суши",
+      "topics": [
+        "food"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "tokyo",
+      "query": "как попасть в город из аэропорта",
+      "topics": [
+        "local_transport"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "rome",
+      "query": "какие музеи посетить",
+      "topics": [
+        "sights"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "rome",
+      "query": "где остановиться недорого",
+      "topics": [
+        "areas"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "paris",
+      "query": "что посмотреть кроме Эйфелевой башни",
+      "topics": [
+        "sights"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "paris",
+      "query": "безопасно ли в метро ночью",
+      "topics": [
+        "safety",
+        "local_transport"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "dubai",
+      "query": "где купить сувениры и золото",
+      "topics": [
+        "shopping"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "dubai",
+      "query": "чем заняться с детьми",
+      "topics": [
+        "sights"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "antalya",
+      "query": "лучшие пляжи",
+      "topics": [],
+      "top1": false,
+      "top3": false,
+      "reason": "not_recognized"
+    },
+    {
+      "dest": "antalya",
+      "query": "как доехать до Кемера",
+      "topics": [
+        "local_transport"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "bali",
+      "query": "где жить серферу",
+      "topics": [
+        "areas"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "bali",
+      "query": "храмы и рисовые террасы",
+      "topics": [],
+      "top1": false,
+      "top3": false,
+      "reason": "not_recognized"
+    },
+    {
+      "dest": "kazan",
+      "query": "что посмотреть в кремле",
+      "topics": [
+        "sights"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "kazan",
+      "query": "попробовать татарскую кухню",
+      "topics": [],
+      "top1": false,
+      "top3": false,
+      "reason": "not_recognized"
+    },
+    {
+      "dest": "spb",
+      "query": "белые ночи и разводные мосты",
+      "topics": [],
+      "top1": false,
+      "top3": false,
+      "reason": "not_recognized"
+    },
+    {
+      "dest": "spb",
+      "query": "как передвигаться по городу",
+      "topics": [
+        "local_transport"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "tbilisi",
+      "query": "где поесть хинкали",
+      "topics": [
+        "food"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "tbilisi",
+      "query": "серные бани",
+      "topics": [],
+      "top1": false,
+      "top3": false,
+      "reason": "not_recognized"
+    },
+    {
+      "dest": "budva",
+      "query": "куда пойти вечером потанцевать",
+      "topics": [
+        "nightlife"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "budva",
+      "query": "what can I buy as a gift",
+      "topics": [
+        "shopping"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "sochi",
+      "query": "где тихо и много зелени",
+      "topics": [
+        "sights"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "sochi",
+      "query": "how do I get around the city",
+      "topics": [
+        "local_transport"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "istanbul",
+      "query": "что привезти домой",
+      "topics": [
+        "shopping"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "istanbul",
+      "query": "is it dangerous for tourists",
+      "topics": [
+        "safety"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "istanbul",
+      "query": "where to eat",
+      "topics": [
+        "food"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "kazan",
+      "query": "what to see",
+      "topics": [
+        "sights"
+      ],
+      "top1": true,
+      "top3": true,
+      "reason": "retrieved"
+    },
+    {
+      "dest": "rome",
+      "query": "сколько стоит перекусить",
+      "topics": [
+        "food"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "rome",
+      "query": "how to avoid pickpockets",
+      "topics": [
+        "safety"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "paris",
+      "query": "чем удивить ребёнка",
+      "topics": [
+        "sights"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    },
+    {
+      "dest": "tokyo",
+      "query": "где переночевать подешевле",
+      "topics": [
+        "areas"
+      ],
+      "top1": false,
+      "top3": false,
+      "reason": "no_grounded_result"
+    }
+  ]
+}

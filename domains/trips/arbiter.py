@@ -17,12 +17,13 @@ import re
 from difflib import SequenceMatcher
 
 from .geo import BY_ID
-from .rules import PLACE_QUESTIONS, find_destination, match_origin, time_expression_not_place
+from .dialogue import QUESTION_INPUT_FIELDS
+from .rules import DEFERABLE_QUESTIONS, PLACE_QUESTIONS, find_destination, match_origin, time_expression_not_place
 from .state import TripState, TripUpdate
 from .textparse import MONTH_RE, month_of, norm
 
 # Поля, где правила точнее модели: если правила что-то нашли, берём их значение
-RULES_WIN = {"date_from", "date_to", "nights", "month", "season", "year", "budget_total", "budget_night", "adults", "children", "pets", "trip_types", "transport", "lodging",
+RULES_WIN = {"date_from", "date_to", "nights", "month", "season", "year", "budget_total", "budget_night", "adults", "children", "pets", "trip_types", "scenic_views", "relaxed_walks", "transport", "lodging",
              "meal", "hotel_wishes", "abroad", "economy", "direct_only", "baggage",
              "max_travel_hours", "stars_min", "shift_days", "pick", "confirm", "after_sale", "origin", "question"}
 
@@ -99,7 +100,7 @@ def _value(raw: str, unit: str) -> set[int]:
 # «завтрак и бассейн есть?» — вопрос, а не требование, правила это различают
 _EVIDENCE_FIELDS = {"destination", "origin", "month", "date_from", "date_to", "nights", "adults", "children",
                     "budget_total", "budget_night", "max_travel_hours", "trip_types", "transport", "lodging",
-                    "abroad", "economy", "stars_min", "party_size"}
+                    "abroad", "economy", "stars_min", "party_size", "scenic_views", "relaxed_walks", "question"}
 # «С женой», «вдвоём», «с друзьями» возраст не подтверждают — агент уточнит про детей (решение команды)
 _ADULT_WORDS = r"взр|один|одна|\bсам\b|\bсама\b"
 
@@ -138,6 +139,9 @@ def _backed(field: str, value, quote: str | None, t: str) -> bool:
     if field not in _EVIDENCE_FIELDS or not quote or value is None or not _quote_in(quote, t):
         return False
     q = norm(quote)
+    if field == "question":
+        topics = set(str(value).split("|")) - {""}
+        return len(q.strip()) >= 4 and bool(topics) and topics <= PLACE_QUESTIONS
     if field == "destination":
         dest_id = find_destination(norm(str(value)))
         return norm(str(value))[:4] in q or (dest_id is not None and find_destination(q) == dest_id)
@@ -201,6 +205,27 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     service_fields = ("split_stays", "split_choice", "room_allocations", "search_scope", "flight_direction", "transfer_from", "transfer_to", "transfer_time", "transfer_date", "transfer_direction", "seat_class", "unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
+    # A model can recognise an unfamiliar way to defer a clarification, but
+    # only with a verbatim quote from this turn and no concrete answer or
+    # competing action. Deferral never chooses an option or authorises a
+    # transaction; required service details stay unknown and are requested.
+    quote = norm(quotes.get("unsure", "")).strip()
+    answer_fields = QUESTION_INPUT_FIELDS.get(state.pending_question or "", set())
+    explicit_answer = any(rule_data.get(field) is not None or
+                          (getattr(llm, field, None) is not None and
+                           _backed(field, getattr(llm, field), quotes.get(field), t))
+                          for field in answer_fields)
+    if (rules.unsure is None and llm.unsure is True and state.pending_question in DEFERABLE_QUESTIONS
+            and 4 <= len(quote) <= 120 and quote in t and not explicit_answer
+            and not rules.question and not llm.question and rules.pick is None and rules.confirm is None
+            and not llm.confirm and not rules.after_sale and not rules.resolve_trip_choice):
+        data["unsure"] = True
+    if llm.question and not rules.question:
+        # Semantic fallback only for read-only destination questions with a
+        # quoted user phrase. It cannot trigger purchases or discard a service.
+        if (not state.dest_id or "question" not in backed or rules.confirm is not None or
+                rules.pick is not None or rules.after_sale or rules.new_search or rules.search_scope):
+            data["question"] = None
     if state.showing == "real_hotels":
         # A model may guess a number for a duplicate or partial name. Only an
         # exact, unambiguous visible record or a stated number can select it.
@@ -224,6 +249,11 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         if cue and not re.search(cue, t) and field not in backed:
             notes.append(f"{field}={value!r}: нет опоры в тексте")
             data[field] = None
+
+    for field in ("scenic_views", "relaxed_walks"):
+        if (rule_data.get(field) is None and data.get(field) is not None and
+                (field not in backed or "?" in text)):
+            data[field] = None  # a question is not a confirmed wish
 
     if (rules.month is not None and rules.date_from is None and (data.get("date_from") or data.get("date_to"))
             and "date_from" not in backed):

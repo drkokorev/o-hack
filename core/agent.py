@@ -212,6 +212,7 @@ class Agent:
             values = by_rules.model_dump(exclude_none=True)
             if set(values) & pending_fields[pending]:
                 return by_rules, "rules"
+        needs_clarification = False
         if self.llm is not None and use_llm:
             messages = self.domain.extraction_messages(
                 session.state, session.history[-self.history_messages :], text, today
@@ -223,14 +224,27 @@ class Agent:
                     update, session.last_notes = arbitrate(session.state, text, update, by_rules)
                     if session.last_notes:
                         log.info("Сверка LLM: отклонено или исправлено полей: %d", len(session.last_notes))
-                    return update, "llm+rules" if by_rules.model_dump(exclude_none=True) else "llm"
-                if by_rules is None:
-                    return update, "llm"
-                gaps = {k: v for k, v in by_rules.model_dump(exclude_none=True).items()
-                        if getattr(update, k) is None}
-                return (update.model_copy(update=gaps), "llm+rules") if gaps else (update, "llm")
+                    if update.model_dump(exclude_none=True):
+                        return update, "llm+rules" if by_rules.model_dump(exclude_none=True) else "llm"
+                    needs_clarification = True  # a model interpretation was rejected, rather than an API failure
+                else:
+                    if by_rules is None:
+                        return update, "llm"
+                    gaps = {k: v for k, v in by_rules.model_dump(exclude_none=True).items()
+                            if getattr(update, k) is None}
+                    return (update.model_copy(update=gaps), "llm+rules") if gaps else (update, "llm")
         if by_rules is not None and by_rules.model_dump(exclude_none=True):
             return by_rules, "rules"
+        # On an otherwise unrecognized answer to a pending question, a domain
+        # may ask the model for a narrowly scoped classification. This is
+        # reached only after the same privacy gate as the first model call.
+        classify = getattr(self.domain, "interpret_clarification", None)
+        breaker = getattr(self.llm, "breaker", None) if self.llm is not None else None
+        if (needs_clarification and self.llm is not None and use_llm and classify is not None and
+                (breaker is None or breaker.state == "ok")):
+            inferred = classify(session.state, text, self.llm)
+            if inferred is not None and inferred.model_dump(exclude_none=True):
+                return inferred, "llm"
         return self.domain.update_model(), "none"
 
     def _compose(self, session: Session, text: str, step: Step) -> Step:

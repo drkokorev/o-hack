@@ -49,13 +49,18 @@ QUESTION_TOPICS = [("travel", r"время (?:в )?пути|сколько (?:е
                    ("transfer", r"трансфер|как добрат|до отеля|такси"), ("pets", r"собак|кошк|животн|питом"),
                    # вопросы о месте — отвечаем по путеводителю (RAG)
                    ("sights", r"что (?:\w+ )?(?:посмотреть|интересного|посетить)|достопримечательн|достопримичательн|куда (?:\w+ )?сходить|"
-                              r"чем (?:\w+ )?заняться|что (?:там )?делать|what\s+(?:to|can i)\s+see"),
+                              r"чем (?:\w+ )?(?:заняться|удивить)|что (?:там )?делать|какие\s+(?:\w+\s+)?музеи|"
+                              r"где\s+(?:\w+\s+)?покататься|где\s+(?:\w+\s+){0,3}(?:зелен|природ)|"
+                              r"what\s+(?:to|can i)\s+see"),
                    ("areas", r"какой район|в каком районе|где (?:\w+ ){0,2}(?:жить|остановиться|поселиться|переночевать)|where\s+(?:to|should i)\s+stay"),
                    ("food", r"где (?:\w+ ){0,2}(?:поесть|покушать|пожрать|перекусить|пообедать|поужинать)|что (?:\w+ )?попробовать|местн\w* кухн|"
-                            r"ресторан|кафе|where\s+(?:to|can i)\s+eat"),
-                   ("safety", r"безопасн|опасно|не опасно"),
-                   ("local_transport", r"как (?:там )?(?:передвигаться|ездить)|общественн\w* транспорт|метро|автобус|how\s+(?:to|do i)\s+get around"),
-                   ("shopping", r"что (?:привезти|купить)\s+(?:домой|в подарок|на память)|где (?:купить|пошопиться)|сувенир|where\s+(?:to|can i)\s+shop"),
+                            r"ресторан|кафе|сколько\s+стоит\s+перекусить|where\s+(?:to|can i)\s+eat"),
+                   ("safety", r"безопасн|опасно|не опасно|\bdangerous\b|\bsafe\b|\bpickpockets?\b"),
+                   ("local_transport", r"как (?:там )?(?:передвигаться|ездить|пользоваться|доехать|добраться|попасть)|"
+                                       r"общественн\w* транспорт|метро|автобус|\bmetro\b|public\s+transport|"
+                                       r"how\s+(?:to|do i)\s+get around"),
+                   ("shopping", r"что (?:привезти|купить)\s+(?:домой|в подарок|на память)|где (?:купить|пошопиться)|сувенир|"
+                                r"where\s+(?:to|can i)\s+shop|what\s+can\s+i\s+buy"),
                    ("nightlife", r"куда (?:пойти|сходить)\s+(?:вечером|танцевать)|ночн\w* клуб|ночн\w* жизн")]
 PLACE_QUESTIONS = frozenset({"sights", "areas", "food", "safety", "local_transport", "shopping", "nightlife"})
 CONFIRM_STRONG = (r"^(да\b(?!\s*нет)|оформля|оформи|бронир|оплачива|оплати|покупа|купи|куплю|подтвержда|согласн|верно|"
@@ -67,6 +72,48 @@ _CONFIRM_LEAD = r"^(?:(?:всё|все|ну|да|хорошо|отлично|н�
 CONFIRM_SHORT = r"^(ок|окей|ага|угу|конечно|давай|давайте|го|поехали|отлично|супер)[.!]*$"
 ORDINALS = {"перв": 1, "втор": 2, "трет": 3, "четв": 4, "пят": 5}
 _OFFSET_WORDS = {"день": 1, "дня": 1, "дней": 1, "сутки": 1, "неделю": 7, "недели": 7}
+
+# Guest counts have many case forms in ordinary Russian ("для двух взрослых",
+# "с тремя детьми"). Keep them local to guest nouns: globally replacing these
+# words would also change budgets, dates and other unrelated quantities.
+_GUEST_NUMBERS = {
+    "один": 1, "одна": 1, "одного": 1, "одной": 1, "одним": 1,
+    "два": 2, "две": 2, "двое": 2, "двоих": 2, "двух": 2, "двум": 2, "двумя": 2,
+    "три": 3, "трое": 3, "троих": 3, "трех": 3, "трем": 3, "тремя": 3,
+    "четыре": 4, "четверо": 4, "четверых": 4, "четырех": 4, "четырем": 4, "четырьмя": 4,
+    "пять": 5, "пятеро": 5, "пяти": 5, "шесть": 6, "шести": 6,
+    "семь": 7, "семи": 7, "восемь": 8, "восьми": 8, "девять": 9, "девяти": 9,
+    "десять": 10, "десяти": 10,
+}
+_GUEST_NUMBER = r"(?:\d{1,2}|" + "|".join(sorted(_GUEST_NUMBERS, key=len, reverse=True)) + r")"
+
+_DELEGATED_REPLY = re.compile(
+    r"^\s*(?:(?:ну|тогда|пока|ладно|давай|давайте|просто|лучше)\s+)*"
+    r"(?:(?:сам(?:а|и)?\s+)?(?:предложи(?:те)?|посоветуй(?:те)?|подбери(?:те)?|выбери(?:те)?|"
+    r"выбирай(?:те)?|реши(?:те)?|решай(?:те)?|придумай(?:те)?)"
+    r"(?:\s+(?:сам(?:а|и)?|мне|за\s+меня|что[- ]нибудь|на\s+(?:свое|свой)\s+(?:усмотрение|вкус))){0,2}"
+    r"|(?:на\s+(?:свое|твое)\s+усмотрение|как\s+(?:сам|сама)\s+решишь|как\s+посоветуешь|"
+    r"you\s+(?:choose|decide)|up\s+to\s+you))\s*[.!?]*\s*$"
+)
+DEFERABLE_QUESTIONS = frozenset({
+    "when", "duration", "origin", "destination", "people", "children", "children_ages",
+    "rooms", "room_allocation", "budget", "passengers", "flight_date", "flight_direction",
+    "transfer_route", "transfer_direction", "transfer_date", "transfer_time",
+    "multi_hotel", "split_stays", "split_choice", "lodging",
+})
+
+
+def _guest_count(text: str, noun: str) -> int | None:
+    """Last explicitly positive count beside the appropriate guest noun."""
+    found = []
+    for match in re.finditer(rf"(?<![а-я\d])(?P<count>{_GUEST_NUMBER})\s*{noun}", text):
+        before = _NEG_BEFORE.search(text[max(0, match.start() - 30):match.start()])
+        after = re.match(r"^\s+не\s+(?:едут|едет|летят|летит|поедут|полетят|будут|нужн\w*)\b",
+                         text[match.end():match.end() + 32])
+        if not before and not after:
+            word = match.group("count")
+            found.append(int(word) if word.isdigit() else _GUEST_NUMBERS[word])
+    return found[-1] if found else None
 
 
 _NEG_BEFORE = re.compile(r"(\bне|\bбез|\bвместо|\bкроме|\bпередумал(?:а|и)?\s+(?:насчет|про)|"
@@ -140,7 +187,8 @@ def _fuzzy_destination(word: str) -> str | None:
 def _unknown_place(text: str) -> str | None:
     """Город или страна вне каталога: «в Париж», «в Лиссабоне» — чтобы честно сказать, а не подменить молча."""
     not_place_stems = re.compile(r"^(?:недел|выходн|дн|отпуск|путешеств|поездк|начал|середин|конц|следующ|"
-                                 r"этот|этом|друг|тепл|холод|город|страна|росси|самолет|поезд|машин|палат|кемпинг|отел)")
+                                 r"этот|этом|друг|тепл|холод|город|страна|росси|самолет|поезд|машин|палат|кемпинг|отел|"
+                                 r"ресторан|кафе|музе|магазин|аэропорт|вокзал|клуб|бар|метро)")
     for m in re.finditer(r"\b(?:в|во)\s+([а-яё]{3,}(?:-[а-яё]+)?)", text, re.IGNORECASE):
         word = m.group(1)
         if re.search(r"игра(?:ю|ем|ешь|ете|ет|ют|ть|л|ла|ли)\s+$", norm(text[:m.start()])):
@@ -343,6 +391,17 @@ def _shift(t: str) -> int | None:
 def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
     t = norm(text)
     data: dict = {}
+    # The user may delegate a suggestion instead of literally saying "не
+    # знаю". Only treat a standalone reply as deferral, and never as consent
+    # to book, pay, cancel, or silently choose mandatory traveller details.
+    delegated = bool(_DELEGATED_REPLY.fullmatch(t))
+    without_dates = bool(state.pending_question == "when" and re.fullmatch(
+        r"\s*(?:(?:ну|давай|давайте|пока)\s+)*(?:пока\s+)?без\s+(?:конкретн\w*\s+)?дат(?:ы)?\s*[.!?]*\s*", t))
+    if state.pending_question in DEFERABLE_QUESTIONS and (delegated or without_dates):
+        return TripUpdate(unsure=True, wants_ideas=True if state.pending_question == "when" and not state.dest_id
+                          and not state.search_scope else None)
+    if delegated and not state.dest_id and not state.pending_question and state.stage in {"start", "destination"}:
+        return TripUpdate(wants_ideas=True)
     if state.pending_question == "multi_hotel" and re.search(r"сравн|на одни даты|одинаков\w* дат", t):
         return TripUpdate(search_scope="hotel_only")
     if state.pending_question == "multi_hotel" and re.search(r"по очереди|поочередно|сначала|разные даты", t):
@@ -367,7 +426,12 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["search_scope"] = "multi_hotel"
     elif re.search(r"(?:только|лишь)\s+трансфер|(?:ищу|найди|подбери|нужен|закажи)\s+(?:мне\s+)?трансфер", t):
         data["search_scope"] = "transfer_only"
-    elif re.search(r"(?:только|лишь)\s+(?:отел\w*|жиль[её]|гостиниц\w*|проживани\w*)|(?:ищу|найди|подбери)\s+(?:только\s+)?(?:жиль[её]|гостиниц\w*)", t):
+    elif (re.search(r"(?:только|лишь)\s+(?:отел\w*|жиль[её]|гостиниц\w*|проживани\w*)", t) or
+          ((not state.search_scope and state.stage == "start") and
+           state.pending_question != "lodging" and
+           (not state.pending_question or re.match(r"^\s*(?:ищу|найди|подбери)\b", t)) and
+           re.search(r"^\s*(?:(?:ищу|найди|подбери)\s+(?:мне\s+)?)?(?:отел\w*|жиль[её]|гостиниц\w*)\b", t) and
+           not re.search(r"перел[её]т|самол[её]т|авиабилет|рейс|трансфер|поезд(?!к)|тур\b", t))):
         data["search_scope"] = "hotel_only"
     elif (re.search(r"(?:только|лишь|без\s+отеля).*?(?:поезд(?!к)|\bж/?д\b|сапсан|ласточк)", t) or
           (re.search(r"(?:поезд(?!к)|\bж/?д\b).*?без\s+(?:отеля|гостиницы|проживания|жилья)", t))):
@@ -551,6 +615,12 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["economy"] = True
     if re.search(r"отдох|поехать|съездить|отпуск|путешеств|куда|поездк|\bтур\b|развеяться|выбраться|посоветуй|идеи", t):
         data["wants_ideas"] = True
+    for field, pattern in (
+        ("scenic_views", r"красив\w*\s+(?:вид|пейзаж)\w*|живописн\w*\s+(?:вид|пейзаж)\w*|панорамн\w*\s+вид\w*"),
+        ("relaxed_walks", r"(?:спокойн|неспешн|легк)\w*\s+прогул\w*|прогул\w*\s+без\s+спешки"),
+    ):
+        if (match := re.search(pattern, t)) and not _question_clause(t, match.start(), match.end()):
+            data[field] = not _negated_at(t, match.start(), match.end())
     if re.search(r"майски", t) and not d_in:
         data["month"] = 5  # праздники указывают месяц, но не конкретные даты или длительность
     m = (re.search(rf"на\s+{NUM}\s+(ноч|сут)", t) or re.search(rf"\b{NUM}\s*(?:ноч|сут|н\b)", t)
@@ -587,11 +657,9 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["clear_duration"] = True
 
     # Состав
-    m = re.search(rf"{NUM}\s*(?:взросл|взр\b)", t)
-    if m:
-        data["adults"] = num_word(m.group(1))
-    elif (inflected := re.search(r"\b(?:на\s+)?(двоих|троих|четверых)\s+(?:взросл|взр\b)", t)):
-        data["adults"] = {"двоих": 2, "троих": 3, "четверых": 4}[inflected.group(1)]
+    adult_count = _guest_count(t, r"(?:взросл\w*|взр\b)")
+    if adult_count is not None:
+        data["adults"] = adult_count
     elif (mm := re.search(rf"(?:не\s+\w+,?\s+а|а)\s+(двое|трое|четверо|пятеро|{NUM})\b(?!{_UNITS})", t)) and re.search(r"\bне\s+(двое|трое|один|одна|четверо)", t):
         data["party_size"] = num_word(mm.group(1))  # «не двое, а трое»
     elif (n := parse_guests(text)) is not None and re.search(r"человек|чел\b|персон|нас\b|вчетвером|втроём|втроем|на двоих|на троих|на четверых|\bтрое\b|\bчетверо\b", t):
@@ -615,11 +683,9 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["party_size"] = 2
     if re.search(r"добав\w* (ещ[её] )?(одного )?взросл|ещ[её] (один|одна|одного) (взросл|человек)|\+\s*1", t):
         data["add_adults"] = 1
-    kids = (re.search(rf"(?:с|и)\s+(?:{NUM}|(одним|одной|двумя|тремя))\s+(?:детьми|дет|реб[её]н)", t) or
-            re.search(rf"\b{NUM}\s*(?:детей|ребенка|ребенок|дети|реб\b|дет\b)", t))
-    if kids:
-        word = kids.group(1) or (kids.group(2) if kids.lastindex and kids.lastindex >= 2 else "")
-        data["children"] = {"двумя": 2, "тремя": 3}.get(word, num_word(word))
+    kids = _guest_count(t, r"(?:детей|дети|детьми|детям|ребен\w*|реб\b|дет\b)")
+    if kids is not None:
+        data["children"] = kids
     elif re.search(r"с реб[её]нк|с дочк|с сыном|с малыш|с ребенк|и реб[её]н|и дочк|и сын\b|и сыном|\+\s*реб|"
                    r"[,;]\s*(?:и\s+)?(?:ребенок|дочка|сын|малыш)\b", t):
         data["children"] = 1
@@ -840,7 +906,8 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["show_real_hotels"] = True
     asking = "?" in text or re.search(r"\b(можно ли|если|а что если|какие условия|условия отмены)\b", t)
     if "?" in text or re.search(r"\bможно ли\b|\bадрес\b|где (?:находится|расположен)|"
-                                r"^(а |какая |какие |какой |какое |нуж(?:ен|на|но|ны) ли|есть ли|сколько )|"
+                                r"^(а |какая |какие |какой |какое |в каком |безопасно ли |не опасно ли |нуж(?:ен|на|но|ны) ли|есть ли|сколько |"
+                                r"где |куда |что |чем |как |where |what |how |is )|"
                                 r"\b(?:есть|включен[ао]?|входит)\s*$", t):
         questions = []
         for topic, pattern in QUESTION_TOPICS:

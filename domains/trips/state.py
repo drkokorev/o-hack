@@ -29,6 +29,8 @@ class TripParams(BaseModel):
     visa_free_requested: bool | None = Field(None, description="Пользователь хочет безвизовый въезд; актуальные условия не подтверждены")
     trip_types: list[str] | None = Field(None, description="Коды типа отдыха: sea, beach, warm, mountains, ski, "
                                          "city, culture, nature, food, spa, exotic, surf")
+    scenic_views: bool | None = Field(None, description="Явное пожелание красивых видов; не подтверждает их наличие")
+    relaxed_walks: bool | None = Field(None, description="Явное пожелание спокойных или неспешных прогулок; доступность маршрутов не проверена")
     month: int | None = Field(None, ge=1, le=12, description="Месяц поездки 1–12, если точных дат нет")
     season: str | None = Field(None, description="Время года без указанного месяца: summer, autumn, winter, spring")
     year: int | None = Field(None, ge=1, le=9999, description="Год поездки, только если пользователь явно его назвал")

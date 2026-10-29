@@ -23,6 +23,8 @@ QUESTION_INPUT_FIELDS = {
     "passengers": {"adults", "party_size"},
     "children": {"children"},
     "children_ages": {"children_ages"},
+    "rooms": {"rooms"},
+    "budget": {"budget_total", "budget_per_person", "budget_night"},
     "room_allocation": {"room_allocations", "rooms"},
     "split_stays": {"split_stays"},
     "split_choice": {"split_choice"},
@@ -30,6 +32,7 @@ QUESTION_INPUT_FIELDS = {
     "transfer_direction": {"transfer_direction"},
     "transfer_time": {"transfer_time"},
     "flight_direction": {"flight_direction"},
+    "multi_hotel": {"search_scope"},
     "lodging": {"lodging"},
     "transport": {"transport"},
 }
@@ -128,7 +131,33 @@ def ideas(state: TripState, *, exclude_shown: bool = False) -> Step:
               "highlights": list(d.highlights)} for d in places]
     payload = {"kind": "ideas", "items": items}
     state.last_view = payload
-    lines = ["Вот несколько идей. Это направления для вдохновения: даты, стоимость и время в пути пока не рассчитывал."]
+    lines = ["Вот несколько направлений для вдохновения."]
+    if state.date_from and state.date_to:
+        label = "Ориентировочный период по демоданным" if state.dates_assumed else "Ваши даты"
+        lines.append(f"{label}: {state.date_from:%d.%m.%Y}–{state.date_to:%d.%m.%Y}.")
+    elif state.date_from:
+        lines.append(f"Учитываю начало поездки: {state.date_from:%d.%m.%Y}.")
+    missing = []
+    if not (state.date_from or state.month):
+        missing.append("месяц или даты")
+    if not state.nights and not (state.date_from and state.date_to):
+        missing.append("длительность")
+    if not state.origin:
+        missing.append("город отправления")
+    if not state.adults or state.children_unknown:
+        missing.append("состав путешественников")
+    if missing:
+        lines.append("Цены и время в пути пока не рассчитаны: для оценки нужны " + ", ".join(missing) + ".")
+    else:
+        lines.append("Цены и время в пути для этих идей пока не рассчитаны.")
+    if state.origin and state.origin_inferred:
+        lines.append(f"Город отправления {state.origin} определён примерно по IP. Поправьте меня, если это не так.")
+    if state.budget_total is None and state.budget_per_person is None and state.budget_night is None:
+        lines.append("При желании укажите бюджет на всю поездку; можно продолжить и без него.")
+    wishes = (["красивые виды"] if state.scenic_views else []) + (["спокойные прогулки"] if state.relaxed_walks else [])
+    if wishes:
+        lines.append("Сохранил пожелания: " + " и ".join(wishes) + ". Для конкретных мест виды и подходящие "
+                     "маршруты пока не проверены; они не служили подтверждённым фильтром.")
     if off_season:
         lines.append(f"В стране {state.country} в это время не купальный сезон по историческим средним: "
                      + "; ".join(f"{d.name} — {climate(d.id, month).describe()}" for d in places if climate(d.id, month)) + ".")

@@ -84,6 +84,8 @@ def verify(answer: str, context: str, user_text: str, known_tokens: set[str], fa
     if (re.search(r"демонстрац|смоделир", facts, re.IGNORECASE)
             and not re.search(r"демо|смоделир|модельн|условн", answer, re.IGNORECASE)):
         problems.append("потеряна пометка, что данные демонстрационные")
+    if "путеводителя могут устареть" in facts.lower() and "устар" not in answer.lower():
+        problems.append("потеряна оговорка об актуальности путеводителя")
     if "по данным языковой модели" in facts and "модел" not in answer.lower():
         problems.append("потеряна пометка, что место определила модель")
     if _GUSH.search(answer):

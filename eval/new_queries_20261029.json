@@ -1,0 +1,18 @@
+[
+  {"id":"adult_genitive_hotel", "text":"Только отель в Сочи с 12 по 18 ноября для двух взрослых и ребенка 5 лет, с завтраком, до 90 тысяч на всех", "expected":{"search_scope":"hotel_only", "adults":2, "children":1, "children_ages":[5], "date_from":"2026-11-12", "date_to":"2026-11-18", "budget_total":90000, "meal":"breakfast"}},
+  {"id":"three_adults", "text":"Отель в Казани для трёх взрослых с 5 по 8 декабря", "expected":{"search_scope":"hotel_only", "adults":3}},
+  {"id":"four_adults", "text":"Номер на четырех взрослых в Сочи", "expected":{"adults":4}},
+  {"id":"two_children", "text":"Отель в Сочи для 2 взрослых и двух детей", "expected":{"adults":2, "children":2}},
+  {"id":"three_children", "text":"В Казань с 2 взрослыми и тремя детьми", "expected":{"children":3}},
+  {"id":"adults_corrected", "text":"Нужен отель в Сочи не для двух взрослых, а для трех взрослых", "expected":{"adults":3}},
+  {"id":"no_children", "text":"В Казань для двух взрослых без детей", "expected":{"adults":2, "children":0}},
+  {"id":"food_question_no_mark", "text":"где поесть в Стамбуле", "expected_contains":{"question":["food"]}},
+  {"id":"food_question_english", "text":"where to eat in Istanbul", "expected_contains":{"question":["food"]}},
+  {"id":"sights_question_no_mark", "text":"что посмотреть в Казани", "expected_contains":{"question":["sights"]}},
+  {"id":"question_not_requirement", "text":"Есть ли багаж?", "expected":{"baggage":null}},
+  {"id":"tomorrow_not_next_month", "text":"Не завтра, а в следующем месяце", "expected":{"date_from":null, "month":11, "year":2026}},
+  {"id":"baggage_and_class", "text":"Только перелёт из Москвы в Казань 10 декабря 2026 в одну сторону бизнес-класс с багажом", "expected":{"search_scope":"flight_only", "flight_direction":"one_way", "seat_class":"бизнес", "baggage":true}},
+  {"id":"two_room_count", "text":"Только отель в Казани на 2 номера, 3 взрослых и ребенок", "expected":{"search_scope":"hotel_only", "rooms":2, "adults":3, "children":1}},
+  {"id":"no_assumed_adult", "text":"Хочу в Казань с другом", "expected":{"party_size":2, "adults":null}},
+  {"id":"tour_not_hotel", "text":"Ищу пакетный тур в Турцию", "expected":{"search_scope":"operator_tour"}}
+]

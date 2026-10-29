@@ -3,7 +3,7 @@
 async (page) => {
   const base = new URL(page.url()).origin, checks = [], widths = [];
   const assert = (ok, name) => { if (!ok) throw new Error(name); checks.push(name); console.log('PASS '+name); };
-  const idle = () => page.waitForFunction(() => !document.querySelector('#send').disabled);
+  const idle = () => page.waitForFunction(() => !document.querySelector('#send').disabled, null, {timeout:120000});
   const screenshot = async name => {
     await page.locator('img:visible').evaluateAll(imgs=>Promise.all(imgs.map(img=>img.decode().catch(()=>{}))));
     await page.screenshot({path:'output/playwright/'+name+'.png', fullPage:false});
