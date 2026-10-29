@@ -20,15 +20,13 @@ def choose_event(agent, session, event_id):
     # Exact city identity; never choose the closest unrelated destination.
     matches = [dest for dest in DESTINATIONS if dest.name == event['city'] and dest.country == event['country']]
     dest = matches[0] if len(matches) == 1 else None
-    candidate = agent.domain.merge(state.model_copy(deep=True), TripUpdate(destination=dest.id if dest else event['city']))
+    if not dest or event.get('destination_id') != dest.id:
+        raise HTTPException(status_code=422, detail='Для этого события пока нет подбора поездки. Выберите другое событие.')
+    candidate = agent.domain.merge(state.model_copy(deep=True), TripUpdate(destination=dest.id))
     state = candidate
     if state.pending_trip_candidate:
         raise HTTPException(status_code=409, detail='Сначала завершите изменение текущей поездки.')
     state.selected_event = {key: event[key] for key in ('id', 'name', 'city', 'country', 'start', 'end', 'dates', 'url')}
-    if not dest:
-        state.country = event['country']
-        state.place_country = event['country']
-        state.map_place = {'id':f"event-city:{event_id}", 'name':event['city'], 'country':event['country'], 'lat':event['lat'], 'lon':event['lon']}
     # Event dates are not check-in/check-out dates. Existing dates remain intact.
     step = agent.domain.step(state)
     intro = f"Повод для поездки: {event['name']}, {event['city']} — {event['dates']}. Билеты на событие не включены."

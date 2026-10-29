@@ -62,22 +62,13 @@ experience.showChat = () => journeyUI.show("chat", false);
 experience.showIdeas = () => {renderWelcome();journeyUI.show("results");};
 
 function renderHead(data) {
-  const p = (data && data.payload) || {};
-  const trip = p.trip || (p.order && { origin_code: p.order.origin_code, dest_code: p.order.dest_code, origin: p.order.origin, dest: p.order.dest });
-  if (p.kind === "order") { $("head").replaceChildren(); return; }
-  if (trip && trip.dest) {
-    $("head").replaceChildren(el("div", { class: "route" },
-      el("h1", {class:"route-title"}, el("span", {}, trip.origin), el("span", {"aria-hidden":"true",class:"route-arrow"}, "→"), el("span", {}, trip.dest)),
-      el("p", { class: "names" }, [trip.dates, trip.people].filter(Boolean).join(" · "))));
-    routeWeather(trip,data.trip_summary);
-  } else if (data && (data.understood || []).length) {
-    const title = ["ideas","destinations"].includes(p.kind) ? "Куда отправимся?" : "Уточним вашу поездку";
-    $("head").replaceChildren(el("div", { class: "hero" }, el("h1", {}, title)));
-  } else {
-    $("head").replaceChildren(el("div", { class: "hero" },
-      el("h1", {}, "Соооберём вашу поездку"),
-      el("p", {}, "Отель, дорога и трансферы — по вашим пожеланиям.")));
-  }
+  const p=data?.payload||{},stage=data?.stage||'start';
+  const title={start:data?.understood?.length?'Уточним вашу поездку':'Соооберём вашу поездку',destination:'Туда, где вам хорошо',plan:'Выберем то самое',cart:'Всё складывается',payment:'Почти поехали',booked:'Можно предвкушать',hotel_search:'Найдём тот самый отель',transfer_search:'Встретим и довезём',flight_search:'Выберем дорогу'}[stage]||'Соооберём вашу поездку';
+  const trip=p.trip||(p.order&&{origin:p.order.origin,dest:p.order.dest});
+  const route=trip?.dest?[trip.origin,trip.dest].filter(Boolean).join(' → '):null;
+  const subtitle=route||(!data?'Отель, дорога и трансферы — по вашим пожеланиям.':null);
+  $("head").replaceChildren(el('div',{class:'hero'},el('h1',{},title),subtitle?el('p',{class:route?'stage-route':null},subtitle):null));
+  if(trip?.dest)routeWeather(trip,data.trip_summary);
 }
 
 function renderConditions(data) {
@@ -402,7 +393,7 @@ const views = {
   packages(p) {
     drawMap(tripRoute(p.trip));
     const out = [];
-    if(p.notice)out.push(el("p",{class:"notice"},p.notice));
+    if(p.notice && !lastData?.reply?.includes(p.notice))out.push(el("p",{class:"notice"},p.notice));
     if(p.diff?.length)out.push(el("p",{class:"notice"},"Пересобрал план: "+p.diff.join("; ")+"."));
     if(p.relaxed?.length)out.push(el("p",{class:"notice"},"Чтобы что-то нашлось, я "+p.relaxed.join(", ")+"."));
     const packageCards=el("div",{class:"cards"},p.items.map((k,i)=>el("article",{class:"card package-card"+(i===0?" best":"")},
@@ -570,11 +561,12 @@ function renderSuggest(data) {
 function render(data) {
   sessionId = data.session_id; lastData = data;
   renderStages(data.stage); renderHead(data); renderConditions(data); renderSuggest(data);
+  tripMap.setTripContext?.(data.trip_summary);
   document.querySelector(".board").classList.toggle("compact", ["plan", "cart", "booked"].includes(data.stage));
   const p = data.payload || {};
   $("map").hidden = p.kind === "order";
   const notices = [p.kind !== "packages" ? p.notice : null, p.travel_notice, p.pet_notice]
-    .filter(Boolean).map(text => el("p", {class:"notice"}, text));
+    .filter(text=>text && !data.reply?.includes(text)).map(text => el("p", {class:"notice"}, text));
   if (views[p.kind]) $("view").replaceChildren(...[...notices, ...views[p.kind](p)].filter(Boolean));
   else if (["greeting", "flight_results", "service_results"].includes(p.kind)) { $("view").replaceChildren(); drawMap({}); }
   else if (p.kind === "question") {

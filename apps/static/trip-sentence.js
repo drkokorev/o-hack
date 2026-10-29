@@ -1,40 +1,32 @@
-/* One physical summary moves with the active panel; fields are never duplicated. */
+/* The chosen facts belong to the conversation, in both the full site and widget. */
 window.createTripContextLayout = () => {
-  const panel=document.getElementById('trip-context'), board=document.getElementById('board');
-  const chatAnchor=document.createComment('trip conditions in chat');
-  panel.before(chatAnchor);
+  const panel=document.getElementById('trip-context');
   const body=document.createElement('div');body.id='trip-context-body';
   body.append(...panel.childNodes);panel.append(body);
   const toggle=document.createElement('button');toggle.type='button';toggle.id='trip-context-toggle';
   toggle.setAttribute('aria-controls',body.id);
-  const label=document.createElement('span'), preview=document.createElement('span');
+  const label=document.createElement('span'),preview=document.createElement('span');
   label.className='trip-context-label';preview.className='trip-context-preview';
-  toggle.append(label,preview);panel.prepend(toggle);
+  toggle.append(label,preview);panel.prepend(toggle);panel.classList.add('is-compact');
   let expanded=false;
-  function place(){
-    const compact=window.ODIN_EMBED||matchMedia('(max-width:900px)').matches;
-    const inBoard=!compact||['results','map'].includes(document.body.dataset.panel);
-    const focus=panel.contains(document.activeElement)?document.activeElement:null;
-    if(inBoard&&panel.parentElement!==board)board.prepend(panel);
-    else if(!inBoard&&panel.parentElement!==chatAnchor.parentElement)chatAnchor.after(panel);
-    panel.classList.toggle('is-compact',compact);
-    toggle.hidden=!compact;body.hidden=compact&&!expanded;
-    toggle.setAttribute('aria-expanded',String(expanded));
-    label.textContent=expanded?'Свернуть условия':'Условия поездки';
-    preview.hidden=expanded;
-    if(focus&&focus!==document.activeElement)(body.hidden?toggle:focus).focus({preventScroll:true});
+  function paint(){
+    body.hidden=!expanded;toggle.setAttribute('aria-expanded',String(expanded));
+    label.textContent=expanded?'Свернуть условия':'Условия поездки';preview.hidden=expanded;
   }
-  toggle.onclick=()=>{expanded=!expanded;place();};
-  window.addEventListener('resize',place);
-  place();
+  toggle.onclick=()=>{expanded=!expanded;paint();};paint();
+  // The shared footer is outside both panels. Reserve its real wrapped height.
+  const root=document.documentElement,top=document.querySelector('header.top'),footer=document.querySelector('.quiet-footer'),nav=document.querySelector('.panel-navigation');
+  const fit=()=>{root.style.setProperty('--app-top',`${top.offsetHeight}px`);root.style.setProperty('--footer-height',`${footer.offsetHeight}px`);root.style.setProperty('--nav-height',`${nav.offsetHeight}px`);};
+  const observer=new ResizeObserver(fit);[top,footer,nav].forEach(n=>observer.observe(n));fit();
   return {update(data){
     const s=data?.trip_summary||{};
     const route=[s.origin,s.destination].filter(Boolean).join(' → ');
     const dates=panel.querySelector('[data-trip-field="dates"]');
-    preview.textContent=[route,s.date_from&&dates?dates.textContent:null].filter(Boolean).join(' · ')||'Уточняем детали';
-    toggle.title=preview.textContent;
-    if(!data)expanded=false;
-    place();
+    const people=panel.querySelector('[data-trip-field="people"]');
+    const budget=panel.querySelector('[data-trip-field="budget"]');
+    const known=[route,s.date_from&&dates?dates.textContent:null,s.adults&&people?people.textContent:null,s.budget_total&&budget?budget.textContent:null].filter(Boolean);
+    preview.textContent=known.join(' · ')||(data?.understood||[]).slice(0,2).join(' · ')||'Ваши пожелания';
+    toggle.title=preview.textContent;if(!data)expanded=false;paint();
   }};
 };
 
@@ -83,12 +75,12 @@ window.createTripSentence = ({container, onEdit}) => {
       parts.push(control(key, value, label, missing));
     };
     const scope = s.search_scope;
-    if (!['hotel_only', 'transfer_only', 'split_hotel'].includes(scope)) {
+    if (s.origin && !['hotel_only', 'transfer_only', 'split_hotel'].includes(scope)) {
       const origin = (info?.origins || []).find(o => o.name === s.origin);
       put('', 'origin', s.origin ? origin?.from || `откуда: ${s.origin}` : 'откуда?', 'Город отправления', !s.origin);
       if (s.origin) remove(`из: ${s.origin}`);
     }
-    if (scope !== 'split_hotel') {
+    if (destination && scope !== 'split_hotel') {
       const direction = destination ? directions[destination] || (known ? `в ${destination}` : `куда: ${destination}`) : 'куда?';
       put(' ', 'destination', direction, 'Направление', !destination);
       remove(destination);
@@ -96,7 +88,7 @@ window.createTripSentence = ({container, onEdit}) => {
     const start = date(s.date_from, s.date_from?.slice(0, 4) !== s.date_to?.slice(0, 4)), end = date(s.date_to);
     if (scope !== 'transfer_only') {
       const dates = start && end ? `${date(s.date_from, s.date_from.slice(0,4)!==s.date_to.slice(0,4), true)} — ${date(s.date_to, true, true)}` : s.date_from ? `с ${date(s.date_from, true, true)}` : 'когда?';
-      put(', ', 'dates', dates, 'Даты поездки', !s.date_from);
+      if (s.date_from) put(', ', 'dates', dates, 'Даты поездки');
       if (start && end) remove(`${start} — ${end}`);
       else if (s.date_from) remove(`начало: ${date(s.date_from)}`);
       if (s.nights && !['flight_only', 'train_only'].includes(scope)) {
@@ -113,11 +105,11 @@ window.createTripSentence = ({container, onEdit}) => {
       const children = `${s.children} ${plural(s.children, 'ребёнок', 'ребёнка', 'детей')}`;
       people.push(children); remove(children);
     }
-    put(', ', 'people', people.join(' и ') || 'кто едет?', 'Путешественники', !people.length);
+    if (people.length) put(', ', 'people', people.join(' и '), 'Путешественники');
     const money = s.budget_total ? new Intl.NumberFormat('ru-RU').format(s.budget_total) : null;
-    put(', ', 'budget', money ? `до ${money} ₽ на всех` : 'бюджет?', 'Общий бюджет', !money);
+    if (money) put(', ', 'budget', `до ${money} ₽ на всех`, 'Общий бюджет');
     if (money) remove(`бюджет ${money} ₽`);
-    container.replaceChildren('Едем ', ...parts, '.');
+    container.replaceChildren(...(parts.length ? [s.origin || destination ? 'Едем ' : '', ...parts, '.'] : []));
     // Only exact duplicates of represented values disappear. Ages, transport,
     // per-person budgets, accessibility needs and assumptions stay available.
     const normalize = value => String(value).replace(/\s*\(примерно по IP\)/g, '').replace(/[\s\u00a0\u202f]+/g, ' ').trim();

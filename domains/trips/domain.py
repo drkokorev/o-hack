@@ -1668,7 +1668,7 @@ class TripsDomain:
                 lines.append(f"   Проверил состыковки: {'; '.join(risky[:3])}")
         if state.assumptions:
             lines += ["", "Я предположил: " + ", ".join(state.assumptions) + ". Поправьте, если не так."]
-        lines += ["", "Какой вариант берём? Можно поменять условия: «на два дня позже», «дешевле», «другие отели»."]
+        lines += ["", "Выберите подходящий вариант или уточните пожелания."]
         payload = {"kind": "packages", "trip": self._trip_card(trip), "diff": diff, "relaxed": relaxed, "notice": notice,
                    "calendar": self._calendar(trip, self.today()),
                    "assumptions": state.assumptions,

@@ -16,7 +16,7 @@ window.createPreferences = function createPreferences(map) {
       maximumFractionDigits: 0 }).format(value / rates.rub_per_unit[currency.value]);
   }
   function apply() {
-    document.querySelectorAll("#view, #conditions, #trip-summary-line, #log .bot, #say").forEach((root) => {
+    document.querySelectorAll("#view, #conditions, #trip-summary-line, .trip-context-preview, #log .bot, #say").forEach((root) => {
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
       nodes.forEach((node) => {

@@ -10,7 +10,7 @@ async page=>{
     await page.setViewportSize({width,height:width>=1024?960:740});
     if(width<=900)await page.locator('button[data-panel="chat"]').click();
     const panel=page.locator('#trip-context'),toggle=page.locator('#trip-context-toggle');
-    if(width<=900&&await toggle.getAttribute('aria-expanded')==='true')await toggle.click();
+    if(await toggle.getAttribute('aria-expanded')==='true')await toggle.click();
     const measurement=await page.evaluate(()=>{
       const p=document.getElementById('trip-context'),c=document.getElementById('conversation-scroll');
       return {width:innerWidth,height:p.getBoundingClientRect().height,chatHeight:c.getBoundingClientRect().height,
@@ -19,15 +19,15 @@ async page=>{
     });samples.push(measurement);
     ok(measurement.one&&!measurement.overflow,`one summary without horizontal overflow: ${width}`);
     if(width>900){
-      ok(await page.locator('#board > #trip-context').count()===1,`wide summary is outside chat: ${width}`);
-      ok(await page.locator('#head .route-title').isHidden(),`route is not duplicated: ${width}`);
+      ok(await page.locator('.chat > #trip-context').count()===1,`wide summary stays in chat: ${width}`);
+      ok(await page.locator('#head h1').isVisible(),`stage heading stays visible: ${width}`);
     }else{
       ok(measurement.height<=100&&measurement.chatHeight>=160,`compact summary leaves readable chat: ${width}`);
       await toggle.focus();await page.keyboard.press('Enter');
       ok(await page.locator('#trip-context-body').isVisible(),`keyboard expands summary: ${width}`);
       await toggle.click();
       await page.locator('button[data-panel="results"]').click();
-      ok(await page.locator('#board > #trip-context').isVisible(),`conditions accompany results: ${width}`);
+      ok(await page.locator('.chat > #trip-context').count()===1,`results do not duplicate conditions: ${width}`);
       await page.locator('button[data-panel="chat"]').click();
     }
     if(width===390)await page.screenshot({path:'output/playwright/sentence-placed-mobile.png'});
@@ -48,7 +48,8 @@ async page=>{
   ok(await frame.locator('#condition-value').isVisible(),'embedded chat shares field editing');
   await frame.locator('#condition-cancel').click();await frame.locator('#trip-context-toggle').click();
   await frame.locator('button[data-panel="results"]').click();
-  ok(await frame.locator('#board > #trip-context').isVisible(),'embedded results retain access to parameters');
+  await frame.locator('button[data-panel="chat"]').click();
+  ok(await frame.locator('.chat > #trip-context').isVisible(),'embedded parameters stay accessible via chat');
   await page.screenshot({path:'output/playwright/sentence-placed-widget.png'});
   await page.setViewportSize({width:1440,height:960});await page.goto('http://127.0.0.1:18191/');await idle();
   await page.locator('#reset').click();await page.locator('#reset-confirm').click();await idle();

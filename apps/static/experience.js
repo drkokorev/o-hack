@@ -62,13 +62,13 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   function update(data) {
     summary = data?.trip_summary || {};
     let eventLine=byId('selected-event');
-    if(!eventLine){eventLine=document.createElement('p');eventLine.id='selected-event';eventLine.className='selected-event';byId('trip-context').append(eventLine);}
+    if(!eventLine){eventLine=document.createElement('p');eventLine.id='selected-event';eventLine.className='selected-event';byId('trip-context-body').append(eventLine);}
     eventLine.hidden=!summary.selected_event;
     eventLine.textContent=summary.selected_event ? `${summary.selected_event.name} · ${summary.selected_event.dates}` : '';
     const stage = data?.stage || "start";
     boardLabel = ["plan","cart","payment","booked"].includes(stage) ? "Поездка" : "Карта";
     const titles = {start:"Куда хочется?",destination:"Туда, где вам хорошо",plan:"Выбираем то самое",cart:"Всё складывается",payment:"Почти поехали",booked:"Можно предвкушать",hotel_search:"Выбираем жильё",transfer_search:"Подбираем трансфер",flight_search:"Выбираем дорогу"};
-    byId("chat-title").textContent = stage === "start" && data?.understood?.length ? "Уточняем вашу поездку" : titles[stage] || titles.start;
+    byId("chat-title").textContent = data ? "Ваша поездка" : "Давайте спланируем";
     const types = summary.trip_types || [];
     let mood = types.some(t=>["sea","beach"].includes(t)) ? "sea" : types.some(t=>["ski","mountains"].includes(t)) ? "alpine" : types.some(t=>["city","culture"].includes(t)) ? "city" : types.includes("nature") ? "forest" : null;
     if (selectedMood === "alpine" && mood === "forest") mood = "alpine";
@@ -114,7 +114,10 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     const submit=byId("condition-form").querySelector('[type="submit"]');
     submit.disabled=true;submit.textContent="Обновляем…";
     byId("condition-error").hidden=true;
-    const saved=await send(settings[key].prefix+text);
+    const value=key==='budget'&&/^[\d\s.,]+$/.test(text)?`${text} рублей на всех`:
+      key==='duration'&&/^\d+$/.test(text)?`${text} ночей`:
+      key==='people'&&/^\d+$/.test(text)?`${text} взрослых`:text;
+    const saved=await send(settings[key].prefix+value);
     submit.disabled=false;submit.textContent="Применить";
     if(saved) {
       byId("conditions-dialog").close();

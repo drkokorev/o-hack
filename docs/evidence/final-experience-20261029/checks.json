@@ -1,0 +1,759 @@
+{
+  "base_commit": "6693512c4a6dba729084f57032ee568af529b303",
+  "date": "2026-10-29",
+  "target_branch": "artemiy",
+  "inputs": "Synthetic trips; local real API in rules mode for browser checks; separate bounded live-model smoke; no checkout or external booking.",
+  "python": {
+    "command": "python -m pytest -q",
+    "result": "PASS",
+    "passed": 830,
+    "warnings": 4,
+    "seconds": 107.85
+  },
+  "event_regression": {
+    "command": "python -m pytest tests/test_presentation_data.py tests/test_published_events.py tests/test_globe_event_selection.py -q",
+    "result": "PASS",
+    "passed": 41,
+    "seconds": 17.21
+  },
+  "browser": [
+    {
+      "command": "npx --offline --package @playwright/cli playwright-cli -s=odin-globe run-code --filename tools/verify_final_experience.js",
+      "result": {
+        "status": "PASS",
+        "checks": [
+          "one shared footer outside the two panels",
+          "stage heading and timeline live above the globe",
+          "three travel occasions are visible immediately",
+          "all featured photographs load locally",
+          "no empty questionnaire competes with starter wishes",
+          "Formula 1 opens a loaded thematic photo",
+          "event card names the location and labels the image honestly",
+          "event action selects a supported city without inventing stay dates",
+          "selected event continues into full trip options",
+          "chosen parameters remain compact in the chat",
+          "compact summary exposes route dates party and budget",
+          "no duplicate primary result action above the globe",
+          "editing the summary changes only the requested parameter",
+          "collapsed summary follows the chosen display currency",
+          "another event changes destination while preserving travel conditions",
+          "responsive roles and no horizontal overflow at 1366",
+          "responsive roles and no horizontal overflow at 1024",
+          "responsive roles and no horizontal overflow at 390",
+          "conversation keeps at least 160px of reading space at 390",
+          "footer does not cover composer at 390",
+          "responsive roles and no horizontal overflow at 320",
+          "conversation keeps at least 160px of reading space at 320",
+          "footer does not cover composer at 320",
+          "second chat has the same compact summary",
+          "second chat does not create an invisible WebGL map",
+          "second chat shares footer currency and language controls",
+          "second chat opens the same current parameter editor",
+          "second chat exposes the same trip cards",
+          "no uncaught browser errors"
+        ],
+        "samples": [
+          {
+            "width": 1366,
+            "overflow": false,
+            "surface": {
+              "x": 28,
+              "y": 301.78125,
+              "width": 880,
+              "height": 320,
+              "top": 301.78125,
+              "right": 908,
+              "bottom": 621.78125,
+              "left": 28
+            },
+            "footer": {
+              "x": 0,
+              "y": 725,
+              "width": 1366,
+              "height": 43,
+              "top": 725,
+              "right": 1366,
+              "bottom": 768,
+              "left": 0
+            },
+            "summaryInChat": true
+          },
+          {
+            "width": 1024,
+            "overflow": false,
+            "surface": {
+              "x": 20,
+              "y": 292.5,
+              "width": 604,
+              "height": 320,
+              "top": 292.5,
+              "right": 624,
+              "bottom": 612.5,
+              "left": 20
+            },
+            "footer": {
+              "x": 0,
+              "y": 725,
+              "width": 1024,
+              "height": 43,
+              "top": 725,
+              "right": 1024,
+              "bottom": 768,
+              "left": 0
+            },
+            "summaryInChat": true
+          },
+          {
+            "width": 390,
+            "overflow": false,
+            "surface": {
+              "x": 16,
+              "y": 306.1875,
+              "width": 358,
+              "height": 300,
+              "top": 306.1875,
+              "right": 374,
+              "bottom": 606.1875,
+              "left": 16
+            },
+            "footer": {
+              "x": 0,
+              "y": 715,
+              "width": 390,
+              "height": 65,
+              "top": 715,
+              "right": 390,
+              "bottom": 780,
+              "left": 0
+            },
+            "summaryInChat": true
+          },
+          {
+            "width": 320,
+            "overflow": false,
+            "surface": {
+              "x": 16,
+              "y": 410.1875,
+              "width": 288,
+              "height": 300,
+              "top": 410.1875,
+              "right": 304,
+              "bottom": 710.1875,
+              "left": 16
+            },
+            "footer": {
+              "x": 0,
+              "y": 715,
+              "width": 320,
+              "height": 65,
+              "top": 715,
+              "right": 320,
+              "bottom": 780,
+              "left": 0
+            },
+            "summaryInChat": true
+          }
+        ],
+        "errors": []
+      }
+    },
+    {
+      "command": "npx --offline --package @playwright/cli playwright-cli -s=odin-globe run-code --filename tools/verify_trip_sentence.js",
+      "result": {
+        "status": "PASS",
+        "checks": [
+          "desktop conditions stay in the conversation",
+          "stage headline remains visible",
+          "original request is one sentence, with year and inflected city names",
+          "primary values are not repeated as wishes",
+          "only confirmed fields are shown; budget can be added",
+          "expanded summary stays within 32 percent of viewport",
+          "cancel leaves server and sentence unchanged",
+          "keyboard activates the corresponding editor",
+          "Escape returns focus to the field",
+          "budget edit preserves route, dates and people",
+          "people edit preserves budget and dates",
+          "origin edit preserves destination and people",
+          "destination edit preserves origin and budget",
+          "calendar applies a complete range and preserves unrelated conditions",
+          "at most two extra conditions are visible",
+          "air bounds are grouped and sea preference is visible",
+          "remaining conditions are available via count",
+          "other saved wishes survive compact presentation",
+          "desktop summary stays compact with many wishes",
+          "weather opens its current editable range",
+          "weather change preserves sea constraint and budget",
+          "remaining conditions are readable and editable after expansion",
+          "failed request retains draft and accepted budget",
+          "retained edit can be retried",
+          "currency preference still formats the interactive budget",
+          "390 px mobile summary is collapsed and fits within 100 px",
+          "mobile opens field editor",
+          "dark theme retains compact layout",
+          "320 px viewport does not overflow",
+          "no uncaught browser errors"
+        ],
+        "samples": {
+          "basicHeight": 148.796875,
+          "conditions": [
+            "из: Москва",
+            "Анталья",
+            "море",
+            "12 августа — 12 сентября 2027",
+            "31 ночь",
+            "2 взрослых",
+            "с питомцем",
+            "животное: собака",
+            "бюджет 180 000 ₽",
+            "воздух от 25 °C",
+            "воздух до 30 °C",
+            "море от 23 °C",
+            "без пересадок",
+            "завтраки",
+            "бассейн"
+          ],
+          "desktopHeight": 235,
+          "mobileHeight": 79
+        },
+        "errors": []
+      }
+    },
+    {
+      "command": "npx --offline --package @playwright/cli playwright-cli -s=odin-globe run-code --filename tools/verify_trip_sentence_edges.js",
+      "result": {
+        "status": "PASS",
+        "checks": [
+          "duration edit retains origin and budget",
+          "summary refinement does not overwrite a message being edited",
+          "unchanged field closes without a redundant request",
+          "date range crossing years shows both years",
+          "unknown place names remain inert text inside a working control",
+          "duplicate filtering preserves child ages and separate constraints",
+          "sentence controls settle to the active theme color"
+        ],
+        "duration": {
+          "from": "2027-08-12",
+          "to": "2027-08-19",
+          "nights": 7
+        }
+      }
+    },
+    {
+      "command": "npx --offline --package @playwright/cli playwright-cli -s=odin-globe run-code --filename tools/verify_trip_context_placement.js",
+      "result": {
+        "status": "PASS",
+        "checks": [
+          "one summary without horizontal overflow: 1440",
+          "wide summary stays in chat: 1440",
+          "stage heading stays visible: 1440",
+          "one summary without horizontal overflow: 1024",
+          "wide summary stays in chat: 1024",
+          "stage heading stays visible: 1024",
+          "one summary without horizontal overflow: 768",
+          "compact summary leaves readable chat: 768",
+          "keyboard expands summary: 768",
+          "results do not duplicate conditions: 768",
+          "one summary without horizontal overflow: 390",
+          "compact summary leaves readable chat: 390",
+          "keyboard expands summary: 390",
+          "results do not duplicate conditions: 390",
+          "one summary without horizontal overflow: 320",
+          "compact summary leaves readable chat: 320",
+          "keyboard expands summary: 320",
+          "results do not duplicate conditions: 320",
+          "dark sentence contrast is at least 4.5:1",
+          "embedded chat starts with compact conditions",
+          "embedded chat shares field editing",
+          "embedded parameters stay accessible via chat",
+          "new trip restores clean globe introduction",
+          "no browser exceptions"
+        ],
+        "samples": [
+          {
+            "width": 1440,
+            "height": 79,
+            "chatHeight": 565.703125,
+            "parent": "ASIDE",
+            "overflow": false,
+            "one": true
+          },
+          {
+            "width": 1024,
+            "height": 79,
+            "chatHeight": 565.703125,
+            "parent": "ASIDE",
+            "overflow": false,
+            "one": true
+          },
+          {
+            "width": 768,
+            "height": 68,
+            "chatHeight": 294.3125,
+            "parent": "ASIDE",
+            "overflow": false,
+            "one": true
+          },
+          {
+            "width": 390,
+            "height": 79,
+            "chatHeight": 259.3125,
+            "parent": "ASIDE",
+            "overflow": false,
+            "one": true
+          },
+          {
+            "width": 320,
+            "height": 97,
+            "chatHeight": 189.3125,
+            "parent": "ASIDE",
+            "overflow": false,
+            "one": true
+          }
+        ],
+        "darkContrast": 10.022624133668662,
+        "errors": []
+      }
+    },
+    {
+      "command": "npx --offline --package @playwright/cli playwright-cli -s=odin-globe run-code --filename tools/verify_trip_sentence_service.js",
+      "result": {
+        "status": "PASS",
+        "checks": [
+          "request is a standalone flight",
+          "summary date opens the single-day calendar",
+          "one click changes only the service date"
+        ]
+      }
+    },
+    {
+      "command": "npx --offline --package @playwright/cli playwright-cli -s=odin-globe run-code --filename tools/verify_refinements.js",
+      "result": {
+        "checks": [
+          "new introduction copy",
+          "onboarding is replayable",
+          "requested globe names",
+          "no duplicate map source controls",
+          "sound synthesis asset removed",
+          "favorite and hide are at card top",
+          "both directions visible without details",
+          "single-date fare strip removed",
+          "no duplicate climate footer",
+          "IP detail remains internal",
+          "favorites do not expand into chat",
+          "hidden card disappears",
+          "no black-list announcement in results",
+          "saved places open on demand",
+          "return from hidden immediately restores current card",
+          "first calendar click does not send or reset anything",
+          "calendar retains keyboard focus after choosing start",
+          "second calendar click applies whole range",
+          "dates preserve other trip constraints",
+          "new cards retain currency conversion",
+          "selected package opens unified basket",
+          "basket contains both journeys, hotel and transfers",
+          "chat action matches payment intent",
+          "chat payment action actually opens payment",
+          "basket fits 320",
+          "basket fits 390",
+          "basket fits 768",
+          "recording has exactly one visible stop control",
+          "recording has activity indicator",
+          "dictation fills draft without sending",
+          "speech error is styled as feedback",
+          "typing clears obsolete speech error",
+          "widget shares current chat controls",
+          "widget does not allocate a hidden globe",
+          "widget displays shared trip results",
+          "mobile embedded range calendar fits",
+          "widget shares full basket, not hotels alone",
+          "shared widget exposes privacy document",
+          "document available: /privacy",
+          "document available: /terms",
+          "no JavaScript exceptions"
+        ],
+        "errors": [],
+        "real_audio_recorded": false
+      }
+    },
+    {
+      "command": "npx --offline --package @playwright/cli playwright-cli -s=odin-globe run-code --filename tools/verify_globe_recovery.js",
+      "result": {
+        "checks": [
+          "context-loss extension available: Географическая",
+          "surface and 3D layers restored: Географическая",
+          "context-loss extension available: Дизайнерская",
+          "surface and 3D layers restored: Дизайнерская",
+          "singleton opens actual city without another zoom",
+          "singleton has a 44 px target, including edge click",
+          "no JavaScript exceptions"
+        ],
+        "errors": [],
+        "fixture": "one real Paris record as a singleton group; normal renderer and point endpoint"
+      }
+    },
+    {
+      "command": "npx --offline --package @playwright/cli playwright-cli -s=odin-globe run-code --filename tools/verify_integrated_landmarks.js",
+      "result": {
+        "checked": [
+          "tower",
+          "kremlin",
+          "spire",
+          "clocktower",
+          "colosseum",
+          "gate",
+          "pyramids",
+          "liberty",
+          "isaac",
+          "kulsharif",
+          "sochi_port",
+          "shamanka",
+          "kamchatka",
+          "russky_bridge",
+          "galata",
+          "cappadocia",
+          "registan",
+          "sagrada",
+          "parthenon",
+          "belem",
+          "great_wall",
+          "taj_mahal",
+          "marina_bay",
+          "petronas",
+          "fuji",
+          "bali_temple",
+          "maldives",
+          "christ",
+          "chichen_itza",
+          "golden_gate",
+          "opera",
+          "table_mountain"
+        ],
+        "loaded": [
+          "tower",
+          "kremlin",
+          "liberty",
+          "pyramids",
+          "colosseum",
+          "galata",
+          "isaac",
+          "sagrada",
+          "belem",
+          "taj_mahal",
+          "great_wall",
+          "shamanka",
+          "sochi_port",
+          "kulsharif",
+          "registan",
+          "spire",
+          "parthenon",
+          "clocktower",
+          "cappadocia",
+          "fuji",
+          "marina_bay",
+          "russky_bridge",
+          "gate",
+          "petronas",
+          "chichen_itza",
+          "golden_gate",
+          "kamchatka",
+          "bali_temple",
+          "maldives",
+          "opera",
+          "christ",
+          "table_mountain"
+        ],
+        "requests": [
+          {
+            "path": "/static/models/landmarks/tower.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/kremlin.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/liberty.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/pyramids.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/vendor/three/draco/draco_decoder.wasm",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/vendor/three/draco/draco_wasm_wrapper.js",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/colosseum.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/galata.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/isaac.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/sagrada.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/belem.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/taj_mahal.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/great_wall.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/shamanka.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/sochi_port.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/kulsharif.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/registan.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/spire.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/parthenon.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/clocktower.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/cappadocia.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/fuji.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/marina_bay.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/russky_bridge.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/gate.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/petronas.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/chichen_itza.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/golden_gate.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/kamchatka.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/bali_temple.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/maldives.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/opera.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/christ.glb",
+            "status": 200,
+            "local": true
+          },
+          {
+            "path": "/static/models/landmarks/table_mountain.glb",
+            "status": 200,
+            "local": true
+          }
+        ],
+        "errors": [],
+        "rendering": "actual shared WebGL layer; every model decoded and every place card opened"
+      }
+    }
+  ],
+  "live_model": {
+    "result": "PASS",
+    "steps": [
+      {
+        "action": "natural-language trip request",
+        "result": "PASS",
+        "nlu": "llm+rules",
+        "seconds": 17.38
+      },
+      {
+        "action": "structured Antalya selection",
+        "result": "PASS",
+        "nlu": "action",
+        "variants": 3
+      },
+      {
+        "action": "group transfer in model-enabled app",
+        "result": "PASS",
+        "before_rub": 118140,
+        "after_rub": 117080
+      },
+      {
+        "action": "resume without state advance",
+        "result": "PASS"
+      }
+    ],
+    "voice_backend": "gigaam",
+    "voice_status": "loading",
+    "voice_audio_tested": false,
+    "checkout_performed": false
+  },
+  "voice_health_after_warmup": {
+    "backend": "gigaam",
+    "status": "ready",
+    "max_seconds": 20
+  },
+  "attempts": [
+    {
+      "test": "Commons covers download",
+      "result": "FAIL",
+      "reason": "One metadata request returned HTTP 429. Bounded retries and sequential download succeeded; no content/license was guessed."
+    },
+    {
+      "test": "first Python suite",
+      "result": "FAIL",
+      "passed": 829,
+      "failed": 1,
+      "seconds": 104.17,
+      "reason": "Old fixture expected Mexico Grand Prix and other removed map-only entries. Replaced with curated-destination regression; full rerun passed."
+    },
+    {
+      "test": "first final browser flow",
+      "result": "FAIL",
+      "reason": "Bare number budget was not understood. Editor now supplies rubles/all travellers for numeric input; rerun passed."
+    },
+    {
+      "test": "widget editor assertion",
+      "result": "FAIL",
+      "reason": "Test expected raw number; actual field intentionally contains current natural-language budget. Assertion corrected to verify amount."
+    },
+    {
+      "test": "single-flight calendar",
+      "result": "FAIL",
+      "reason": "Old test clicked hidden parameter in collapsed summary. It now opens summary first; three checks passed."
+    },
+    {
+      "test": "first full 32-model inspection",
+      "result": "FAIL",
+      "reason": "A landmark hit area intercepted a zoom control. Reserved control bounds and raised controls above markers; all 32 passed."
+    },
+    {
+      "test": "UI/UX Pro Max pattern search",
+      "result": "NO_MATCH",
+      "reason": "Two targeted disclosure queries returned unrelated typography guidance. Applied general skill accessibility guidance and inspected the real interface instead."
+    }
+  ],
+  "limits": [
+    "No physical-phone/FPS benchmark.",
+    "Synthetic microphone samples and transcription fixture; no recording of user microphone.",
+    "Commercial data and booking remain demo.",
+    "Organizer schedules were not reverified in this pass; existing source dates retained."
+  ],
+  "source_sha256": {
+    "apps/event_selection.py": "8c9245b13f27bd46bc89ace8aaa277759946d15e163b4be17994134fca2b796f",
+    "apps/static/app.js": "eb02e041217e43402a0a30dd0b1e8ad4390115479633826cc828a8dd473afb0b",
+    "apps/static/events.json": "07f2422d8808a993a200ef9e37cdc8aa7701d3bca974f052c74c768fa3c1d3de",
+    "apps/static/experience.js": "d5381de26f3525dd34450fb068dce23e8fd8e27612ea819e35fc737f95f0c7b4",
+    "apps/static/icons.js": "d3639a608ed565c65b62555e0e03b931aad2eccc4644d45d66a32eed43d5e501",
+    "apps/static/index.html": "388a96b97b3a7a3fd7a4fe7816f6241f6a45d8a88680241d0f554e3d20d6c554",
+    "apps/static/journey-ui.js": "8d8c055ee90de9d0228d2b40693aea7b2aeb5be1c3359cc8a6f02c3e92379483",
+    "apps/static/preferences.js": "dd05127cced86ba6ba22e6ab8de7a53308fc87a045fa12cbe745869d4a51fc5d",
+    "apps/static/reply-text.js": "c535fc338d8461117506d70b56137b8264ac211ed9d897504d7248f6f7db9b2d",
+    "apps/static/trip-map.js": "b4aae4bc71b705c8101080dd8b8b4e2ec2d2fb6bdc59b4965f3b05221d79cf42",
+    "apps/static/trip-sentence.css": "e731b1876f66fdefef425381da25c5552660fb38466282ac4088e07a9e09d080",
+    "apps/static/trip-sentence.js": "435c0e4f8b6ef77dfbf5b0351cfe44a7b249025e4b26c866dc5a161c612c5fa3",
+    "domains/trips/domain.py": "5abee07711d28850bddf59c2cdbcaedf2b90d51f99e84b55369f01e955842ef8",
+    "tests/test_presentation_data.py": "63faacdad034e4b94ef592f0b0a10bd42c46f95d3b7ad390299cf4f167eecdda",
+    "tools/verify_integrated_landmarks.js": "632c926610dfcb630ab01d5efa3a955736cb30b1f0cf47babc16e0e6ede83074",
+    "tools/verify_trip_context_placement.js": "11fb305d1b30c202a622c287bbe6552250dcea298754c6cd20c49a97fe4db5da",
+    "tools/verify_trip_sentence.js": "b98ed8274a190e8783b35848aef73edcd3cf6413583856d3e17eedcff91f375e",
+    "tools/verify_trip_sentence_service.js": "f15fbc22809509e5b12bc745a62c33304f3689b921c902e4ffcd99c571c033e5",
+    "apps/static/final-layout.css": "947b56792d98c802586934d74335d9e8f301201b2c60e5f8a06fb5dd30493040",
+    "tests/test_published_events.py": "36f301602f464f32331fa217cd1fb3e5bab934dc9b4939c09fd3a55f07e6c357",
+    "tools/fetch_event_photos.py": "dd06f3fa01e92e48c7ac98b2be7e05a6ceb664e38a9e500b8d7f65507468e593",
+    "tools/verify_final_experience.js": "6745d3f85c8ec91c2f6220e4d660d9e4df5bfe7b640d089a58f21969be982b94",
+    "apps/static/img/events/art.jpg": "6595f2b9d7b774854f13ae075157627d7060496a08bd50e28ebbc0e0791f7c32",
+    "apps/static/img/events/classical.jpg": "b0100aedec30f4352d169f2ea98d914247b6b9eb6490b37908e15e60004db8ac",
+    "apps/static/img/events/credits.json": "ba520d54ae8c1187d6a5de538efe25dd5d58ca605ba0b0bbfa8391427cdd77ac",
+    "apps/static/img/events/film.jpg": "a681de30856d84a62a9b53432c4173b48422fb2b15a4b20bf59cc91fc930ae91",
+    "apps/static/img/events/football.jpg": "f6adf7f74c66cfbafd153aef8d038d1e2fcf3929adbd3f03aedcada1ccbc53ec",
+    "apps/static/img/events/golf.jpg": "947bf0d1570bdfa93e963198eebb2c3a8b9208fcf53018a6faae8e3e043fc22b",
+    "apps/static/img/events/music.jpg": "81375c1ced7741e26c998b7c21946ee23bd82e4585e20d187c142cfaece1d0c0",
+    "apps/static/img/events/nature.jpg": "cb195ded455ecee44983d78cb30f8dca6502c0b691a4fd68cbc0159a64969ea6",
+    "apps/static/img/events/race.jpg": "d730a7d69907fdbf7ffde2b205fd2ced5f0cc0db8b2db57ff7e33f4852220e4e",
+    "apps/static/img/events/running.jpg": "484f298e47c99d98d01562ab44c16e9aebec2bdf5b1c377cc19d911e3619bd04",
+    "apps/static/img/events/village.jpg": "3afc74029b60bd19882ba74e2acd62be03353bce833686103cfe18e2902f8a91"
+  }
+}

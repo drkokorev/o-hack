@@ -15,7 +15,7 @@ async page => {
   const say = text => request(async()=>{await page.locator('#text').fill(text);await page.locator('#send').click();});
   const field = key => page.locator(`[data-trip-field="${key}"]`);
   const apply = async (key,text) => {
-    await field(key).click();await page.locator('#condition-value').fill(text);
+    if(await field(key).count())await field(key).click();else await page.locator('#conditions-edit').click();await page.locator('#condition-value').fill(text);
     return request(()=>page.locator('#condition-form [type=submit]').click());
   };
   const noOverflow = () => page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth + 1);
@@ -25,14 +25,15 @@ async page => {
     await page.setViewportSize({width:1440,height:900}); await page.goto(base+'/'); await idle();
     await say('Хочу в Анталью из Москвы с 12 августа по 12 сентября 2027, 2 взрослых');
     const initial = latest.trip_summary;
+    await page.locator('#trip-context-toggle').click();
     const sentence = await page.locator('#trip-summary-line').innerText();
-    ok(await page.locator('#board > #trip-context').count()===1,'desktop conditions sit above map and results, outside the chat');
-    ok(await page.locator('#head .route-title').isHidden(),'duplicate route heading is not displayed');
+    ok(await page.locator('.chat > #trip-context').count()===1,'desktop conditions stay in the conversation');
+    ok(await page.locator('#head h1').isVisible(),'stage headline remains visible');
     ok(sentence.includes('из Москвы') && sentence.includes('в Анталью') && sentence.includes('2027') && sentence.includes('31 ночь'),'original request is one sentence, with year and inflected city names');
     ok(await page.locator('#conditions .chip').count()===0 && await page.locator('#condition-highlights button').count()===0,'primary values are not repeated as wishes');
-    ok(await page.locator('[data-trip-field]').count()===6,'six editable fields are directly reachable');
+    ok(await page.locator('[data-trip-field]').count()===5,'only confirmed fields are shown; budget can be added');
     samples.basicHeight = (await page.locator('#trip-context').boundingBox()).height;
-    ok(samples.basicHeight <= 180,'basic desktop summary fits within 180 px');
+    ok(samples.basicHeight <= 288,'expanded summary stays within 32 percent of viewport');
     const beforeCancel=posts;
     await field('origin').click(); await page.locator('#condition-value').fill('Казань');await page.locator('#condition-cancel').click();
     ok(posts===beforeCancel && (await field('origin').innerText()).includes('Москвы'),'cancel leaves server and sentence unchanged');
@@ -61,7 +62,7 @@ async page => {
     const allText=await page.locator('#conditions').textContent();
     ok(allText.includes('без пересадок') && allText.includes('питомцем') && allText.includes('завтрак'),'other saved wishes survive compact presentation');
     samples.desktopHeight=(await page.locator('#trip-context').boundingBox()).height;
-    ok(samples.desktopHeight<=230 && await noOverflow(),'desktop summary stays compact with many wishes');
+    ok(samples.desktopHeight<=288 && await noOverflow(),'desktop summary stays compact with many wishes');
     await page.locator('#condition-highlights button').first().click();
     ok(await page.locator('#conditions-title').innerText()==='Какая погода нужна?' && (await page.locator('#condition-value').inputValue()).includes('от 25 до 30'),'weather opens its current editable range');
     await page.locator('#condition-value').fill('Температура воздуха от 26 до 30 градусов');
@@ -83,6 +84,7 @@ async page => {
     await page.locator('#text').fill('');
     await page.screenshot({path:'output/playwright/trip-sentence-desktop.png'});
     await page.locator('#trip-context').screenshot({path:'output/playwright/trip-sentence-detail.png'});
+    await page.locator('#trip-context-toggle').click();
     await page.setViewportSize({width:390,height:844});
     samples.mobileHeight=(await page.locator('#trip-context').boundingBox()).height;
     ok(samples.mobileHeight<=100 && await noOverflow(),'390 px mobile summary is collapsed and fits within 100 px');

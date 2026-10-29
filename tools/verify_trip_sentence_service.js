@@ -7,6 +7,7 @@ async page=>{
   await page.locator('#send').click();const data=await(await response).json();
   await page.waitForFunction(()=>!document.getElementById('send').disabled);
   ok(data.trip_summary.search_scope==='flight_only','request is a standalone flight');
+  if(await page.locator('#trip-context-toggle').getAttribute('aria-expanded')!=='true')await page.locator('#trip-context-toggle').click();
   await page.locator('[data-trip-field="dates"]').click();
   ok((await page.locator('.date-picker-note').innerText())==='Выберите день поездки.','summary date opens the single-day calendar');
   const next=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/chat'&&r.request().method()==='POST');

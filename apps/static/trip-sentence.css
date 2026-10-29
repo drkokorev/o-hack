@@ -1,11 +1,5 @@
 /* The summary reads as a sentence, while its underlined values remain buttons. */
 .trip-context { padding:6px 12px; max-height:34dvh; }
-.board > .trip-context {margin:0 0 12px;padding:12px 18px;border-radius:18px;background:var(--surface);max-height:none;overflow:visible;}
-.board > .trip-context:not(.is-compact) #trip-summary-line {font-size:18px;line-height:1.5;}
-.board:has(> .trip-context:not([hidden])) #head .hero,
-.board:has(> .trip-context:not([hidden])) #head .route-title,
-.board:has(> .trip-context:not([hidden])) #head .route .names {display:none;}
-.board:has(> .trip-context:not([hidden])) #head .route {margin:0;}
 .trip-context .condition-change {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
 #trip-context-toggle {display:grid;position:relative;gap:3px;width:100%;min-height:60px;padding:8px 28px 8px 0;border:0;border-radius:8px;background:none;color:var(--ink);font:500 13px/1.5 var(--body);text-align:left;cursor:pointer;}
 #trip-context-toggle::after {content:'';position:absolute;right:6px;top:22px;width:7px;height:7px;border-right:1.7px solid currentColor;border-bottom:1.7px solid currentColor;transform:rotate(45deg);}

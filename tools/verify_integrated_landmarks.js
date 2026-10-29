@@ -12,6 +12,8 @@ async(page)=>{
   await page.locator('.map-kind').selectOption('attraction');
   for(const place of landmarks){
     await page.evaluate(p=>tripMap.draw({targets:[{lat:p.lat,lon:p.lon}]}),place);
+    // Route discovery starts with the complete globe; inspect miniatures by zooming.
+    for(let step=0;step<3;step++)await page.getByRole('button',{name:'Приблизить карту',exact:true}).click();
     await page.waitForFunction(id=>tripMap.getView().models.includes(id),place.icon,{timeout:20000});
     const marker=page.getByRole('button',{name:`${place.city}: ${place.name}`,exact:true});
     await marker.waitFor({state:'visible',timeout:10000});await marker.click();

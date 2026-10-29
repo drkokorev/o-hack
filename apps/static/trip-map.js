@@ -66,8 +66,8 @@
     const api = (path) => new URL(path, apiBase).href;
     let info = null, land = null, lib = null, map = null, catalog = null, countries = null, countryNames = new Map();
     let events = [], landmarks = [], settings = {}, eventChecked = null;
-    let options = {}, kind = "all", controller = null, resetViewPending = false;
-    let globeMode='earth', earthSurface=null, basemap=null, imageCredits={}, eventWindow='soon';
+    let options = {}, kind = "all", controller = null, resetViewPending = false, routeCameraKey=null, fittedZoom=null;
+    let globeMode='earth', earthSurface=null, basemap=null, imageCredits={}, eventWindow='soon', tripContext={}, eventPeriodChosen=false;
     try { if(localStorage.getItem('odin.globe')==='atlas') globeMode='atlas'; } catch (_) {}
     const theme=()=>document.documentElement.dataset.theme==='dark'?'dark':'light';
     let sequence = 0, detailSequence = 0, timer = 0, userMoved = false, manualCountry = null, initialCountry = null;
@@ -80,28 +80,31 @@
       // Fit the complete sphere to the available surface, including short laptops.
       const width = holder?.clientWidth || container.clientWidth || 600;
       const height = holder?.clientHeight || 500;
-      return Math.max(-.3, Math.min(2, Math.log2(Math.min(width - 56, height - 76) / 170)));
+      return Math.max(-.3, Math.min(2, Math.log2(Math.min(width - 64, height - 76) / 145)));
     };
     const status = node("span", { class: "map-status", role: "status", "aria-live": "polite" }, "Загружаем карту…");
     const filter = node("select", { class: "map-kind", "aria-label": "Тип мест",
-      onchange: (e) => { kind = e.target.value; eventPeriod.hidden=kind!=="event"; renderLandmarks(); renderEvents(); schedule(); } },
+      onchange: (e) => { kind = e.target.value; renderFeatured(); renderLandmarks(); renderEvents(); schedule(); } },
       Object.entries(KINDS).map(([id, title]) => node("option", { value: id }, title)));
     const modeSwitch=node('div',{class:'globe-modes',role:'group','aria-label':'Вид глобуса'},
       ...[['earth','Географическая'],['atlas','Дизайнерская']].map(([id,label])=>node('button',{type:'button','data-globe-mode':id,'aria-pressed':globeMode===id,onclick:()=>setGlobeMode(id)},label)));
-    const eventPeriod=node('select',{class:'map-event-period','aria-label':'Когда проходят события',hidden:true,onchange:e=>{eventWindow=e.target.value;renderEvents();schedule();}},
-      node('option',{value:'soon'},'В ближайшие 3 месяца'),node('option',{value:'all'},'Весь календарь'));
+    const eventPeriod=node('select',{class:'map-event-period','aria-label':'Когда проходят события',onchange:e=>{eventPeriodChosen=true;eventWindow=e.target.value;renderFeatured();renderLandmarks();renderEvents();schedule();}},
+      node('option',{value:'trip',disabled:true},'Для вашей поездки'),node('option',{value:'soon',selected:true},'Ближайшие 3 месяца'),node('option',{value:'all'},'Весь календарь'));
+    const featuredList=node('div',{class:'event-discovery-list'});
+    const featured=node('section',{class:'event-discovery','aria-label':'Поводы поехать',hidden:true},
+      node('div',{class:'event-discovery-head'},node('strong',{},'Поводы поехать'),eventPeriod),featuredList);
     function setGlobeMode(value) {
       globeMode=value;surface.dataset.globe=value;
       try {localStorage.setItem('odin.globe',value);} catch (_) {}
       for(const button of modeSwitch.children)button.setAttribute('aria-pressed',String(button.dataset.globeMode===value));
       if(map){earthSurface?.setStyle(value==='atlas'?'map':'satellite');basemap?.set(theme(),globeMode);renderGeography();map.triggerRepaint();}
     }
-    const scope = node("button", { type: "button", class: "map-scope", hidden:true, onclick: () => world() }, "К глобусу");
+    const scope = node("button", { type: "button", class: "map-scope", hidden:true, 'aria-label':'К глобусу',title:'К глобусу', onclick: () => world() }, window.odinIcon('globe'));
     const zoomBy = (delta) => map && map.easeTo({zoom: Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + delta)),
       duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650, easing: (t) => 1 - Math.pow(1-t, 3)});
     const controls = node("div", { class: "map-controls" },
       node("button", { type: "button", "aria-label": "Приблизить карту", onclick: () => zoomBy(0.7) }, window.odinIcon("plus")),
-      node("button", { type: "button", "aria-label": "Отдалить карту", onclick: () => zoomBy(-0.7) }, window.odinIcon("minus")));
+      node("button", { type: "button", "aria-label": "Отдалить карту", onclick: () => zoomBy(-0.7) }, window.odinIcon("minus")),scope);
     const detailList = node("div", { class: "map-choice", hidden: true, role: "region",
       "aria-label": "Несколько объектов рядом" });
     const footer = node("div", { class: "map-footer" },
@@ -123,17 +126,28 @@
     }
     const head = node("div", { class: "map-head" }, node("div", { class: "map-caption" },
       node("b", {}, "Исследуйте мир"), node("small", {}, "Крупные места — сразу, остальные — при приближении")),
-      modeSwitch, node("div", { class: "map-tools" }, eventPeriod, filter, scope));
+      modeSwitch, node("div", { class: "map-tools" }, filter));
     const body = node("div", { class: "map-frame" }, head, surface,
       node("div", { class: "map-status-row" }, status,
         node("span", { class: "map-legend" }, "Места рядом объединены · все объекты в списке ниже")),
-      detailList);
+      detailList,featured);
     document.getElementById("map-source-details")?.replaceChildren(footer);
     surface.dataset.globe=globeMode;
     const mapNotice=node('button',{type:'button',class:'map-tiles-notice',hidden:true,onclick:()=>{map?.triggerRepaint();basemap?.set(theme(),globeMode);}},'Улицы не загрузились. Приблизьте ещё раз или проверьте сеть.');
     surface.append(mapNotice);
     container.classList.add("trip-map");
     container.replaceChildren(body);
+    // Size the globe from the free space, not from the current booking stage.
+    const sizeSurface=()=>{
+      if(!container.clientWidth)return;
+      const reserved=(document.querySelector('.quiet-footer')?.offsetHeight||0)+(document.querySelector('.panel-navigation')?.offsetHeight||0)+featured.offsetHeight+24;
+      const available=innerHeight-(surface.getBoundingClientRect().top+scrollY)-reserved;
+      const height=Math.round(Math.max(matchMedia('(max-width:900px)').matches?300:320,Math.min(720,available)));
+      if(surface.style.height!==`${height}px`)surface.style.height=`${height}px`;
+    };
+    const layoutObserver=new ResizeObserver(sizeSurface);
+    [head,featured,document.getElementById('head'),document.getElementById('journey'),document.querySelector('header.top'),document.querySelector('.quiet-footer')].filter(Boolean).forEach(el=>layoutObserver.observe(el));
+    window.addEventListener('resize',sizeSurface);sizeSurface();
 
     function showStatus(text, error = false) {
       status.textContent = error || /первые 2 000|не загруз|недоступ/i.test(text) ? text : "";
@@ -283,10 +297,9 @@
       detailList.querySelector("button")?.focus();
     }
     function eventPhoto(event) {
-      // An actual organiser image can be supplied with explicit credit. Otherwise
-      // use an existing licensed photograph of this exact city, never an artist substitute.
+      // Thematic covers carry an explicit label; never imply a photo of a future edition.
       if(event.image?.src && event.image?.credit && event.image?.page &&
-        /^\/static\//.test(event.image.src)) return {...event.image,kind:'event'};
+        /^\/static\//.test(event.image.src)) return {...event.image,kind:event.image.kind||'event'};
       const city=(info?.places||[]).find(p=>p.name===event.city);
       const key=city && `dest/${city.id}.jpg`,credit=key && imageCredits[key];
       return credit ? {src:asset(`img/${key}`),credit:`${credit.author} · ${credit.license}`,page:credit.page,kind:'city'} : null;
@@ -296,8 +309,8 @@
     function eventContent(event) {
       const photo=eventPhoto(event);
       const content=node('div',{class:'map-pop event-story'},
-        photo ? node('figure',{class:'event-photo'},node('img',{src:photo.src,alt:photo.kind==='city'?`Город события — ${event.city}`:event.name,decoding:'async',onerror:e=>{e.target.parentElement.hidden=true;}}),
-          node('figcaption',{},photo.kind==='city'?'Город события':'Фото события')) : node('div',{class:'event-poster','aria-hidden':'true'},node('span',{},monogram(event)),node('small',{},event.category)),
+        photo ? node('figure',{class:'event-photo'},node('img',{src:photo.src,alt:photo.alt||(photo.kind==='city'?`Город события — ${event.city}`:event.name),decoding:'async',onerror:e=>{e.target.parentElement.hidden=true;}}),
+          node('figcaption',{},photo.kind==='theme'?'Тематическое фото':photo.kind==='city'?'Город события':'Фото события')) : node('div',{class:'event-poster','aria-hidden':'true'},node('span',{},monogram(event)),node('small',{},event.category)),
         node('div',{class:'map-pop-kind'},event.category),node('strong',{},event.name),
         node('p',{class:'event-when'},event.dates),node('p',{class:'event-location'},`${event.city}, ${event.country}`),
         node('p',{class:'event-story-copy'},event.description || ({
@@ -313,8 +326,33 @@
           node('p',{},`${event.location_note || 'Метка показывает город, не вход на площадку.'} Билеты не проверены.`),
           event.status_note ? node('p',{},event.status_note):null,
           node('p',{},`Проверено ${eventChecked} · `,safeLink(event.url,event.source)),
-          photo ? node('p',{},'Фото: ',safeLink(photo.page,photo.credit)):null));
+          photo ? node('p',{},'Фото: ',safeLink(photo.page,photo.credit),photo.license_url?[' · ',safeLink(photo.license_url,'Лицензия')]:null,' · Кадрирование при показе.'):null));
       return content;
+    }
+    function eventMatches(event){
+      const now=new Date(),today=now.toISOString().slice(0,10),horizon=new Date(now.getTime()+92*86400000).toISOString().slice(0,10);
+      if(event.end<today)return false;
+      if(eventWindow==='soon')return event.start<=horizon;
+      if(eventWindow==='trip'&&tripContext.date_from){
+        return event.end>=tripContext.date_from&&event.start<=(tripContext.date_to||tripContext.date_from)&&(!tripContext.destination||event.city===tripContext.destination);
+      }
+      return true;
+    }
+    const eventOrder=(a,b)=>(b.priority||0)-(a.priority||0)||a.start.localeCompare(b.start)||a.id.localeCompare(b.id);
+    function openEvent(event){
+      if(!mapReady)return;
+      closePopup();
+      map.once('moveend',()=>makePopup(event.lon,event.lat,eventContent(event)));
+      map.flyTo({center:[event.lon,event.lat],zoom:Math.max(overviewZoom(),3.2),duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:750});
+    }
+    function renderFeatured(){
+      featured.hidden=!events.length||!['all','event'].includes(kind);
+      const eligible=events.filter(eventMatches).sort(eventOrder),cities=new Set(),picks=[];
+      for(const event of eligible){if(!cities.has(event.city)){picks.push(event);cities.add(event.city);}if(picks.length===3)break;}
+      featuredList.replaceChildren(...picks.map(event=>node('button',{type:'button',class:'event-teaser','data-event-id':event.id,onclick:()=>openEvent(event)},
+        node('img',{src:eventPhoto(event)?.src,alt:'',decoding:'async'}),node('span',{},node('b',{},eventName(event)),node('small',{},event.city),node('small',{},event.dates)))));
+      if(!picks.length)featuredList.append(node('p',{class:'event-empty'},eventWindow==='trip'?'На эти даты в выбранном городе пока нет событий. Можно открыть весь календарь.':'В этой подборке пока нет ближайших событий. Откройте весь календарь.'));
+      requestAnimationFrame(sizeSurface);
     }
     function landmarkIcon(kind) {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -392,8 +430,9 @@
         }).catch(() => { /* Accessible markers remain if 3D is unavailable. */ });
       }
       const models=[],rect=holder.getBoundingClientRect(), occupied=[], selected=[];
+      const controlBoxes=[...controls.children].filter(el=>!el.hidden).map(el=>el.getBoundingClientRect());
       const landmarkCap=map.getZoom()<3 ? 4 : map.getZoom()<6 ? 7 : 12;
-      const eventAnchors=kind==='all' ? events.filter(e=>e.end>=new Date().toISOString().slice(0,10)&&onVisibleHemisphere(e.lon,e.lat)).slice(0,24).map(e=>map.project([e.lon,e.lat])) : [];
+      const eventAnchors=kind==='all' ? events.filter(e=>eventMatches(e)&&onVisibleHemisphere(e.lon,e.lat)).sort(eventOrder).slice(0,24).map(e=>map.project([e.lon,e.lat])) : [];
       const importance=place=>{const p=map.project([place.lon,place.lat]);return (place.priority||0)+(map.getZoom()>=3?Math.max(0,180-Math.hypot(p.x-rect.width/2,p.y-rect.height/2)*8):0);};
       for (const place of [...landmarks].sort((a,b)=>importance(b)-importance(a))) {
         if (!onVisibleHemisphere(place.lon, place.lat)) continue;
@@ -404,6 +443,7 @@
         if (place.heritage && map.getZoom()<3) continue;
         const size=place.heritage ? 38 : rect.width<500 ? 58 : 68;
         const box={left:position.x-size/2,right:position.x+size/2,top:position.y-size,bottom:position.y+(place.heritage ? 4 : 28)};
+        if(controlBoxes.some(b=>box.left+rect.left<b.right+6&&box.right+rect.left>b.left-6&&box.top+rect.top<b.bottom+6&&box.bottom+rect.top>b.top-6))continue;
         const overlapping=occupied.find((item)=>box.left<item.box.right+4 && box.right>item.box.left-4 &&
           box.top<item.box.bottom+4 && box.bottom>item.box.top-4);
         if (overlapping) {overlapping.group.push(place);continue;}
@@ -443,14 +483,12 @@
       if (!map || !lib) return;
       for(const marker of landmarkMarkers){marker._odinState.events=[];updateLandmarkBadge(marker);}
       if(!['all','event'].includes(kind)){clearMarkers(eventMarkers);visibleEvents=[];return;}
-      const now=new Date(),today=now.toISOString().slice(0,10);
-      const horizon=new Date(now.getTime()+92*86400000).toISOString().slice(0,10);
       const rect=holder.getBoundingClientRect(),zoom=map.getZoom();
       const occupied=[...targetMarkers,...landmarkMarkers].map(m=>m.getElement()).filter(el=>!el.hidden).map(visualBounds);
       occupied.push(...[...controls.children].map(b=>b.getBoundingClientRect()));
       const groups=[];visibleEvents=[];
       for(const event of events){
-        if(event.end<today || (eventWindow==='soon' && event.start>horizon) || !onVisibleHemisphere(event.lon,event.lat))continue;
+        if(!eventMatches(event) || !onVisibleHemisphere(event.lon,event.lat))continue;
         const pos=map.project([event.lon,event.lat]);
         if(pos.x<24||pos.y<50||pos.x>rect.width-24||pos.y>rect.height-55)continue;
         visibleEvents.push(event);
@@ -458,8 +496,8 @@
         if(!group){group={x:pos.x,y:pos.y,events:[]};groups.push(group);}
         group.events.push(event);
       }
-      for(const group of groups)group.events.sort((a,b)=>a.start.localeCompare(b.start)||a.id.localeCompare(b.id));
-      groups.sort((a,b)=>a.events[0].start.localeCompare(b.events[0].start)||a.events[0].id.localeCompare(b.events[0].id));
+      for(const group of groups)group.events.sort(eventOrder);
+      groups.sort((a,b)=>eventOrder(a.events[0],b.events[0]));
       const cap=zoom<3? (rect.width<500?3:5):zoom<6?8:12;
       const previous=new Map(eventMarkers.map(m=>[m._odinKey,m])),next=[];
       for(const entry of groups){
@@ -661,7 +699,8 @@
     function world() {
       if (!map) return;
       const point = worldCenter();
-      map.easeTo({ center: point, zoom: overviewZoom(),
+      fittedZoom=overviewZoom();
+      map.easeTo({ center: point, zoom: fittedZoom,
         duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700 });
     }
     function countryCenter(code) {
@@ -673,8 +712,8 @@
       if (force) manualCountry = code;
       else initialCountry = code;
       const center = countryCenter(code);
-      if (map && center && (force || !userMoved)) map.easeTo({ center,
-        zoom: overviewZoom(), duration: 0 });
+      if (map && center && (force || !userMoved)) {fittedZoom=overviewZoom();map.easeTo({ center,
+        zoom: fittedZoom, duration: 0 });}
     }
     function renderRoute() {
       if (!mapReady || !map.getSource("trip-route")) return;
@@ -692,23 +731,27 @@
       })) : [];
       map.getSource("trip-route").setData({ type: "FeatureCollection", features });
       const points = [origin, ...targets].filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon));
+      const cameraKey=JSON.stringify(points.map(p=>[p.lon,p.lat]));
+      if(cameraKey===routeCameraKey)return;
+      routeCameraKey=cameraKey;
       const duration = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 850;
-      if (points.length === 1) map.flyTo({ center: [points[0].lon, points[0].lat], zoom: 4, duration });
+      if (points.length === 1) {fittedZoom=overviewZoom();map.flyTo({ center: [points[0].lon, points[0].lat], zoom: fittedZoom, duration });}
       if (points.length > 1) {
         const regional = (settings.regional_overviews || []).find((view) => targets.length > 1 &&
           targets.every((target) => target.country === view.country) && Array.isArray(view.center) &&
           view.center.length === 2 && view.center.every(Number.isFinite) && Number.isFinite(view.zoom));
         const longitudes = points.map((p) => p.lon), span = Math.max(...longitudes) - Math.min(...longitudes);
         if (regional) {
-          map.flyTo({center:regional.center, zoom:Math.min(regional.zoom, overviewZoom()), duration});
+          fittedZoom=overviewZoom();map.flyTo({center:regional.center, zoom:fittedZoom, duration});
         } else if (span > 65) {
           const radians = points.map((p) => p.lon * Math.PI / 180);
           const lon = Math.atan2(radians.reduce((a,v) => a + Math.sin(v), 0), radians.reduce((a,v) => a + Math.cos(v), 0)) * 180 / Math.PI;
           const lat = points.reduce((a,p) => a + p.lat, 0) / points.length;
-          map.flyTo({center:[lon, lat], zoom:Math.min(1.1, overviewZoom()), duration});
+          fittedZoom=overviewZoom();map.flyTo({center:[lon, lat], zoom:fittedZoom, duration});
         } else {
-          const bounds = new lib.LngLatBounds(); points.forEach((p) => bounds.extend([p.lon, p.lat]));
-          map.fitBounds(bounds, {padding:65, maxZoom:4, duration});
+          fittedZoom=overviewZoom();
+          const lon=points.reduce((sum,p)=>sum+p.lon,0)/points.length,lat=points.reduce((sum,p)=>sum+p.lat,0)/points.length;
+          map.flyTo({center:[lon,lat],zoom:fittedZoom,duration});
         }
       }
     }
@@ -749,6 +792,7 @@
         imageCredits=await json(asset('img/credits.json')).catch(()=>({}));
         settings = mapSettings;
         events = eventData.events || []; eventChecked = eventData.checked_at || "дата неизвестна";
+        renderFeatured();
         countryNames = new Map((countryData.items || []).map((item) => [item.code,item.name]));
         landmarks = [...(landmarkData.landmarks || []), ...(heritageData.sites || []).map((item) => ({...item,heritage:true}))]
           .filter((p) => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lon));
@@ -796,13 +840,13 @@
           catch(_){basemap.setEarthReady(false);showStatus('Поверхность восстанавливается. Карта доступна.',true);}
         },100));
         mapReady = true;
-        let fittedZoom=holder.clientWidth>0?map.getZoom():null;
+        fittedZoom=holder.clientWidth>0?map.getZoom():null;
         const resizeObserver=new ResizeObserver(()=>requestAnimationFrame(()=>{
           if(!map || !holder.clientWidth || !holder.clientHeight)return;
           map.resize();
           if(resetViewPending){
             resetViewPending=false;fittedZoom=overviewZoom();map.jumpTo({center:worldCenter(),zoom:fittedZoom});
-          } else if(!options.origin && !options.targets?.length && (fittedZoom===null || (!userMoved && Math.abs(map.getZoom()-fittedZoom)<.08))){
+          } else if(fittedZoom===null || Math.abs(map.getZoom()-fittedZoom)<.08){
             fittedZoom=overviewZoom();map.jumpTo({zoom:fittedZoom});
           }
         }));
@@ -823,7 +867,8 @@
           scope.hidden=map.getZoom()<=overviewZoom()+.1 && !options.targets?.length;
         };
         function syncTargetVisibility(){for(const marker of targetMarkers){const p=marker.getLngLat(),el=marker.getElement();el.hidden=!onVisibleHemisphere(p.lng,p.lat);el.inert=el.hidden||map.isMoving();}}
-        map.on('move',()=>{for(const marker of [...landmarkMarkers,...eventMarkers,...targetMarkers,...clusterMarkers]){const p=marker.getLngLat();if(!onVisibleHemisphere(p.lng,p.lat))marker.getElement().hidden=true;}});
+        map.on('move',()=>{for(const marker of [...landmarkMarkers,...eventMarkers,...targetMarkers,...clusterMarkers]){const p=marker.getLngLat();if(!onVisibleHemisphere(p.lng,p.lat))marker.getElement().hidden=true;}
+          if(kind==='all'&&map.getZoom()<2.8)for(const marker of clusterMarkers){marker.getElement().hidden=true;marker.getElement().inert=true;}});
         map.on("moveend", () => { syncScope(); updateHint();syncTargetVisibility(); renderLandmarks(); renderEvents(); renderGeography(); schedule(); });
         syncScope();
         map.on("click", (event) => {
@@ -860,8 +905,15 @@
         else if (mapReady) renderRoute();
       },
       setCountry(code, force = false) { setCountry(code, force); },
+      setTripContext(summary){
+        tripContext=summary||{};
+        eventPeriod.querySelector('[value="trip"]').disabled=!tripContext.date_from;
+        if(!eventPeriodChosen)eventWindow=tripContext.date_from?'trip':'soon';
+        if(eventWindow==='trip'&&!tripContext.date_from)eventWindow='soon';
+        eventPeriod.value=eventWindow;renderFeatured();if(mapReady){renderLandmarks();renderEvents();schedule();}
+      },
       reset() {
-        options={};userMoved=false;kind='all';filter.value='all';eventWindow='soon';eventPeriod.value='soon';eventPeriod.hidden=true;
+        options={};routeCameraKey=null;userMoved=false;kind='all';filter.value='all';eventWindow='soon';eventPeriod.value='soon';eventPeriodChosen=false;tripContext={};eventPeriod.querySelector('[value="trip"]').disabled=true;renderFeatured();
         closePopup();expansion=null;clearExpansion();
         resetViewPending=true;
         if(mapReady) requestAnimationFrame(()=>{renderRoute();if(holder.clientWidth&&holder.clientHeight){resetViewPending=false;map.resize();world();}});
