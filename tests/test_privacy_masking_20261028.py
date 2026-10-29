@@ -116,17 +116,20 @@ def test_recognized_food_allergy_keeps_a_dietary_request_without_the_diagnosis()
     agent = Agent(TripsDomain(today=lambda: TODAY), model, today=lambda: TODAY)
     session = agent.new_session()
     agent.handle(session, "У меня сильная аллергия на орехи, хочу в Сочи")
-    prompt = model.calls[0][-1]["content"].lower()
-    assert "аллергия" not in prompt and "исключить орехи" in prompt
+    assert not model.calls
+    assert session.state.accessibility_needs == ["diet_nuts"]
+    assert "аллергия" not in session.state.model_dump_json().lower()
     assert session.state.dest_id == "sochi"
 
 
 def test_recognized_food_intolerance_keeps_the_dietary_requirement():
     model = FakeLLM({})
     agent = Agent(TripsDomain(today=lambda: TODAY), model, today=lambda: TODAY)
-    agent.handle(agent.new_session(), "У меня непереносимость глютена, еду в Сочи")
-    prompt = model.calls[0][-1]["content"].lower()
-    assert "непереносимость" not in prompt and "исключить глютен" in prompt
+    session = agent.new_session()
+    agent.handle(session, "У меня непереносимость глютена, еду в Сочи")
+    assert not model.calls
+    assert session.state.accessibility_needs == ["diet_gluten"]
+    assert "непереносимость" not in session.state.model_dump_json().lower()
 
 
 def test_http_chat_continues_after_automatic_redaction():

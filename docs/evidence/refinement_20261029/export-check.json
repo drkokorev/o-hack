@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "text_files_scanned": 83,
+  "binary_files": 43,
+  "flags": [],
+  "scope": "changed export relative to origin/artemiy; signature scan plus manual review of synthetic evidence",
+  "raw_provider_or_session_logs_exported": false
+}

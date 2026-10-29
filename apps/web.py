@@ -13,10 +13,11 @@ import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
+from datetime import date, timedelta
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
@@ -28,13 +29,17 @@ from core.ru import MONTHS_GEN, fmt_money, plural
 from apps.location import city_hint, visitor_city, visitor_country
 from apps import chat_navigation
 from domains.trips import guides
+from apps.event_selection import choose_event
 from domains.trips.domain import TripsDomain
+from domains.trips.accessibility import LABELS as ACCESS_LABELS
+from domains.trips.party_features import LABELS as TRAVEL_LABELS, PET_LABELS
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
 from domains.trips import map_catalog
-from domains.trips.state import TripState
+from domains.trips.state import TripState, TripUpdate
 from domains.trips.world_places import find_world_places
 from apps.voice import LocalVoice, MAX_AUDIO_BYTES
+from apps.legal import render_document
 
 log = logging.getLogger(__name__)
 STATIC = Path(__file__).parent / "static"
@@ -52,12 +57,24 @@ EXAMPLES = [
 ]
 
 
+class DateRangeIn(BaseModel):
+    start: date
+    end: date
+
+class PreferencesIn(BaseModel):
+    saved: list[str] = Field(default_factory=list, max_length=100)
+    hidden: list[str] = Field(default_factory=list, max_length=100)
+
 class ChatIn(BaseModel):
     text: str
     session_id: str | None = None
     map_point_id: str | None = Field(default=None, max_length=200)
     map_country_code: str | None = Field(default=None, min_length=2, max_length=2)
     map_city_id: str | None = Field(default=None, max_length=200)
+    destination_id: str | None = Field(default=None, max_length=100)
+    event_id: str | None = Field(default=None, max_length=160)
+    date_range: DateRangeIn | None = None
+    preferences: PreferencesIn | None = None
     detected_city: str | None = None  # untrusted browser hint; never an exact location
 
 
@@ -72,6 +89,10 @@ class NavigateIn(BaseModel):
 
 class EditIn(NavigateIn):
     text: str
+
+
+class TransferIn(NavigateIn):
+    kind: Literal["auto", "taxi", "shuttle"]
 
 
 class Sessions:
@@ -135,10 +156,23 @@ class Sessions:
 def understood(state: TripState) -> list[str]:
     """Что агент понял из разговора — короткими плашками."""
     chips = []
-    if state.origin:
-        suffix = " (примерно по IP)" if state.origin_inferred else ""
-        chips.append(f"из: {state.origin}{suffix}")
-    if state.dest_id:
+    scope = {"flight_only": "только перелёт", "train_only": "только поезд", "hotel_only": "только жильё", "transfer_only": "только трансфер",
+             "split_hotel": "два последовательных отеля"}.get(state.search_scope)
+    if scope:
+        chips.append(scope)
+    if state.search_scope == "transfer_only":
+        kinds = {"airport": "аэропорт", "station": "вокзал", "hotel": "отель"}
+        if state.transfer_from and state.transfer_to:
+            chips.append(f"{kinds.get(state.transfer_from, '?')} → {kinds.get(state.transfer_to, '?')}")
+        if state.transfer_time:
+            chips.append(f"подача в {state.transfer_time}")
+        if state.transfer_date:
+            chips.append(f"дата трансфера: {state.transfer_date:%d.%m.%Y}")
+    if state.origin and state.search_scope not in {"hotel_only", "transfer_only", "split_hotel"}:
+        chips.append(f"из: {state.origin}")
+    if state.search_scope == "split_hotel" and state.split_stays:
+        chips.extend(f"отель {i}: {BY_ID[s.dest_id].name}" for i, s in enumerate(state.split_stays, 1) if s.dest_id in BY_ID)
+    elif state.dest_id:
         chips.append(BY_ID[state.dest_id].name)
     elif state.destination:
         chips.append(state.destination)
@@ -152,7 +186,19 @@ def understood(state: TripState) -> list[str]:
         chips.append("безвизовый въезд: не проверен")
     for t in state.trip_types or []:
         chips.append(TAG_NAMES.get(t, t))
-    if state.date_from and state.date_to:
+    if state.scenic_views:
+        chips.append("красивые виды: не проверены")
+    if state.relaxed_walks:
+        chips.append("спокойные прогулки: не проверены")
+    for key in state.accessibility_needs or []:
+        if key in ACCESS_LABELS:
+            chips.append(ACCESS_LABELS[key] + ": не проверено")
+    for key in state.travel_needs or []:
+        if key in TRAVEL_LABELS:
+            chips.append(TRAVEL_LABELS[key] + ("" if key in {"older_traveler", "retiree"} else ": не проверено"))
+    if state.search_scope == "transfer_only":
+        pass  # do not display a stay's dates as a transfer booking
+    elif state.date_from and state.date_to:
         start_year = f" {state.date_from.year}" if state.date_from.year != state.date_to.year else ""
         chips.append(f"{state.date_from.day} {MONTHS_GEN[state.date_from.month - 1]}{start_year} — "
                      f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]} {state.date_to.year}")
@@ -173,15 +219,34 @@ def understood(state: TripState) -> list[str]:
         chips.append(f"{prefix}{state.party_size} {plural(state.party_size, 'путешественник', 'путешественника', 'путешественников')}")
     if state.children:
         chips.append(f"{state.children} {plural(state.children, 'ребёнок', 'ребёнка', 'детей')}")
-    if state.children_ages:
+    if state.children_age_months_by_child and state.children_ages and len(state.children_age_months_by_child) == len(state.children_ages):
+        ages = [f"{months} мес." if months is not None else f"{years} лет" for years, months in zip(state.children_ages, state.children_age_months_by_child)]
+        basis = {"checkin": "на дату заезда", "current": "указан сейчас; к поездке может измениться"}.get(
+            state.child_age_basis, "дата возраста не уточнена")
+        chips.append("возраст детей: " + ", ".join(ages) + f" ({basis})")
+    elif state.child_age_months is not None:
+        basis = {"checkin": "на дату заезда", "current": "указан сейчас; к поездке может измениться"}.get(
+            state.child_age_basis, "дата возраста не уточнена")
+        chips.append(f"возраст ребёнка: {state.child_age_months} мес. ({basis})")
+    elif state.children_ages:
         chips.append("возраст детей: " + ", ".join(map(str, state.children_ages)) + " лет")
     if state.rooms:
         chips.append(f"номеров: {state.rooms}")
+    if state.room_allocations:
+        chips.append("распределение по номерам указано")
     if state.lodging:
         prefix = "возможно: " if "lodging" in (state.tentative_fields or []) else ""
         chips.append(prefix + {"tent": "палатка", "hotel": "отель"}.get(state.lodging, state.lodging))
     if state.pets:
         chips.append("с питомцем")
+        if state.pet_types:
+            chips.append("животное: " + ", ".join(PET_LABELS[key] for key in state.pet_types if key in PET_LABELS))
+        if state.pet_count:
+            chips.append(f"животных: {state.pet_count}")
+        if state.pet_weight_kg is not None:
+            chips.append(f"вес животного: {state.pet_weight_kg:g} кг")
+        if state.pet_cabin is not None:
+            chips.append("питомец в салоне: не проверено" if state.pet_cabin else "питомец не в салоне")
     if state.budget_total:
         chips.append(f"бюджет {fmt_money(state.budget_total)}")
     if state.economy:
@@ -201,6 +266,8 @@ def understood(state: TripState) -> list[str]:
     if state.transport:
         prefix = "возможно: " if "transport" in (state.tentative_fields or []) else ""
         chips.append(prefix + {"train": "поезд", "plane": "самолёт", "none": "нет подходящего транспорта"}.get(state.transport, state.transport))
+    if state.seat_class:
+        chips.append(f"класс: {state.seat_class}")
     if state.direct_only:
         chips.append("без пересадок")
     if state.meal:
@@ -226,7 +293,15 @@ def contextual_suggestions(state: TripState, step) -> list[str]:
     if kind == "greeting":
         return EXAMPLES
     if kind == "question":
+        if payload.get("field") in ("transfer_direction", "flight_direction"):
+            return ["в одну сторону", "туда и обратно"]
+        if payload.get("field") == "multi_hotel":
+            return ["сравнить", "по очереди"]
+        if payload.get("field") == "when" and not state.dest_id and not state.search_scope:
+            return ["предложи сам", "пока не знаю"]
         return ["пока не знаю"] if payload.get("field") in ("when", "duration", "origin", "people", "children") else []
+    if kind == "service_results" and state.pending_question == "split_choice":
+        return [str(i) for i in range(1, len(state.split_displayed) + 1)]
     if kind == "real_hotels":
         return [str(i) for i in range(1, len(payload.get("items") or []) + 1)]
     if kind == "real_hotel_selected":
@@ -383,6 +458,23 @@ def build_app(agent: Agent | None = None) -> FastAPI:
     def index() -> FileResponse:
         return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
+    def document(kind: str) -> HTMLResponse:
+        return HTMLResponse(render_document(kind, llm_provider=settings.llm_provider,
+                            llm_enabled=agent.llm is not None, session_ttl_seconds=sessions.ttl_seconds),
+                            headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+                                     "Referrer-Policy": "no-referrer",
+                                     "Content-Security-Policy": "default-src 'none'; style-src 'self'; "
+                                     "font-src 'self'; img-src 'self' data:; base-uri 'none'; "
+                                     "form-action 'none'; frame-ancestors 'self'"})
+
+    @app.get("/terms", response_class=HTMLResponse, include_in_schema=False)
+    def terms() -> HTMLResponse:
+        return document("terms")
+
+    @app.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+    def privacy() -> HTMLResponse:
+        return document("privacy")
+
     @app.get("/health")
     def health() -> dict:
         if require_models and voice.status != "ready":
@@ -395,9 +487,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                             headers={"Cache-Control": "no-store"})
 
     def city_for_request(request: Request) -> dict:
-        local_preview = (os.getenv("ODIN_LOCAL_PREVIEW_IP") == "1" and
-                         request.url.hostname in {"127.0.0.1", "localhost", "::1"})
-        return visitor_city(request.client.host if request.client else None, local_preview=local_preview)
+        return visitor_city(request.client.host if request.client else None)
 
     @app.get("/api/visitor-city")
     def city_info(request: Request) -> JSONResponse:
@@ -465,16 +555,24 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         breaker = getattr(agent.llm, "breaker", None)
         return {"llm": settings.llm_model if agent.llm is not None else None,
                 "llm_state": breaker.state if breaker else "off",
-                "destinations": len(DESTINATIONS),
+                "today": agent.today().isoformat(), "destinations": len(DESTINATIONS),
                 "hotels": hotel_count(),
                 "places": [{"id": d.id, "name": d.name, "lat": d.lat, "lon": d.lon} for d in DESTINATIONS],
-                "origins": [{"name": o.name, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
+                "origins": [{"name": o.name, "from": o.from_, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
                 "examples": EXAMPLES, "stages": [{"key": k, "title": t} for k, t in STAGES]}
+
+    @app.get("/api/weather")
+    def weather(destination_id: str, start: date, end: date):
+        from apps.weather import forecast
+        destination=BY_ID.get(destination_id)
+        if destination is None or end <= start or (end-start).days>365:
+            raise HTTPException(status_code=422, detail="Проверьте направление и даты")
+        return forecast(destination,start,end,agent.today())
 
     @app.get("/api/voice")
     def voice_info(response: Response) -> dict:
         response.headers["Cache-Control"] = "no-store"
-        return {"backend": "gigaam" if voice.model_dir else "browser", "status": voice.status,
+        return {"backend": "gigaam" if voice.model_dir else "off", "status": voice.status,
                 "max_seconds": 20}
 
     @app.post("/api/voice/transcribe")
@@ -502,12 +600,13 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         reply = step.reply
         if session.last_nlu in {"rules", "none"} and breaker and breaker.state in {"degraded", "down"}:
             reply += "\n\nЯзыковая модель временно недоступна; ответ подготовлен по правилам."
-        summary = state.model_dump(mode="json", include={"origin", "date_from", "date_to", "nights",
-            "adults", "children", "children_ages", "budget_total", "transport", "trip_types"})
+        summary = state.model_dump(mode="json", include={"origin", "origin_inferred", "date_from", "date_to", "nights",
+            "adults", "children", "children_ages", "budget_total", "transport", "trip_types", "selected_event", "search_scope"})
         summary["destination"] = BY_ID[state.dest_id].name if state.dest_id else state.destination or state.country
         return {"session_id": session_id, "reply": reply, "payload": images.decorate(step.payload),
             "stage": state.stage, "understood": understood(state), "assumptions": state.assumptions,
             "nlu": session.last_nlu, "suggestions": contextual_suggestions(state, step),
+            "input_sensitive": session.last_input_sensitive,
             "trip_summary": summary, "revision": session.ui_revision,
             "can_undo": bool(session.ui_previous) and chat_navigation.can_snapshot(session),
             "checked": ["Неподтверждённый параметр отклонён или исправлен."] * len(session.last_notes),
@@ -517,6 +616,36 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         if revision != session.ui_revision or not session.ui_previous or not chat_navigation.can_snapshot(session):
             raise HTTPException(status_code=409, detail="Этот шаг уже нельзя изменить. Уточните условия в чате.")
 
+    @app.post("/api/session")
+    def resume_session(body: ResetIn, response: Response):
+        """Read current state; never replay a message, checkout or payment."""
+        response.headers["Cache-Control"] = "no-store"
+        session = sessions.existing(body.session_id)
+        with session.lock:
+            step = session.last or Step("Расскажите о поездке.", payload={"kind": "greeting"})
+            return present(body.session_id, session, step, time.perf_counter())
+
+    @app.post("/api/trip/transfer")
+    def change_transfer(body: TransferIn, response: Response):
+        response.headers["Cache-Control"] = "no-store"
+        session = sessions.existing(body.session_id)
+        with session.lock:
+            state = session.state
+            if (session.ui_revision != body.revision or state.stage != "cart" or
+                    state.order or state.pending_trip_candidate or not session.last or
+                    not isinstance(session.last.payload, dict) or session.last.payload.get("kind") != "cart"):
+                raise HTTPException(status_code=409, detail="Откройте выбранную поездку ещё раз, чтобы изменить трансфер.")
+            # Preserve the chosen hotel; change only the ground-transport preference.
+            state.hotel_id = session.last.payload["package"]["hotel"]["id"]
+            state.transfer_kind = None if body.kind == "auto" else body.kind
+            session.last_input_sensitive = False
+            state.params_changed = True
+            state.act = {}
+            session.last = agent.domain.step(state)
+            session.last_nlu, session.last_notes = "action", []
+            chat_navigation.complete_turn(session, None)
+            return present(body.session_id, session, session.last, time.perf_counter())
+
     @app.post("/api/chat/undo")
     def undo_chat(body: NavigateIn, response: Response):
         started = time.perf_counter()
@@ -525,6 +654,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         with session.lock:
             check_navigation(session, body.revision)
             step = chat_navigation.undo(session)
+            session.last_input_sensitive = False
             return present(body.session_id, session, step, started)
 
     @app.post("/api/chat/edit")
@@ -541,6 +671,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             previous = session.ui_previous
             session.state, session.last = proposed.state, proposed.last
             session.last_nlu, session.last_notes = proposed.last_nlu, proposed.last_notes
+            session.last_input_sensitive = proposed.last_input_sensitive
             session.history = []
             chat_navigation.complete_turn(session, previous)
             return present(body.session_id, session, step, started)
@@ -551,6 +682,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         session_id, session = sessions.get(body.session_id)
         response.headers["Cache-Control"] = "no-store"
         with session.lock:
+            session.last_input_sensitive = False
             guessed_origin = None
             if not session.location_checked:
                 session.location_checked = True
@@ -562,10 +694,34 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                 elif location.get("city_name"):
                     session.state.ip_city_hint = location["city_name"]
             previous = chat_navigation.snapshot(session)
+            if body.preferences is not None:
+                session.state.ui_preferences={key:[v for v in values if len(v)<=200] for key,values in body.preferences.model_dump().items()}
             selected = None
-            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id)) > 1:
+            if sum(bool(value) for value in (body.map_point_id, body.map_country_code, body.map_city_id, body.destination_id, body.event_id, body.date_range)) > 1:
                 raise HTTPException(status_code=422, detail="Выберите один объект карты")
-            if body.map_point_id:
+            if body.date_range:
+                dates=body.date_range
+                if dates.start<agent.today() or dates.end<=dates.start or (dates.end-dates.start).days>365 or dates.end>agent.today()+timedelta(days=731):
+                    raise HTTPException(status_code=422,detail="Выберите будущие даты и возвращение позже отправления")
+                candidate=agent.domain.merge(session.state.model_copy(deep=True),TripUpdate(date_from=dates.start,date_to=dates.end,nights=(dates.end-dates.start).days))
+                step=agent.domain.step(candidate)
+                session.state=candidate
+                session.last,session.last_nlu,session.last_notes=step,'action',[]
+            elif body.event_id:
+                step, selected = choose_event(agent, session, body.event_id)
+            elif body.destination_id:
+                dest = BY_ID.get(body.destination_id)
+                if dest is None:
+                    raise HTTPException(status_code=422, detail="Направление отсутствует в каталоге")
+                if session.state.order or session.state.pending_trip_candidate or session.state.stage in {"payment", "booked"}:
+                    raise HTTPException(status_code=409, detail="Начните новую поездку, чтобы выбрать другое направление.")
+                # A catalog ID is a structured action, not a natural-language
+                # utterance. Free-form messages still use the full privacy path.
+                session.state = agent.domain.merge(session.state, TripUpdate(destination=dest.id))
+                step = agent.domain.step(session.state)
+                session.last, session.last_nlu, session.last_notes = step, "action", []
+                selected = {"id": dest.id, "name": dest.name, "accepted": session.state.dest_id == dest.id}
+            elif body.map_point_id:
                 point = map_catalog.lookup(body.map_point_id)
                 if not point or point["kind"] != "hotel" or not body.map_point_id.startswith("overture:"):
                     raise HTTPException(status_code=422, detail="Не найден выбранный отель")
@@ -673,8 +829,15 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                         step.reply = "Не удалось выбрать страну. Попробуйте ещё раз.\n\n" + step.reply
             else:
                 step = agent.handle(session, body.text)
-            if guessed_origin and session.state.origin_inferred and session.state.origin == guessed_origin:
-                step.reply = f"Город отправления предположительно {guessed_origin} по IP. Если это не так, напишите другой город.\n\n" + step.reply
+            if (guessed_origin and session.state.search_scope in {"hotel_only", "transfer_only", "multi_hotel", "split_hotel"}
+                    and session.state.origin_inferred and session.state.origin == guessed_origin):
+                # A hotel or local transfer does not need a departure city.
+                session.state.origin, session.state.origin_inferred = None, False
+                if previous and previous[0].origin_inferred and previous[0].origin == guessed_origin:
+                    previous[0].origin, previous[0].origin_inferred = None, False
+                guessed_origin = None
+            # The approximate origin is already exposed as an editable chip.
+            # Avoid repeating the geolocation notice in the conversation.
             chat_navigation.complete_turn(session, previous)
             result = present(session_id, session, step, started)
             result["map_selection"] = selected

@@ -27,7 +27,7 @@ MEALS = {"room_only": "без питания", "breakfast": "завтраки", 
          "all_inclusive": "всё включено", "meal_included": "питание включено, вид уточняется"}
 AMENITIES = {
     "pool": "бассейн", "kids_club": "детский клуб", "spa": "спа", "gym": "фитнес", "parking": "парковка",
-    "pets": "можно с животными", "beach_line": "первая линия", "wifi": "Wi-Fi", "kitchen": "кухня в номере",
+    "pets": "питомцы: условия не проверены", "beach_line": "первая линия", "wifi": "Wi-Fi", "kitchen": "кухня в номере",
 }
 _ALL_INCLUSIVE_PLACES = {"antalya", "hurghada", "sharm", "sanya", "dubai"}
 
@@ -361,7 +361,7 @@ def trains(origin: Origin, dest: Destination, day: date) -> list[Leg]:
                            arrive=dep + timedelta(minutes=minutes), seat_class="купе",
                            price_per_person=int(round((1500 + km * 3.0) * season_factor(dest, day)
                                                       * rng.uniform(0.9, 1.15), -2)),
-                           pets_ok=True, note="ночь в поезде, животных можно в купе целиком"))
+                           pets_ok=True, note="ночь в поезде"))
     return out
 
 
@@ -383,13 +383,17 @@ class Transfer(BaseModel):
     note: str = ""
 
 
-def transfer(hotel: Hotel, guests: int, train: bool = False) -> Transfer:
+def transfer(hotel: Hotel, guests: int, train: bool = False, preferred: str | None = None) -> Transfer:
     dest = BY_ID[hotel.dest_id]
     km = hotel.center_km + 2 if train else hotel.airport_km
     per_km = 45 if dest.abroad else 35
     minutes = int(km / 40 * 60) + 15
     taxi = int(round((400 + km * per_km) * (1.4 if guests > 4 else 1.0), -1))
-    if km > 40 and guests <= 3 and not train:
+    if preferred == "shuttle":
+        return Transfer(kind="shuttle", minutes=minutes + 40,
+                        price=int(round(guests * (300 + km * 9), -1)),
+                        note="групповой трансфер, может заезжать в другие отели")
+    if preferred != "taxi" and km > 40 and guests <= 3 and not train:
         shuttle = int(round(guests * (300 + km * 9), -1))
         if shuttle < taxi * 0.7:
             return Transfer(kind="shuttle", minutes=minutes + 40, price=shuttle,

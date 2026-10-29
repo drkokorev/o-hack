@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "foreign namesake is not auto-filled",
+    "supported origin reaches chat without an IP suffix",
+    "single service date applies in one click",
+    "single service calendar closes after selection",
+    "local city data attribution remains visible in embedded chat",
+    "legal links fit a 320 px chat"
+  ],
+  "visitor_city_response_stubbed": true
+}

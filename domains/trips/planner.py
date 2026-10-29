@@ -29,6 +29,7 @@ class Trip:
     budget: int | None = None
     budget_night: int | None = None
     mode: str | None = None
+    seat_class: str | None = None
     direct_only: bool = False
     baggage_required: bool = False
     max_hours: float | None = None
@@ -37,6 +38,8 @@ class Trip:
     stars_min: int | None = None
     wishes: list[str] = field(default_factory=list)
     trip_types: list[str] = field(default_factory=list)
+    room_guests: list[tuple[int, int]] = field(default_factory=list)  # explicit adults, children per room
+    transfer_kind: str | None = None
 
     @property
     def nights(self) -> int:
@@ -72,7 +75,9 @@ class Package:
 
 
 def _leg_matches(leg: Leg, *, direct_only: bool = False, pets: bool = False,
-                 baggage_required: bool = False, max_hours: float | None = None) -> bool:
+                 baggage_required: bool = False, max_hours: float | None = None, seat_class: str | None = None) -> bool:
+    if seat_class and leg.seat_class != seat_class:
+        return False
     if direct_only and leg.stops:
         return False
     if pets and not leg.pets_ok:
@@ -87,7 +92,7 @@ def _leg_matches(leg: Leg, *, direct_only: bool = False, pets: bool = False,
 def _leg_ok(leg: Leg, trip: Trip) -> bool:
     # A train's baggage rules are unknown and must be disclosed separately.
     return _leg_matches(leg, direct_only=trip.direct_only, pets=trip.pets,
-                        baggage_required=trip.baggage_required, max_hours=trip.max_hours)
+                        baggage_required=trip.baggage_required, max_hours=trip.max_hours, seat_class=trip.seat_class)
 
 
 def _leg_penalty(leg: Leg, trip: Trip) -> float:
@@ -122,7 +127,7 @@ def _hotel_filter(h: Hotel, trip: Trip, relaxed: set[str], peak_night: date) -> 
     if trip.pets and "pets" not in h.amenities:
         return False
     if "budget_night" not in relaxed and trip.budget_night:
-        if hotel_price(h, peak_night, 1, trip.adults, trip.children) > trip.budget_night:
+        if _stay_price(h, trip, peak_night, 1) > trip.budget_night:
             return False
     if "stars_min" not in relaxed and trip.stars_min and h.stars < trip.stars_min:
         return False
@@ -133,6 +138,12 @@ def _hotel_filter(h: Hotel, trip: Trip, relaxed: set[str], peak_night: date) -> 
     if "wishes" not in relaxed and any(w not in h.amenities for w in trip.wishes if w != "pets"):
         return False
     return True
+
+
+def _stay_price(h: Hotel, trip: Trip, start: date, nights: int) -> int:
+    """Demo price is summed once per explicitly allocated room."""
+    guests = trip.room_guests or [(trip.adults, trip.children)]
+    return sum(hotel_price(h, start, nights, adults, children) for adults, children in guests)
 
 
 def _hotel_value(h: Hotel, price: int, trip: Trip) -> float:
@@ -173,18 +184,19 @@ def candidate_hotels(trip: Trip) -> tuple[list[tuple[Hotel, int]], list[str]]:
             notes.append(note)
         hotels = [h for h in hotels_for(trip.dest.id) if _hotel_filter(h, trip, relaxed, peak_night)]
         if hotels:
-            priced = [(h, hotel_price(h, trip.date_in, trip.nights, trip.adults, trip.children)) for h in hotels]
+            priced = [(h, _stay_price(h, trip, trip.date_in, trip.nights)) for h in hotels]
             return priced, notes
     return [], notes
 
 
-def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Package], list[str]]:
+def make_packages(trip: Trip, pinned_hotel: str | None = None, *, hidden_hotels=(), preferred_hotels=()) -> tuple[list[Package], list[str]]:
     outs = [leg for leg in transport_options(trip.origin, trip.dest, trip.date_in, trip.mode) if _leg_ok(leg, trip)]
     backs = [leg for leg in transport_options(trip.origin, trip.dest, trip.date_out, trip.mode)
              if _leg_ok(leg, trip)]
     if not outs or not backs:
         return [], ["нет подходящего транспорта на эти даты"]
     hotels, relaxed = candidate_hotels(trip)
+    hotels = [hp for hp in hotels if hp[0].id not in hidden_hotels]
     if not hotels:
         return [], ["нет отелей, которые принимают ваши условия"]
 
@@ -206,12 +218,12 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
     fast_out = min(outs, key=comfort_key)
     fast_back = min(backs, key=comfort_key)
 
-    by_value = sorted(hotels, key=lambda hp: -_hotel_value(hp[0], hp[1], trip))
+    by_value = sorted(hotels, key=lambda hp: (hp[0].id not in preferred_hotels, -_hotel_value(hp[0], hp[1], trip)))
     pinned = next((hp for hp in hotels if hp[0].id == pinned_hotel), None)
     if pinned_hotel and pinned is None:
         return [], ["выбранный отель не подходит под текущие условия или отсутствует в демонстрационном каталоге"]
     def stay_cost(hp: tuple[Hotel, int]) -> int:  # отель вместе с трансферами туда и обратно
-        return hp[1] + transfer(hp[0], trip.people, outs[0].mode == "train").price * 2
+        return hp[1] + transfer(hp[0], trip.people, outs[0].mode == "train", trip.transfer_kind).price * 2
 
     # Для отдыха на море даже «Экономный» и «Комфорт» — не дальше пешей прогулки до пляжа (если такие есть)
     beach = bool({"sea", "beach"} & set(trip.trip_types)) or "beach_line" in trip.wishes
@@ -243,10 +255,10 @@ def make_packages(trip: Trip, pinned_hotel: str | None = None) -> tuple[list[Pac
         hotel_in = max(trip.date_in, out.arrive.date() if out.arrive.hour >= 5 else out.arrive.date() - timedelta(days=1))
         hotel_out = min(trip.date_out, back.depart.date())
         if (hotel_in, hotel_out) != (trip.date_in, trip.date_out) and hotel_out > hotel_in:
-            price = hotel_price(hotel, hotel_in, (hotel_out - hotel_in).days, trip.adults, trip.children)
+            price = _stay_price(hotel, trip, hotel_in, (hotel_out - hotel_in).days)
         pkg = Package(key, out, back, hotel, price,
-                      transfer(hotel, trip.people, out.mode == "train"),
-                      transfer(hotel, trip.people, back.mode == "train"), hotel_in, hotel_out)
+                      transfer(hotel, trip.people, out.mode == "train", trip.transfer_kind),
+                      transfer(hotel, trip.people, back.mode == "train", trip.transfer_kind), hotel_in, hotel_out)
         if any(p.out.id == pkg.out.id and p.back.id == pkg.back.id and p.hotel.id == pkg.hotel.id
                for p in packages):
             continue
@@ -271,7 +283,7 @@ def leg_text(leg: Leg) -> str:
     via = f", пересадка в {VIA_PREP.get(leg.via or '', leg.via)} {hm(leg.layover_min)}" if leg.stops else (", без пересадок" if leg.mode == "plane" else "")
     bag = "" if leg.mode == "train" else (", с багажом" if leg.baggage else ", только ручная кладь")
     return (f"{kind} {leg.carrier} {leg.number}: {leg.depart:%d.%m %H:%M} → {leg.arrive:%d.%m %H:%M} "
-            f"({hm(leg.minutes)}{via}{bag})")
+            f"({hm(leg.minutes)}{via}{bag}, класс {leg.seat_class})")
 
 
 def explain(pkg: Package, trip: Trip, all_: list[Package]) -> None:
@@ -286,7 +298,7 @@ def explain(pkg: Package, trip: Trip, all_: list[Package]) -> None:
     if trip.children and {"kids_club", "pool"} & set(h.amenities):
         why.append("для детей: " + ", ".join(AMENITIES[a] for a in ("kids_club", "pool") if a in h.amenities))
     if trip.pets:
-        why.append("можно с животными")
+        why.append("животные указаны в демо-каталоге; условия размещения не проверены")
     if h.free_cancel_days is not None:
         why.append(f"бесплатная отмена за {h.free_cancel_days} дн.")
     if not pkg.out.stops and pkg.out.mode == "plane":
@@ -386,7 +398,7 @@ def check(pkg: Package, trip: Trip) -> list[tuple[str, str]]:
         if trip.pets:
             out.append(("warn", "с животным: уточните правила ввоза и необходимые документы"))
     if trip.pets and pkg.out.mode == "plane":
-        out.append(("warn", "животное в салоне — до 8 кг с переноской, иначе в багажном отсеке"))
+        out.append(("warn", "животное: перевозку, место, ограничения переноски и доплату нужно подтвердить у перевозчика"))
     weather = climate(trip.dest.id, trip.date_in.month)
     if weather and {"sea", "beach"} & set(trip.trip_types) and weather.sea is not None and weather.sea < 22:
         out.append(("warn", f"море в это время {weather.sea:+.0f}° — прохладно для купания"))
@@ -429,12 +441,12 @@ def timeline(pkg: Package, trip: Trip) -> list[dict]:
 
 def cheapest_start(origin: Origin, dest: Destination, first: date, last: date, nights: int,
                    mode: str | None = None, *, baggage_required: bool = False, direct_only: bool = False,
-                   pets: bool = False, max_hours: float | None = None) -> date | None:
+                   pets: bool = False, max_hours: float | None = None, seat_class: str | None = None) -> date | None:
     """Самая выгодная дата заезда в окне [first, last] по цене дороги туда-обратно (её же видит календарь цен)."""
     best, best_cost = None, None
     day = first
     constraints = {"baggage_required": baggage_required, "direct_only": direct_only,
-                   "pets": pets, "max_hours": max_hours}
+                   "pets": pets, "max_hours": max_hours, "seat_class": seat_class}
     while day <= last:
         out = [leg for leg in transport_options(origin, dest, day, mode) if _leg_matches(leg, **constraints)]
         back = [leg for leg in transport_options(origin, dest, day + timedelta(days=nights), mode)

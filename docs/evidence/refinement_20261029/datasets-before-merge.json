@@ -1,0 +1,314 @@
+{
+  "refs": {
+    "HEAD": "bd10e133a853b85aaaa10f7a2759b7db0e295aba",
+    "origin/main": "28a7006de302dae00e88e55774fddd59727ee39e",
+    "origin/daniil": "28a7006de302dae00e88e55774fddd59727ee39e"
+  },
+  "files": {
+    "domains/trips/data/geo.json": {
+      "HEAD": {
+        "sha256": "eb3d552cf14faea38a84db5609560f3390acf949a16c05fd4ea577e2031c60f1",
+        "bytes": 81083
+      },
+      "origin/main": {
+        "sha256": "ff86e802b8dedadcb267e355adb81b07355c767541d69100b6bc4b884a7f7bad",
+        "bytes": 147883
+      },
+      "origin/daniil": {
+        "sha256": "ff86e802b8dedadcb267e355adb81b07355c767541d69100b6bc4b884a7f7bad",
+        "bytes": 147883
+      }
+    },
+    "domains/trips/data/hotels.json": {
+      "HEAD": {
+        "sha256": "4f3315002f0ce76ed11dc3a66970159f732ad66118b5ba04a6b74a6c01a71a9c",
+        "bytes": 13492282
+      },
+      "origin/main": {
+        "sha256": "4f3315002f0ce76ed11dc3a66970159f732ad66118b5ba04a6b74a6c01a71a9c",
+        "bytes": 13492282
+      },
+      "origin/daniil": {
+        "sha256": "4f3315002f0ce76ed11dc3a66970159f732ad66118b5ba04a6b74a6c01a71a9c",
+        "bytes": 13492282
+      }
+    },
+    "domains/trips/data/climate.json": {
+      "HEAD": {
+        "sha256": "8343048b1da9480aef361cf9e194d3433b819c7a379a41b7e35e0e8be84690b8",
+        "bytes": 101712
+      },
+      "origin/main": {
+        "sha256": "8343048b1da9480aef361cf9e194d3433b819c7a379a41b7e35e0e8be84690b8",
+        "bytes": 101712
+      },
+      "origin/daniil": {
+        "sha256": "8343048b1da9480aef361cf9e194d3433b819c7a379a41b7e35e0e8be84690b8",
+        "bytes": 101712
+      }
+    },
+    "domains/trips/data/world_cities.sqlite3": {
+      "HEAD": {
+        "sha256": "4a4a0978a8bd4843f82115e841c55f35f2b351b435e7d242ab941ab2fe3387eb",
+        "bytes": 24014848
+      },
+      "origin/main": {
+        "sha256": "4a4a0978a8bd4843f82115e841c55f35f2b351b435e7d242ab941ab2fe3387eb",
+        "bytes": 24014848
+      },
+      "origin/daniil": {
+        "sha256": "4a4a0978a8bd4843f82115e841c55f35f2b351b435e7d242ab941ab2fe3387eb",
+        "bytes": 24014848
+      }
+    },
+    "domains/trips/data/ourairports.json": {
+      "HEAD": {
+        "sha256": "42e7d8ca44591b942eb558cd82d23b37495f77cdf27008f2f0ac7dc47615c91d",
+        "bytes": 8475663
+      },
+      "origin/main": {
+        "sha256": "42e7d8ca44591b942eb558cd82d23b37495f77cdf27008f2f0ac7dc47615c91d",
+        "bytes": 8475663
+      },
+      "origin/daniil": {
+        "sha256": "42e7d8ca44591b942eb558cd82d23b37495f77cdf27008f2f0ac7dc47615c91d",
+        "bytes": 8475663
+      }
+    },
+    "domains/trips/data/campgrounds.json": {
+      "HEAD": {
+        "sha256": "81a93064fb4f18be95e9bc138b09e853b7ec7043baaf40a0c1950afdff9c9f64",
+        "bytes": 1864
+      },
+      "origin/main": {
+        "sha256": "81a93064fb4f18be95e9bc138b09e853b7ec7043baaf40a0c1950afdff9c9f64",
+        "bytes": 1864
+      },
+      "origin/daniil": {
+        "sha256": "81a93064fb4f18be95e9bc138b09e853b7ec7043baaf40a0c1950afdff9c9f64",
+        "bytes": 1864
+      }
+    },
+    "apps/static/events.json": {
+      "HEAD": {
+        "sha256": "4413be51a380bcf08da724a3f31c9ced9c95a202afc855a39f9ca3f0bb50cd50",
+        "bytes": 67834
+      },
+      "origin/main": {
+        "sha256": "aec4078d7b4519b9516fe89ff5c8683ac734cdecdb83585d75cf58cc69b19636",
+        "bytes": 67157
+      },
+      "origin/daniil": {
+        "sha256": "aec4078d7b4519b9516fe89ff5c8683ac734cdecdb83585d75cf58cc69b19636",
+        "bytes": 67157
+      }
+    },
+    "apps/static/heritage.json": {
+      "HEAD": {
+        "sha256": "a12c114769dcf056eebf305858a21af25f54e838f00a61551c40dfe47f25214b",
+        "bytes": 35499
+      },
+      "origin/main": {
+        "sha256": "a12c114769dcf056eebf305858a21af25f54e838f00a61551c40dfe47f25214b",
+        "bytes": 35499
+      },
+      "origin/daniil": {
+        "sha256": "a12c114769dcf056eebf305858a21af25f54e838f00a61551c40dfe47f25214b",
+        "bytes": 35499
+      }
+    },
+    "domains/trips/data/guides.json": {
+      "HEAD": null,
+      "origin/main": {
+        "sha256": "a3fd94f3f992fd851c63c22be8e9470d28a1774c3c60d1c40ab14619376c2963",
+        "bytes": 2584851
+      },
+      "origin/daniil": {
+        "sha256": "a3fd94f3f992fd851c63c22be8e9470d28a1774c3c60d1c40ab14619376c2963",
+        "bytes": 2584851
+      }
+    },
+    "domains/trips/data/guides_vectors.npy": {
+      "HEAD": null,
+      "origin/main": {
+        "sha256": "6263b88d0a0a24defebea19d63ba2235724b2016c5c4f34f347a9ed4f823777d",
+        "bytes": 2119040
+      },
+      "origin/daniil": {
+        "sha256": "6263b88d0a0a24defebea19d63ba2235724b2016c5c4f34f347a9ed4f823777d",
+        "bytes": 2119040
+      }
+    }
+  },
+  "geo": {
+    "HEAD": {
+      "origins": 7,
+      "destinations": 75,
+      "duplicate_origin_names": [],
+      "extra_origin_fields": [],
+      "duplicate_airport_codes": []
+    },
+    "origin/main": {
+      "origins": 290,
+      "destinations": 75,
+      "duplicate_origin_names": [],
+      "extra_origin_fields": [
+        "airport_km",
+        "en"
+      ],
+      "duplicate_airport_codes": [
+        "LED",
+        "KZN",
+        "SVX",
+        "OVB",
+        "GOJ",
+        "KUF",
+        "CEK",
+        "KRR",
+        "UFA",
+        "KCY",
+        "VOZ",
+        "VOG",
+        "PEE",
+        "GSV",
+        "TJM",
+        "IJK",
+        "BAX",
+        "IKT",
+        "KHV",
+        "IAR",
+        "VVO",
+        "MCX",
+        "TOF",
+        "REN",
+        "KEJ",
+        "NOZ",
+        "ZIA",
+        "PEZ",
+        "NBC",
+        "KVX",
+        "CSY",
+        "DME",
+        "STW",
+        "VKO",
+        "SVO",
+        "MQF",
+        "IWA",
+        "ARH",
+        "HTA",
+        "AER",
+        "CEE",
+        "KRO",
+        "OGZ",
+        "SGC",
+        "GRV",
+        "MMK",
+        "KMW",
+        "BTK",
+        "GDZ",
+        "NAL",
+        "BQS",
+        "PKV",
+        "BWO",
+        "ABA",
+        "ESL",
+        "MRV",
+        "NSK",
+        "UUA",
+        "KJA",
+        "RMZ"
+      ]
+    },
+    "origin/daniil": {
+      "origins": 290,
+      "destinations": 75,
+      "duplicate_origin_names": [],
+      "extra_origin_fields": [
+        "airport_km",
+        "en"
+      ],
+      "duplicate_airport_codes": [
+        "LED",
+        "KZN",
+        "SVX",
+        "OVB",
+        "GOJ",
+        "KUF",
+        "CEK",
+        "KRR",
+        "UFA",
+        "KCY",
+        "VOZ",
+        "VOG",
+        "PEE",
+        "GSV",
+        "TJM",
+        "IJK",
+        "BAX",
+        "IKT",
+        "KHV",
+        "IAR",
+        "VVO",
+        "MCX",
+        "TOF",
+        "REN",
+        "KEJ",
+        "NOZ",
+        "ZIA",
+        "PEZ",
+        "NBC",
+        "KVX",
+        "CSY",
+        "DME",
+        "STW",
+        "VKO",
+        "SVO",
+        "MQF",
+        "IWA",
+        "ARH",
+        "HTA",
+        "AER",
+        "CEE",
+        "KRO",
+        "OGZ",
+        "SGC",
+        "GRV",
+        "MMK",
+        "KMW",
+        "BTK",
+        "GDZ",
+        "NAL",
+        "BQS",
+        "PKV",
+        "BWO",
+        "ABA",
+        "ESL",
+        "MRV",
+        "NSK",
+        "UUA",
+        "KJA",
+        "RMZ"
+      ]
+    }
+  },
+  "events": {
+    "HEAD": {
+      "count": 110,
+      "unique_ids": 110,
+      "with_description": 3,
+      "with_dedicated_image": 0
+    },
+    "origin/main": {
+      "count": 110,
+      "unique_ids": 110,
+      "with_description": 0,
+      "with_dedicated_image": 0
+    },
+    "origin/daniil": {
+      "count": 110,
+      "unique_ids": 110,
+      "with_description": 0,
+      "with_dedicated_image": 0
+    }
+  }
+}

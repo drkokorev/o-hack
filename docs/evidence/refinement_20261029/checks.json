@@ -1,0 +1,220 @@
+{
+  "task": "Combine user interface, 25 requested refinements, landmark collection, PD and f549225 model",
+  "code_commit": "0d60bd10dabfcd93f14192eadc68c5881b173c3b",
+  "earlier_baseline": "bd10e133a853b85aaaa10f7a2759b7db0e295aba",
+  "integration": {
+    "artemiy_model": "f549225afbd5f2a69aa589ac0c347bbfd71559c0",
+    "privacy": "be4b2be326fb1d1df64137aabaa6d0cd4914f5db",
+    "landmarks": "7c47e6f"
+  },
+  "environment": {
+    "os": "Windows",
+    "server": "127.0.0.1:18191",
+    "browser": "Chromium via Playwright CLI",
+    "audio": "synthetic WAV and stub transcription, no actual microphone recording",
+    "python": "3.14",
+    "additional_local_dependencies": {
+      "onnxruntime": "1.31.1",
+      "tokenizers": "0.23.3"
+    }
+  },
+  "verified": [
+    {
+      "status": "PASS",
+      "name": "full combined Python suite",
+      "count": 796,
+      "warnings": 4,
+      "seconds": 170.99,
+      "command": "python -m pytest -q --tb=short",
+      "scope": "4cf50bb plus then-current globe edits; before bundled city index was added"
+    },
+    {
+      "status": "PASS",
+      "name": "final city, IP override and privacy tests",
+      "count": 16,
+      "warnings": 4,
+      "seconds": 13.42,
+      "command": "python -m pytest tests/test_bundled_origin_ip.py tests/test_ip_city_20261028.py tests/test_demo_privacy_20261029.py -q --tb=short",
+      "scope": "final local index; legal wording then adjusted without behavior changes"
+    },
+    {
+      "status": "PASS",
+      "name": "shared UI browser flows",
+      "count": 41,
+      "evidence": "browser.json",
+      "command": "playwright-cli run-code --filename tools/verify_refinements.js"
+    },
+    {
+      "status": "PASS",
+      "name": "WebGL recovery and singleton click",
+      "count": 7,
+      "evidence": "globe-recovery.json",
+      "command": "playwright-cli run-code --filename tools/verify_globe_recovery.js"
+    },
+    {
+      "status": "PASS",
+      "name": "all 32 models decoded, rendered and cards opened",
+      "count": 32,
+      "evidence": "landmarks-32.json",
+      "command": "playwright-cli run-code --filename tools/verify_integrated_landmarks.js"
+    },
+    {
+      "status": "PASS",
+      "name": "final city client, service date, 320 px attribution",
+      "count": 6,
+      "evidence": "final-client.json",
+      "command": "playwright-cli run-code --filename tools/verify_final_city_ui.js"
+    },
+    {
+      "status": "PASS",
+      "name": "live model and local voice readiness",
+      "count": 4,
+      "evidence": "live-model.json",
+      "command": "python -m tools.verify_design_models --base http://127.0.0.1:18191 --output result.json"
+    },
+    {
+      "status": "PASS",
+      "name": "top-level static JS/MJS syntax",
+      "count": 22,
+      "command": "node --check <each apps/static/*.js and *.mjs>"
+    },
+    {
+      "status": "PASS",
+      "name": "dataset integration comparison",
+      "evidence": "datasets.json",
+      "command": "python -m tools.audit_design_datasets --output result.json"
+    },
+    {
+      "status": "PASS",
+      "name": "bundled local IP index reproducibility metadata",
+      "evidence": "origin-ip.json"
+    }
+  ],
+  "earlier_attempts": [
+    {
+      "local_log": "refinement-all-32.log",
+      "sha256": "8cfcd4629cc8883f1d9b80efc466ed6ffc8b2efe8f0f13343a8f6b833bdff0a5",
+      "result": "PASS",
+      "check_count": 32
+    },
+    {
+      "local_log": "refinement-browser-combined.log",
+      "sha256": "3cd48188ca71866a8d563f7d48d9aa3ab9d177370ea0545c119ca6cab97411d3",
+      "result": "PASS",
+      "check_count": 41
+    },
+    {
+      "local_log": "refinement-browser-final.log",
+      "sha256": "3cb29b662d9f677361fa7c4837a789197b54f786b36b8408110d5ff246d2dbe9",
+      "result": "PASS",
+      "check_count": 38
+    },
+    {
+      "local_log": "refinement-browser-merged-final.log",
+      "sha256": "59cdc451995a80e173790d3485f1b9a36357456ed98f28ac93c971b2cd013573",
+      "result": "PASS",
+      "check_count": 38
+    },
+    {
+      "local_log": "refinement-browser-merged.log",
+      "sha256": "65b9e61d6fd9eced64f1d02f072681d9f336367c59e467bbda69dbf2d79760e5",
+      "result": "FAIL",
+      "summary": "Error: first calendar click does not send or reset anything"
+    },
+    {
+      "local_log": "refinement-browser.log",
+      "sha256": "59f88826fb4a02f70858da2c451e710c6c86c49a85cdd758264bc2eab9e64b75",
+      "result": "PASS",
+      "check_count": 33
+    },
+    {
+      "local_log": "refinement-combined-pytest.log",
+      "sha256": "c358dea51082ccb9f22c20163f52de60792017ff39b822adfc5806995c61cd57",
+      "result": "PASS",
+      "summary": "796 passed, 4 warnings in 170.99s (0:02:50)"
+    },
+    {
+      "local_log": "refinement-datasets-final.log",
+      "sha256": "76d68379fa28b9dfca04f93a51c29b2f0a9164892bedf702a9893a12e28727ea",
+      "result": "PASS",
+      "summary": "Git dataset hash comparison"
+    },
+    {
+      "local_log": "refinement-final-client-initial.log",
+      "sha256": "f3b52694157e9658929bb36b057dbc770ca2574252ff3e76d523822bad5cfbf4",
+      "result": "FAIL",
+      "summary": "Error: single service calendar closes after selection"
+    },
+    {
+      "local_log": "refinement-final-client.log",
+      "sha256": "cbbc43a02e667b9015adab68f7f15a49d83dfd3a99a5d0a29e2a8452d46531e2",
+      "result": "PASS",
+      "check_count": 6
+    },
+    {
+      "local_log": "refinement-globe-32.log",
+      "sha256": "5a0ec8300fb2a36e417e6f8b8fb5e20910fede754e2a5aadbb8486f39d3c0cc1",
+      "result": "PASS",
+      "check_count": 7
+    },
+    {
+      "local_log": "refinement-globe-final.log",
+      "sha256": "27594b3ec58fbbdf1724fce25252cbda9febb6bdaab668805a2bc2da74316183",
+      "result": "PASS",
+      "check_count": 7
+    },
+    {
+      "local_log": "refinement-integration-targeted.log",
+      "sha256": "5e676f6b4373192b74a232bddc4f307f331624cc24664b509a8a7bb31a2f2cf3",
+      "result": "PASS",
+      "summary": "31 passed, 4 warnings in 39.32s"
+    },
+    {
+      "local_log": "refinement-ip-final.log",
+      "sha256": "2c6ea0e8acde96041a4b98d48cd719386a462898274dadf61212c4d68d48e54f",
+      "result": "FAIL",
+      "summary": "1 failed, 15 passed, 4 warnings in 2.43s"
+    },
+    {
+      "local_log": "refinement-ip-verified.log",
+      "sha256": "3d808dba26fe4f59468e7eded717794d08acfb517dc8fd17c1e283e8ae0568ce",
+      "result": "PASS",
+      "summary": "16 passed, 4 warnings in 13.42s"
+    },
+    {
+      "local_log": "refinement-live-final.log",
+      "sha256": "18b55a63fd0aa8fa7ec0b5c01e492919cb5476ecf928b415e7d022f0eb351cf7",
+      "result": "PASS",
+      "summary": "live-model smoke, four steps"
+    },
+    {
+      "local_log": "refinement-merged-pytest.log",
+      "sha256": "1f679215816db7a834fec217b46b95481586caeac8a01b468e5eb4afe7bd21d3",
+      "result": "FAIL",
+      "summary": "2 failed, 751 passed, 4 warnings in 164.62s (0:02:44)"
+    },
+    {
+      "local_log": "refinement-pytest.log",
+      "sha256": "30f7ee39fa8426790909eefe3a02bccfeabc02b18a9a88bc97416fb25a3bfb9e",
+      "result": "PASS",
+      "summary": "587 passed in 51.01s"
+    }
+  ],
+  "resolved_failures": [
+    "WebGL restoration first recreated buffers without re-adding removed custom layers; both fixed and rechecked",
+    "751 pass / 2 fail: missing ONNX/tokenizers in reused runtime; installed into this stand only; subsequent 796 pass",
+    "Range calendar received MouseEvent as single flag; changed handler to explicit lambda; browser range check passed",
+    "First local IP index missed English aliases for seven original origins; Moscow regression failed; rebuilt and 16 passed",
+    "Final single-date browser assertion raced asynchronous dialog close; awaited detached element; six checks then passed",
+    "First data download URL included an apostrophe and returned 404; corrected official URL and verified gzip"
+  ],
+  "not_claimed": [
+    "real payment or booking",
+    "actual microphone recognition quality",
+    "physical phone FPS",
+    "dedicated photos for all events",
+    "complete additional-task analytics and scheduled notifications",
+    "specific airport booking selection"
+  ],
+  "counting_note": "Counts overlap. Do not sum them as unique automated tests; no full rerun after isolated final IP addition."
+}

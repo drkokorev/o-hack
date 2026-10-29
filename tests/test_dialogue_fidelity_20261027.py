@@ -251,7 +251,7 @@ def test_multiple_rooms_are_preserved_but_not_priced_as_one():
     session = a.new_session()
     response = a.handle(session, "Из Москвы в Казань с 3 по 6 июня 2027 двое взрослых, нужно 2 номера")
     assert session.state.rooms == 2 and response.payload["kind"] == "question"
-    assert "не могу проверить наличие" in response.reply and "несколько номеров" in response.reply
+    assert response.payload["field"] == "room_allocation" and "распределить" in response.reply
     response = a.handle(session, "один номер")
     assert session.state.rooms == 1 and response.payload["kind"] == "packages"
 

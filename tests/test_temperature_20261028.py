@@ -20,6 +20,19 @@ def test_explicit_air_and_sea_limits_are_separate():
     assert temperature_preferences("не холоднее +25 градусов днем") == {"air_min_temp": 25}
 
 
+def test_editable_temperature_range_preserves_both_bounds_and_subjects():
+    assert temperature_preferences("Температура воздуха от 25 до 30 градусов, температура моря от 23 градусов") == {
+        "air_min_temp": 25, "air_max_temp": 30, "sea_min_temp": 23}
+    assert temperature_preferences("Воздух от -5,5 °C до +2 °C, воздух до 1 градуса") == {
+        "air_min_temp": -5.5, "air_max_temp": 1}
+
+
+def test_temperature_range_needs_units_and_does_not_turn_forecasts_into_wishes():
+    assert temperature_preferences("Какая температура воздуха от 25 до 30 градусов будет?") == {}
+    assert temperature_preferences("воздух от 25 до 30 июня 2027") == {}
+    assert temperature_preferences("воздух от 25 до 30") == {}
+
+
 def test_dates_and_weather_questions_do_not_become_temperature_preferences():
     assert temperature_preferences("25 июня 2027") == {}
     assert temperature_preferences("Какая температура воздуха будет 25 градусов?") == {}

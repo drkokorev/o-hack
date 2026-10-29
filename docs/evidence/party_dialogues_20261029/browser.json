@@ -1,0 +1,35 @@
+{
+  "mode": "rules",
+  "synthetic": true,
+  "result": {
+    "checks": [
+      "adult-only request does not invent children",
+      "trip without pets does not introduce an animal",
+      "recognised dietary draft is not saved",
+      "infant age is accepted and child fares are unverified",
+      "child age answer is not saved in browser recovery",
+      "pending child ages are not saved as a draft",
+      "bare two-child age answer continues the dialogue",
+      "bare child ages are not saved in browser recovery",
+      "mixed ages at check-in lead to hotel results",
+      "mixed child ages are not saved in browser recovery",
+      "pregnancy gets a qualified warning",
+      "sensitive pregnancy message is not saved",
+      "cards show unverified pregnancy conditions",
+      "sensitive message stays redacted after reload",
+      "pet weight and preference are acknowledged without a transport guarantee",
+      "no universal pet weight threshold is asserted",
+      "pet weight can be corrected",
+      "multiple allergies are unverified, including cross-contact",
+      "allergy message is not saved in browser recovery",
+      "remaining dietary requirement is visible after correction",
+      "long notices fit the mobile viewport",
+      "no uncaught browser errors"
+    ],
+    "viewport": {
+      "viewport": 390,
+      "content": 390
+    },
+    "pageErrors": 0
+  }
+}

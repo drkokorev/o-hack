@@ -95,7 +95,7 @@ def test_place_question_without_model_answers_from_guide_and_keeps_trip():
 
 
 def test_llm_answer_on_guide_question_cites_source():
-    answer = "Путеводитель советует искать кафе в центре и попробовать симит. Какой вариант берём?"
+    answer = "Путеводитель советует искать кафе в центре и попробовать симит. Сведения могут устареть. Какой вариант берём?"
     llm = FakeLLM({}, {"question": "food"}, answer)
     a = agent(llm)
     session = a.new_session()

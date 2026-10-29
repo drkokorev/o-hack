@@ -43,11 +43,6 @@
   .preference-icon { font-size: 18px; font-weight: 600; line-height: 1; color: var(--ink); margin-left: 5px; }
   .preferences select { max-width: 105px; min-height: 38px; border: 1px solid var(--line); border-radius: 10px; padding: 0 8px;
     background: var(--surface); color: var(--muted); font-size: 12px; cursor: pointer; }
-  .sound-toggle { display: grid; place-items: center; width: 38px; height: 38px; flex: none; border: 1px solid var(--line);
-    border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer; }
-  .sound-toggle[aria-pressed="true"] .sound-off-line { display: none; }
-  .sound-toggle[aria-pressed="false"] { color: var(--faint); }
-  .sound-toggle:disabled { opacity: .5; cursor: default; }
 
   main.board { padding: 28px 34px 64px; }
   aside.chat { border-left: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column;

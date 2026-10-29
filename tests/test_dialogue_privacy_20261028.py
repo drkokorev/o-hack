@@ -154,12 +154,13 @@ def test_known_total_and_child_count_complete_the_group_without_extra_question()
     assert response.payload["kind"] == "packages"
 
 
-def test_unspecified_children_are_an_explicit_calculation_assumption():
+def test_unspecified_children_are_not_mentioned_or_recorded_as_absent():
     a = agent()
     session = a.new_session()
     response = a.handle(session, "Из Москвы в Казань с 10 по 15 июня 2027 двое взрослых")
     assert session.state.children is None
-    assert "без детей" in response.reply.lower()
+    assert "дет" not in response.reply.lower() and "ребён" not in response.reply.lower()
+    assert "2 взрослых" in response.reply.lower()
 
 
 @pytest.mark.parametrize("private_text", [

@@ -16,16 +16,18 @@ window.createPreferences = function createPreferences(map) {
       maximumFractionDigits: 0 }).format(value / rates.rub_per_unit[currency.value]);
   }
   function apply() {
-    document.querySelectorAll("#view, #conditions, #log .bot, #say").forEach((root) => {
+    document.querySelectorAll("#view, #conditions, #trip-summary-line, .trip-context-preview, #log .bot, #say").forEach((root) => {
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
       nodes.forEach((node) => {
-        if (!original.has(node)) original.set(node, node.nodeValue);
-        const text = original.get(node);
+        if(node.parentElement?.closest('[data-rub-price]')) return;
+        const cached = original.get(node);
+        const text = cached && node.nodeValue === cached.rendered ? cached.source : node.nodeValue;
         node.nodeValue = text.replace(/((?:\d{1,3}(?:[\s\u00a0\u202f]\d{3})+|\d+)(?:[,.]\d{1,2})?)\s*₽/g, (match, amount) => {
           const value = Number(amount.replace(/[\s\u00a0\u202f]/g, "").replace(",", "."));
           const changed = convert(value); return changed ? `≈ ${changed}` : match;
         });
+        original.set(node, {source:text,rendered:node.nodeValue});
       });
     });
     document.querySelectorAll("[data-rub-price]").forEach((node) => {
@@ -34,7 +36,7 @@ window.createPreferences = function createPreferences(map) {
       node.textContent = changed ? `≈ ${changed}` : node.dataset.originalLabel;
     });
     currency.title = currency.value === "RUB" ? "Валюта демонстрационных цен" :
-      "Примерный пересчёт демо-цен по курсу ЦБ РФ на 28.10.2026; бюджет в диалоге указывайте в рублях";
+      "Примерный пересчёт; дата курса указана внизу страницы. Бюджет в диалоге — в рублях";
     note.hidden = currency.value === "RUB" || !rates;
   }
   currency.addEventListener("change", () => { manualCurrency = currency.value; save("odin.currency", manualCurrency); apply(); });
@@ -51,7 +53,7 @@ window.createPreferences = function createPreferences(map) {
     }
     if (rates) {
       note.append("≈ ", Object.assign(document.createElement("a"),
-        { href: rates.url, target: "_blank", rel: "noopener", textContent: "курс ЦБ на 28.10.2026" }), " · бюджет в ₽");
+        { href: rates.url, target: "_blank", rel: "noopener", textContent: `курс ЦБ на ${rates.date.split("-").reverse().join(".")}` }), " · бюджет в ₽");
     } else {
       currency.value = "RUB"; currency.disabled = true;
       note.textContent = "Курс недоступен; суммы показаны в рублях.";

@@ -77,6 +77,17 @@ def _month_short(m: re.Match) -> str:
 
 def norm(text: str) -> str:
     text = text.lower().replace("ё", "е")
+    # Limited English support, retaining negation before replacing date words.
+    text = re.sub(r"\bnot\s+tomorrow\b", "не завтра", text)
+    text = re.sub(r"\bnot\s+(?:in\s+)?next\s+month\b", "не в следующем месяце", text)
+    text = re.sub(r"\b(?:in\s+)?next\s+month\b", "в следующем месяце", text)
+    text = re.sub(r"\btomorrow\b", "завтра", text)
+    text = re.sub(r"\b(\d{1,2})\s+adults?\b", r"\1 взрослых", text)
+    # Narrow, unambiguous typo corrections for time expressions only.
+    text = re.sub(r"\bпосле\s+завтра\b", "послезавтра", text)
+    text = re.sub(r"\bзавтро\b", "завтра", text)
+    text = re.sub(r"\bследущ(ий|ем|его|им)\b", r"следующ\1", text)
+    text = re.sub(r"\b(следующ(?:ем|ий|его|им))\s+мес\b\.?", r"\1 месяце", text)
     text = re.sub(r"\b(?:дикабр|декобр)(?=[ьяе]\b)", "декабр", text)
     text = re.sub(r"\b(во? )?(янв|февр?|мар|апр|июн|июл|авг|сент?|окт|нояб?|дек|январ|феврал|апрел|сентябр|октябр|"
                   r"ноябр|декабр)\b\.?", _month_short, text)
@@ -218,12 +229,17 @@ def parse_dates(text: str, today: date, known_in: date | None = None,
                 month = today.month if day >= today.day else today.month % 12 + 1
                 check_in = future_date(day, month, today)
     if check_in is None:
-        if re.search(r"\bпослезавтра\b", t):
-            check_in = today + timedelta(days=2)
-        elif re.search(r"\bзавтра\b", t):
-            check_in = today + timedelta(days=1)
-        elif re.search(r"\bсегодня\b", t):
-            check_in = today
+        for word, offset in (("послезавтра", 2), ("завтра", 1), ("сегодня", 0)):
+            for match in re.finditer(rf"\b{word}\b", t):
+                before = t[max(0, match.start() - 35):match.start()]
+                after = t[match.end():match.end() + 35]
+                if (re.search(r"\bне\s+(?:(?:хочу|можем|могу|поедем|едем|летим)\s+)?$", before) or
+                        re.match(r"\s+не\s+(?:могу|можем|хочу|хотим|едем|летим|поедем|подходит)\b", after)):
+                    continue
+                check_in = today + timedelta(days=offset)
+                break
+            if check_in is not None:
+                break
     if check_in is None:
         relative = re.search(
             r"\bчерез\s+(\d{1,4}|один|одну|два|две|три|четыре|пять|шесть|семь|пару)\s+"

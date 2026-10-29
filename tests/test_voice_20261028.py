@@ -17,10 +17,10 @@ def wav(seconds=1, rate=16000, channels=1):
     return out.getvalue()
 
 
-def test_rules_mode_uses_browser_voice_when_no_local_model_is_set(monkeypatch):
+def test_voice_is_off_without_a_local_model_and_never_enables_external_recognition(monkeypatch):
     monkeypatch.delenv("VOICE_MODEL_DIR", raising=False)
     with TestClient(build_app()) as client:
-        assert client.get("/api/voice").json() == {"backend": "browser", "status": "off", "max_seconds": 20}
+        assert client.get("/api/voice").json() == {"backend": "off", "status": "off", "max_seconds": 20}
         assert client.post("/api/voice/transcribe", content=wav()).status_code == 503
 
 

@@ -128,6 +128,9 @@ _HEALTH_INFO = re.compile(
     r"(?:диагноз\s*[:=]?\s*)?(?:диабет|астма|гипертония|целиакия|эпилепсия|онкология|беременность|"
     r"вич|психиатрическ\w*\s+диагноз)\b", re.IGNORECASE
 )
+_PREGNANCY = re.compile(r"\bбеременн(?:ость|ости|остью|ая|ой|ую|ые|ых|ым|ыми|а|ы)\b", re.IGNORECASE)
+_PREGNANCY_WEEKS_AFTER = re.compile(r"(\[условия беременности\])\s*,?\s*(?:(?:срок|уже|на сроке|на)\s*)?\d{1,2}(?:-я|-й)?\s*нед(?:ел\w*|\.?)", re.IGNORECASE)
+_PREGNANCY_WEEKS_BEFORE = re.compile(r"\b\d{1,2}(?:-я|-й)?\s*нед(?:ел\w*|\.?)\s*(\[условия беременности\])", re.IGNORECASE)
 _MEDICATION = re.compile(r"\b(?:я\s+)?принимаю\s+(?:инсулин|лекарств\w*|препарат\w*)\b", re.IGNORECASE)
 _HEALTH_DIAGNOSIS = re.compile(
     r"\b(?:у\s+меня|у\s+реб[её]нка|у\s+сына|у\s+дочери|у\s+мамы|у\s+отца|у\s+жены|у\s+мужа)\s+"
@@ -182,7 +185,9 @@ _UNRESOLVED_HINTS = tuple(re.compile(pattern, re.IGNORECASE) for pattern in (
     r"\b(?:загран)?паспорт\w*\s*[:#№-]?\s*[a-zа-яё]{1,3}[- ]*\d{4,}\b",
     r"\b(?:t\.me|telegram\.me|vk\.com|wa\.me|instagram\.com)/[\w.-]+",
     r"\b[\w.+-]+\s+(?:это|собака|через|at|\{at\})\s+[\w-]+\s+(?:точка|dot)\s+[\w-]+",
-    r"\b(?:инсулин\w*|лекарств\w*|диагноз\w*|артрит\w*)\b",
+    r"\b(?:инсулин\w*|лекарств\w*|диагноз\w*|артрит\w*|диабет\w*|астм\w*|"
+    r"эпилепси\w*|онкологи\w*|беременн\w*|аллерги\w*|непереносимост\w*|анафилак\w*)\b",
+    r"\b(?:я\s+вешу|мой\s+вес|реб[её]нок\s+весит)\s*\d{1,3}(?:[.,]\d+)?\s*кг\b",
     r"\bродил(?:ся|ась)\s+в\s+(?:тысяча|девятнадцать|двадцать)\b",
     r"\b(?:моя\s+квартира|(?:я\s+)?живу\s+(?:у|в|на))\b[^;.!?\n]{0,100}\b(?:дом\w*|дом)\b",
 ))
@@ -223,9 +228,16 @@ def mask_basic_data(text: str, vault: Vault | None = None) -> tuple[str, bool]:
         lambda match: "[условие питания: исключить " + _FOODS[match.group("food").casefold()] + "]", inspected)
     inspected, intolerance_count = _FOOD_INTOLERANCE.subn(
         lambda match: "[условие питания: исключить " + _INTOLERANCE_FOODS[match.group("food").casefold()] + "]", inspected)
-    masked = food_count > 0 or intolerance_count > 0
+    # Keep only the fact that pregnancy-related travel conditions were raised;
+    # do not retain gestational age or a medical history in the session vault.
+    inspected, pregnancy_count = _PREGNANCY.subn("[условия беременности]", inspected)
+    inspected = _PREGNANCY_WEEKS_AFTER.sub(r"\1 [сведения о здоровье]", inspected)
+    inspected = _PREGNANCY_WEEKS_BEFORE.sub(r"[сведения о здоровье] \1", inspected)
+    masked = food_count > 0 or intolerance_count > 0 or pregnancy_count > 0
     for pattern, replacement in _SENSITIVE_PATTERNS:
-        if vault is None:
+        # Health details never need restoration: don't keep their original
+        # values even in the session's in-memory reversible vault.
+        if vault is None or replacement == "[сведения о здоровье]":
             inspected, count = pattern.subn(replacement, inspected)
         else:  # обратимо: «[телефон_1]», значение остаётся только в хранилище сессии
             label = replacement.strip("[]")

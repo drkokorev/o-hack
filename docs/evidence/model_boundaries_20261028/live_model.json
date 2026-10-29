@@ -1,0 +1,43 @@
+{
+  "model": "GigaChat-2-Max",
+  "cases": [
+    {
+      "case": "flight",
+      "kind": "flight_results",
+      "expected_kind": "flight_results",
+      "nlu": "llm+rules",
+      "answer_by": "template",
+      "model_used": true,
+      "pass": true
+    },
+    {
+      "case": "tour",
+      "kind": "question",
+      "expected_kind": "question",
+      "nlu": "llm+rules",
+      "answer_by": "template",
+      "model_used": true,
+      "pass": true
+    },
+    {
+      "case": "privacy",
+      "kind": "question",
+      "expected_kind": "question",
+      "nlu": "llm+rules",
+      "answer_by": "llm",
+      "model_used": true,
+      "pass": true
+    },
+    {
+      "case": "package",
+      "kind": "packages",
+      "expected_kind": "packages",
+      "nlu": "llm+rules",
+      "answer_by": "template",
+      "model_used": true,
+      "pass": true
+    }
+  ],
+  "calls": 5,
+  "test_values_in_requests": false
+}

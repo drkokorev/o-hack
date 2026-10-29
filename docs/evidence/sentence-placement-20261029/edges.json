@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "checks": [
+    "duration edit retains origin and budget",
+    "summary refinement does not overwrite a message being edited",
+    "unchanged field closes without a redundant request",
+    "date range crossing years shows both years",
+    "unknown place names remain inert text inside a working control",
+    "duplicate filtering preserves child ages and separate constraints",
+    "sentence controls settle to the active theme color"
+  ],
+  "duration": {
+    "from": "2027-08-12",
+    "to": "2027-08-19",
+    "nights": 7
+  }
+}

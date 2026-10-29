@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "context-loss extension available: Географическая",
+    "surface and 3D layers restored: Географическая",
+    "context-loss extension available: Дизайнерская",
+    "surface and 3D layers restored: Дизайнерская",
+    "singleton opens actual city without another zoom",
+    "singleton has a 44 px target, including edge click",
+    "no JavaScript exceptions"
+  ],
+  "errors": [],
+  "fixture": "one real Paris record as a singleton group; normal renderer and point endpoint"
+}

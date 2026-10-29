@@ -12,21 +12,25 @@ from dataclasses import replace
 from datetime import date, timedelta
 from typing import Callable
 
+from pydantic import BaseModel, Field
+
 from core.agent import Step
-from core.llm import Message, schema_hint
+from core.llm import Message, extract, schema_hint
 from core.ru import MONTHS_GEN, WEEKDAYS, WEEKDAYS_SHORT, fmt_money, plural
 
 from .climate import SOURCE as CLIMATE_SOURCE
 from .climate import climate
 from . import guides, landmarks
+from .accessibility import LABELS as ACCESS_LABELS, needs_local_handling, notice as accessibility_notice
+from .party_features import LABELS as TRAVEL_LABELS, PET_LABELS, local_only as party_local_only, notice as travel_notice
 from .geo import BY_ID, DESTINATIONS, ORIGIN_BY_NAME, TAG_NAMES, Destination, destination_has_tag
 from .dialogue import QUESTION_INPUT_FIELDS, idea_places, ideas, missing_for_trip
 from .inspire import Suggestion, suggest
 from .offers import AMENITIES, MEALS, hotels_for, transport_options
-from .planner import VIA_PREP, Package, Trip, _leg_ok, cheapest_start, hm, leg_text, make_packages, month_window, timeline
+from .planner import VIA_PREP, Package, Trip, _leg_ok, _leg_matches, cheapest_start, hm, leg_text, make_packages, month_window, timeline
 from .arbiter import arbitrate
-from .rules import find_destination, match_origin, rule_extract, time_expression_not_place
-from .state import PARAM_FIELDS, TripState, TripUpdate
+from .rules import DEFERABLE_QUESTIONS, find_destination, match_origin, rule_extract, time_expression_not_place
+from .state import PARAM_FIELDS, RoomAllocation, StaySegment, TripState, TripUpdate
 from .tent import tent_order, tent_step
 from .temperature import TEMP_FIELDS, matches_history
 from .textparse import norm
@@ -35,7 +39,7 @@ from .world_places import find_world_places
 MONTHS_PREP = ["январе", "феврале", "марте", "апреле", "мае", "июне", "июле", "августе", "сентябре",
                "октябре", "ноябре", "декабре"]
 ACTIONS = ("pick", "pick_name", "confirm", "shift_days", "show_hotels", "show_real_hotels", "search_real_hotels", "after_sale", "cheaper", "hesitate", "question",
-           "wants_ideas", "more", "back", "unknown_origin", "corrected_place", "unsure", "duration_not_given",
+           "wants_ideas", "more", "back", "unknown_origin", "corrected_place", "unsure", "child_age_number", "duration_not_given",
            "clear_duration", "payment_method")
 
 EXTRACTION_PROMPT = """Ты — модуль понимания в агенте путешествий. Сегодня {today} ({weekday}).
@@ -47,6 +51,8 @@ EXTRACTION_PROMPT = """Ты — модуль понимания в агенте 
 Правила:
 - destination — город, курорт или страна, если пользователь назвал или выбрал направление ("Турция" → "Анталья" не додумывай, пиши как сказано).
 - trip_types — коды из списка: sea, beach, warm, mountains, ski, city, culture, nature, food, spa, exotic, surf. "К тёплому морю" → ["sea", "warm"].
+- scenic_views и relaxed_walks — только прямо высказанные пожелания красивых видов или спокойных прогулок. Вопрос об их наличии не является пожеланием. Для каждого дай отдельную дословную цитату в evidence.
+- question — если пользователь спрашивает об уже выбранном месте, определи тему и приложи дословную цитату evidence.question. Пожелание само по себе не превращай в вопрос; бронирование и подтверждение определяются отдельно.
 - month — только явно названный месяц; время года не означает конкретный месяц. date_from/date_to — YYYY-MM-DD от сегодняшней даты. nights — число ночей ("на неделю" → 7).
 - "в следующем месяце" — следующий календарный месяц относительно сегодня, без конкретного дня. Слова "следующем" и "месяце" не являются названиями мест.
 - "через 3 дня" — дата начала через три дня от сегодня; это не длительность и не дата окончания.
@@ -59,6 +65,7 @@ EXTRACTION_PROMPT = """Ты — модуль понимания в агенте 
 - confirm — true на "да/оформляй/берём" при подтверждении, false на отказ.
 - shift_days — "на два дня позже" → 2, "на день раньше" → -1.
 - cheaper — просит дешевле. show_hotels — просит другие отели. after_sale — после покупки: early_checkin, late_checkout, change_dates, cancel.
+- unsure — пользователь не знает ответ на текущее уточнение, откладывает его или просит предложить решение вместо ответа. Приведи дословную цитату в evidence.unsure. Это не согласие на покупку и не разрешение угадывать даты, пассажиров или другие обязательные данные.
 - clear — какие параметры больше не учитывать ("бюджет не важен" → ["budget_total"], "другое направление" → ["destination"]).
 Примеры:
 "давай подумаем" → {{"confirm": null}}
@@ -79,6 +86,11 @@ EXTRACTION_PROMPT = """Ты — модуль понимания в агенте 
 
 GREETING = ("Расскажите о поездке своими словами — куда или какой отдых хотите, когда, кто едет и какой бюджет. "
             "Например: «Хочу к тёплому морю в ноябре, недорого, с ребёнком, без долгих перелётов».")
+PREGNANCY_ANSWER = ("Я не могу оценить безопасность поездки или определить применимые медицинские ограничения. "
+                    "Обсудите индивидуальные вопросы с врачом и отдельно уточните условия перевозчика и страховки; "
+                    "они здесь не проверены. Срок и диагноз сообщать в чат не нужно.")
+SENIOR_FARE_ANSWER = ("Льготы и право на них зависят от перевозчика, маршрута, тарифа и подтверждающих условий. "
+                      "Проверенной скидки сейчас нет; к демоценам она не применена.")
 
 
 def _people(adults: int, children: int) -> str:
@@ -99,12 +111,13 @@ def _dates(d1: date, d2: date) -> str:
 
 # Вопросы о месте отвечаем по путеводителю; остальным темам путеводитель даёт контекст для LLM
 NO_ANSWER = "Пока не могу надёжно ответить на этот вопрос."
-PLACE_TOPICS = frozenset({"sights", "areas", "food", "safety", "local_transport"})
+PLACE_TOPICS = frozenset({"sights", "areas", "food", "safety", "local_transport", "shopping", "nightlife"})
 GUIDE_QUERY = {"sights": "достопримечательности что посмотреть музеи", "areas": "районы где жить остановиться",
                "food": "кухня еда рестораны что попробовать", "safety": "безопасность опасность",
                "local_transport": "транспорт передвижение метро автобус такси",
                "visa": "въезд виза документы граница", "weather": "климат погода сезон когда ехать",
-               "transfer": "аэропорт как добраться трансфер такси", "travel": "как добраться аэропорт поезд"}
+               "transfer": "аэропорт как добраться трансфер такси", "travel": "как добраться аэропорт поезд",
+               "shopping": "покупки сувениры магазины", "nightlife": "ночная жизнь бары клубы"}
 
 
 def _source(s: "guides.Snippet") -> dict:
@@ -121,6 +134,12 @@ def _excerpt(s: "guides.Snippet", limit: int = 360) -> str:
         text = text[: cut + 1] if cut > 80 else text[:limit].rsplit(" ", 1)[0] + "…"
     lang = "" if s.lang == "ru" else " (статья на английском)"
     return f"По путеводителю {guides.SOURCE} («{s.title}»{lang}): {text}"
+
+
+class ClarificationIntent(BaseModel):
+    intent: str | None = Field(None, description="delegate, defer, pause, answer, question или unknown")
+    evidence: str | None = Field(None, description="Дословный фрагмент последнего сообщения")
+
 
 class TripsDomain:
     name = "trips"
@@ -167,7 +186,17 @@ class TripsDomain:
                 return any(walk(item) for item in value.values())
             return False
 
-        return walk(state.params().model_dump(mode="json", exclude_none=True))
+        return walk(state.params().model_dump(mode="json", exclude_none=True,
+                                             exclude={"accessibility_needs", "travel_needs", "children_ages", "child_age_months", "children_age_months_by_child", "child_age_basis", "room_allocations"}))
+
+    @staticmethod
+    def requires_local_processing(text: str) -> bool:
+        return needs_local_handling(text) or party_local_only(text)
+
+    @staticmethod
+    def requires_local_context(state: TripState, text: str) -> bool:
+        return (state.pending_question in {"children_ages", "children_age_unit", "room_allocation"} or
+                (state.pending_question == "children" and bool(re.search(r"\b(?:лет|год|года|месяц\w*|мес)\b", text, re.IGNORECASE))))
 
     # ---------- понимание ----------
 
@@ -184,7 +213,9 @@ class TripsDomain:
                 f"{i}. {h['name']}" for i, h in enumerate(state.real_hotels_shown, 1))
         system = EXTRACTION_PROMPT.format(
             today=today.isoformat(), weekday=WEEKDAYS[today.weekday()], stage=state.stage,
-            state=state.params().model_dump_json(exclude_none=True), pending=state.pending_question or "нет",
+            state=state.params().model_dump_json(exclude_none=True,
+                exclude={"accessibility_needs", "travel_needs", "children_ages", "child_age_months", "children_age_months_by_child", "child_age_basis", "room_allocations"}),
+            pending=state.pending_question or "нет",
             shown=shown, schema=schema_hint(TripUpdate))
         # The structured state and current turn carry the necessary context.
         # Do not resend earlier free-form messages (which may contain personal
@@ -193,6 +224,30 @@ class TripsDomain:
 
     def rule_extract(self, state: TripState, text: str, today: date) -> TripUpdate:
         return rule_extract(state, text, today)
+
+    def interpret_clarification(self, state: TripState, text: str, llm) -> TripUpdate | None:
+        """Classify only an unresolved reply; it cannot select or purchase anything."""
+        if (state.pending_question not in DEFERABLE_QUESTIONS or state.pending or
+                state.stage in {"payment", "booked"}):
+            return None
+        prompt = (
+            "Определи смысл последнего ответа на уточнение турагента. Ожидаемое поле: "
+            f"{state.pending_question}. Верни только JSON с intent и evidence. "
+            "delegate: человек просит агента самому предложить, выбрать или ориентироваться на опыт агента; "
+            "defer: человек сейчас не знает ответ и хочет продолжить без него; "
+            "pause: человек хочет отложить разговор; answer: дал конкретное значение; "
+            "question: задал отдельный вопрос; unknown: другое или непонятно. "
+            "Для delegate и defer evidence — дословная цитата из сообщения. "
+            "Не извлекай числа и не подтверждай покупку."
+        )
+        decision = extract(llm, ClarificationIntent, [
+            {"role": "system", "content": prompt}, {"role": "user", "content": text}])
+        quote = (decision.evidence or "").strip()
+        folded = lambda value: value.casefold().replace("ё", "е")
+        if (decision.intent in {"delegate", "defer"} and 4 <= len(quote) <= 120 and
+                folded(quote) in folded(text)):
+            return TripUpdate(unsure=True)
+        return None
 
     def arbitrate(self, state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -> tuple[TripUpdate, list[str]]:
         return arbitrate(state, text, llm, rules)
@@ -220,6 +275,48 @@ class TripsDomain:
             keep = {"past_orders": state.past_orders + ([state.order] if state.order else [])}
             state = TripState(**{k: v for k, v in keep.items() if v})
         data = update.model_dump(include=set(PARAM_FIELDS), exclude_none=True)
+        if "travel_needs" in data or update.remove_travel_needs:
+            incoming = {key for key in (data.get("travel_needs") or []) if key in TRAVEL_LABELS}
+            data["travel_needs"] = sorted((set(state.travel_needs or []) | incoming) - set(update.remove_travel_needs or [])) or None
+        if data.get("pets") is False:
+            data.update(pet_types=None, pet_count=None, pet_weight_kg=None, pet_cabin=None)
+        elif "pet_types" in data and state.pet_types and data["pet_types"] != state.pet_types:
+            if "pet_weight_kg" not in data:
+                data["pet_weight_kg"] = None
+            if "pet_count" not in data:
+                data["pet_count"] = None
+            if "pet_cabin" not in data:
+                data["pet_cabin"] = None
+        if data.get("pet_count", state.pet_count) and data.get("pet_count", state.pet_count) > 1 and "pet_weight_kg" not in data:
+            data["pet_weight_kg"] = None
+        if data.get("pet_count", state.pet_count) and data.get("pet_count", state.pet_count) > 1 and "pet_cabin" not in data:
+            data["pet_cabin"] = None
+        if "accessibility_needs" in data or update.remove_accessibility_needs:
+            incoming = {key for key in (data.get("accessibility_needs") or []) if key in ACCESS_LABELS}
+            existing = set(state.accessibility_needs or [])
+            if incoming & {"wheelchair", "baby_stroller"}:
+                existing.discard("stroller_unspecified")
+            if incoming - {"unspecified"}:
+                existing.discard("unspecified")
+            data["accessibility_needs"] = sorted((existing | incoming) - set(update.remove_accessibility_needs or [])) or None
+        if "split_stays" in data:
+            data["split_stays"] = [StaySegment.model_validate(item) for item in data["split_stays"]]
+        if "split_choice" not in data and state.split_choice and any(
+                key in data and data[key] != getattr(state, key) for key in
+                ("split_stays", "adults", "children", "children_ages", "room_allocations", "rooms", "budget_total", "meal", "hotel_wishes")):
+            data["split_choice"] = None
+        if "room_allocations" in data:
+            data["room_allocations"] = [RoomAllocation.model_validate(item) for item in data["room_allocations"]]
+            if data["room_allocations"] and state.children is None:
+                all_ages = [age for room in data["room_allocations"] for age in room.children_ages]
+                data["children"], data["children_ages"], data["children_unknown"] = len(all_ages), all_ages, False
+                if state.pending_question == "room_allocation":
+                    data["child_age_basis"] = "checkin"
+        elif state.room_allocations and any(key in data and data[key] != getattr(state, key)
+                                             for key in ("rooms", "adults", "children", "children_ages")):
+            data["room_allocations"] = None
+        if data.get("transport") and state.transport and data["transport"] != state.transport and "seat_class" not in data:
+            data["seat_class"] = None
         explicit_stay = data.get("date_from") is not None and data.get("date_to") is not None
         if not explicit_stay and (update.clear_duration or ({"trip_days_min", "trip_days_max"}.intersection(data) and "nights" not in data)):
             data["nights"] = None
@@ -271,6 +368,21 @@ class TripsDomain:
             if update.children == 0 or (update.children != state.children and "children_ages" not in data
                                         and not filling_unknown_count):
                 data["children_ages"] = None
+                if "child_age_months" not in data:
+                    data["child_age_months"] = data["child_age_basis"] = None
+                if "children_age_months_by_child" not in data:
+                    data["children_age_months_by_child"] = None
+        if "children_ages" in data and "child_age_months" not in data:
+            data["child_age_months"] = None
+            if "children_age_months_by_child" not in data:
+                data["children_age_months_by_child"] = None
+            if "child_age_basis" not in data:
+                data["child_age_basis"] = None
+        if state.pending_question == "children_age_unit" and ("children_ages" in data or "child_age_months" in data):
+            state.pending_child_age_number = None
+            state.pending_question = None
+        if data.get("child_age_months") is not None and "children_ages" not in data:
+            data["children_ages"] = None  # an undated age in months does not establish age at a future stay
         if data.get("children_ages") and data.get("children", state.children) is not None:
             if len(data["children_ages"]) > data.get("children", state.children):
                 data.pop("children_ages")
@@ -283,6 +395,10 @@ class TripsDomain:
             if adults is not None and children is not None and group_size == adults + children:
                 group_conflict = False
         defer_when_for_ideas = False
+        deferred_question = state.pending_question if update.unsure else None
+        if (update.without_dates and not state.dest_id and not state.search_scope and
+                not (state.date_from or state.month or data.get("date_from") or data.get("month"))):
+            state.skipped_questions = sorted(set(state.skipped_questions) | {"when"})
         if state.pending_question:
             # If the person cannot answer (or changes the subject), don't keep asking
             # the same question on every turn. New information can still fill the field.
@@ -310,6 +426,10 @@ class TripsDomain:
         if update.unknown_place and "destination" not in data:
             data["destination"] = update.unknown_place
         changes: dict = {"group_conflict": group_conflict}
+        if ((update.destination is not None and update.destination not in {state.destination, state.dest_id})
+                or (update.country is not None and update.country != state.country)
+                or update.unknown_place is not None):
+            changes["selected_event"] = None
         if update.destination is not None or update.unknown_place is not None:
             changes["map_place"] = None
         if update.place_country:
@@ -416,6 +536,14 @@ class TripsDomain:
                 new.budget_total = int(ref * 0.95) // 1000 * 1000
                 new.budget_per_person = None
         act = {k: getattr(update, k) for k in ACTIONS if getattr(update, k) is not None}
+        if new.accessibility_needs != state.accessibility_needs:
+            act["accessibility_changed"] = True
+        if new.travel_needs != state.travel_needs:
+            act["travel_needs_changed"] = True
+        if any(getattr(new, field) != getattr(state, field) for field in ("pets", "pet_types", "pet_count", "pet_weight_kg", "pet_cabin")):
+            act["pet_details_changed"] = True
+        if deferred_question:
+            act["deferred_question"] = deferred_question
         if defer_when_for_ideas:
             act["defer_when_for_ideas"] = True
         if tentative_now:
@@ -436,6 +564,9 @@ class TripsDomain:
     # ---------- решение ----------
 
     def step(self, state: TripState) -> Step:
+        accessibility_changed = bool(state.act.get("accessibility_changed"))
+        travel_changed = bool(state.act.get("travel_needs_changed"))
+        pet_changed = bool(state.act.get("pet_details_changed"))
         result = self._step(state)
         if state.answered_question and state.dest_id:
             # ответ на вопрос мог быть встроен в другой шаг — источники по теме вопроса прикладываем здесь
@@ -443,6 +574,71 @@ class TripsDomain:
             result.sources = (topical + [x for x in result.sources if x not in topical])[:4]
         if not result.sources:
             result.sources = self._context_sources(state, result)
+        if state.accessibility_needs:
+            kind = result.payload.get("kind") if isinstance(result.payload, dict) else None
+            if accessibility_changed or kind in {"ideas", "destinations", "packages", "hotels", "cart", "payment",
+                                                 "order", "flight_results", "service_results", "real_hotels",
+                                                 "real_hotel_selected", "tent_transport", "tent_cart", "tent_order"}:
+                result.reply = accessibility_notice(state.accessibility_needs, state.search_scope, state.transport) + "\n\n" + result.reply
+            if isinstance(result.payload, dict):
+                result.payload["accessibility_status"] = "unverified"
+                warning = "Условия доступности не проверены; варианты не отбирались по ним."
+                previous = result.payload.get("notice")
+                if not previous or not previous.startswith(warning):
+                    result.payload["notice"] = f"{warning} {previous}" if previous else warning
+        else:
+            if isinstance(result.payload, dict) and result.payload.pop("accessibility_status", None) == "unverified":
+                warning = "Условия доступности не проверены; варианты не отбирались по ним."
+                prior = result.payload.get("notice", "")
+                if prior.startswith(warning):
+                    remainder = prior[len(warning):].strip()
+                    if remainder:
+                        result.payload["notice"] = remainder
+                    else:
+                        result.payload.pop("notice", None)
+            if accessibility_changed:
+                result.reply = "Убрал указанные условия доступности из поездки.\n\n" + result.reply
+        results = {"ideas", "destinations", "packages", "hotels", "cart", "payment", "order", "flight_results",
+                   "service_results", "real_hotels", "real_hotel_selected", "tent_transport", "tent_cart", "tent_order"}
+        kind = result.payload.get("kind") if isinstance(result.payload, dict) else None
+        if state.travel_needs:
+            note = travel_notice(state.travel_needs, state.search_scope)
+            if note and (travel_changed or kind in results and not set(state.travel_needs) <= {"older_traveler", "retiree"}):
+                result.reply = note + "\n\n" + result.reply
+            if isinstance(result.payload, dict):
+                if note and not set(state.travel_needs) <= {"older_traveler", "retiree"}:
+                    result.payload["travel_notice"] = note
+                else:
+                    result.payload.pop("travel_notice", None)
+        elif isinstance(result.payload, dict):
+            result.payload.pop("travel_notice", None)
+        if travel_changed and not state.travel_needs:
+            result.reply = "Убрал указанное дополнительное условие поездки.\n\n" + result.reply
+        if state.pets:
+            labels = ", ".join(PET_LABELS[t] for t in (state.pet_types or []) if t in PET_LABELS)
+            details = ([labels] if labels else ["питомец"]) + ([f"количество: {state.pet_count}"] if state.pet_count else [])
+            if state.pet_weight_kg is not None:
+                details.append(f"вес: {state.pet_weight_kg:g} кг")
+            if state.pet_cabin is not None:
+                details.append("пожелание: в салоне" if state.pet_cabin else "пожелание: не в салоне")
+            pet_note = ("Учёл животное: " + ", ".join(details) + ". Допуск, перевозка, переноска, доплаты и условия "
+                        "размещения у конкретных поставщиков не проверены; запрос не отправлен.")
+            if (state.pet_count and state.pet_count > 1) or len(state.pet_types or []) > 1:
+                pet_note += " Для нескольких животных вес и место каждого здесь отдельно не сохраняются; уточните их у поставщика."
+            if pet_changed or kind in results:
+                result.reply = pet_note + "\n\n" + result.reply
+            if isinstance(result.payload, dict):
+                result.payload["pet_notice"] = pet_note
+        elif isinstance(result.payload, dict):
+            result.payload.pop("pet_notice", None)
+        if pet_changed and state.pets is False:
+            result.reply = "Учёл, что поездка без питомца.\n\n" + result.reply
+        if isinstance(result.payload, dict):
+            unverified = bool(state.pets or set(state.travel_needs or []) - {"older_traveler", "retiree"})
+            if unverified:
+                result.payload["requirements_unverified"] = True
+            else:
+                result.payload.pop("requirements_unverified", None)
         return result
 
     # ---------- путеводители (RAG) ----------
@@ -458,14 +654,19 @@ class TripsDomain:
 
     @staticmethod
     def note_text(state: TripState, text: str) -> None:
-        state.asked_text = text[:300]
+        from core.guard import contains_unresolved_sensitive_data
+        state.asked_text = None if needs_local_handling(text) or party_local_only(text) or contains_unresolved_sensitive_data(text) else text[:300]
 
     @staticmethod
     def _topic_found(dest_id: str | None, topic: str, asked: str | None = None) -> list[tuple[str, list]]:
         out = []
         for item in (t for t in topic.split("|") if t in GUIDE_QUERY):
-            query = GUIDE_QUERY[item] + " " + (asked or "")
-            found = guides.search(query, dest=dest_id, topic=item, k=4) if dest_id else []
+            # Static travel guides are not a source of current visa rules,
+            # forecasts, timetables, transfer tariffs, or booking conditions.
+            if item not in PLACE_TOPICS:
+                continue
+            query = asked or GUIDE_QUERY[item]
+            found = guides.search_grounded(query, dest=dest_id, topic=item, k=4) if dest_id else []
             # Только профильные разделы: «в районе улицы…» из «Безопасности» — не ответ про районы,
             # «про машину» для визы только запутает модель
             wanted = set(guides.TOPIC_TAGS.get(item, ()))
@@ -478,17 +679,24 @@ class TripsDomain:
     def _with_guide(self, step: Step, dest_id: str | None, topic: str, asked: str | None = None) -> Step:
         """Вопросы о месте («что посмотреть», «какой район») — по путеводителю; к остальным — источники для LLM."""
         excerpts = []
+        sources = []
         for item, found in self._topic_found(dest_id, topic, asked):
             if found and len(found[0].text) < 220 and len(found) > 1 and found[1].section == found[0].section:
                 # короткое «удобно выделить районы:» без следующего фрагмента бессмысленно — склеиваем
                 found[0] = replace(found[0], text=found[0].text + " " + found[1].text)
             if item in PLACE_TOPICS:
-                excerpts.append(_excerpt(found[0]) if found else
-                                ("В путеводителе по этому направлению ответа не нашёл." if dest_id else
-                                 "Назовите направление — расскажу по путеводителю."))
+                excerpt = (_excerpt(found[0]) if found else
+                           ("В путеводителе по этому направлению ответа не нашёл." if dest_id else
+                            "Назовите направление — расскажу по путеводителю."))
+                if item == "safety" and found:
+                    excerpt += " Сведения путеводителя могут устареть; актуальную обстановку проверьте в официальных источниках."
+                elif found:
+                    excerpt += " Сведения путеводителя могут устареть; цены и условия уточняйте отдельно."
+                excerpts.append(excerpt)
+            sources.extend(_source(s) for s in found)
         if excerpts and NO_ANSWER in step.reply:
             step.reply = step.reply.replace(NO_ANSWER, " ".join(excerpts), 1)
-        step.sources = (step.sources + self._topic_sources(dest_id, topic, asked))[:4]
+        step.sources = (step.sources + sources)[:4]
         return step
 
     @staticmethod
@@ -503,6 +711,95 @@ class TripsDomain:
             return []
         return [_source(s) for s in (guides.overview(i) for i in ids if i) if s]
 
+    @staticmethod
+    def allow_answer_generation(state: TripState, step: Step) -> bool:
+        """Keep computed offers, transactions and time-sensitive answers exact."""
+        if state.accessibility_needs or state.travel_needs or state.pets:
+            return False  # never let generated prose remove an unverified-access warning
+        topics = set((state.answered_question or "").split("|")) - {""}
+        kind = (step.payload or {}).get("kind") if isinstance(step.payload, dict) else None
+        if topics and not topics <= PLACE_TOPICS:
+            return False
+        if kind == "ideas" and (state.scenic_views or state.relaxed_walks):
+            return False  # an LLM must not turn an unverified wish into a claim about a place
+        if state.search_scope in {"flight_only", "train_only", "hotel_only", "transfer_only", "multi_hotel", "split_hotel", "operator_tour"}:
+            return False
+        if "safety" in topics:
+            return False
+        # With a specific named item or constraint, display the evidence
+        # directly; the general answer validator cannot establish entailment.
+        if (topics and topics <= PLACE_TOPICS and state.asked_text and state.dest_id and
+                guides.has_specific_terms(state.asked_text, state.dest_id)):
+            return False
+        if topics and topics <= (PLACE_TOPICS - {"safety"}) and not kind and not step.sources:
+            return False
+        if topics and topics <= (PLACE_TOPICS - {"safety"}) and not kind:
+            return True
+        if state.stage in {"plan", "cart", "payment", "booked"} or kind in {
+            "packages", "real_hotels", "real_hotel_selected", "flight_results", "destinations"
+        }:
+            return False
+        if re.search(r"не провер|не подтвержд|демонстрац|смоделир|не прогноз|не могу", step.reply, re.I):
+            return False
+        return True
+
+    def _flight_only(self, state: TripState) -> Step:
+        """Search a synthetic flight or train catalogue without requiring a hotel."""
+        is_train = state.search_scope == "train_only"
+        mode = "train" if is_train else "plane"
+        label = "поезд" if is_train else "перелёт"
+        def question(field: str, text: str) -> Step:
+            state.pending_question = field
+            return Step(text, payload={"kind": "question", "field": field})
+
+        if not state.dest_id:
+            return question("destination", f"Куда нужен {label}? Назовите город из демо-каталога.")
+        if not state.origin:
+            return question("origin", f"Из какого города нужен {label}?")
+        if not state.date_from:
+            return question("flight_date", "На какую дату нужна поездка? Укажите день, месяц и год.")
+        if not state.flight_direction:
+            return question("flight_direction", "Билет нужен в одну сторону или туда и обратно?")
+        if state.flight_direction == "round_trip" and not state.date_to:
+            return question("when", "Укажите обе даты целиком: например, с 10 по 15 июня 2027 года.")
+        origin = ORIGIN_BY_NAME.get(state.origin)
+        if origin is None:
+            return question("origin", "Для этого города отправления нет вариантов в демо-каталоге. Назовите другой город.")
+        if state.transport in ({"plane", "none"} if is_train else {"train", "none"}):
+            return Step(f"Вы попросили только {label}, но указали другой транспорт. Уточните, что искать.",
+                        payload={"kind": "question", "field": "transport"})
+        dest = BY_ID[state.dest_id]
+        if origin.name == dest.name:
+            return question("origin", "Город отправления и назначения совпадают. Откуда планируете поехать?")
+        constraints = dict(direct_only=bool(state.direct_only), pets=bool(state.pets),
+                           baggage_required=bool(state.baggage), max_hours=state.max_travel_hours,
+                           seat_class=state.seat_class)
+        def find(day: date):
+            return sorted((leg for leg in transport_options(origin, dest, day, mode)
+                           if _leg_matches(leg, **constraints)), key=lambda leg: (leg.price_per_person, leg.minutes))[:3]
+        out = find(state.date_from)
+        back = find(state.date_to) if state.flight_direction == "round_trip" else []
+        state.stage, state.showing, state.pending_question = "flight_search", None, None
+        if not out or (state.flight_direction == "round_trip" and not back):
+            return Step(("В демонстрационном каталоге нет поездов по этим условиям. " if is_train else
+                         "В демонстрационном каталоге нет перелётов по этим условиям. ") + "Это не означает, "
+                        "что их нет в действительных расписаниях. Можно изменить дату или ограничения" +
+                        (f", включая класс «{state.seat_class}»" if state.seat_class else "") + ".",
+                        payload={"kind": "flight_results", "items": []})
+        lines = [("Демонстрационные поезда: рейсы, перевозчики, время и цены вымышлены; " if is_train else
+                  "Демонстрационные перелёты: рейсы, перевозчики, время и цены вымышлены; ") +
+                 "наличие, реальные тарифы и покупка не проверяются.", f"Туда: {origin.name} → {dest.name}"]
+        for leg in out:
+            lines.append(f"• {leg_text(leg)} — {fmt_money(leg.price_per_person)} на человека (демо)")
+        if back:
+            lines.append(f"Обратно: {dest.name} → {origin.name}")
+            for leg in back:
+                lines.append(f"• {leg_text(leg)} — {fmt_money(leg.price_per_person)} на человека (демо)")
+        lines.append(("Цена за всех и детские тарифы не рассчитаны; " if state.children or state.children_unknown else
+                      "Общая цена на всех не рассчитана; ") + "бюджет и стыковки с другими услугами не проверены. "
+                     "Отдельный билет здесь нельзя купить. Можете изменить дату, багаж или пересадки.")
+        return Step("\n".join(lines), payload={"kind": "flight_results"})
+
 
     def _step(self, state: TripState) -> Step:
         act: dict = state.act or {}
@@ -511,6 +808,18 @@ class TripsDomain:
         state.answered_question = act.get("question")
         today = self.today()
         notes: list[str] = []
+        if act.get("child_age_number") is not None:
+            state.pending_child_age_number = act["child_age_number"]
+            state.pending_question = "children_age_unit"
+            return Step(f"Уточните, пожалуйста: ребёнку будет {state.pending_child_age_number} лет или месяцев?",
+                        payload={"kind": "question", "field": "children_age_unit"})
+        if state.pending_question == "children_age_unit" and state.pending_child_age_number is not None:
+            question = f"Уточните, пожалуйста: ребёнку будет {state.pending_child_age_number} лет или месяцев?"
+            if act.get("question"):
+                answer = self._answer_incomplete(state, act["question"], followup=False)
+                return Step(answer.reply + " " + question, payload={"kind": "question", "field": "children_age_unit"},
+                            sources=answer.sources)
+            return Step(question, payload={"kind": "question", "field": "children_age_unit"})
         if act.get("ask_trip_choice"):
             return Step("У вас уже есть другая поездка. Начать новую и очистить её условия или изменить текущую, "
                         "сохранив остальные? Напишите «новая поездка» или «изменить текущую».",
@@ -539,7 +848,51 @@ class TripsDomain:
                         f"или среди них не указан взрослый. Уточните число взрослых и детей.",
                         payload={"kind": "question", "field": "people_conflict"})
 
-        if state.unavailable_origin:
+        # Questions can interrupt a stand-alone service search as well as a
+        # complete trip. Do not rerun the search and swallow the answer. If the
+        # same utterance also changes parameters, attach the answer to the
+        # newly calculated service response below.
+        service_answer = None
+        service_scopes = {"flight_only", "train_only", "hotel_only", "transfer_only",
+                          "multi_hotel", "split_hotel", "operator_tour"}
+        deferred = act.get("deferred_question")
+        if (deferred and state.stage != "booked" and not state.pending and
+                (state.search_scope in service_scopes or deferred in {"room_allocation", "children_ages"})):
+            labels = {
+                "when": "даты заезда и выезда", "duration": "длительность поездки", "origin": "город отправления",
+                "destination": "направление", "people": "число взрослых", "children": "число детей",
+                "children_ages": "возраст каждого ребёнка", "rooms": "число номеров",
+                "room_allocation": "распределение гостей и возраст детей по номерам", "budget": "бюджет",
+                "passengers": "число пассажиров", "flight_date": "дату поездки",
+                "flight_direction": "нужен билет в одну сторону или туда и обратно",
+                "transfer_route": "пункты отправления и назначения", "transfer_direction": "направление трансфера",
+                "transfer_date": "дату трансфера", "transfer_time": "время подачи машины",
+                "multi_hotel": "сравнить отели или жить в них по очереди", "split_stays": "периоды проживания",
+                "split_choice": "выбор показанной пары отелей", "lodging": "тип размещения",
+            }
+            state.pending_question = deferred
+            detail = labels.get(deferred, "недостающее условие")
+            return Step(f"Пока оставим это открытым. Для подбора нужно уточнить {detail}; "
+                        "я не буду придумывать эти данные. Напишите их, когда определитесь.",
+                        payload={"kind": "question", "field": deferred})
+        if act.get("question") and state.search_scope in service_scopes and state.stage != "booked":
+            service_answer = self._answer_incomplete(state, act["question"], followup=False)
+            if not changed:
+                return self._prefix(service_answer, notes)
+
+        def service_response(step: Step) -> Step:
+            if service_answer:
+                step.reply = service_answer.reply + "\n\n" + step.reply
+                step.sources = (service_answer.sources + step.sources)[:4]
+            return self._prefix(step, notes)
+
+        if state.search_scope == "operator_tour":
+            return service_response(Step("Пакетные туры туроператоров сейчас не подключены: не могу проверить их состав, "
+                        "цену или наличие. Могу собрать самостоятельную демонстрационную поездку с отелем и дорогой "
+                        "или показать только демонстрационные перелёты. Напишите, какой вариант нужен.",
+                        payload={"kind": "question", "field": "search_scope"}))
+
+        if state.unavailable_origin and state.search_scope not in {"hotel_only", "transfer_only", "split_hotel"}:
             return Step(f"В прототипе пока нет отправления из {state.unavailable_origin}. "
                         f"Есть {len(ORIGIN_BY_NAME)} городов России от 50 тыс. жителей — назовите ваш или ближайший крупный.",
                         payload={"kind": "question"})
@@ -609,7 +962,7 @@ class TripsDomain:
                         "При дальнейших расчётах цены и рейсы останутся демонстрационными.",
                         payload={"kind": "real_hotel_selected", "hotel": state.selected_real_hotel})
 
-        if (act.get("question") and state.stage != "booked" and
+        if (act.get("question") and state.search_scope not in {"hotel_only", "transfer_only", "multi_hotel", "split_hotel"} and state.stage != "booked" and
                 (not state.dest_id or missing_for_trip(state))):
             return self._prefix(self._answer_incomplete(state, act["question"]), notes)
 
@@ -640,24 +993,36 @@ class TripsDomain:
             if step is not None:
                 return self._prefix(step, notes)
 
-        if state.date_from and state.date_from < today:
+        if state.search_scope != "transfer_only" and state.date_from and state.date_from < today:
             return Step("Дата начала поездки уже прошла. Укажите, пожалуйста, будущие даты поездки.",
                         payload={"kind": "question"})
-        if state.date_from and state.date_to and state.date_to <= state.date_from:
+        if state.search_scope != "transfer_only" and state.date_from and state.date_to and state.date_to <= state.date_from:
             return Step("Дата окончания должна быть позже даты начала. Укажите, пожалуйста, весь период заново.",
                         payload={"kind": "question"})
-        if (state.date_from and state.date_to and state.nights is not None and
+        if (state.search_scope != "transfer_only" and state.date_from and state.date_to and state.nights is not None and
                 state.nights != (state.date_to - state.date_from).days):
             span = (state.date_to - state.date_from).days
             return Step(f"Указанные даты — {span} {plural(span, 'ночь', 'ночи', 'ночей')}, "
                         f"а отдельно вы назвали {state.nights} {plural(state.nights, 'ночь', 'ночи', 'ночей')}. "
                         "Уточните даты целиком или напишите нужное число ночей.",
                         payload={"kind": "question", "field": "duration_conflict"})
-        if state.month and state.year and not state.date_from:
+        if state.search_scope != "transfer_only" and state.month and state.year and not state.date_from:
             first, last = month_window(state.month, state.month_part, today, state.year)
             if first > last:
                 return Step("Указанный период уже прошёл. Укажите, пожалуйста, будущий месяц и год поездки.",
                             payload={"kind": "question"})
+
+        if state.search_scope == "multi_hotel":
+            state.pending_question = "multi_hotel"
+            return service_response(Step("Уточните, пожалуйста: сравнить два отеля на одни даты или жить в разных отелях по очереди? "
+                        "Можно сравнить отели на одни даты или собрать две демонстрационные остановки по очереди.",
+                        payload={"kind": "question", "field": "multi_hotel"}))
+        if state.search_scope == "split_hotel":
+            from .service_search import split_hotels
+            return service_response(split_hotels(state, today))
+        if state.search_scope in {"hotel_only", "transfer_only"}:
+            from .service_search import hotel_only, transfer_only
+            return service_response(hotel_only(state, today) if state.search_scope == "hotel_only" else transfer_only(state, today))
 
         if act.get("period_mentioned"):
             if state.date_from and state.date_to:
@@ -673,6 +1038,12 @@ class TripsDomain:
             return Step("В прототипе доступны только самолёт и поезд. По указанным условиям подходящего "
                         "транспорта нет. Если поезд или самолёт подойдут, скажите об этом.",
                         payload={"kind": "question"})
+
+        if state.search_scope in {"flight_only", "train_only"}:
+            if state.destination and not state.dest_id:
+                return Step(f"Направление «{state.destination}» отсутствует в демо-каталоге перелётов. "
+                            "Уточните город или выберите другое направление.", payload={"kind": "question", "field": "destination"})
+            return service_response(self._flight_only(state))
 
         if act.get("back") and (state.dest_id or state.stage in ("plan", "cart")):
             if state.dest_id:
@@ -767,10 +1138,10 @@ class TripsDomain:
                     state.pending_question = "when"
                     return self._prefix(Step("Когда примерно хотите поехать? Можно назвать месяц или время года. "
                                 "Если пока не знаете — так и скажите, предложу идеи без дат и цен.",
-                                payload={"kind": "question"}), notes)
+                                payload={"kind": "question", "field": "when"}), notes)
                 if ((not state.month and not state.date_from) or not state.origin or not state.adults or
                         not state.nights or state.children_unknown or state.country or state.lodging == "tent" or
-                        state.tentative_fields):
+                        state.tentative_fields or (state.rooms and state.rooms > 1)):
                     return self._prefix(ideas(state), notes)
                 return self._prefix(self._inspire(state, today, exclude_shown=bool(act.get("more"))), notes)
 
@@ -781,9 +1152,10 @@ class TripsDomain:
                 question = (f"По IP город примерно {state.ip_city_hint}, но в демо может не быть отправления оттуда. "
                             "Напишите город, из которого хотите поехать.")
             if topic in state.skipped_questions:
+                state.pending_question = topic
                 return Step("Пока оставим это открытым. Для расчёта нужны даты, длительность, город отправления "
                             "и число путешественников; можете указать их, когда определитесь.",
-                            payload={"kind": "question"})
+                            payload={"kind": "question", "field": topic})
             state.pending_question = topic
             return self._prefix(Step(question, payload={"kind": "question", "field": topic}), notes)
         origin_name = state.origin
@@ -793,10 +1165,18 @@ class TripsDomain:
                         payload={"kind": "question"})
 
         if state.lodging != "tent" and state.rooms and state.rooms > 1:
-            return Step(f"Запомнил запрос на {state.rooms} номеров. Пока не могу проверить наличие и "
-                        "рассчитать несколько номеров: в прототипе используется один номер. "
-                        "Могу показать реальные объекты без цен или продолжить с одним номером.",
-                        payload={"kind": "question", "field": "rooms"})
+            from .service_search import question
+            if state.rooms > 9:
+                return question(state, "rooms", "Для одного запроса доступно до 9 номеров. Уточните число номеров.")
+            allocations = state.room_allocations or []
+            if len(allocations) != state.rooms:
+                return question(state, "room_allocation", "Как распределить гостей по номерам? Например: "
+                                "номер 1: 2 взрослых, ребёнок 7 лет; номер 2: 1 взрослый. "
+                                "Укажите возраст каждого ребёнка на дату заезда, в годах или месяцах.")
+            if (sum(r.adults for r in allocations) != state.adults or
+                    (state.children is not None and sum(len(r.children_ages) for r in allocations) != state.children) or
+                    (state.children_ages is not None and sorted(age for r in allocations for age in r.children_ages) != sorted(state.children_ages))):
+                return question(state, "room_allocation", "Состав или возраст детей по номерам не совпадает с общими данными. Уточните распределение.")
 
         thresholds = {key: getattr(state, key) for key in TEMP_FIELDS if getattr(state, key) is not None}
         if thresholds:
@@ -847,7 +1227,7 @@ class TripsDomain:
             return Step("Выбранный отель есть в открытом каталоге, но его нельзя связать с демонстрационным расчётом. "
                         "Другой отель не подставляю; можно выбрать другой объект или изменить условия.",
                         payload={"kind": "question", "reason": "selected_hotel_unavailable"})
-        packages, relaxed = make_packages(trip, state.hotel_id)
+        packages, relaxed = make_packages(trip, state.hotel_id, hidden_hotels={v[6:] for v in state.ui_preferences.get("hidden",[]) if v.startswith("hotel:")}, preferred_hotels={v[6:] for v in state.ui_preferences.get("saved",[]) if v.startswith("hotel:")})
         if not packages:
             state.stage, state.showing = "plan", None
             reason = relaxed[0] if relaxed else "нет вариантов"
@@ -997,10 +1377,7 @@ class TripsDomain:
     def _required_inputs(self, state: TripState) -> tuple[str, int, int, list[str]]:
         if not state.origin or not state.adults:
             raise ValueError("Для расчёта требуются город отправления и число взрослых")
-        assumptions = ([f"город отправления {state.origin} приблизительно определён по IP; его можно изменить"]
-                       if state.origin_inferred else [])
-        if state.children is None:
-            assumptions.append("дети не указаны, расчёт пока без детей")
+        assumptions = []
         return state.origin, state.adults, state.children or 0, assumptions
 
     def _period(self, state: TripState, today: date, dest: Destination | None) -> tuple[date | None, int, list[str]]:
@@ -1023,7 +1400,7 @@ class TripsDomain:
         origin = ORIGIN_BY_NAME[state.origin]
         best = cheapest_start(origin, dest, first, last, nights, state.transport,
                               baggage_required=bool(state.baggage), direct_only=bool(state.direct_only),
-                              pets=bool(state.pets), max_hours=state.max_travel_hours) or first
+                              pets=bool(state.pets), max_hours=state.max_travel_hours, seat_class=state.seat_class) or first
         end = best + timedelta(days=nights)
         part = {"early": "в начале месяца", "mid": "в середине месяца", "late": "в конце месяца"}.get(state.month_part or "",
                                                                                                    "в этом месяце")
@@ -1067,11 +1444,13 @@ class TripsDomain:
         trip = Trip(
             origin=ORIGIN_BY_NAME[origin_name], dest=dest, date_in=start, date_out=start + timedelta(days=nights),
             adults=adults, children=children, pets=bool(state.pets), budget=budget_total, mode=state.transport,
+            seat_class=state.seat_class,
+            room_guests=[(r.adults, len(r.children_ages)) for r in (state.room_allocations or [])] if (state.rooms or 1) > 1 else [],
             direct_only=bool(state.direct_only), baggage_required=bool(state.baggage),
             max_hours=state.max_travel_hours, meal=state.meal,
             free_cancellation=bool(state.free_cancellation), stars_min=state.stars_min,
             wishes=list(state.hotel_wishes or []) + (["pets"] if state.pets else []),
-            trip_types=list(state.trip_types or []))
+            trip_types=list(state.trip_types or []), transfer_kind=state.transfer_kind)
         trip.budget_night = state.budget_night
         return trip, None
 
@@ -1083,9 +1462,10 @@ class TripsDomain:
         if not exclude_shown:
             state.seen = []
         excluded_countries = {d.id for d in DESTINATIONS if d.country in (state.excluded_countries or [])}
-        exclude = set(state.rejected) | excluded_countries | (set(state.seen) | set(state.suggested) if exclude_shown else set())
-        common = dict(trip_types=list(state.trip_types or []), abroad=state.abroad, pets=bool(state.pets),
+        exclude = set(state.rejected) | set(state.ui_preferences.get("hidden",[])) | excluded_countries | (set(state.seen) | set(state.suggested) if exclude_shown else set())
+        common = dict(limit=12 if state.ui_preferences.get("saved") else 3, trip_types=list(state.trip_types or []), abroad=state.abroad, pets=bool(state.pets),
                       mode=state.transport, meal=state.meal, stars_min=state.stars_min, window=window,
+                      seat_class=state.seat_class,
                       baggage_required=bool(state.baggage), direct_only=bool(state.direct_only),
                       free_cancellation=bool(state.free_cancellation), budget_night=state.budget_night,
                       wishes=list(state.hotel_wishes or []),
@@ -1095,7 +1475,7 @@ class TripsDomain:
                         max_hours=state.max_travel_hours, exclude=exclude or None, economy=bool(state.economy), **common)
         if not items and exclude_shown and state.seen:  # показали всё подходящее — начинаем подборку заново
             state.seen = []
-            exclude = set(state.rejected) | excluded_countries | set(state.suggested)
+            exclude = set(state.rejected) | set(state.ui_preferences.get("hidden",[])) | excluded_countries | set(state.suggested)
             items = suggest(ORIGIN_BY_NAME[origin_name], start, nights, adults, children, budget=state.budget_total,
                             max_hours=state.max_travel_hours, exclude=exclude or None, economy=bool(state.economy),
                             **common)
@@ -1120,6 +1500,8 @@ class TripsDomain:
             return Step("По всем указанным условиям в демонстрационных данных ничего не нашлось. "
                         "Какие условия можно изменить: направление, бюджет или время в пути?",
                         payload={"kind": "question"})
+        items.sort(key=lambda item: item.dest.id not in state.ui_preferences.get("saved",[]))
+        items=items[:3]
         state.stage, state.showing = "destination", "destinations"
         state.suggested = [s.dest.id for s in items]
         state.seen = sorted(set(state.seen) | set(state.suggested))
@@ -1130,6 +1512,15 @@ class TripsDomain:
         lines = [prefix] if prefix else []
         lines.append(f"Куда можно поехать в {when} на {nights} {plural(nights, 'ночь', 'ночи', 'ночей')}, "
                      f"{_people(adults, children)}:")
+        lines.append(f"Модельная оценка среди показанных направлений — от {fmt_money(min(s.est_total for s in items))} "
+                     "за всех. Цены демонстрационные; реальное наличие и тарифы не проверены.")
+        if state.origin_inferred:
+            lines.append(f"Город отправления {origin_name} определён примерно по IP; поправьте, если он неверен.")
+        if state.budget_total is None and state.budget_per_person is None and state.budget_night is None:
+            lines.append("Бюджет не указан; можете назвать сумму на всю поездку, и я пересчитаю подбор.")
+        wishes = (["красивые виды"] if state.scenic_views else []) + (["спокойные прогулки"] if state.relaxed_walks else [])
+        if wishes:
+            lines.append("Сохранены пожелания: " + ", ".join(wishes) + ". Их соответствие конкретным местам не проверено.")
         if state.baggage and state.transport != "plane":
             lines.append("Если в маршруте будет поезд, нормы багажа нужно уточнить у перевозчика: они не проверены.")
         if state.visa_free_requested:
@@ -1161,7 +1552,7 @@ class TripsDomain:
         from .planner import _hotel_value, candidate_hotels
 
         hotels, relaxed = candidate_hotels(trip)
-        ranked = sorted(hotels, key=lambda hp: -_hotel_value(hp[0], hp[1], trip))[:5]
+        ranked = sorted([hp for hp in hotels if "hotel:"+hp[0].id not in state.ui_preferences.get("hidden",[])], key=lambda hp: ("hotel:"+hp[0].id not in state.ui_preferences.get("saved",[]), -_hotel_value(hp[0], hp[1], trip)))[:5]
         if not ranked:
             state.showing, state.hotel_ids_shown = None, []
             reason = ("В демонстрационном каталоге нет объектов для этого направления."
@@ -1200,6 +1591,8 @@ class TripsDomain:
             conditions.append("питомец")
         if trip.baggage_required:
             conditions.append("багаж в самолёте")
+        if trip.seat_class:
+            conditions.append(f"класс {trip.seat_class}")
         actions = []
         if trip.max_hours is not None and has_transport(replace(trip, max_hours=None)):
             actions.append(("увеличить или убрать ограничение времени в пути", "время в пути не важно"))
@@ -1241,8 +1634,26 @@ class TripsDomain:
         lines.append(f"{trip.dest.name}, {_dates(trip.date_in, trip.date_out)}, {_people(trip.adults, trip.children)}, "
                      f"{trip.origin.from_}. Собрал {len(packages)} {plural(len(packages), 'вариант', 'варианта', 'вариантов')}:")
         lines.append("Это демонстрационные предложения: цены, рейсы, рейтинги и условия смоделированы, наличие не проверялось.")
+        lines.append(f"Самый недорогой из показанных вариантов — {fmt_money(min(p.total(trip.people) for p in packages))} "
+                     "за всех, включая дорогу, отель и трансферы (демо).")
+        if state.origin_inferred:
+            lines.append(f"Город отправления {trip.origin.name} определён примерно по IP; поправьте, если он неверен.")
+        if state.budget_total is None and state.budget_per_person is None and state.budget_night is None:
+            lines.append("Бюджет не указан; можете назвать сумму на всю поездку, и я пересчитаю варианты.")
+        wishes = (["красивые виды"] if state.scenic_views else []) + (["спокойные прогулки"] if state.relaxed_walks else [])
+        if wishes:
+            lines.append("Сохранены пожелания: " + ", ".join(wishes) + ". Их соответствие конкретным местам не проверено.")
         if trip.children:
-            lines.append("Оплата и льготы для детей по возрасту не проверены; условия зависят от конкретного отеля и перевозчика.")
+            lines.append("Для демо стоимость дороги рассчитана одинаково на каждого человека, без детских скидок. "
+                         "Оплата и льготы для детей по возрасту не проверены; они зависят от конкретного отеля и перевозчика.")
+            if state.child_age_basis in {"current", "unspecified"}:
+                lines.append("Возраст ребёнка не подтверждён на даты поездки; к ней он может измениться. "
+                             "Для реального тарифа нужен возраст на даты соответствующей услуги.")
+        if trip.room_guests:
+            lines.append(f"Рассчитано {len(trip.room_guests)} номеров по указанному распределению. "
+                         "Наличие нескольких номеров и детские тарифы не проверены.")
+            if trip.budget_night:
+                lines.append("Лимит на ночь применён к сумме за все номера.")
         if trip.baggage_required and any(leg.mode == "train" for p in packages for leg in (p.out, p.back)):
             lines.append("Нормы багажа для поездов не проверены; уточните их у перевозчика.")
         if relaxed:
@@ -1257,7 +1668,7 @@ class TripsDomain:
                 lines.append(f"   Проверил состыковки: {'; '.join(risky[:3])}")
         if state.assumptions:
             lines += ["", "Я предположил: " + ", ".join(state.assumptions) + ". Поправьте, если не так."]
-        lines += ["", "Какой вариант берём? Можно поменять условия: «на два дня позже», «дешевле», «другие отели»."]
+        lines += ["", "Выберите подходящий вариант или уточните пожелания."]
         payload = {"kind": "packages", "trip": self._trip_card(trip), "diff": diff, "relaxed": relaxed, "notice": notice,
                    "calendar": self._calendar(trip, self.today()),
                    "assumptions": state.assumptions,
@@ -1276,7 +1687,7 @@ class TripsDomain:
         day = cheapest_start(trip.origin, trip.dest, trip.date_in - timedelta(days=10),
                              trip.date_in + timedelta(days=10), trip.nights, trip.mode,
                              baggage_required=trip.baggage_required, direct_only=trip.direct_only,
-                             pets=trip.pets, max_hours=trip.max_hours)
+                             pets=trip.pets, max_hours=trip.max_hours, seat_class=trip.seat_class)
         if day and day != trip.date_in and day >= self.today() + timedelta(days=2):
             ideas.append(f"заезд {day.day} {MONTHS_GEN[day.month - 1]} — дорога дешевле")
         if trip.mode != "train" and trip.dest.rail and trip.origin.rail:
@@ -1305,6 +1716,10 @@ class TripsDomain:
                   f"• Обратно: {leg_text(pkg.back)} — {fmt_money(pkg.back.price_per_person * trip.people)}",
                   f"Итого: {fmt_money(total)} на {_people(trip.adults, trip.children)}.",
                   "", "Проверил состыковки:"]
+        if trip.room_guests:
+            lines.insert(1, f"Номеров: {len(trip.room_guests)}; наличие и окончательная цена не проверены.")
+        if trip.children:
+            lines.insert(1, "Демо-дорога: одинаковая цена на каждого; детские тарифы не проверены.")
         lines += [f"{'✓' if kind == 'ok' else '!'} {text}" for kind, text in pkg.checks]
         lines += ["", "Перейти к выбору способа оплаты? Это демонстрация: реальной брони и списания не будет."]
         payload = {"kind": "cart", "trip": self._trip_card(trip), "diff": diff, "package": self._package_card(pkg, trip),
@@ -1439,6 +1854,11 @@ class TripsDomain:
                 "cancellation": "Условия отмены зависят от выбранного тарифа отеля и перевозчика. "
                                 "Реальные правила пока не проверены; демо-заказ можно удалить без настоящей оплаты.",
                 "baggage": "Нормы багажа зависят от перевозчика и тарифа. Проверенных условий пока нет.",
+                "child_fare": "Детский билет может быть бесплатным, со скидкой или по полному тарифу; "
+                              "место, сборы и возрастные границы зависят от перевозчика и даты поездки. "
+                              "Проверенных детских тарифов у меня пока нет.",
+                "pregnancy": PREGNANCY_ANSWER,
+                "senior_fare": SENIOR_FARE_ANSWER,
                 "meal": "Питание зависит от выбранного отеля и тарифа. Проверенных условий пока нет.",
                 "transfer": "Время и стоимость трансфера зависят от маршрута и отеля. Проверенных данных пока нет.",
                 "pets": "Условия для животных зависят от конкретного отеля и перевозчика. "
@@ -1490,6 +1910,13 @@ class TripsDomain:
         elif topic == "visa":
             text = ("Нужна ли виза, зависит от гражданства и условий поездки. "
                     "Актуальные требования я не проверял; уточните их в официальных источниках.")
+        elif topic == "child_fare":
+            text = ("Детский билет может быть бесплатным, со скидкой или по полному тарифу; место, сборы и "
+                    "возрастные границы зависят от перевозчика и даты поездки. Проверенных детских тарифов у меня пока нет.")
+        elif topic == "pregnancy":
+            text = PREGNANCY_ANSWER
+        elif topic == "senior_fare":
+            text = SENIOR_FARE_ANSWER
         elif topic == "weather":
             w = climate(d.id, trip.date_in.month)
             text = (f"{d.name} в {MONTHS_PREP[trip.date_in.month - 1]}: {w.describe()} "
@@ -1611,7 +2038,8 @@ class TripsDomain:
 
     @staticmethod
     def _leg_card(leg, people: int = 1) -> dict:
-        return {"price": fmt_money(leg.price_per_person * people), "mode": leg.mode, "carrier": leg.carrier, "number": leg.number, "depart": f"{leg.depart:%d.%m %H:%M}",
+        return {"id": leg.id, "price": fmt_money(leg.price_per_person * people), "price_rub": leg.price_per_person * people,
+                "mode": leg.mode, "carrier": leg.carrier, "number": leg.number, "depart": f"{leg.depart:%d.%m %H:%M}",
                 "arrive": f"{leg.arrive:%d.%m %H:%M}", "duration": hm(leg.minutes), "stops": leg.stops,
                 "via": leg.via, "layover": hm(leg.layover_min) if leg.stops else None, "baggage": leg.baggage,
                 "seat_class": leg.seat_class}
@@ -1622,16 +2050,34 @@ class TripsDomain:
         return {"id": h.id, "name": h.name, "stars": h.stars, "rating": h.rating, "reviews": h.reviews,
                 "area": h.area, "beach_km": h.beach_km, "center_km": h.center_km, "meal": MEALS[h.meal],
                 "amenities": [AMENITIES[a] for a in h.amenities if a in AMENITIES], "price": fmt_money(price),
-                "per_night": fmt_money(price // nights), "check_in": h.check_in,
+                "per_night": fmt_money(price // nights), "check_in": h.check_in, "check_out": h.check_out,
                 "date_in": stay_in.isoformat(), "date_out": stay_out.isoformat(), "dates": _dates(stay_in, stay_out),
                 "free_cancel_days": h.free_cancel_days, "praise": h.praise, "complaints": h.complaints,
                 "kind": h.kind, "source": h.source, "website": h.website, "map_url": h.map_url}
 
     def _package_card(self, p: Package, trip: Trip) -> dict:
+        exit_minutes = 40 if p.out.mode == "plane" else 15
+        buffer_minutes = 120 if p.back.mode == "plane" else 40
+        pickup_in = p.out.arrive + timedelta(minutes=exit_minutes)
+        arrive_in = pickup_in + timedelta(minutes=p.transfer_in.minutes)
+        arrive_out = p.back.depart - timedelta(minutes=buffer_minutes)
+        pickup_out = arrive_out - timedelta(minutes=p.transfer_out.minutes)
+        def ground_card(transfer, start, end, pickup, arrive):
+            return {"kind": transfer.kind, "from": start, "to": end,
+                    "pickup": pickup.strftime("%d.%m %H:%M"), "arrive": arrive.strftime("%d.%m %H:%M"),
+                    "minutes": hm(transfer.minutes), "duration_minutes": transfer.minutes,
+                    "price": fmt_money(transfer.price), "price_rub": transfer.price,
+                    "note": transfer.note, "people": _people(trip.adults, trip.children)}
+        arrival_point = ("Вокзал" if p.out.mode == "train" else "Аэропорт") + ", " + trip.dest.name
+        departure_point = ("Вокзал" if p.back.mode == "train" else "Аэропорт") + ", " + trip.dest.name
         return {"key": p.key, "title": p.title, "total": fmt_money(p.total(trip.people)),
+                "total_rub": p.total(trip.people),
                 "out": self._leg_card(p.out, trip.people), "back": self._leg_card(p.back, trip.people),
                 "hotel": self._hotel_card(p.hotel, p.hotel_total, trip, p.hotel_in, p.hotel_out),
                 "transfer": {"minutes": hm(p.transfer_in.minutes), "price": fmt_money(p.transfer_in.price + p.transfer_out.price),
-                             "note": p.transfer_in.note},
+                             "note": p.transfer_in.note, "preference": trip.transfer_kind or "auto",
+                             "in": ground_card(p.transfer_in, arrival_point, p.hotel.name, pickup_in, arrive_in),
+                             "out": ground_card(p.transfer_out, p.hotel.name, departure_point, pickup_out, arrive_out),
+                             "arrival_buffer": hm(exit_minutes), "departure_buffer": hm(buffer_minutes)},
                 "why": p.why, "tradeoffs": p.tradeoffs, "timeline": timeline(p, trip),
                 "checks": [{"level": k, "text": t} for k, t in p.checks]}

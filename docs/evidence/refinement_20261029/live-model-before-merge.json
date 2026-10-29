@@ -1,0 +1,31 @@
+{
+  "result": "PASS",
+  "steps": [
+    {
+      "action": "natural-language trip request",
+      "result": "PASS",
+      "nlu": "llm+rules",
+      "seconds": 23.46
+    },
+    {
+      "action": "structured Antalya selection",
+      "result": "PASS",
+      "nlu": "action",
+      "variants": 3
+    },
+    {
+      "action": "group transfer in model-enabled app",
+      "result": "PASS",
+      "before_rub": 118140,
+      "after_rub": 117080
+    },
+    {
+      "action": "resume without state advance",
+      "result": "PASS"
+    }
+  ],
+  "voice_backend": "gigaam",
+  "voice_status": "ready",
+  "voice_audio_tested": false,
+  "checkout_performed": false
+}

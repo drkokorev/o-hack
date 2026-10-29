@@ -17,12 +17,13 @@ import re
 from difflib import SequenceMatcher
 
 from .geo import BY_ID
-from .rules import PLACE_QUESTIONS, find_destination, match_origin, time_expression_not_place
+from .dialogue import QUESTION_INPUT_FIELDS
+from .rules import DEFERABLE_QUESTIONS, PLACE_QUESTIONS, find_destination, match_origin, time_expression_not_place
 from .state import TripState, TripUpdate
 from .textparse import MONTH_RE, month_of, norm
 
 # Поля, где правила точнее модели: если правила что-то нашли, берём их значение
-RULES_WIN = {"date_from", "date_to", "nights", "month", "season", "year", "budget_total", "budget_night", "adults", "children", "pets", "trip_types", "transport", "lodging",
+RULES_WIN = {"date_from", "date_to", "nights", "month", "season", "year", "budget_total", "budget_night", "adults", "children", "pets", "trip_types", "scenic_views", "relaxed_walks", "transport", "lodging",
              "meal", "hotel_wishes", "abroad", "economy", "direct_only", "baggage",
              "max_travel_hours", "stars_min", "shift_days", "pick", "confirm", "after_sale", "origin", "question"}
 
@@ -38,7 +39,7 @@ CUES = {
     "nights": _NUM + r"|недел|выходн|ноч|сут|дн",
     "adults": _NUM + r"|взросл|вдво|втро|вчетв|нас\b|муж|жен|один|одна|сам\b|друз|компан|семь|пар[аео]",
     "children": r"реб|дет|сын|доч|малыш|школьн|подрост|семь",
-    "pets": r"соба|кош|кот|пит[оеё]м|живот|п[её]с|щен",
+    "pets": r"соба|кош|кот|пит[оеё]м|живот|п[её]с|щен|попуга|птиц|кролик",
     "lodging": r"палат|кемпинг|отел|жиль",
     "budget_total": _NUM + r"|тыс|к\b|млн|миллион|бюджет|руб|₽|дешев|недорог",
     "budget_night": _NUM + r"|тыс|к\b|ноч|сутк",
@@ -99,7 +100,7 @@ def _value(raw: str, unit: str) -> set[int]:
 # «завтрак и бассейн есть?» — вопрос, а не требование, правила это различают
 _EVIDENCE_FIELDS = {"destination", "origin", "month", "date_from", "date_to", "nights", "adults", "children",
                     "budget_total", "budget_night", "max_travel_hours", "trip_types", "transport", "lodging",
-                    "abroad", "economy", "stars_min", "party_size"}
+                    "abroad", "economy", "stars_min", "party_size", "scenic_views", "relaxed_walks", "question"}
 # «С женой», «вдвоём», «с друзьями» возраст не подтверждают — агент уточнит про детей (решение команды)
 _ADULT_WORDS = r"взр|один|одна|\bсам\b|\bсама\b"
 
@@ -138,6 +139,9 @@ def _backed(field: str, value, quote: str | None, t: str) -> bool:
     if field not in _EVIDENCE_FIELDS or not quote or value is None or not _quote_in(quote, t):
         return False
     q = norm(quote)
+    if field == "question":
+        topics = set(str(value).split("|")) - {""}
+        return len(q.strip()) >= 4 and bool(topics) and topics <= PLACE_QUESTIONS
     if field == "destination":
         dest_id = find_destination(norm(str(value)))
         return norm(str(value))[:4] in q or (dest_id is not None and find_destination(q) == dest_id)
@@ -146,7 +150,14 @@ def _backed(field: str, value, quote: str | None, t: str) -> bool:
     if field == "month":
         return any(month_of(m.group(0)) == value for m in re.finditer(MONTH_RE, q))
     if field in ("date_from", "date_to"):
-        return hasattr(value, "day") and re.search(rf"(?<!\d){value.day}(?!\d)", q) is not None
+        # A day number alone cannot prove the month or year supplied by the model.
+        # Rules resolve partial and relative dates against today's date instead.
+        if not hasattr(value, "day"):
+            return False
+        for match in re.finditer(r"(?<!\d)(\d{1,2})[./](\d{1,2})[./](\d{4})(?!\d)", q):
+            if (int(match.group(1)), int(match.group(2)), int(match.group(3))) == (value.day, value.month, value.year):
+                return True
+        return False
     if field in ("nights", "adults", "children", "budget_total", "budget_night", "max_travel_hours", "party_size"):
         if isinstance(value, bool) or not isinstance(value, int):
             return False
@@ -191,9 +202,36 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     backed = {field for field, value in data.items() if _backed(field, value, quotes.get(field), t)}
     data.pop("evidence", None)
 
-    service_fields = ("unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
+    service_fields = ("split_stays", "split_choice", "room_allocations", "search_scope", "flight_direction", "transfer_from", "transfer_to", "transfer_time", "transfer_date", "transfer_direction", "seat_class", "unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "without_dates", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "child_age_months", "child_age_basis", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "accessibility_needs", "remove_accessibility_needs", "travel_needs", "remove_travel_needs", "pet_types", "pet_count", "pet_weight_kg", "pet_cabin", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
+    data["child_age_number"] = rule_data.get("child_age_number")
+    data["children_age_months_by_child"] = rule_data.get("children_age_months_by_child")
+    if data.get("clear") and not (rules.clear and "accessibility_needs" in rules.clear):
+        data["clear"] = [field for field in data["clear"] if field != "accessibility_needs"] or None
+    if data.get("clear") and not (rules.clear and "travel_needs" in rules.clear):
+        data["clear"] = [field for field in data["clear"] if field != "travel_needs"] or None
+    # A model can recognise an unfamiliar way to defer a clarification, but
+    # only with a verbatim quote from this turn and no concrete answer or
+    # competing action. Deferral never chooses an option or authorises a
+    # transaction; required service details stay unknown and are requested.
+    quote = norm(quotes.get("unsure", "")).strip()
+    answer_fields = QUESTION_INPUT_FIELDS.get(state.pending_question or "", set())
+    explicit_answer = any(rule_data.get(field) is not None or
+                          (getattr(llm, field, None) is not None and
+                           _backed(field, getattr(llm, field), quotes.get(field), t))
+                          for field in answer_fields)
+    if (rules.unsure is None and llm.unsure is True and state.pending_question in DEFERABLE_QUESTIONS
+            and 4 <= len(quote) <= 120 and quote in t and not explicit_answer
+            and not rules.question and not llm.question and rules.pick is None and rules.confirm is None
+            and not llm.confirm and not rules.after_sale and not rules.resolve_trip_choice):
+        data["unsure"] = True
+    if llm.question and not rules.question:
+        # Semantic fallback only for read-only destination questions with a
+        # quoted user phrase. It cannot trigger purchases or discard a service.
+        if (not state.dest_id or "question" not in backed or rules.confirm is not None or
+                rules.pick is not None or rules.after_sale or rules.new_search or rules.search_scope):
+            data["question"] = None
     if state.showing == "real_hotels":
         # A model may guess a number for a duplicate or partial name. Only an
         # exact, unambiguous visible record or a stated number can select it.
@@ -217,6 +255,11 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         if cue and not re.search(cue, t) and field not in backed:
             notes.append(f"{field}={value!r}: нет опоры в тексте")
             data[field] = None
+
+    for field in ("scenic_views", "relaxed_walks"):
+        if (rule_data.get(field) is None and data.get(field) is not None and
+                (field not in backed or "?" in text)):
+            data[field] = None  # a question is not a confirmed wish
 
     if (rules.month is not None and rules.date_from is None and (data.get("date_from") or data.get("date_to"))
             and "date_from" not in backed):
@@ -266,6 +309,9 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     if "pets" in question_topics and rules.pets is None and data.get("pets") is not None:
         notes.append("pets: вопрос об условиях для животных не подтверждает их участие в поездке")
         data["pets"] = None
+    if "child_fare" in question_topics and rules.children is None and data.get("children") is not None:
+        notes.append("children: вопрос о детском тарифе не подтверждает состав поездки")
+        data["children"] = None
     for topic, field in (("baggage", "baggage"), ("cancellation", "free_cancellation")):
         if topic in question_topics and rule_data.get(field) is None and data.get(field) is not None:
             notes.append(f"{field}: вопрос об условиях не задаёт требование")
@@ -286,14 +332,14 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
             notes.append(f"{field}: точное значение в реплике не подтверждено")
             data[field] = None
 
-    explicit_day = re.search(r"\b\d{1,2}\s*[./]\s*\d{1,2}|\b\d{1,2}\s*(?:–|-|по\b|"
-                             r"январ|феврал|март|апрел|ма[йяе]|июн|июл|август|сентябр|октябр|ноябр|декабр)|"
-                             r"\b(?:завтра|послезавтра|сегодня)\b", t)
-    if not rules.date_from and not explicit_day and "date_from" not in backed:
-        data["date_from"] = data["date_to"] = None
-    elif not rules.date_to and data.get("date_to") and "date_to" not in backed:
+    if not rules.date_from and "date_from" not in backed:
+        data["date_from"] = None
+    if not rules.date_to and data.get("date_to") and "date_to" not in backed:
         notes.append("date_to: дата окончания поездки явно не подтверждена")
         data["date_to"] = None
+    if (rules.search_scope or state.search_scope) == "transfer_only":
+        # Transfer pickup is a separate date; an LLM must not rewrite the stay.
+        data["date_from"] = data["date_to"] = None
 
     # Направление: правила знают каталог точно; без упоминания в тексте модель часто повторяет контекст
     if data.get("destination"):

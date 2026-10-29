@@ -1,4 +1,4 @@
-/* Local or browser voice recognition; dictation is always reviewed before sending. */
+/* GigaAM on the application server; the transcript can be reviewed before sending. */
 (() => {
   "use strict";
 
@@ -39,12 +39,7 @@
         this.source = this.context.createMediaStreamSource(stream);
         this.processor = this.context.createScriptProcessor(4096, 1, 1);
         this.processor.onaudioprocess = (event) => {
-          const data = event.inputBuffer.getChannelData(0);
-          if (!this.stopped) {
-            this.chunks.push(new Float32Array(data));
-            let sum = 0; for (let i = 0; i < data.length; i += 4) sum += data[i] * data[i];
-            this.onlevel?.(Math.sqrt(sum / (data.length / 4)));
-          }
+          if (!this.stopped) this.chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
           event.outputBuffer.getChannelData(0).fill(0);
         };
         this.source.connect(this.processor); this.processor.connect(this.context.destination);
@@ -85,70 +80,68 @@
     abort() { this.cancelled = true; this.stopped = true; this.controller?.abort(); this.cleanup(); this.chunks = []; this.onend?.(); }
   }
 
-  // Default (widget): one control starts/stops dictation when the field is empty and sends edited text otherwise.
-  // dedicated (chat): a separate microphone next to «Send» — click to record, click again to review the text,
-  // or press «Send» while recording to transcribe and send at once (finish()).
-  window.createVoiceInput = ({ input, button, status, dedicated = false }) => {
-    const BrowserRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  // One control starts/stops dictation when the field is empty and sends edited text otherwise.
+  window.createVoiceInput = ({ input, button, microphone = null, status, holdToTalk = false }) => {
     const icons = {
       mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-3 0h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
       arrow: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
       stop: '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg>',
     };
     let backend = null, current = null, phase = "idle", limit = null, ticker = null;
-    let startedAt = 0;
-    let disclosedBackend = null, after = null;
-    // Полоска уровня звука во время записи (как в Claude): последние значения громкости столбиками
-    const wave = dedicated ? document.getElementById("voice-wave") : null, BARS = 28;
-    if (wave) wave.replaceChildren(...Array.from({ length: BARS }, () => document.createElement("i")));
-    let levels = [];
-    const showLevel = (value) => {
-      if (!wave) return;
-      levels = [...levels, Math.min(1, value * 9)].slice(-BARS);
-      [...wave.children].forEach((bar, i) => {
-        const v = levels[i - (BARS - levels.length)];
-        bar.style.height = v === undefined ? "" : `${Math.max(3, Math.round(v * 22))}px`;
-      });
-    };
-    const setWave = (on) => { if (wave) { wave.hidden = !on; input.classList.toggle("dictating", on); if (!on) { levels = []; showLevel(0); levels = []; } } };
-    const cancelButton = dedicated ? document.getElementById("voice-cancel") : null;
+    let pressed = false, held = false, pointerId = null, holdTimer = null, suppressUntil = 0, mode = "toggle", startedAt = 0;
+    let disclosedBackend = null,errorTimer=null;
+    const meter=document.createElement('div');meter.className='voice-meter';meter.hidden=true;meter.setAttribute('role','status');
+    meter.innerHTML='<span class="voice-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="voice-timer"></span>';
+    if(microphone)input.after(meter);
+    const cancelButton = holdToTalk || microphone ? document.getElementById("voice-cancel") : null;
     const notifyAudio = (recording) => document.dispatchEvent(new CustomEvent("odin:recording", {detail:{recording}}));
-    const message = (text) => { status.textContent = text; status.hidden = !text; };
+    const message = (text) => {
+      clearTimeout(errorTimer);status.replaceChildren();status.hidden=!text;status.dataset.tone=/не удалось|не распознана|нет разрешения|доступ.*не получен|недоступен/i.test(text)?'error':'info';
+      status.append(text);
+      if(text&&status.dataset.tone==='error'){const close=document.createElement('button');close.type='button';close.className='dismiss-error';close.setAttribute('aria-label','Скрыть ошибку голоса');close.textContent='×';close.onclick=()=>message('');status.append(close);errorTimer=setTimeout(()=>message(''),8000);}
+    };
+    input.addEventListener('input',()=>{if(!current)message('');});
     function update() {
       const hasText = Boolean(input.value.trim());
-      button.innerHTML = current ? icons.stop : (dedicated || !hasText ? icons.mic : icons.arrow);
-      const label = current ? (phase === "processing" ? "Распознаю речь" :
-        dedicated ? "Остановить запись и вставить текст" : "Остановить запись") :
-        dedicated || !hasText ? "Голосовой ввод" : "Отправить";
+      button.innerHTML = current ? (phase === "listening" && mode === "hold" ? icons.mic : icons.stop) :
+        (holdToTalk || microphone || hasText ? icons.arrow : icons.mic);
+      const label = current ? (phase === "processing" ? "Распознаю речь" : "Остановить запись") :
+        holdToTalk ? "Отправить сообщение. Удерживайте для диктовки" : microphone ? "Отправить сообщение" : hasText ? "Отправить" : "Голосовой ввод";
       button.setAttribute("aria-label", label);
       button.title = label;
       button.classList.toggle("recording", Boolean(current) && phase !== "processing");
-      setWave(Boolean(current));
-      if (wave) wave.classList.toggle("processing", phase === "processing");
       button.dataset.listening = String(Boolean(current) && phase === "listening");
-      if (cancelButton) cancelButton.hidden = !current;
+      if (cancelButton) cancelButton.hidden = microphone ? true : !current;
+      if (microphone) {
+        button.hidden=Boolean(current);input.hidden=Boolean(current);meter.hidden=!current;
+        meter.classList.toggle('processing',phase==='processing');
+        meter.querySelector('.voice-timer').textContent=phase==='processing'?'Распознаём…':phase==='starting'?'Включаем микрофон…':'Запись · 0:20';
+        microphone.disabled=phase==='processing';
+        microphone.innerHTML = current ? icons.stop : icons.mic;
+        microphone.setAttribute("aria-label", current ? "Остановить диктовку" : "Начать диктовку");
+        microphone.classList.toggle("recording", Boolean(current));
+      }
     }
     function hint() {
-      if (current || dedicated) return;
+      if (current || holdToTalk || microphone) return;
       if (backend?.backend === "gigaam") {
         message(backend.status === "ready" ? "Голос распознаётся на сервере приложения (до 20 секунд)." :
           "Модель голоса загружается или недоступна; текстовый ввод работает.");
       } else {
-        message(BrowserRecognition && window.isSecureContext ?
-          "Аудио может отправляться сервису распознавания браузера." : "Голосовой ввод недоступен; можно написать сообщение.");
+        message("Голосовой ввод недоступен; можно написать сообщение.");
       }
     }
     async function checkBackend() {
       try {
         const response = await fetch("/api/voice", { cache: "no-store" });
-        backend = response.ok ? await response.json() : { backend: "browser" };
-      } catch (_) { backend = { backend: "browser" }; }
+        backend = response.ok ? await response.json() : { backend: "off", status: "unavailable" };
+      } catch (_) { backend = { backend: "off", status: "unavailable" }; }
       hint();
       if (backend.backend === "gigaam" && backend.status === "loading") setTimeout(checkBackend, 4000);
     }
     function cancel() {
-      clearTimeout(limit); clearInterval(ticker); limit = null;
-      after = null; notifyAudio(false);
+      clearTimeout(limit); clearInterval(ticker); clearTimeout(holdTimer); limit = null;
+      pressed = false; held = false; notifyAudio(false);
       const recognition = current; current = null; phase = "idle";
       if (recognition) { try { recognition.abort(); } catch (_) { /* already stopped */ } }
       update(); message(""); hint();
@@ -159,16 +152,13 @@
         return;
       }
       if (!backend) { message("Проверяю доступность голосового ввода. Попробуйте ещё раз."); return; }
-      const useLocal = backend.backend === "gigaam";
-      const Recognition = useLocal ? LocalRecognition : BrowserRecognition;
-      const available = window.isSecureContext && Recognition && (!useLocal ||
-        (backend.status === "ready" && navigator.mediaDevices?.getUserMedia && (window.AudioContext || window.webkitAudioContext)));
+      const available = window.isSecureContext && backend.backend === "gigaam" &&
+        backend.status === "ready" && navigator.mediaDevices?.getUserMedia && (window.AudioContext || window.webkitAudioContext);
       if (!available) {
         message("Голосовой ввод недоступен в этом браузере или соединении; можно написать сообщение.");
         return;
       }
-      const recognition = new Recognition();
-      recognition.onlevel = showLevel;
+      const recognition = new LocalRecognition();
       current = recognition; phase = "starting"; update();
       recognition.lang = "ru-RU"; recognition.continuous = false;
       recognition.interimResults = false; recognition.maxAlternatives = 1;
@@ -178,8 +168,7 @@
         if (stopRequested) { try { recognition.stop(); } catch (_) {} return; }
         phase = "listening"; update();
         startedAt = performance.now(); notifyAudio(true);
-        const finishHint = dedicated ? "■ — вставить текст, ↵ — сразу отправить" : "нажмите стрелку, чтобы закончить";
-        const tick = () => message(`Запись ${Math.min(20,Math.floor((performance.now()-startedAt)/1000))} / 20 с · ${finishHint}`);
+        const tick = () => {const left=Math.max(0,20-Math.floor((performance.now()-startedAt)/1000));if(microphone){message('');meter.querySelector('.voice-timer').textContent=`Запись · 0:${String(left).padStart(2,'0')}`;}else message(`Запись ${20-left} / 20 с`);};
         tick(); ticker = setInterval(tick, 250);
       };
       recognition.onresult = (event) => {
@@ -192,8 +181,7 @@
           lastFinal = i;
         }
         input.dispatchEvent(new Event("input", { bubbles: true }));
-        if (!after) message((recognition.limited ? "Достигнут лимит 20 секунд. " : "") +
-          "Текст добавлен. Проверьте его и нажмите «Отправить».");
+        message("");
       };
       recognition.onerror = (event) => {
         if (current !== recognition) return;
@@ -205,58 +193,83 @@
       recognition.onend = () => {
         if (current !== recognition) return;
         clearTimeout(limit); clearInterval(ticker); limit = null; current = null; phase = "idle"; notifyAudio(false); update();
-        const then = after; after = null;
         if (!failed && lastFinal < 0) message("Речь не распознана. Попробуйте ещё раз или напишите сообщение.");
-        else if (!failed && then) then();
       };
       recognition.requestStop = () => {
         if (stopRequested) return;
         stopRequested = true; clearInterval(ticker); notifyAudio(false);
-        phase = "processing"; update(); message("Распознаю речь…");
+        phase = "processing"; update(); message(microphone?"":"Распознаю речь…");
         try { recognition.stop(); } catch (_) { /* onstart will stop it once ready */ }
       };
       try {
-        message(useLocal ? "Включаю микрофон. Звук распознаётся на сервере приложения." :
-          "Включаю микрофон. Аудио может отправляться сервису браузера.");
+        message("Включаю микрофон. Звук распознаётся на сервере приложения.");
         recognition.start();
         limit = setTimeout(() => { if (current === recognition) { recognition.limited = true; recognition.requestStop(); } }, 20000);
       } catch (_) {
         current = null; phase = "idle"; clearInterval(ticker); notifyAudio(false); update(); message("Не удалось начать запись. Можно написать сообщение.");
       }
     }
-    function begin() {
+    async function begin(requestedMode = "toggle") {
       if (button.disabled || current) return;
+      mode = requestedMode;
       if (!backend) { message("Голос ещё загружается. Попробуйте через секунду."); return; }
-      if (dedicated && disclosedBackend !== backend.backend) {
+      if (backend.backend === "gigaam" && backend.status === "ready" && disclosedBackend !== backend.backend) {
         const dialog = document.getElementById("voice-dialog");
-        document.getElementById("voice-disclosure").textContent = backend.backend === "gigaam"
-          ? "Аудио будет отправлено на сервер приложения для распознавания."
-          : "Аудио может передаваться сервису распознавания вашего браузера.";
+        document.getElementById("voice-disclosure").textContent =
+          "Аудио будет отправлено на сервер приложения для распознавания GigaAM. Не диктуйте документы, платёжные данные и секреты.";
         document.getElementById("voice-dismiss").onclick = () => dialog.close();
-        document.getElementById("voice-allow").onclick = () => {
+        document.getElementById("voice-allow").onclick = async () => {
           dialog.close(); disclosedBackend = backend.backend;
           if (!navigator.mediaDevices?.getUserMedia) { message("Микрофон недоступен. Можно написать сообщение."); return; }
-          toggle();  // разрешение браузера спросит сама запись
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+            stream.getTracks().forEach((track)=>track.stop());
+            if(microphone){mode="toggle";toggle();}else message("Микрофон готов. Удерживайте стрелку для диктовки.");
+          } catch (_) { message("Доступ к микрофону не получен. Текстовый ввод работает."); }
         };
         if (!dialog.open) dialog.showModal();
         return;
       }
+      if (requestedMode === "hold" && !pressed) return;
       toggle();
     }
-    if (dedicated) {
-      button.addEventListener("click", () => { if (current) { if (phase !== "processing") current.requestStop(); } else begin(); });
+    if (holdToTalk) {
+      button.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0 || button.disabled || current) return;
+        pressed = true; held = false; pointerId = event.pointerId;
+        button.setPointerCapture?.(pointerId);
+        holdTimer = setTimeout(()=>{if(pressed){held=true;suppressUntil=performance.now()+1000;begin("hold");}},350);
+      });
+      button.addEventListener("pointerup", (event) => {
+        if(event.pointerId !== pointerId) return;
+        clearTimeout(holdTimer); pressed=false;
+        const rect=button.getBoundingClientRect();
+        const outside=event.clientX<rect.left-12 || event.clientX>rect.right+12 || event.clientY<rect.top-12 || event.clientY>rect.bottom+12;
+        if(held || outside) {
+          suppressUntil=performance.now()+600;
+          if(current && outside) cancel();
+          else if(current && phase === "starting") { cancel(); message("Микрофон готовится. Попробуйте удержать стрелку ещё раз."); }
+          else if(current && phase === "listening") current.requestStop();
+        }
+        held=false;pointerId=null;
+      });
+      button.addEventListener("pointercancel",()=>{clearTimeout(holdTimer);pressed=false;suppressUntil=performance.now()+600;if(current)cancel();});
+      button.addEventListener("click",(event)=>{
+        if(event.detail > 0 && performance.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation();}
+      },true);
+      button.addEventListener("contextmenu",(event)=>event.preventDefault());
       document.addEventListener("keydown",(event)=>{if(event.key==="Escape" && current){event.preventDefault();cancel();}});
-      document.addEventListener("visibilitychange",()=>{if(document.hidden && current)cancel();});
+      document.addEventListener("visibilitychange",()=>{if(document.hidden){clearTimeout(holdTimer);pressed=false;if(current)cancel();}});
       window.addEventListener("pagehide",cancel);
     }
+    if (microphone) microphone.addEventListener("click", () => current ? toggle() : begin("toggle"));
     input.addEventListener("input", update);
-    // Stop recording, wait for the transcript, then call done() — «Send» pressed while dictating.
-    function finish(done) {
-      if (!current) { done(); return; }
-      after = done;
-      if (phase !== "processing") current.requestStop();
+    if (microphone && !holdToTalk) {
+      document.addEventListener("keydown",event=>{if(event.key==="Escape"&&current){event.preventDefault();cancel();}});
+      document.addEventListener("visibilitychange",()=>{if(document.hidden&&current)cancel();});
+      window.addEventListener("pagehide",cancel);
     }
-    update(); if(!dedicated)message("Проверяю доступность голосового ввода…"); checkBackend();
-    return { toggle, begin, finish, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };
+    update(); if(!holdToTalk&&!microphone)message("Проверяю доступность голосового ввода…"); checkBackend();
+    return { toggle, begin, update, cancel, isActive: () => Boolean(current), clearStatus: () => message("") };
   };
 })();

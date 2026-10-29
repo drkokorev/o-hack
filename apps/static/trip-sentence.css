@@ -1,0 +1,44 @@
+/* The summary reads as a sentence, while its underlined values remain buttons. */
+.trip-context { padding:6px 12px; max-height:34dvh; }
+.trip-context .condition-change {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+#trip-context-toggle {display:grid;position:relative;gap:3px;width:100%;min-height:60px;padding:8px 28px 8px 0;border:0;border-radius:8px;background:none;color:var(--ink);font:500 13px/1.5 var(--body);text-align:left;cursor:pointer;}
+#trip-context-toggle::after {content:'';position:absolute;right:6px;top:22px;width:7px;height:7px;border-right:1.7px solid currentColor;border-bottom:1.7px solid currentColor;transform:rotate(45deg);}
+#trip-context-toggle[aria-expanded="true"]::after {transform:rotate(225deg);top:26px;}
+.trip-context-preview {font-size:12px;font-weight:400;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.trip-context.is-compact {padding:2px 12px;max-height:34dvh;overflow:auto;}
+.trip-context.is-compact #trip-context-body {padding:2px 0 6px;border-top:1px solid var(--line);}
+.trip-context.is-compact #trip-summary-line {font-size:14px;}
+#trip-context-toggle:hover .trip-context-label {color:var(--accent);}
+#trip-summary-line { margin:0; font-size:15px; line-height:1.5; letter-spacing:-.015em; overflow-wrap:anywhere; }
+.trip-word { display:inline-block; min-height:44px; max-width:100%; padding:8px 3px; margin:0 1px;
+  border:0; border-radius:5px; background:transparent; color:var(--accent); font-weight:500;
+  font-family:inherit; font-size:inherit; line-height:1.5; letter-spacing:inherit; cursor:pointer;
+  text-decoration:underline; text-decoration-style:dashed; text-decoration-thickness:1px;
+  text-underline-offset:5px; text-decoration-color:color-mix(in srgb,var(--accent) 48%,transparent);
+  transition:background-color .16s,color .16s; white-space:normal; overflow-wrap:anywhere; }
+.trip-word:hover,.trip-word:focus-visible { background:var(--accent-soft); text-decoration-style:solid; }
+.trip-word:disabled { cursor:wait; }
+.trip-word.is-missing { color:var(--muted); font-weight:400; }
+.trip-add { display:inline-grid; place-items:center; vertical-align:middle; width:44px; height:44px; border:0; border-radius:10px; background:transparent; color:var(--muted); cursor:pointer; font:20px var(--body); }
+.trip-add:hover { background:var(--accent-soft); color:var(--accent); }
+.trip-context-actions { display:flex; flex-wrap:wrap; align-items:center; gap:0 10px; }
+#condition-highlights { display:contents; }
+.trip-highlight { max-width:100%; min-height:44px; padding:8px 0; border:0; background:transparent; color:var(--muted); cursor:pointer; font:12px/1.45 var(--body); text-align:left; text-decoration:underline; text-decoration-style:dotted; text-underline-offset:4px; overflow-wrap:anywhere; }
+.trip-highlight:hover { color:var(--accent); }
+.trip-highlight::first-letter { text-transform:uppercase; }
+#all-conditions { min-width:0; }
+#all-conditions[open] { flex-basis:100%; }
+#all-conditions summary { list-style:none; min-height:44px; padding:12px 0; font-size:12px; font-weight:500; }
+#all-conditions summary::-webkit-details-marker { display:none; }
+#all-conditions summary::after { content:' ↓'; }
+#all-conditions[open] summary::after { content:' ↑'; }
+#all-conditions #conditions { max-height:none; overflow:visible; padding-bottom:8px; }
+#conditions .chip { min-height:44px; text-align:left; }
+#conditions-dialog { width:min(440px,calc(100vw - 32px)); }
+#conditions-dialog #condition-value { font-size:16px; }
+#condition-field,#condition-field-label { display:none; }
+#condition-error { color:var(--risk); font-size:13px; }
+.condition-form-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:20px; }
+.condition-form-actions .btn { min-height:44px; }
+@media(max-width:700px) { .trip-context { margin-bottom:8px; } #trip-summary-line { font-size:14px; } }
+@media(prefers-reduced-motion:reduce) { .trip-word { transition:none; } }

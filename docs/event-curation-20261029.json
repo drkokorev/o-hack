@@ -1,0 +1,441 @@
+{
+  "source_commit": "6693512c4a6dba729084f57032ee568af529b303",
+  "kept": [
+    "moscow-wildlife-2026",
+    "moscow-vivacello-2026",
+    "expo-belgrade-2027",
+    "fifa-women-rio-2027",
+    "athletics-beijing-2027",
+    "art-doha-2027",
+    "sappho-rome-2026",
+    "f1-miami-2027",
+    "f1-hungary-2027",
+    "f1-azerbaijan-2027",
+    "f1-turkey-2027",
+    "f1-singapore-2027",
+    "f1-qatar-2027",
+    "f1-qatar-2026",
+    "global-village",
+    "fitness-dubai",
+    "design-dubai",
+    "golf-dubai",
+    "art-dubai",
+    "marathon-dubai",
+    "burj-run",
+    "quoz",
+    "untold-dubai",
+    "moma-save-project",
+    "moma-doc",
+    "moma-new-directors",
+    "moma-silent",
+    "moma-contenders",
+    "tribeca"
+  ],
+  "excluded": [
+    {
+      "id": "f2-abu-dhabi-2026",
+      "city": "Абу-Даби",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "venice-street-show-2027",
+      "city": "Венеция",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "hockey-dusseldorf-2027",
+      "city": "Дюссельдорф",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "formula1-monaco-2027",
+      "city": "Монако",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "venice-biennale-2026",
+      "city": "Венеция",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "ces-las-vegas-2027",
+      "city": "Лас-Вегас",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "green-expo-2027",
+      "city": "Йокогама",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "christmas-vienna-2026",
+      "city": "Вена",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "sundance-film-2027",
+      "city": "Боулдер",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "fringe-edinburgh-2027",
+      "city": "Эдинбург",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "art-basel-2027",
+      "city": "Базель",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "art-miami-2026",
+      "city": "Майами-Бич",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "art-hong-kong-2027",
+      "city": "Гонконг",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-bahrain-2027",
+      "city": "Манама",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-saudi-2027",
+      "city": "Джидда",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-australia-2027",
+      "city": "Мельбурн",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-japan-2027",
+      "city": "Судзука",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-china-2027",
+      "city": "Шанхай",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-canada-2027",
+      "city": "Монреаль",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-portugal-2027",
+      "city": "Портиман",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-britain-2027",
+      "city": "Сильверстоун",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-austria-2027",
+      "city": "Шпильберг",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-belgium-2027",
+      "city": "Спа",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-italy-2027",
+      "city": "Монца",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-spain-2027",
+      "city": "Мадрид",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-usa-2027",
+      "city": "Остин",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-mexico-2027",
+      "city": "Мехико",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-brazil-2027",
+      "city": "Сан-Паулу",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-vegas-2027",
+      "city": "Лас-Вегас",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-abudhabi-2027",
+      "city": "Абу-Даби",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-mexico-2026",
+      "city": "Мехико",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-brazil-2026",
+      "city": "Сан-Паулу",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-vegas-2026",
+      "city": "Лас-Вегас",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "f1-abudhabi-2026",
+      "city": "Абу-Даби",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "imagine-amsterdam",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "idfa",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "light-amsterdam",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "chocolate-amsterdam",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "pink-film-amsterdam",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "cinemasia",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "rollende",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "holland-festival",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "julidans",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "milkshake-amsterdam",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "grachtenfestival",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "fringe-amsterdam",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "camera-japan",
+      "city": "Амстердам",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "celtic-connections",
+      "city": "Глазго",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "up-helly-aa",
+      "city": "Леруик",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "mountain-festival",
+      "city": "Форт-Уильям",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "glasgow-film",
+      "city": "Глазго",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "crufts",
+      "city": "Бирмингем",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "glasgow-comedy",
+      "city": "Глазго",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "grand-national",
+      "city": "Ливерпуль",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "manchester-marathon",
+      "city": "Манчестер",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "london-marathon",
+      "city": "Лондон",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "cheltenham-jazz",
+      "city": "Челтнем",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "sound-city",
+      "city": "Ливерпуль",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "focus-wales",
+      "city": "Рексем",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "chelsea-flower",
+      "city": "Лондон",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "hay-festival",
+      "city": "Хей-он-Уай",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "liverpool-biennial",
+      "city": "Ливерпуль",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "glastonbury",
+      "city": "Гластонбери",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "llangollen-music",
+      "city": "Лланголлен",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "goodwood-speed",
+      "city": "Чичестер",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "edinburgh-jazz",
+      "city": "Эдинбург",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "cowes-week",
+      "city": "Каус",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "pasifika",
+      "city": "Окленд",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "auckland-writers",
+      "city": "Окленд",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "steampunk",
+      "city": "Оамару",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "tour-down-under",
+      "city": "Аделаида",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "adelaide-fringe",
+      "city": "Аделаида",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "adelaide-festival",
+      "city": "Аделаида",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "womadelaide",
+      "city": "Аделаида",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "noosa-surf",
+      "city": "Нуса",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "noosa-food",
+      "city": "Нуса",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "noosa-alive",
+      "city": "Нуса",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "sxsw",
+      "city": "Остин",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "montreal-art-film",
+      "city": "Монреаль",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "iifa-2027",
+      "city": "Абу-Даби",
+      "reason": "No exact destination in the trip catalog"
+    },
+    {
+      "id": "curacao-film",
+      "city": "Виллемстад",
+      "reason": "No exact destination in the trip catalog"
+    }
+  ]
+}
