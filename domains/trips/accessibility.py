@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 
 from .textparse import norm
+from .dietary import LABELS as DIET_LABELS, classify_food
 
 
 LABELS = {
@@ -36,6 +37,7 @@ LABELS = {
     "diet_eggs": "исключить яйца",
     "unspecified": "условия доступности нужно уточнить",
 }
+LABELS.update(DIET_LABELS)
 
 _PATTERNS = {
     "wheelchair": r"инвалидн\w*\s+(?:кресл\w*|коляск\w*)|кресл\w*[- ]коляск\w*|\bэлектроколяск\w*|\b(?:wheelchair|wheel[ -]?chair)\b|"
@@ -103,13 +105,18 @@ def classify(text: str) -> tuple[set[str], set[str]]:
                 remove.add(key)
             else:
                 add.add(key)
+    dietary_added, dietary_removed, dietary_unknown = classify_food(text)
+    add.update(dietary_added)
+    remove.update(dietary_removed)
+    if dietary_unknown:
+        add.add("dietary")
     # An explicit wheelchair or specific help makes the generic identity term
     # unnecessary; a diagnosis/identity alone never implies a particular aid.
     if add - _IDENTITY_ONLY:
         add.discard("unspecified")
     if add & {"wheelchair", "baby_stroller"}:
         add.discard("stroller_unspecified")
-    if any(key.startswith("diet_") for key in add):
+    if any(key.startswith("diet_") for key in add) and not dietary_unknown:
         add.discard("dietary")
     return add - remove, remove
 
@@ -148,7 +155,7 @@ def notice(needs: list[str], scope: str | None, transport: str | None = None) ->
     if "guide_dog" in have:
         guidance.append("У перевозчика и жилья отдельно уточните условия для собаки-проводника.")
     if "dietary" in have or any(key.startswith("diet_") for key in have):
-        guidance.append("Состав блюд и возможность исключить аллерген уточняйте непосредственно у поставщика питания.")
+        guidance.append("Состав блюд и исключения уточняйте у поставщика питания; при аллергии отдельно проверьте риск перекрёстного контакта с аллергенами.")
     if "dietary" in have:
         guidance.append("Название продукта не распознано; уточните его отдельно у поставщика.")
     if "stroller_unspecified" in have:

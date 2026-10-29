@@ -27,7 +27,7 @@ MEALS = {"room_only": "без питания", "breakfast": "завтраки", 
          "all_inclusive": "всё включено", "meal_included": "питание включено, вид уточняется"}
 AMENITIES = {
     "pool": "бассейн", "kids_club": "детский клуб", "spa": "спа", "gym": "фитнес", "parking": "парковка",
-    "pets": "можно с животными", "beach_line": "первая линия", "wifi": "Wi-Fi", "kitchen": "кухня в номере",
+    "pets": "питомцы: условия не проверены", "beach_line": "первая линия", "wifi": "Wi-Fi", "kitchen": "кухня в номере",
 }
 _ALL_INCLUSIVE_PLACES = {"antalya", "hurghada", "sharm", "sanya", "dubai"}
 
@@ -361,7 +361,7 @@ def trains(origin: Origin, dest: Destination, day: date) -> list[Leg]:
                            arrive=dep + timedelta(minutes=minutes), seat_class="купе",
                            price_per_person=int(round((1500 + km * 3.0) * season_factor(dest, day)
                                                       * rng.uniform(0.9, 1.15), -2)),
-                           pets_ok=True, note="ночь в поезде, животных можно в купе целиком"))
+                           pets_ok=True, note="ночь в поезде"))
     return out
 
 

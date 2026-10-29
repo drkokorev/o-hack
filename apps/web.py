@@ -32,6 +32,7 @@ from domains.trips import guides
 from apps.event_selection import choose_event
 from domains.trips.domain import TripsDomain
 from domains.trips.accessibility import LABELS as ACCESS_LABELS
+from domains.trips.party_features import LABELS as TRAVEL_LABELS, PET_LABELS
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
 from domains.trips import map_catalog
@@ -192,6 +193,9 @@ def understood(state: TripState) -> list[str]:
     for key in state.accessibility_needs or []:
         if key in ACCESS_LABELS:
             chips.append(ACCESS_LABELS[key] + ": не проверено")
+    for key in state.travel_needs or []:
+        if key in TRAVEL_LABELS:
+            chips.append(TRAVEL_LABELS[key] + ("" if key in {"older_traveler", "retiree"} else ": не проверено"))
     if state.search_scope == "transfer_only":
         pass  # do not display a stay's dates as a transfer booking
     elif state.date_from and state.date_to:
@@ -215,7 +219,16 @@ def understood(state: TripState) -> list[str]:
         chips.append(f"{prefix}{state.party_size} {plural(state.party_size, 'путешественник', 'путешественника', 'путешественников')}")
     if state.children:
         chips.append(f"{state.children} {plural(state.children, 'ребёнок', 'ребёнка', 'детей')}")
-    if state.children_ages:
+    if state.children_age_months_by_child and state.children_ages and len(state.children_age_months_by_child) == len(state.children_ages):
+        ages = [f"{months} мес." if months is not None else f"{years} лет" for years, months in zip(state.children_ages, state.children_age_months_by_child)]
+        basis = {"checkin": "на дату заезда", "current": "указан сейчас; к поездке может измениться"}.get(
+            state.child_age_basis, "дата возраста не уточнена")
+        chips.append("возраст детей: " + ", ".join(ages) + f" ({basis})")
+    elif state.child_age_months is not None:
+        basis = {"checkin": "на дату заезда", "current": "указан сейчас; к поездке может измениться"}.get(
+            state.child_age_basis, "дата возраста не уточнена")
+        chips.append(f"возраст ребёнка: {state.child_age_months} мес. ({basis})")
+    elif state.children_ages:
         chips.append("возраст детей: " + ", ".join(map(str, state.children_ages)) + " лет")
     if state.rooms:
         chips.append(f"номеров: {state.rooms}")
@@ -226,6 +239,14 @@ def understood(state: TripState) -> list[str]:
         chips.append(prefix + {"tent": "палатка", "hotel": "отель"}.get(state.lodging, state.lodging))
     if state.pets:
         chips.append("с питомцем")
+        if state.pet_types:
+            chips.append("животное: " + ", ".join(PET_LABELS[key] for key in state.pet_types if key in PET_LABELS))
+        if state.pet_count:
+            chips.append(f"животных: {state.pet_count}")
+        if state.pet_weight_kg is not None:
+            chips.append(f"вес животного: {state.pet_weight_kg:g} кг")
+        if state.pet_cabin is not None:
+            chips.append("питомец в салоне: не проверено" if state.pet_cabin else "питомец не в салоне")
     if state.budget_total:
         chips.append(f"бюджет {fmt_money(state.budget_total)}")
     if state.economy:

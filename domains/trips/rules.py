@@ -415,9 +415,16 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         # Assistance animals are a separate request, not automatically an
         # ordinary pet subject to the demo pet filter.
         remaining = re.sub(r"собак\w*[- ](?:проводник|помощник)\w*", " ", norm(text))
-        if not re.search(r"с\s+(?:кошк|питомц|животн|котом|щенк)|(?:друг\w*|втор\w*)\s+собак", remaining):
+        if not re.search(r"(?:с|со|и)\s+(?:кошк|питомц|животн|котом|щенк)|(?:друг\w*|втор\w*)\s+собак", remaining):
             changes["pets"] = None
-    return parsed.model_copy(update=changes) if changes else parsed
+    parsed = parsed.model_copy(update=changes) if changes else parsed
+    from .party_features import classify as classify_party, removed_pet_types
+    party = classify_party(text, state, parsed)
+    removed_pets = removed_pet_types(text, state.pet_types)
+    if removed_pets and not re.search(r"\bбез\s+(?:животн|питомц)\w*", norm(text)):
+        remaining = sorted(set(state.pet_types or []) - removed_pets)
+        party.update(pets=bool(remaining), pet_types=remaining or None)
+    return parsed.model_copy(update=party) if party else parsed
 
 
 def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:
@@ -450,10 +457,47 @@ def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:
     if state.pending_question == "room_allocation" and not re.search(r"\b(?:\d+|один|одна|два|две|три)\s+номер(?:а|ов)?\b", t):
         from .service_search import parse_room_allocations
         return TripUpdate(room_allocations=parse_room_allocations(text) or [])
+    if state.pending_question == "children_age_unit" and state.pending_child_age_number is not None:
+        number = state.pending_child_age_number
+        unit = re.fullmatch(r"\s*(?:это\s+)?(?:(\d{1,3})\s+)?(лет|год|года|месяц|месяца|месяцев|мес\.?)\s*[.!]?\s*", t)
+        if unit:
+            number = int(unit.group(1)) if unit.group(1) is not None else number
+            if unit.group(2) in {"лет", "год", "года"} and number <= 17:
+                return TripUpdate(children_ages=[number], child_age_basis="checkin")
+            if unit.group(2).startswith("мес") and number <= 215:
+                return TripUpdate(children_ages=[number // 12], child_age_months=number, child_age_basis="checkin")
     if state.pending_question == "children_ages" and re.fullmatch(r"\s*\d{1,2}(?:\s*(?:,|и)\s*\d{1,2})*\s*(?:лет|года|год)?\s*[.!]?\s*", t):
         ages = [int(n) for n in re.findall(r"\d{1,2}", t)]
         if all(0 <= age <= 17 for age in ages) and len(ages) == (state.children or 0):
-            return TripUpdate(children_ages=ages)
+            return TripUpdate(children_ages=ages, child_age_basis="checkin")
+    if state.pending_question == "children_ages" and (state.children or 0) > 1:
+        answer = re.sub(r"^\s*(?:на\s+дату\s+(?:заезда|поездки|проживания)\s+)?(?:детям\s+)?", "", t).strip(" .!")
+        parts = re.split(r"\s*(?:,|\s+и\s+)\s*", answer)
+        pairs = [re.fullmatch(r"(\d{1,3})\s*(месяц(?:а|ев)?|мес\.?|год|года|лет)", part) for part in parts]
+        if len(pairs) == state.children and all(pairs):
+            values = [(int(match.group(1)), match.group(2)) for match in pairs]
+            if all(value <= (215 if unit.startswith("мес") else 17) for value, unit in values):
+                return TripUpdate(children_ages=[value // 12 if unit.startswith("мес") else value for value, unit in values],
+                                  children_age_months_by_child=[value if unit.startswith("мес") else None for value, unit in values],
+                                  child_age_basis="checkin")
+    if state.pending_question == "children_ages" and state.children == 1:
+        months = re.fullmatch(r"\s*(?:на\s+дату\s+(?:заезда|поездки|проживания)\s+)?(?:ребенку\s+)?(?:будет\s+)?(\d{1,3})\s*(?:месяц(?:а|ев)?|мес\.?)\s*[.!]?\s*", t)
+        if months and int(months.group(1)) <= 215:
+            age = int(months.group(1))
+            return TripUpdate(children_ages=[age // 12], child_age_months=age, child_age_basis="checkin")
+    if state.pending_question == "children":
+        mixed = re.fullmatch(r"\s*(?:детям\s+)?(\d{1,3})\s*(месяц|месяца|месяцев|год|года|лет)\s*(?:и|,)\s*(\d{1,3})\s*(месяц|месяца|месяцев|год|года|лет)\s*[.!]?\s*", t)
+        if mixed:
+            pairs = [(int(mixed.group(1)), mixed.group(2)), (int(mixed.group(3)), mixed.group(4))]
+            if all(value <= (215 if unit.startswith("месяц") else 17) for value, unit in pairs):
+                return TripUpdate(children=2, children_unknown=False,
+                                  children_ages=[value // 12 if unit.startswith("месяц") else value for value, unit in pairs],
+                                  children_age_months_by_child=[value if unit.startswith("месяц") else None for value, unit in pairs],
+                                  child_age_basis="unspecified")
+        age_reply = re.fullmatch(r"\s*(?:детям\s+)?(\d{1,2})\s*(?:и|,)\s*(\d{1,2})\s*(?:года|год|лет)\s*[.!]?\s*", t)
+        if age_reply and all(0 <= int(value) <= 17 for value in age_reply.groups()):
+            return TripUpdate(children=2, children_unknown=False, children_ages=[int(value) for value in age_reply.groups()],
+                              child_age_basis="unspecified")
     # Scope changes only on explicit requests; «только прямой перелёт» alone
     # is a transport constraint, not a request to remove the hotel.
     if re.search(r"\b(?:два|2|несколько)\s+(?:разных\s+)?отел(?:я|ей)\b", t):
@@ -464,8 +508,9 @@ def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:
           ((not state.search_scope and state.stage == "start") and
            state.pending_question != "lodging" and
            (not state.pending_question or re.match(r"^\s*(?:ищу|найди|подбери)\b", t)) and
-           re.search(r"^\s*(?:(?:ищу|найди|подбери)\s+(?:мне\s+)?)?(?:отел\w*|жиль[её]|гостиниц\w*)\b", t) and
-           not re.search(r"перел[её]т|самол[её]т|авиабилет|рейс|трансфер|поезд(?!к)|тур\b", t))):
+           (re.search(r"^\s*(?:(?:ищу|найди|подбери)\s+(?:мне\s+)?)?(?:отел\w*|жиль[её]|гостиниц\w*)\b", t) or
+            re.search(r"\b(?:нужен|нужна|нужно|ищу|подбери)\s+(?:доступн\w*\s+)?(?:отел\w*|жиль[её]|гостиниц\w*)\b", t)) and
+           not re.search(r"перел[её]т|самол[её]т|авиабилет|рейс|трансфер|поезд|тур\b|отдых|отпуск", t))):
         data["search_scope"] = "hotel_only"
     elif (re.search(r"(?:только|лишь|без\s+отеля).*?(?:поезд(?!к)|\bж/?д\b|сапсан|ласточк)", t) or
           (re.search(r"(?:поезд(?!к)|\bж/?д\b).*?без\s+(?:отеля|гостиницы|проживания|жилья)", t))):
@@ -734,17 +779,32 @@ def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:
         data["children_unknown"] = False
     # Accept only explicit ages in years. Months, future birthdays and dates
     # cannot establish the age at check-in or a carrier's tariff category.
-    single_age = re.search(r"(?:ребенку|ребенка|ребенком|ребенок|сыну|дочке|дочери|малышу)\s+(\d{1,2})\s+(?:год|года|лет)\b", t)
+    single_age = re.search(r"(?:ребенку|ребенка|ребенком|ребенок|сын|сыну|сыном|дочке|дочери|малышу|малышом)\s+(?:будет\s+)?(\d{1,2})\s+(?:год|года|лет)\b", t)
     pair_ages = re.search(r"дет(?:ям|ей|и|ьми)\s+(\d{1,2})\s*(?:и|,)\s*(\d{1,2})\s+(?:года|лет)\b", t)
     ages = ([int(pair_ages.group(1)), int(pair_ages.group(2))] if pair_ages else
             [int(single_age.group(1))] if single_age else None)
     if ages and all(0 <= age <= 17 for age in ages) and data.get("children") != 0:
         data["children_ages"] = ages
+        data["child_age_basis"] = ("checkin" if re.search(r"на\s+(?:дату\s+)?(?:заезда|заселения|поездки|начала\s+поездки)", t)
+                                   else "unspecified")
         if data.get("children") is None and state.children is None:
             if pair_ages or data.get("children_unknown"):
                 data["children_unknown"] = True  # two named ages need not describe every child
             else:
                 data["children"] = 1
+    months = re.search(r"(?:ребенку|ребенка|ребенком|ребенок|сыну|сыном|дочке|дочери|малышу|малышом|младенцу|младенцем)\s+(?:будет\s+)?(\d{1,3})\s*(?:месяц(?:а|ев)?|мес\.?)\b", t)
+    if months and int(months.group(1)) <= 215 and data.get("children") != 0:
+        if (data.get("children") or state.children or 1) == 1:
+            data["children"] = 1
+            data["child_age_months"] = int(months.group(1))
+            at_stay = bool(re.search(r"на\s+(?:дату\s+)?(?:заезда|заселения|поездки|начала\s+поездки)", t))
+            data["child_age_basis"] = "checkin" if at_stay else "unspecified" if "будет" in months.group(0) else "current"
+            if at_stay:
+                data["children_ages"] = [data["child_age_months"] // 12]
+    unclear_age = re.search(r"(?:ребенку|сыну|дочке|малышу)\s+(?:будет\s+)?(\d{1,3})\s+на\s+(?:дату\s+)?(?:заезда|поездки)\b", t)
+    if unclear_age and state.children == 1 and int(unclear_age.group(1)) <= 215:
+        data["child_age_number"] = int(unclear_age.group(1))
+        data.pop("wants_ideas", None)
     room_match = re.search(rf"\b{NUM}\s+(?:отдельн\w*\s+)?номер(?:а|ов)?\b", t)
     if room_match and (number := num_word(room_match.group(1))) is not None and 1 <= number <= 20:
         data["rooms"] = number
@@ -752,7 +812,7 @@ def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:
         remaining = data["party_size"] - data["children"]
         if remaining > 0:
             data["adults"] = remaining
-    if "adults" not in data and not data.get("party_size") and re.search(r"\b(одна|один|одному|одной)\b(?!\s*(ноч|день|раз|номер|комнат|отел))|в одиночку", t):
+    if "adults" not in data and not data.get("party_size") and re.search(r"\b(одна|один|одному|одной)\b(?!\s*(ноч|день|раз|номер|комнат|отел|собак|кошк|кот|животн|питомц|птиц|попуга|кролик))|в одиночку", t):
         data["party_size"] = 1
         if not re.search(r"реб|дет|сын|доч|школьн|подрост", t):
             data["adults"] = 1  # «я один» — один взрослый; не спрашиваем «сколько из 1 взрослые»
@@ -767,14 +827,20 @@ def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:
             data.pop("children", None)
             data.pop("children_ages", None)
             data.pop("children_unknown", None)
-    pet_mention = re.search(r"с собак|с кош|с питомц|с животн|с собачк|с котом|с псом|со щенк|"
-                            r"\bи (?:с\s+)?(?:собак|кошк|питомец|кот\b|пес\b|щен)", t)
+    pet_mention = re.search(r"\b(?:с|со)\s+(?:(?:\d{1,2}|одн\w*|двумя|двух|двум|две|два|трех|тремя|три)\s+)?"
+                            r"(?:собак|кош|питомц|животн|собачк|кот|пс|щен|попуга|птиц|кролик)|"
+                            r"\bи (?:с\s+)?(?:собак|кошк|питомец|кот\b|пес\b|щен|попуга|птиц|кролик)", t)
     pet_question = re.search(r"(?:можно|разреш\w*|принима\w*|пуст\w*)\s+(?:ли\s+)?"
-                             r"(?:(?:ехать|останавливат\w*|засел\w*|поселиться)\s+)?"
-                             r"(?:с|со)\s+(?:собак|кош|питомц|животн|кот|пс|щен)", t)
-    if pet_mention and not (pet_question and pet_question.start() <= pet_mention.start() < pet_question.end()):
+                             r"(?:(?:ехать|останавливат\w*|остановиться|засел\w*|поселиться)\s+)?"
+                             r"(?:с|со)\s+(?:собак|кош|питомц|животн|кот|пс|щен|попуга|птиц|кролик)", t)
+    hypothetical = bool(pet_mention and (_question_clause(t, pet_mention.start(), pet_mention.end()) or
+                        (pet_question and pet_question.start() <= pet_mention.start() < pet_question.end())) and
+                        not re.search(r"\b(?:едем|еду|лечу|летим|поедем|полетим|мы\s+с)\b", t[max(0, pet_mention.start()-35):pet_mention.start()]))
+    negated_pet = bool(pet_mention and (_negated_at(t, pet_mention.start(), pet_mention.end()) or
+                       re.match(r"\s+не\s+(?:едем|едет|едут|летим|летит|летят|поедет|полетит)\b", t[pet_mention.end():])))
+    if pet_mention and not hypothetical and not negated_pet:
         data["pets"] = True
-    elif re.search(r"без (собак|животн|питомц)", t):
+    elif negated_pet or re.search(r"без (собак|кошк|кот|птиц|попуга|кролик|животн|питомц)", t):
         data["pets"] = False
     tent_refused = re.search(r"\b(?:без|не|не хочу|не хотим|не нужна|не нужен)\s+(?:своей\s+)?палатк", t)
     if tent_refused:
@@ -936,7 +1002,8 @@ def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:
     if re.search(r"друг\w* отел|ещ[её] отел|покажи отел|другой вариант жиль|все отели|сменить отель", t):
         data["show_hotels"] = True
     hotel_search = re.fullmatch(r"\s*(?:(?:найди|поищи|ищу|покажи)\s+)?(?:отель|гостиницу|гостиница)\s+(.{3,100}?)\s*[.!]?\s*", text, re.I)
-    if hotel_search and not re.match(r"(?:с|без|где|котор|рядом|нужен|любой|недорог)\b", norm(hotel_search.group(1))):
+    if (hotel_search and not re.match(r"(?:с|без|в|во|где|котор|рядом|нужен|любой|недорог)\b", norm(hotel_search.group(1)))
+            and not re.search(r"\b(?:с|со)\s+(?:собак|кошк|котом|животн|питомц)\w*", norm(hotel_search.group(1)))):
         data["search_real_hotels"] = hotel_search.group(1).strip()
         data.pop("show_hotels", None)
     if (re.search(r"реальн\w*|настоящ\w*|без демо|без выдум|открыт\w* данн", t)

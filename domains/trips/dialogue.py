@@ -23,6 +23,7 @@ QUESTION_INPUT_FIELDS = {
     "passengers": {"adults", "party_size"},
     "children": {"children"},
     "children_ages": {"children_ages"},
+    "children_age_unit": {"children_ages"},
     "rooms": {"rooms"},
     "budget": {"budget_total", "budget_per_person", "budget_night"},
     "room_allocation": {"room_allocations", "rooms"},

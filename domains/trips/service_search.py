@@ -29,9 +29,15 @@ def parse_room_allocations(text: str) -> list[RoomAllocation] | None:
             return None
         block = block[:adults.start()] + " " + block[adults.end():]
         children = []
-        for child in re.finditer(r"\b(?:ребенок|ребенку|ребенка)\s*(\d{1,2})\s*(?:год|года|лет)\b", block):
-            children.append(int(child.group(1)))
-        block = re.sub(r"\b(?:ребенок|ребенку|ребенка)\s*\d{1,2}\s*(?:год|года|лет)\b", " ", block)
+        child_pattern = r"\b(?:ребенок|ребенку|ребенка)\s*(\d{1,3})\s*(год|года|лет|месяц|месяца|месяцев)\b"
+        for child in re.finditer(child_pattern, block):
+            age = int(child.group(1))
+            if child.group(2).startswith("месяц"):
+                if age > 215:
+                    return None
+                age //= 12
+            children.append(age)
+        block = re.sub(child_pattern, " ", block)
         # Only punctuation and the conjunction "и" may remain. In particular,
         # negations and unsupported descriptions cannot silently add/drop guests.
         remainder = re.sub(r"\bи\b|[\s,;.!]+", "", block)
@@ -108,6 +114,9 @@ def hotel_only(state: TripState, today: date) -> Step:
     if not state.date_from or not state.date_to:
         return question(state, "when", "Укажите даты заезда и выезда целиком.")
     if not state.adults:
+        if "unaccompanied_minor" in (state.travel_needs or []):
+            return question(state, "people", "В демо-поиске жилья нужен минимум один взрослый на номер. "
+                            "Для проживания ребёнка без взрослого условия нужно уточнить у объекта размещения.")
         return question(state, "people", "Сколько взрослых будет проживать?")
     if state.children_unknown:
         return question(state, "children", "Сколько детей будет проживать?")
@@ -118,7 +127,8 @@ def hotel_only(state: TripState, today: date) -> Step:
         allocations = state.room_allocations or []
         if len(allocations) != count:
             return question(state, "room_allocation", f"Как распределить гостей по {count} номерам? Например: "
-                            "номер 1: 2 взрослых, ребёнок 7 лет; номер 2: 1 взрослый. Укажите возраст каждого ребёнка.")
+                            "номер 1: 2 взрослых, ребёнок 7 лет; номер 2: 1 взрослый. "
+                            "Укажите возраст каждого ребёнка на дату заезда, в годах или месяцах.")
         adults = sum(room.adults for room in allocations)
         children = sum(len(room.children_ages) for room in allocations)
         if adults != state.adults or (state.children is not None and children != state.children):
@@ -133,7 +143,7 @@ def hotel_only(state: TripState, today: date) -> Step:
             return question(state, "rooms", "В одном номере может быть до 6 взрослых и 4 детей. Укажите число номеров и распределение.")
         # Missing ages do not become zero or a free-child assumption.
         if state.children and len(allocations[0].children_ages) != state.children:
-            return question(state, "children_ages", "Укажите возраст каждого ребёнка в годах на дату заезда.")
+            return question(state, "children_ages", "Укажите возраст каждого ребёнка на дату заезда: в годах, а для малыша можно в месяцах.")
     nights = (state.date_to - state.date_from).days
     if nights <= 0 or nights > 30:
         return question(state, "when", "Укажите даты заезда и выезда: от 1 до 30 ночей.")
@@ -152,6 +162,8 @@ def hotel_only(state: TripState, today: date) -> Step:
     for total, hotel in candidates[:3]:
         lines.append(f"• {hotel.name}, {hotel.stars}★, {MEALS[hotel.meal]} — {fmt_money(total)} за все номера (демо)")
     child_note = "Возрастные льготы не проверены. " if state.children else ""
+    if state.children and state.child_age_basis in {"current", "unspecified"}:
+        child_note += "Возраст на дату заезда не подтверждён. "
     lines.append("Это расчёт без дороги и трансфера. " + child_note + "Наличие нескольких номеров не проверено; "
                  "для настоящего тарифа нужны данные поставщика. Купить или забронировать здесь нельзя.")
     return Step("\n".join(lines), payload={"kind": "service_results"})
@@ -207,7 +219,7 @@ def split_hotels(state: TripState, today: date) -> Step:
     if state.children_unknown:
         return question(state, "children", "Сколько детей будет проживать в обоих отелях?")
     if state.children and len(state.children_ages or []) != state.children:
-        return question(state, "children_ages", "Укажите возраст каждого ребёнка в годах на дату заезда.")
+        return question(state, "children_ages", "Укажите возраст каждого ребёнка на дату заезда: в годах, а для малыша можно в месяцах.")
     if (state.rooms or 1) > 1:
         return Step("Для двух последовательных отелей расчёт нескольких номеров одновременно пока не поддерживается. "
                     "Можно рассчитать два отеля с одним номером или несколько номеров в одном отеле.",
