@@ -135,7 +135,7 @@ function renderHidden() {
 }
 function selectionPreferences(){return {saved:Object.keys(preferenceData.saved).slice(0,100),hidden:preferenceData.hidden.slice(0,100)};}
 function openDates(single=false){const s=lastData?.trip_summary||{};openTripDates({single,start:s.date_from,end:s.date_to,today:info?.today,onSelect:range=>single?send(`на ${range.start.split('-').reverse().join('.')}`):send(`Даты поездки: с ${range.start.split('-').reverse().join('.')} по ${range.end.split('-').reverse().join('.')}`,{date_range:range})});}
-function datesButton(){return el("button",{type:"button",class:"btn ghost date-range-open",onclick:openDates},"Изменить даты");}
+function datesButton(){return el("button",{type:"button",class:"btn ghost date-range-open",onclick:()=>openDates()},"Изменить даты");}
 function routeWeather(trip, summary){
   if(!trip.dest_id||!summary?.date_from||!summary?.date_to)return;
   const line=el('p',{class:'route-weather',role:'status'},'Загружаем погоду…');$("head").append(line);
