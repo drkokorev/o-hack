@@ -1,0 +1,100 @@
+// Run with playwright-cli run-code --filename tools/verify_trip_sentence.js.
+// Open the locally running application first. Real API in rules mode; synthetic requests only.
+async page => {
+  const checks = [], errors = [], samples = {};
+  const ok = (condition, name) => { if (!condition) throw Error(name); checks.push(name); };
+  const base = new URL(page.url()).origin;
+  let posts = 0, latest;
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('request', request => { if (new URL(request.url()).pathname === '/api/chat') posts++; });
+  const idle = () => page.waitForFunction(() => !document.querySelector('#send').disabled, null, {timeout:60000});
+  const request = async action => {
+    const response = page.waitForResponse(r=>new URL(r.url()).pathname === '/api/chat' && r.request().method()==='POST');
+    await action(); latest = await (await response).json(); await idle(); return latest;
+  };
+  const say = text => request(async()=>{await page.locator('#text').fill(text);await page.locator('#send').click();});
+  const field = key => page.locator(`[data-trip-field="${key}"]`);
+  const apply = async (key,text) => {
+    await field(key).click();await page.locator('#condition-value').fill(text);
+    return request(()=>page.locator('#condition-form [type=submit]').click());
+  };
+  const noOverflow = () => page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth + 1);
+  try {
+    await page.goto(base+'/static/favicon.svg');
+    await page.evaluate(()=>{sessionStorage.clear();localStorage.clear();localStorage.setItem('odin.tour.v2','1');});
+    await page.setViewportSize({width:1440,height:900}); await page.goto(base+'/'); await idle();
+    await say('Хочу в Анталью из Москвы с 12 августа по 12 сентября 2027, 2 взрослых');
+    const initial = latest.trip_summary;
+    const sentence = await page.locator('#trip-summary-line').innerText();
+    ok(sentence.includes('из Москвы') && sentence.includes('в Анталью') && sentence.includes('2027') && sentence.includes('31 ночь'),'original request is one sentence, with year and inflected city names');
+    ok(await page.locator('#conditions .chip').count()===0 && await page.locator('#condition-highlights button').count()===0,'primary values are not repeated as wishes');
+    ok(await page.locator('[data-trip-field]').count()===6,'six editable fields are directly reachable');
+    samples.basicHeight = (await page.locator('#trip-context').boundingBox()).height;
+    ok(samples.basicHeight <= 180,'basic desktop summary fits within 180 px');
+    const beforeCancel=posts;
+    await field('origin').click(); await page.locator('#condition-value').fill('Казань');await page.locator('#condition-cancel').click();
+    ok(posts===beforeCancel && (await field('origin').innerText()).includes('Москвы'),'cancel leaves server and sentence unchanged');
+    await field('people').focus();await page.keyboard.press('Enter');
+    ok(await page.locator('#conditions-title').innerText()==='Кто едет?','keyboard activates the corresponding editor');
+    await page.keyboard.press('Escape');
+    ok(await field('people').evaluate(n=>n===document.activeElement),'Escape returns focus to the field');
+    await apply('budget','до 180000 рублей на всех');
+    ok(latest.trip_summary.budget_total===180000 && latest.trip_summary.date_from===initial.date_from && latest.trip_summary.date_to===initial.date_to && latest.trip_summary.adults===2 && latest.trip_summary.destination===initial.destination,'budget edit preserves route, dates and people');
+    await apply('people','3 взрослых');
+    ok(latest.trip_summary.adults===3 && latest.trip_summary.budget_total===180000 && latest.trip_summary.date_from===initial.date_from,'people edit preserves budget and dates');
+    await apply('origin','Санкт-Петербург');
+    ok(latest.trip_summary.origin==='Санкт-Петербург' && latest.trip_summary.destination===initial.destination && latest.trip_summary.adults===3,'origin edit preserves destination and people');
+    await apply('destination','Сочи');
+    ok(latest.trip_summary.destination==='Сочи' && latest.trip_summary.origin==='Санкт-Петербург' && latest.trip_summary.budget_total===180000,'destination edit preserves origin and budget');
+    await field('dates').click();
+    await page.locator('[data-date="2027-08-15"]').click();
+    await request(()=>page.locator('[data-date="2027-08-22"]').click());
+    ok(latest.trip_summary.date_from==='2027-08-15' && latest.trip_summary.date_to==='2027-08-22' && latest.trip_summary.nights===7 && latest.trip_summary.adults===3 && latest.trip_summary.budget_total===180000,'calendar applies a complete range and preserves unrelated conditions');
+    await say('Измени поездку: в Анталью из Москвы с 12 августа по 12 сентября 2027, 2 взрослых. Температура воздуха от 25 до 30 градусов, температура моря от 23 градусов. Без пересадок, с собакой, нужен завтрак и бассейн.');
+    samples.conditions = latest.understood;
+    ok(await page.locator('#condition-highlights button').count()===2,'at most two extra conditions are visible');
+    const highlights=await page.locator('#condition-highlights').textContent();
+    ok(highlights.includes('воздух 25–30 °C') && highlights.includes('море от 23 °C'),'air bounds are grouped and sea preference is visible');
+    ok(await page.locator('#all-conditions').isVisible(),'remaining conditions are available via count');
+    const allText=await page.locator('#conditions').textContent();
+    ok(allText.includes('без пересадок') && allText.includes('питомцем') && allText.includes('завтрак'),'other saved wishes survive compact presentation');
+    samples.desktopHeight=(await page.locator('#trip-context').boundingBox()).height;
+    ok(samples.desktopHeight<=230 && await noOverflow(),'desktop summary stays compact with many wishes');
+    await page.locator('#condition-highlights button').first().click();
+    ok(await page.locator('#conditions-title').innerText()==='Какая погода нужна?' && (await page.locator('#condition-value').inputValue()).includes('от 25 до 30'),'weather opens its current editable range');
+    await page.locator('#condition-value').fill('Температура воздуха от 26 до 30 градусов');
+    await request(()=>page.locator('#condition-form [type=submit]').click());
+    ok(latest.understood.includes('воздух от 26 °C') && latest.understood.includes('море от 23 °C') && latest.trip_summary.budget_total===180000,'weather change preserves sea constraint and budget');
+    await page.locator('#all-conditions summary').click();
+    ok(await page.getByRole('button',{name:'Изменить условие: без пересадок',exact:true}).isVisible(),'remaining conditions are readable and editable after expansion');
+    await page.locator('#all-conditions summary').click();
+    const previousBudget=latest.trip_summary.budget_total;
+    await page.route('**/api/chat',route=>route.abort('failed'),{times:1});
+    await field('budget').click();await page.locator('#condition-value').fill('до 190000 рублей на всех');await page.locator('#condition-form [type=submit]').click();
+    await page.locator('#condition-error').waitFor({state:'visible'});
+    ok(await page.locator('#conditions-dialog').isVisible() && (await page.locator('#condition-value').inputValue()).includes('190000') && (await field('budget').textContent()).replace(/\s/g,'').includes(String(previousBudget)),'failed request retains draft and accepted budget');
+    await request(()=>page.locator('#condition-form [type=submit]').click());
+    ok(latest.trip_summary.budget_total===190000,'retained edit can be retried');
+    await page.locator('#currency').selectOption('EUR');
+    ok((await field('budget').innerText()).includes('€'),'currency preference still formats the interactive budget');
+    await page.locator('#currency').selectOption('RUB');
+    await page.locator('#text').fill('');
+    await page.screenshot({path:'output/playwright/trip-sentence-desktop.png'});
+    await page.locator('#trip-context').screenshot({path:'output/playwright/trip-sentence-detail.png'});
+    await page.setViewportSize({width:390,height:844});
+    samples.mobileHeight=(await page.locator('#trip-context').boundingBox()).height;
+    ok(samples.mobileHeight<=250 && await noOverflow(),'390 px mobile has no horizontal overflow and summary is at most 250 px');
+    await field('budget').click();ok(await page.locator('#condition-value').isVisible(),'mobile opens field editor');await page.keyboard.press('Escape');
+    await page.screenshot({path:'output/playwright/trip-sentence-mobile.png'});
+    await page.locator('#theme-toggle').click();
+    await page.screenshot({path:'output/playwright/trip-sentence-dark.png'});
+    ok(await page.locator('html').getAttribute('data-theme')==='dark' && await noOverflow(),'dark theme retains compact layout');
+    await page.setViewportSize({width:320,height:740});ok(await noOverflow(),'320 px viewport does not overflow');
+    ok(errors.length===0,'no uncaught browser errors');
+    await page.locator('#theme-toggle').click();await page.setViewportSize({width:1440,height:900});
+    return {status:'PASS',checks,samples,errors};
+  } catch(error) {
+    await page.screenshot({path:'output/playwright/trip-sentence-failure.png'});
+    return {status:'FAIL',failure:error.message,checks,samples,errors};
+  }
+}

@@ -20,9 +20,15 @@ def temperature_preferences(text: str) -> dict[str, float]:
         return {}
     result = {}
     for subject, prefix in ((AIR, "air"), (WATER, "sea")):
+        interval = rf"{subject}\s*(?:должн\w*\s+быть\s*)?от\s*(?P<low>{NUM})\s*(?:{UNIT}\s*)?до\s*(?P<high>{NUM})\s*{UNIT}"
         before = rf"{subject}\s*(?:должн\w*\s+быть\s*)?(?P<op>{OP})\s*(?P<n>{NUM})\s*{UNIT}"
         after = rf"(?P<op>{OP})\s*(?P<n>{NUM})\s*{UNIT}\s*(?:{subject})"
-        for match in re.finditer(before + "|" + after.replace("?P<op>", "?P<op2>").replace("?P<n>", "?P<n2>"), t):
+        for match in re.finditer(interval + "|" + before + "|" + after.replace("?P<op>", "?P<op2>").replace("?P<n>", "?P<n2>"), t):
+            if match.group("low") is not None:
+                low, high = (float(match.group(key).replace(",", ".")) for key in ("low", "high"))
+                if -60 <= low <= 60 and -60 <= high <= 60:
+                    result.update({f"{prefix}_min_temp": low, f"{prefix}_max_temp": high})
+                continue
             op, number = match.group("op") or match.group("op2"), match.group("n") or match.group("n2")
             value = float(number.replace(",", "."))
             if -60 <= value <= 60:
