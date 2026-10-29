@@ -1,0 +1,244 @@
+{
+  "checked": [
+    "tower",
+    "kremlin",
+    "spire",
+    "clocktower",
+    "colosseum",
+    "gate",
+    "pyramids",
+    "liberty",
+    "isaac",
+    "kulsharif",
+    "sochi_port",
+    "shamanka",
+    "kamchatka",
+    "russky_bridge",
+    "galata",
+    "cappadocia",
+    "registan",
+    "sagrada",
+    "parthenon",
+    "belem",
+    "great_wall",
+    "taj_mahal",
+    "marina_bay",
+    "petronas",
+    "fuji",
+    "bali_temple",
+    "maldives",
+    "christ",
+    "chichen_itza",
+    "golden_gate",
+    "opera",
+    "table_mountain"
+  ],
+  "loaded": [
+    "tower",
+    "belem",
+    "sagrada",
+    "colosseum",
+    "kremlin",
+    "isaac",
+    "kulsharif",
+    "taj_mahal",
+    "spire",
+    "registan",
+    "cappadocia",
+    "pyramids",
+    "clocktower",
+    "parthenon",
+    "galata",
+    "great_wall",
+    "gate",
+    "russky_bridge",
+    "sochi_port",
+    "liberty",
+    "shamanka",
+    "kamchatka",
+    "fuji",
+    "bali_temple",
+    "marina_bay",
+    "petronas",
+    "maldives",
+    "christ",
+    "chichen_itza",
+    "golden_gate",
+    "opera",
+    "table_mountain"
+  ],
+  "requests": [
+    {
+      "path": "/static/models/landmarks/sagrada.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/belem.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/tower.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/colosseum.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/vendor/three/draco/draco_wasm_wrapper.js",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/vendor/three/draco/draco_decoder.wasm",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/kremlin.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/isaac.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/kulsharif.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/spire.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/taj_mahal.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/registan.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/cappadocia.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/pyramids.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/clocktower.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/parthenon.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/galata.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/great_wall.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/gate.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/russky_bridge.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/sochi_port.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/liberty.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/shamanka.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/kamchatka.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/fuji.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/bali_temple.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/marina_bay.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/petronas.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/maldives.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/christ.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/chichen_itza.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/golden_gate.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/opera.glb",
+      "status": 200,
+      "local": true
+    },
+    {
+      "path": "/static/models/landmarks/table_mountain.glb",
+      "status": 200,
+      "local": true
+    }
+  ],
+  "errors": [],
+  "rendering": "actual shared WebGL layer; every model decoded and every place card opened"
+}

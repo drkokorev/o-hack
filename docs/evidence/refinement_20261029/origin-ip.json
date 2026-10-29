@@ -1,0 +1,24 @@
+{
+  "source": "DB-IP City Lite",
+  "release": "2026-10",
+  "license": "CC BY 4.0",
+  "source_url": "https://download.db-ip.com/free/dbip-city-lite-2026-10.mmdb.gz",
+  "source_sha256": "c839d407f85a1e0bddba354cef16b2c398182d1c34ed8d985555dce134b36b14",
+  "source_bytes": 60193321,
+  "index_path": "domains/trips/data/origin-ip-index.json.gz",
+  "index_sha256": "4721c21d0ecb36584bca6a544a10e0d20f58703a5ccab20108806b71f1326848",
+  "index_bytes": 427916,
+  "supported_cities": 290,
+  "covered_cities": 244,
+  "ipv4_ranges": 25003,
+  "ipv6_ranges": 7427,
+  "build_command": "python -m tools.build_origin_ip_index --source dbip-city-lite-2026-10.mmdb.gz --release 2026-10",
+  "runtime_external_geo_lookup": false,
+  "real_visitor_address_saved": false,
+  "limitations": [
+    "approximate city from IP",
+    "46 supported cities have no matching source ranges",
+    "private IP and localhost do not identify a public departure city",
+    "VPN location may differ"
+  ]
+}
