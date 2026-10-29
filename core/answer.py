@@ -5,8 +5,8 @@
     → проверка ответа по контексту → метки снова в имена → пользователю.
 
 Факты (цены, рейсы, отели, даты) считает код домена — модель их только пересказывает. Проверка не пропускает
-ответ с числом, которого нет в контексте, со ссылкой, контактом, чужой меткой или обещанием брони; тогда
-пользователь видит черновик-шаблон, он всегда верен. Модель не видит исходных личных данных и таблицы меток.
+типовые неподтверждённые числа, ссылки, метки и обещания; это эвристика, а не доказательство истинности.
+При отклонении пользователь видит ответ политики. Маскирование данных также имеет ограничения.
 """
 
 from __future__ import annotations
@@ -38,6 +38,7 @@ ANSWER_SYSTEM = """Ты — консультант сервиса поездок
 
 _NUMBER = re.compile(r"\d+(?:[   ]\d{3})*(?:[.,:]\d+)?")
 _LINK = re.compile(r"https?://|www\.|\b[\w-]+\.(?:ru|com|org|net|рф)\b", re.IGNORECASE)
+_LINK_TARGET = re.compile(r'https?://[^\s<>]+|(?:www\.)?[\w-]+\.(?:ru|com|org|net|рф)(?:/[^\s<>]*)?', re.I)
 _CONTACT = re.compile(r"@|\+\d|\b\d{3}[ -]\d{2}[ -]\d{2}\b")
 _GUSH = re.compile(r"^\W*(?:замечательн|отличн\w* выбор|прекрасн|великолепн|здорово|чудесн|рад[аы]?,? что)", re.IGNORECASE)
 _TOKEN = re.compile(r"\[[а-яё ]+(?:_\d+)?\]")
@@ -45,6 +46,18 @@ _PRICE = re.compile(r"\d+(?:[ \u00a0\u202f]\d{3})*\s?₽")
 _OPTION = re.compile(r"(?m)^\s*(\d)[.)]\s")
 _PROMISE = re.compile(r"забронирова|оплачен|оплатил|подтвердил[аи]? бронь|перезвон|свяжемся|отправил[аи]? (?:письмо|смс)",
                       re.IGNORECASE)
+
+
+def _positive_promise(text: str) -> bool:
+    for match in _PROMISE.finditer(text):
+        prefix = text[max(0, match.start() - 45):match.start()].lower()
+        if not re.search(r'\b(?:не|нельзя|не могу|не можем|не буду|не будем)\s+$', prefix):
+            return True
+    return False
+
+
+def _links(text: str) -> set[str]:
+    return {value.rstrip('.,;:!?)]}»\"') for value in _LINK_TARGET.findall(text)}
 
 
 @dataclass
@@ -98,14 +111,14 @@ def verify(answer: str, context: str, user_text: str, known_tokens: set[str], fa
     extra = sorted(n for n in _numbers(answer) if n not in allowed and not (n.isdigit() and int(n) <= 3))
     if extra:
         problems.append("числа не из фактов: " + ", ".join(extra[:5]))
-    if _LINK.search(answer) and not _LINK.search(context):
+    if _links(answer) - _links(context):
         problems.append("ссылка")
     if _CONTACT.search(answer) and not _CONTACT.search(context):
         problems.append("контакт")
     unknown = [t for t in _TOKEN.findall(answer) if t not in known_tokens and t not in context and t not in user_text]
     if unknown:
         problems.append("неизвестные метки: " + ", ".join(unknown[:3]))
-    if _PROMISE.search(answer) and not _PROMISE.search(context):
+    if _positive_promise(answer) and not _positive_promise(context):
         problems.append("обещание, которого нет в фактах")
     letters = re.findall(r"[a-zа-яё]", answer.casefold())
     if letters and sum(1 for ch in letters if "а" <= ch <= "я" or ch == "ё") / len(letters) < 0.6:
@@ -134,7 +147,7 @@ def messages(user_text: str, facts: str, sources: list[dict]) -> list[Message]:
 
 
 def compose(llm: LLM | None, user_text: str, facts: str, draft: str, sources: list[dict],
-            known_tokens: set[str]) -> Composed:
+            known_tokens: set[str], *, required_question: str | None = None) -> Composed:
     """Ответ модели, если он прошёл проверку; иначе черновик. Одна повторная попытка при ошибке проверки."""
     if llm is None or not facts.strip():
         return Composed(draft, "template")
@@ -142,6 +155,8 @@ def compose(llm: LLM | None, user_text: str, facts: str, draft: str, sources: li
     problems: list[str] = []
     for attempt in range(2):
         prompt = messages(user_text, facts, sources)
+        if required_question:
+            prompt[-1]['content'] += '\nОбязательный вопрос — скопируй дословно, других вопросов не добавляй: ' + required_question
         if attempt and problems:
             prompt[-1]["content"] += ("\n\nПредыдущий вариант отклонён: " + "; ".join(problems)
                                       + ". Перепиши строго по фактам.")
@@ -155,6 +170,8 @@ def compose(llm: LLM | None, user_text: str, facts: str, draft: str, sources: li
             # модель часто теряет финальный вопрос — дописываем его из фактов, а не отказываемся от ответа
             answer = answer.rstrip() + "\n\n" + facts.rstrip().splitlines()[-1].strip()
         problems = verify(answer, context, user_text, known_tokens, facts)
+        if required_question and (required_question not in answer or answer.count('?') != 1):
+            problems.append('изменён обязательный вопрос')
         if not problems:
             return Composed(answer, "llm")
     log.info("Ответ модели не прошёл проверку (%s), показан шаблон", "; ".join(problems))

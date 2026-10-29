@@ -1,12 +1,13 @@
-"""An event selection is server-owned context, never client-supplied travel dates."""
+"""Select the exact catalog city and apply the configured event-date policy."""
 import json
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from fastapi import HTTPException
 from core.agent import Step
 from domains.trips.geo import DESTINATIONS
 from domains.trips.state import TripUpdate
+from domains.trips.policy_resources import dialogue_policy
 
 
 def choose_event(agent, session, event_id):
@@ -20,25 +21,50 @@ def choose_event(agent, session, event_id):
     # Exact city identity; never choose the closest unrelated destination.
     matches = [dest for dest in DESTINATIONS if dest.name == event['city'] and dest.country == event['country']]
     dest = matches[0] if len(matches) == 1 else None
-    candidate = agent.domain.merge(state.model_copy(deep=True), TripUpdate(destination=dest.id if dest else event['city']))
+    start, end = date.fromisoformat(event['start']), date.fromisoformat(event['end'])
+    update = TripUpdate(destination=dest.id if dest else event['city'])
+    # A short event is a useful explicit travel choice. Its final day is
+    # inclusive; return the following day so a one-day event has a valid stay.
+    # Long seasons and discontinuous programmes need actual visiting dates.
+    continuous = ';' not in event['dates'] and ' и ' not in event['dates']
+    short = continuous and (end - start).days + 1 <= dialogue_policy().event_autofill_max_days
+    autofill = short and (not state.date_from or state.dates_assumed)
+    if autofill:
+        begin, finish = max(start, agent.today()), end + timedelta(days=1)
+        update = update.model_copy(update={'date_from':begin, 'date_to':finish, 'nights':(finish-begin).days})
+    candidate = agent.domain.merge(state.model_copy(deep=True), update)
     state = candidate
     if state.pending_trip_candidate:
         raise HTTPException(status_code=409, detail='Сначала завершите изменение текущей поездки.')
     state.selected_event = {key: event[key] for key in ('id', 'name', 'city', 'country', 'start', 'end', 'dates', 'url')}
     if not dest:
+        # Do not let fuzzy destination matching substitute a nearby catalog
+        # city for the exact event location (e.g. Abu Dhabi -> Dubai).
+        state.dest_id = None
+        state.destination = event['city']
         state.country = event['country']
         state.place_country = event['country']
         state.map_place = {'id':f"event-city:{event_id}", 'name':event['city'], 'country':event['country'], 'lat':event['lat'], 'lon':event['lon']}
-    # Event dates are not check-in/check-out dates. Existing dates remain intact.
-    step = agent.domain.step(state)
+    if autofill:
+        state.dates_assumed = False
+        state.trip_days_min = state.trip_days_max = None
     intro = f"Повод для поездки: {event['name']}, {event['city']} — {event['dates']}. Билеты на событие не включены."
-    if state.date_from and state.date_to:
-        if state.date_to < date.fromisoformat(event['start']) or state.date_from > date.fromisoformat(event['end']):
-            intro += ' Текущие даты поездки не совпадают с событием. На какие дни перенесём поездку?'
+    if autofill:
+        intro += (f' Подставил город и даты поездки: {state.date_from:%d.%m.%Y}–{state.date_to:%d.%m.%Y}. '
+                  'Возвращение — на следующий день после события; даты можно изменить в календаре или сообщением.')
+        step = agent.domain.step(state)
+    elif state.date_from and state.date_to:
+        if state.date_to <= start or state.date_from > end:
+            state.pending_question = 'when'
+            step = Step('Текущие даты поездки не совпадают с событием. На какие дни перенесём поездку?',
+                        payload={'kind':'question', 'field':'when'})
         else:
             intro += ' Ваши даты поездки сохранены.'
+            step = agent.domain.step(state)
     else:
-        intro += ' На какие дни хотите поехать? Даты события не подставляю как даты проживания.'
+        state.pending_question = 'when'
+        step = Step('Период события сохранён. Какие дни посещения вам подходят? Можно выбрать их в календаре.',
+                    payload={'kind':'question', 'field':'when'})
     step.reply = intro + '\n\n' + step.reply
     session.state = state
     session.last, session.last_nlu, session.last_notes = step, 'action', []

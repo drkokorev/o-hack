@@ -39,6 +39,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     fillCondition(); show("conditions-dialog"); byId("condition-value").focus();
   }
   function fieldFor(text) {
+    if (text.startsWith('период события:')) return 'dates';
     if (/^из:/.test(text)) return "origin";
     if (/бюджет|₽/.test(text)) return "budget";
     if (/взросл|путешествен|ребён|детей/.test(text)) return "people";

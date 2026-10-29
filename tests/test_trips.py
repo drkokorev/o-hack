@@ -113,7 +113,7 @@ def test_rebuild_keeps_hotel_and_reports_diff():
     a = agent()
     s, step = talk(a, "Сочи с 5 по 12 декабря вдвоём", )
     hotel = step.payload["items"][0]["hotel"]["name"]
-    step = a.handle(s, "а если на два дня позже?")
+    step = a.handle(s, "перенеси на два дня позже")
     assert s.state.date_from == date(2026, 12, 7) and s.state.date_to == date(2026, 12, 14)
     assert any("отель тот же" in d for d in step.payload["diff"])
     assert step.payload["items"][0]["hotel"]["name"] == hotel

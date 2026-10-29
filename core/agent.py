@@ -109,6 +109,7 @@ class Agent:
 
     def handle(self, session: Session, text: str, *, after_merge: Callable[[BaseModel], None] | None = None) -> Step:
         session.last_input_sensitive = False
+        session.last_answer_by = 'template'
         # Reject instead of truncating: a document/card number cut at the limit
         # could otherwise evade inspection and be sent partially to the model.
         if len(text) > MAX_INPUT_CHARS:
@@ -171,7 +172,11 @@ class Agent:
                 privacy_unavailable = True
         session.last_input_sensitive = session.last_input_sensitive or unresolved or privacy_unavailable
         update, session.last_nlu = self._understand(session, text, use_llm=not (privacy_unavailable or unresolved))
-        if not update.model_dump(exclude_none=True) and session.last is not None and after_merge is None:
+        respond = getattr(self.domain, 'respond_without_transition', None)
+        read_only = respond(session.state, update, text, session.last) if respond and after_merge is None else None
+        if read_only is not None:
+            step = read_only
+        elif not update.model_dump(exclude_none=True) and session.last is not None and after_merge is None:
             # A message with no understood action must not advance the
             # conversation, skip a pending question, or modify an order.
             previous = session.last
@@ -181,6 +186,9 @@ class Agent:
                 previous_reply = previous_reply.removeprefix("Не понял сообщение. ")
             step = Step("Не понял сообщение. " + (previous_reply if question else
                         "Расскажите о поездке или уточните, что хотите изменить."), payload=previous.payload)
+            unclear = getattr(self.domain, 'unclear_response', None)
+            if unclear is not None:
+                step = unclear(session.state, previous)
         else:
             # An exact, server-validated map selection is an action even when
             # the already selected city adds no new natural-language fields.
@@ -222,6 +230,9 @@ class Agent:
         session.last_notes = []
         rules = getattr(self.domain, "rule_extract", None)
         by_rules = rules(session.state, text, today) if rules is not None else None
+        prefer_local = getattr(self.domain, 'prefer_local_update', None)
+        if by_rules is not None and prefer_local is not None and prefer_local(by_rules):
+            return by_rules, 'rules'
         # Structured answers to an explicit pending question are already
         # validated locally; avoid sending room allocations or retrying an LLM
         # that cannot authoritatively change these service fields.
@@ -276,7 +287,11 @@ class Agent:
         if self.llm is None or not step.reply:
             return step
         known = {token for token in re.findall(r"\[[а-яё ]+_\d+\]", text) if session.vault.known(token)}
-        result = compose(self.llm, text, step.facts or step.reply, step.reply, step.sources, known)
+        questions = re.findall(r'[^.!?\n]*\?', step.reply)
+        required_question = (questions[-1].strip() if questions and isinstance(step.payload, dict)
+                             and step.payload.get('kind') == 'question' and step.payload.get('field') else None)
+        result = compose(self.llm, text, step.facts or step.reply, step.reply, step.sources, known,
+                         required_question=required_question)
         session.last_answer_by = result.by
         if result.problems:
             session.last_notes = session.last_notes + ["ответ: " + "; ".join(result.problems)]

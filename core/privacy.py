@@ -83,13 +83,17 @@ def _morph():
 
 
 def _is_command(span: str) -> bool:
-    """NER принимает глагол в начале короткой фразы за имя: «Оформляй оптимальный», «Запросите ранний заезд»."""
+    """NER can mistake a single verb for a name, including «Благодарствую».
+
+    Known given names always keep the name interpretation. Non-imperative
+    verbs require a high-confidence morphological parse.
+    """
     word = span.casefold()
     if word in _TRAVEL_COMMANDS:
         return True
     if " " in word or word in _given_names():
         return False
-    return any(p.tag.POS == "VERB" and "impr" in p.tag for p in _morph().parse(word))
+    return any(p.tag.POS == "VERB" and ("impr" in p.tag or p.score >= 0.8) for p in _morph().parse(word))
 
 
 @lru_cache(maxsize=1)

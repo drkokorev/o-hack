@@ -34,10 +34,10 @@ def test_picking_by_number_or_name(text, key):
     assert st.stage == "cart" and st.package == key
 
 
-def test_unclear_reply_keeps_destination_list():
+def test_acknowledgement_keeps_destination_list():
     st, step = run("Хочу к морю в ноябре", "спасибо")
     first = st.suggested
-    assert "Не понял" in step.reply
+    assert "Пожалуйста" in step.reply
     st2, _ = run("Хочу к морю в ноябре", "спасибо", "давай 2")
     assert st2.dest_id == first[1]
 

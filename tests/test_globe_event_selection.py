@@ -21,6 +21,7 @@ def test_event_does_not_invent_stay_dates_and_resumes_exact_context():
         assert summary['destination'] == 'Дубай'
         assert summary['selected_event']['id'] == 'global-village'
         assert summary['date_from'] is None and summary['date_to'] is None
+        assert any('период события:' in chip for chip in first['understood'])
         assert 'Билеты на событие не включены' in first['reply']
         restored = client.post('/api/session', json={'session_id':first['session_id']}).json()
         assert restored['trip_summary'] == summary
@@ -65,3 +66,55 @@ def test_suggest_for_me_is_an_explicit_delegation_without_invented_dates():
     update = rule_extract(TripState(), 'Предложи сам', date(2026, 10, 29))
     assert update.unsure is True
     assert update.date_from is None and update.nights is None
+
+
+def test_short_event_populates_city_and_dates_in_one_action():
+    with client_at() as client:
+        result = client.post('/api/chat', json={'text':'Хочу на событие','event_id':'f2-abu-dhabi-2026'}).json()
+        summary = result['trip_summary']
+        assert summary['destination'] == 'Абу-Даби'
+        assert summary['date_from'] == '2026-12-04'
+        assert summary['date_to'] == '2026-12-07'
+        assert summary['nights'] == 3
+        assert 'следующий день' in result['reply']
+        assert 'На какие дни' not in result['reply']
+        restored = client.post('/api/session', json={'session_id':result['session_id']}).json()
+        assert restored['trip_summary'] == summary
+
+
+def test_event_dates_can_be_edited_and_undone_without_losing_event():
+    with client_at() as client:
+        first = client.post('/api/chat', json={'text':'Событие','event_id':'f2-abu-dhabi-2026'}).json()
+        edited = client.post('/api/chat', json={'session_id':first['session_id'],'text':'Даты поездки',
+                            'date_range':{'start':'2026-12-03','end':'2026-12-08'}}).json()
+        assert edited['trip_summary']['date_from'] == '2026-12-03'
+        assert edited['trip_summary']['selected_event']['id'] == 'f2-abu-dhabi-2026'
+        restored = client.post('/api/chat/undo', json={'session_id':first['session_id'],
+                                                     'revision':edited['revision']}).json()
+        assert restored['trip_summary'] == first['trip_summary']
+
+
+def test_ongoing_short_event_does_not_fill_past_arrival():
+    with client_at(date(2026,12,5)) as client:
+        result = client.post('/api/chat', json={'text':'Событие','event_id':'f2-abu-dhabi-2026'}).json()
+        assert result['trip_summary']['date_from'] == '2026-12-05'
+        assert result['trip_summary']['date_to'] == '2026-12-07'
+
+
+def test_one_day_event_has_a_valid_overnight_range():
+    with client_at() as client:
+        result = client.post('/api/chat', json={'text':'Событие','event_id':'marathon-dubai'}).json()
+        assert result['trip_summary']['destination'] == 'Дубай'
+        assert result['trip_summary']['date_from'] == '2027-01-17'
+        assert result['trip_summary']['date_to'] == '2027-01-18'
+        assert result['trip_summary']['nights'] == 1
+
+
+def test_discontinuous_programme_keeps_event_period_without_claiming_a_full_stay():
+    with client_at() as client:
+        result = client.post('/api/chat', json={'text':'Событие','event_id':'venice-street-show-2027'}).json()
+        assert result['trip_summary']['destination'] == 'Венеция'
+        assert result['trip_summary']['date_from'] is None
+        assert result['trip_summary']['date_to'] is None
+        assert result['payload']['field'] == 'when'
+        assert result['reply'].count('?') == 1

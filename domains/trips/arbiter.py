@@ -194,6 +194,10 @@ def _same(a, b) -> bool:
 
 
 def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -> tuple[TripUpdate, list[str]]:
+    from .conversation import accepted_model_act
+    conversation_act = accepted_model_act(state, text, llm, rules)
+    if conversation_act and conversation_act != 'preview':
+        return TripUpdate(dialogue_act=conversation_act), []
     t = norm(text)
     data = llm.model_dump()
     rule_data = rules.model_dump()
@@ -201,10 +205,12 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     quotes = llm.evidence or {}
     backed = {field for field, value in data.items() if _backed(field, value, quotes.get(field), t)}
     data.pop("evidence", None)
+    data['dialogue_act'] = conversation_act
 
     service_fields = ("split_stays", "split_choice", "room_allocations", "search_scope", "flight_direction", "transfer_from", "transfer_to", "transfer_time", "transfer_date", "transfer_direction", "seat_class", "unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "without_dates", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "child_age_months", "child_age_basis", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "accessibility_needs", "remove_accessibility_needs", "travel_needs", "remove_travel_needs", "pet_types", "pet_count", "pet_weight_kg", "pet_cabin", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
+    data['unsupported_budget_currency'] = rules.unsupported_budget_currency
     data["child_age_number"] = rule_data.get("child_age_number")
     data["children_age_months_by_child"] = rule_data.get("children_age_months_by_child")
     if data.get("clear") and not (rules.clear and "accessibility_needs" in rules.clear):
@@ -388,4 +394,8 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
         data["confirm"] = rules.confirm
     if data.get("after_sale") is None and rules.after_sale is not None:
         data["after_sale"] = rules.after_sale
+    if rules.unsupported_budget_currency:
+        for field in ('budget_total', 'budget_per_person', 'budget_night'):
+            data[field] = None
+        notes.append('budget: unsupported currency, no implicit RUB conversion')
     return TripUpdate.model_validate(data), notes

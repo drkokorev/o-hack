@@ -99,12 +99,14 @@ class TripState(TripParams):
     """Состояние диалога: пожелания плюс то, что ведёт код агента."""
 
     stage: str = "start"                 # start | destination | plan | cart | payment | booked
+    budget_currency_issue: str | None = None  # unresolved non-RUB budget, never an implicit conversion
     transfer_kind: Literal["taxi", "shuttle"] | None = None  # explicit UI choice; not inferred by the LLM
     suggested: list[str] = Field(default_factory=list)       # id предложенных направлений
     seen: list[str] = Field(default_factory=list)            # все показанные в этом подборе — «ещё» листает дальше
     dest_id: str | None = None           # выбранное направление
     map_place: dict | None = None         # точная запись города, явно выбранного на карте
     package: str | None = None           # выбранный вариант: optimal | budget | comfort
+    package_options: list[dict[str, str]] = Field(default_factory=list)  # exact titles actually displayed
     hotel_id: str | None = None          # закреплённый пользователем отель
     showing: str | None = None           # что показано для выбора по номеру: destinations | packages | hotels
     hotel_ids_shown: list[str] = Field(default_factory=list)
@@ -144,6 +146,10 @@ class TripState(TripParams):
 
 
 class TripUpdate(TripParams):
+    unsupported_budget_currency: str | None = Field(None, description='Неподдерживаемая валюта бюджета; только локальная проверка')
+    dialogue_act: Literal['greeting', 'thanks', 'pause', 'capabilities', 'summary', 'explain',
+                          'repair', 'data_provenance', 'preview'] | None = Field(
+        None, description='Read-only conversational intent; requires evidence.dialogue_act; never authorises an action')
     evidence: dict[str, str] | None = Field(None, description="Для каждого заполненного поля — дословный фрагмент "
                                             "последней реплики, на котором основано значение: {\"nights\": \"11 дн\", "
                                             "\"origin\": \"из пинзы\"}")
