@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "page_http": 200,
+  "authentication": "fresh context, no cookies or credentials supplied",
+  "metadata": {
+    "duration": 180,
+    "width": 1920,
+    "height": 1080
+  },
+  "playback": "advanced beyond one second",
+  "seek": "chapter 88 seconds played",
+  "mobile_width": 390,
+  "horizontal_overflow": false,
+  "errors": []
+}

@@ -4,8 +4,8 @@
 
 [Ревью диалога и архитектуры, 29.10.2026](docs/38_Ревью_диалога_и_архитектуры_20261029.md): обсуждение альтернатив отделено от изменения поездки, проверяются валюта и предварительный состав, демонстрационные предложения вынесены за контракт источника. При выборе короткого события заполняются город и даты; для длительного выбираются дни посещения.
 
-- [Видео-скринкаст: открытая страница](https://rigby453.github.io/odin-zapros-demo-2026/) — демонстрация версии `53a2aa7`.
-- [Видео на Google Drive](https://drive.google.com/file/d/1cTSwHfalbX3btaZKyBE6NnUkO44e5GK4/view?usp=drive_open).
+- Видео-скринкаст: [смотреть 3 минуты без регистрации](https://rigby453.github.io/odin-zapros-demo-2026/) · [MP4](https://rigby453.github.io/odin-zapros-demo-2026/demo.mp4) · [Google Drive](https://drive.google.com/file/d/1cTSwHfalbX3btaZKyBE6NnUkO44e5GK4/view?usp=drive_open)
+- Короткий промо-ролик, 60 секунд: [`promo/odin-zapros-promo-60s.mp4`](promo/odin-zapros-promo-60s.mp4)
 - Развёрнутый сервис: _опционально_
 
 ## Общая версия и ветки
