@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "checks": [
+    "request is a standalone flight",
+    "summary date opens the single-day calendar",
+    "one click changes only the service date"
+  ]
+}

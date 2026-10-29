@@ -1,0 +1,282 @@
+{
+  "status": "PASS",
+  "tests": 68,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "command": "python -m pytest tests/test_chat_navigation.py tests/test_refinement_20261029.py tests/test_unified_experience.py tests/test_party_dialogues_20261029.py tests/test_temperature_20261028.py -q",
+  "cases": [
+    {
+      "class": "tests.test_chat_navigation",
+      "name": "test_undo_restores_conditions_and_rejects_double_undo"
+    },
+    {
+      "class": "tests.test_chat_navigation",
+      "name": "test_edit_replaces_only_latest_turn"
+    },
+    {
+      "class": "tests.test_chat_navigation",
+      "name": "test_rejected_edit_does_not_erase_valid_turn"
+    },
+    {
+      "class": "tests.test_chat_navigation",
+      "name": "test_new_session_and_reset_have_no_recoverable_history"
+    },
+    {
+      "class": "tests.test_chat_navigation",
+      "name": "test_checkout_drops_undo_snapshot[cart]"
+    },
+    {
+      "class": "tests.test_chat_navigation",
+      "name": "test_checkout_drops_undo_snapshot[payment]"
+    },
+    {
+      "class": "tests.test_chat_navigation",
+      "name": "test_checkout_drops_undo_snapshot[booked]"
+    },
+    {
+      "class": "tests.test_chat_navigation",
+      "name": "test_snapshot_is_independent_and_contains_no_raw_message_history"
+    },
+    {
+      "class": "tests.test_refinement_20261029",
+      "name": "test_range_preserves_trip_and_invalid_range_is_not_applied"
+    },
+    {
+      "class": "tests.test_refinement_20261029",
+      "name": "test_browser_preferences_filter_and_prioritize_without_overriding_requirements"
+    },
+    {
+      "class": "tests.test_refinement_20261029",
+      "name": "test_hidden_hotels_are_not_returned_on_next_recommendation"
+    },
+    {
+      "class": "tests.test_refinement_20261029",
+      "name": "test_forecast_horizon_and_validation"
+    },
+    {
+      "class": "tests.test_refinement_20261029",
+      "name": "test_origin_hint_remains_internal"
+    },
+    {
+      "class": "tests.test_unified_experience",
+      "name": "test_map_hotel_replaces_source_selection_and_undo_restores_it"
+    },
+    {
+      "class": "tests.test_unified_experience",
+      "name": "test_followup_keeps_map_hotel_identity_and_summary"
+    },
+    {
+      "class": "tests.test_unified_experience",
+      "name": "test_undo_exact_city_and_edit_previous_text"
+    },
+    {
+      "class": "tests.test_unified_experience",
+      "name": "test_edited_message_is_masked_at_model_boundary"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_ages_answer_count_question_without_guessing_children_in_adult_only_trip"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_short_age_answer_to_child_count_stays_local[2 \\u0438 7 \\u043b\\u0435\\u0442]"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_short_age_answer_to_child_count_stays_local[2 \\u0438 7 \\u043b\\u0435\\u0442.]"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_room_allocation_ages_are_not_forwarded_in_later_model_context"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_current_infant_age_is_not_assumed_to_be_the_age_at_a_future_hotel"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_two_child_ages_with_mixed_units_do_not_become_a_free_fare"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_hotel_accepts_multiple_child_ages_in_years_and_months_at_checkin"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_unqualified_child_age_is_clarified_without_silently_keeping_old_age"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_child_age_unit_months_preserves_the_explicit_future_age"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_room_allocation_accepts_infant_months_for_age_at_checkin"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_pregnancy_weeks_are_not_trip_duration_or_stored_medical_history"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_gestation_week_is_not_mistaken_for_trip_length[24-\\u044f \\u043d\\u0435\\u0434\\u0435\\u043b\\u044f \\u0431\\u0435\\u0440\\u0435\\u043c\\u0435\\u043d\\u043d\\u043e\\u0441\\u0442\\u0438, \\u0445\\u043e\\u0447\\u0443 \\u0432 \\u0421\\u043e\\u0447\\u0438 \\u043d\\u0430 5 \\u043d\\u043e\\u0447\\u0435\\u0439-5]"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_gestation_week_is_not_mistaken_for_trip_length[\\u0443 \\u043c\\u0435\\u043d\\u044f 20 \\u043d\\u0435\\u0434\\u0435\\u043b\\u044c \\u0431\\u0435\\u0440\\u0435\\u043c\\u0435\\u043d\\u043d\\u043e\\u0441\\u0442\\u0438, \\u0445\\u043e\\u0447\\u0443 \\u0432 \\u0421\\u043e\\u0447\\u0438 \\u043d\\u0430 3 \\u043d\\u043e\\u0447\\u0438-3]"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_general_pregnancy_question_does_not_claim_person_is_pregnant_or_safe_to_fly"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_older_traveller_does_not_imply_a_mobility_problem"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_hotel_for_older_traveller_does_not_require_a_departure_city"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_retiree_status_does_not_automatically_mean_old_age_or_discount"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_senior_fare_question_does_not_create_a_retiree"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_multiple_foods_add_and_remove_individually_without_inventing_safety"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_unrecognized_food_after_known_one_is_not_silently_dropped"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_vegan_and_exclusions_are_preferences_not_an_assumed_allergy"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_vegan_preference_can_be_removed_in_follow_up"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_child_equipment_and_senior_discount_can_be_removed_individually"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_single_pet_weight_and_cabin_are_preserved_changed_and_removed"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_persons_weight_is_not_assigned_to_the_pet"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_luggage_in_cabin_is_not_silently_a_pet_cabin_request"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_guide_dog_and_cat_remain_different_requirements"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_removing_one_kind_of_pet_preserves_the_other"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_multiple_pets_are_not_given_one_unverified_weight"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_different_pets_do_not_share_one_species_count_or_cabin_preference"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_multiple_pets_do_not_inherit_single_pets_cabin_preference"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_hypothetical_pet_question_does_not_create_a_pet"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_cat_hotel_query_is_not_treated_as_a_hotel_name"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_pet_transport_does_not_impose_a_universal_eight_kilo_rule"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_trip_without_pets_does_not_introduce_an_animal"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_explicit_child_seat_and_cot_do_not_assume_their_availability"
+    },
+    {
+      "class": "tests.test_party_dialogues_20261029",
+      "name": "test_unaccompanied_minor_is_not_given_an_invented_adult_or_service"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_explicit_air_and_sea_limits_are_separate"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_editable_temperature_range_preserves_both_bounds_and_subjects"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_temperature_range_needs_units_and_does_not_turn_forecasts_into_wishes"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_dates_and_weather_questions_do_not_become_temperature_preferences"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_model_cannot_invent_a_temperature_threshold"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_unknown_temperature_is_not_a_pass"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_ideas_filter_only_by_known_historical_monthly_values"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_temperature_is_not_applied_without_a_month"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_generic_water_limit_discloses_it_only_uses_sea_surface_data"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_chosen_city_that_misses_limit_is_not_described_as_matching"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_missing_sea_history_is_disclosed_for_a_selected_city"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_inconsistent_air_limits_request_correction"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_clearing_a_temperature_preference_does_not_erase_other_trip_parameters"
+    },
+    {
+      "class": "tests.test_temperature_20261028",
+      "name": "test_model_cannot_drop_explicit_temperature_removal"
+    }
+  ]
+}

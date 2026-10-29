@@ -52,10 +52,12 @@ const drawMap = (options = {}) => tripMap.draw(options);
 const preferences = createPreferences(tripMap);
 const voice = createVoiceInput({input:$("text"), button:$("send"), microphone:$("mic-button"), status:$("voice-status"), holdToTalk:false});
 let lastData = null, latestTurn = null, editing = false;
-const experience = createExperience({send, reset:resetConversation, undo:undoTurn, edit:editTurn,
+const experience = createExperience({send:sendTripChange, reset:resetConversation, undo:undoTurn, edit:editTurn,
   isBusy:()=>busy, voice, ideas:renderWelcome});
 const tripStorage = createTripStorage();
 const journeyUI = createJourneyUI({fill:experience.fill, onTransfer:changeTransfer});
+const tripSentence = createTripSentence({container:$("trip-sentence-text"), onEdit:key=>experience.openCondition(key)});
+const tripContextLayout = createTripContextLayout();
 experience.showChat = () => journeyUI.show("chat", false);
 experience.showIdeas = () => {renderWelcome();journeyUI.show("results");};
 
@@ -80,7 +82,7 @@ function renderHead(data) {
 
 function renderConditions(data) {
   const understood = data?.understood || [], assumed = data?.assumptions || [];
-  $("trip-context").hidden = !understood.length && !assumed.length;
+  $("trip-context").hidden = !data || (!understood.length && !assumed.length && !data.trip_summary);
   // The optional structured field is authoritative. Older services only expose
   // a list, so recognise a destination there only when it matches their catalog.
   const knownPlaces = new Map((info?.places || []).map((p) => [p.name.toLocaleLowerCase("ru"), p.name]));
@@ -90,14 +92,9 @@ function renderConditions(data) {
   $("condition-change").hidden = !changed;
   $("condition-change").textContent = changed ? `${lastDestination} → ${destination}` : "";
   lastDestination = destination;
-  const summary=data?.trip_summary || {};
-  const dates=summary.date_from && summary.date_to ? `${summary.date_from.slice(8)}.${summary.date_from.slice(5,7)}–${summary.date_to.slice(8)}.${summary.date_to.slice(5,7)}` : null;
-  const n=summary.nights, nightWord=n%10===1&&n%100!==11 ? "ночь" : n%10>=2&&n%10<=4&&(n%100<12||n%100>14) ? "ночи" : "ночей";
-  $("trip-summary-line").textContent=[summary.origin ? `Откуда: ${summary.origin}` : null,destination,dates,n ? `${n} ${nightWord}` : null,
-    summary.adults ? `${summary.adults} взр.${summary.children ? ` + ${summary.children} дет.` : ""}` : null,
-    summary.budget_total ? `до ${new Intl.NumberFormat("ru-RU").format(summary.budget_total)} ₽` : null].filter(Boolean).join(" · ") || "Уточняем условия";
-  $("conditions").replaceChildren(...understood.map((c) => el("span", { class: "chip" }, c.replace(/\s*\(примерно по IP\)/g,""))),
-    ...assumed.map((a) => el("span", { class: "chip assumed", title: "Предположение — можно уточнить в чате" }, a)));
+  const extra = tripSentence.render(data, info);
+  renderTripWishes({values:extra, assumptions:assumed, onEdit:(key,text)=>experience.openCondition(key,text), busy});
+  tripContextLayout.update(data);
 
 }
 
@@ -138,7 +135,7 @@ function openDates(single=false){
   const s=lastData?.trip_summary||{},event=s.selected_event;
   const eventStart=event?.start && info?.today ? (event.start>info.today?event.start:info.today) : event?.start;
   openTripDates({single,start:s.date_from||eventStart,end:s.date_to,today:info?.today,event,
-    onSelect:range=>single?send(`на ${range.start.split('-').reverse().join('.')}`):send(`Даты поездки: с ${range.start.split('-').reverse().join('.')} по ${range.end.split('-').reverse().join('.')}`,{date_range:range})});
+    onSelect:range=>single?sendTripChange(`на ${range.start.split('-').reverse().join('.')}`):sendTripChange(`Даты поездки: с ${range.start.split('-').reverse().join('.')} по ${range.end.split('-').reverse().join('.')}`,{date_range:range})});
 }
 function datesButton(){return el("button",{type:"button",class:"btn ghost date-range-open",onclick:()=>openDates()},"Изменить даты");}
 function routeWeather(trip, summary){
@@ -614,6 +611,8 @@ function setBusy(value) {
   busy=value; $("send").disabled=value;
   $("mic-button").disabled=value;
   $("reset").disabled=value; $("conditions-edit").disabled=value;
+  tripSentence.setBusy(value);
+  $("trip-context").querySelectorAll("button").forEach(button=>{button.disabled=value;});
 }
 function editTurn(turn) {
   if(busy) return;
@@ -735,6 +734,13 @@ async function send(text, selection = {}) {
     addMessage("bot",error.message || "Не удалось отправить. Текст сохранён — попробуйте ещё раз.");
     renderSuggest(lastData || "start"); return false;
   } finally {setBusy(false);voice.update();$("text").focus({preventScroll:true});}
+}
+function sendTripChange(text, selection = {}) {
+  if(busy) return;
+  // Editing a summary field is a new refinement, even while an older message
+  // is being rewritten in the composer.
+  editing=false; $("edit-banner").hidden=true;
+  return send(text,selection);
 }
 async function undoTurn() {
   if(busy || !lastData?.can_undo || !latestTurn) return;

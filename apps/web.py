@@ -560,7 +560,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                 "today": agent.today().isoformat(), "destinations": len(DESTINATIONS),
                 "hotels": hotel_count(),
                 "places": [{"id": d.id, "name": d.name, "lat": d.lat, "lon": d.lon} for d in DESTINATIONS],
-                "origins": [{"name": o.name, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
+                "origins": [{"name": o.name, "from": o.from_, "lat": o.lat, "lon": o.lon} for o in ORIGINS],
                 "examples": EXAMPLES, "stages": [{"key": k, "title": t} for k, t in STAGES]}
 
     @app.get("/api/weather")
@@ -603,7 +603,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         if session.last_nlu in {"rules", "none"} and breaker and breaker.state in {"degraded", "down"}:
             reply += "\n\nЯзыковая модель временно недоступна; ответ подготовлен по правилам."
         summary = state.model_dump(mode="json", include={"origin", "origin_inferred", "date_from", "date_to", "nights",
-            "adults", "children", "children_ages", "budget_total", "transport", "trip_types", "selected_event"})
+            "adults", "children", "children_ages", "budget_total", "transport", "trip_types", "selected_event", "search_scope"})
         summary["destination"] = BY_ID[state.dest_id].name if state.dest_id else state.destination or state.country
         return {"session_id": session_id, "reply": reply, "payload": images.decorate(step.payload),
             "stage": state.stage, "understood": understood(state), "assumptions": state.assumptions,

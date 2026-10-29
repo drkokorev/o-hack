@@ -1,7 +1,7 @@
 /* Interaction shell. No dependency on the globe's rendering implementation. */
 window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   const byId = (id) => document.getElementById(id);
-  let summary = {}, selectedMood = "neutral", boardLabel = "Карта";
+  let summary = {}, selectedMood = "neutral", boardLabel = "Карта", conditionOriginal = "";
   const moodNames = {neutral:"Мир открыт",sea:"Ближе к морю",alpine:"Выше облаков",city:"В ритме города",forest:"Наедине с природой",sunset:"Навстречу закату"};
   const closeMenu = () => {};
   const show = (id) => { closeMenu(); const dialog = byId(id); if (!dialog.open) dialog.showModal(); };
@@ -13,14 +13,18 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   };
   const settings = {
     origin:{prefix:"Я выезжаю из ",hint:"Например, Москва"},
-    destination:{prefix:"Хочу в ",hint:"Например, Сочи"},
+    destination:{prefix:"Поменяй направление на ",hint:"Например, Сочи"},
     dates:{prefix:"Даты поездки: ",hint:"Например, с 5 по 12 декабря 2026"},
     duration:{prefix:"Длительность поездки: ",hint:"Например, 7 дней"},
     people:{prefix:"",hint:"Например, 2 взрослых и ребёнок 8 лет"},
     budget:{prefix:"Бюджет: ",hint:"Например, до 150000 рублей на всех"},
     transport:{prefix:"Хочу добраться: ",hint:"Например, поездом"},
+    weather:{prefix:"",hint:"Например, воздух от 25 до 30 градусов, море от 23 градусов"},
     other:{prefix:"",hint:"Например, нужен отель с бассейном"}
   };
+  const fieldLabels = {origin:"Откуда поедем?",destination:"Куда поедем?",dates:"Когда поедем?",
+    duration:"На сколько ночей?",people:"Кто едет?",budget:"Какой бюджет на всех?",
+    transport:"Как доберёмся?",weather:"Какая погода нужна?",other:"Что ещё учесть?"};
   const values = () => ({origin:summary.origin || "",destination:summary.destination || "",
     dates:summary.date_from && summary.date_to ? `с ${summary.date_from.split("-").reverse().join(".")} по ${summary.date_to.split("-").reverse().join(".")}` : "",
     duration:summary.nights ? `${summary.nights} ночей` : "",
@@ -29,14 +33,21 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     transport:{plane:"самолётом",train:"поездом"}[summary.transport] || "",other:""});
   function fillCondition() {
     const key = byId("condition-field").value;
+    byId("conditions-title").textContent = fieldLabels[key];
+    byId("condition-value-label").textContent = byId("condition-field").selectedOptions[0].textContent;
     byId("condition-value").value = values()[key] || "";
     byId("condition-value").placeholder = settings[key].hint;
+    byId("condition-error").hidden = true;
+    byId("condition-value").removeAttribute("aria-invalid");
   }
-  function openCondition(key = "other") {
+  function openCondition(key = "other", currentText = null) {
     if (isBusy()) return;
-    if(key==="dates"){openDates();return;}
+    if(key==="dates"){openDates(['flight_only','train_only'].includes(summary.search_scope));return;}
     byId("condition-field").value = key;
-    fillCondition(); show("conditions-dialog"); byId("condition-value").focus();
+    fillCondition();
+    if(currentText !== null) byId("condition-value").value=currentText;
+    conditionOriginal=byId("condition-value").value.trim();
+    show("conditions-dialog"); byId("condition-value").focus(); byId("condition-value").select();
   }
   function fieldFor(text) {
     if (text.startsWith('период события:')) return 'dates';
@@ -52,7 +63,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
   function update(data) {
     summary = data?.trip_summary || {};
     let eventLine=byId('selected-event');
-    if(!eventLine){eventLine=document.createElement('p');eventLine.id='selected-event';eventLine.className='selected-event';byId('trip-context').append(eventLine);}
+    if(!eventLine){eventLine=document.createElement('p');eventLine.id='selected-event';eventLine.className='selected-event';(byId('trip-context-body')||byId('trip-context')).append(eventLine);}
     eventLine.hidden=!summary.selected_event;
     eventLine.textContent=summary.selected_event ? `${summary.selected_event.name} · ${summary.selected_event.dates}` : '';
     const stage = data?.stage || "start";
@@ -64,7 +75,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     if (selectedMood === "alpine" && mood === "forest") mood = "alpine";
     if (selectedMood === "sunset" && (!mood || mood === "sea")) mood = "sunset";
     if (mood && mood !== selectedMood) setMood(mood);
-    byId("conditions").querySelectorAll(".chip").forEach((chip) => {
+    byId("conditions").querySelectorAll("span.chip").forEach((chip) => {
       const button = document.createElement("button"); button.type = "button";
       button.className = chip.className; button.textContent = chip.textContent;
       button.title = `Изменить: ${chip.textContent}`;
@@ -94,12 +105,26 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     if(event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); byId("ask").requestSubmit(); }
   });
   byId("about-open").onclick=()=>show("about-dialog");
-  byId("conditions-edit").onclick=()=>openCondition("destination");
+  byId("conditions-edit").onclick=()=>openCondition("other");
   byId("condition-field").onchange=fillCondition;
-  byId("condition-form").onsubmit=(event)=> {
+  byId("condition-cancel").onclick=()=>byId("conditions-dialog").close();
+  byId("condition-form").onsubmit=async(event)=> {
     event.preventDefault(); const text=byId("condition-value").value.trim(); if(!text || isBusy()) return;
-    const prefix=settings[byId("condition-field").value].prefix;
-    byId("conditions-dialog").close(); send(prefix+text);
+    const key=byId("condition-field").value;
+    if(text===conditionOriginal) {byId("conditions-dialog").close();return;}
+    const submit=byId("condition-form").querySelector('[type="submit"]');
+    submit.disabled=true;submit.textContent="Обновляем…";
+    byId("condition-error").hidden=true;
+    const saved=await send(settings[key].prefix+text);
+    submit.disabled=false;submit.textContent="Применить";
+    if(saved) {
+      byId("conditions-dialog").close();
+      document.querySelector(`[data-trip-field="${key}"]`)?.focus({preventScroll:true});
+    }
+    else {
+      byId("condition-error").textContent="Не удалось применить изменение. Попробуйте ещё раз.";
+      byId("condition-error").hidden=false;byId("condition-value").focus();
+    }
   };
   byId("reset").onclick=()=>{ if (!isBusy()) show("reset-dialog"); };
   byId("reset-cancel").onclick=()=>byId("reset-dialog").close();

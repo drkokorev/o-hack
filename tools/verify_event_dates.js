@@ -23,9 +23,8 @@ async (page) => {
   }
   const short=await choose('Dubai Design Week');
   assert(short.destination==='Дубай'&&short.date_from==='2026-11-03'&&short.date_to==='2026-11-09','short event fills city and full travel range');
-  assert((await page.locator('#trip-summary-line').innerText()).includes('03.11–09.11'),'summary displays selected dates');
-  await page.getByText('Все условия',{exact:true}).click();
-  await page.getByRole('button',{name:'Изменить: 3 ноября — 9 ноября 2026',exact:true}).click();
+  assert((await page.locator('[data-trip-field="dates"]').innerText()).includes('3 ноя — 9 ноя 2026'),'sentence displays selected dates');
+  await page.locator('[data-trip-field="dates"]').click();
   assert(JSON.stringify(await page.locator('.range-edge').evaluateAll(nodes=>nodes.map(n=>n.dataset.date)))==='["2026-11-03","2026-11-09"]','calendar prefills the same dates');
   assert((await page.locator('.date-picker-event').innerText()).includes('Dubai Design Week'),'calendar explains the event context');
   await page.screenshot({path:'output/playwright/event-calendar.png'});
@@ -34,13 +33,15 @@ async (page) => {
   await page.waitForFunction(()=>lastData?.trip_summary?.selected_event&&!busy);
   assert(JSON.stringify(await page.evaluate(()=>lastData.trip_summary))===JSON.stringify(short),'reload restores event and dates without resending');
   await page.setViewportSize({width:390,height:844});
-  assert(await page.locator('#trip-summary-line').isVisible(),'mobile shows city and dates');
+  assert((await page.locator('#trip-context-toggle').innerText()).includes('Дубай'),'mobile compact summary shows city');
+  await page.locator('#trip-context-toggle').click();
+  assert(await page.locator('[data-trip-field="dates"]').isVisible(),'mobile expands editable dates');
   await page.screenshot({path:'output/playwright/event-mobile.png'});
   await page.setViewportSize({width:1440,height:960});
   const long=await choose('Global Village');
   assert(long.destination==='Дубай'&&!long.date_from&&!long.date_to,'long season asks visiting days without a months-long stay');
-  await page.getByText('Все условия',{exact:true}).click();
-  await page.getByRole('button',{name:/^Изменить: период события:/}).click();
+  assert((await page.locator('[data-trip-field="dates"]').innerText()).includes('1 мая 2027'),'long event fills the date field with its known period');
+  await page.locator('[data-trip-field="dates"]').click();
   assert((await page.locator('.date-picker-event').innerText()).includes('Global Village'),'long event period remains visible in calendar');
   assert((await page.locator('.range-edge').count())<=1,'long event does not prefill a complete long stay');
   await page.screenshot({path:'output/playwright/event-season.png'});
