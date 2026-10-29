@@ -373,7 +373,7 @@ const views = {
       el("p", { class: "section-sub" }, `Демо-цены за поездку на всех: дорога, отель, трансферы, ${p.nights_label || p.nights + " ночей"}. Наличие не проверялось.`),
       el("div", { class: "cards" }, p.items.map((d, i) => el("article", { class: "card" + (i === 0 ? " best" : "") },
         gallery(d.gallery || [d.image], { alt: d.name }),
-        el("div", { class: "kicker" }, el("span", {}, `${i + 1} · ${d.country}`), i === 0 ? el("b", {}, "Лучше всего подходит") : null),
+        el("div", { class: "kicker" }, el("span", {}, `${i + 1} · ${d.country}`), i === 0 && p.accessibility_status !== "unverified" ? el("b", {}, "Лучше всего подходит") : null),
         el("h3", {}, d.name),
         el("div", { class: "price num" }, `от ${d.total}`, el("small", {}, "за всю поездку на всех")),
         d.visa ? el("details", {class:"compact-details visa-details"}, el("summary", {}, "Условия въезда · требуют проверки"), el("p", {}, `Демо-справка: ${d.visa}. Актуальные требования зависят от гражданства и не проверены.`)) : null,
@@ -392,7 +392,7 @@ const views = {
     if(p.relaxed?.length)out.push(el("p",{class:"notice"},"Чтобы что-то нашлось, я "+p.relaxed.join(", ")+"."));
     const packageCards=el("div",{class:"cards"},p.items.map((k,i)=>el("article",{class:"card package-card"+(i===0?" best":"")},
       photo(k.hotel.image,{alt:k.hotel.name,badge:"иллюстрация отеля"}),
-      el("div",{class:"kicker"},el("span",{},`Вариант ${i+1}`),i===0?el("b",{},"Рекомендую"):null),
+      el("div",{class:"kicker"},el("span",{},`Вариант ${i+1}`),i===0&&p.accessibility_status!=="unverified"?el("b",{},"Рекомендую"):null),
       el("h3",{},k.title),el("div",{class:"price num"},k.total,el("small",{},`${p.trip.people} · вся поездка`)),
       el("p",{class:"package-hotel"},`${k.hotel.name} · ${k.hotel.stars}★`),
       el("p",{class:"detail-note"},`${k.hotel.meal} · ${shortLeg(k.out)} · трансферы включены`),
@@ -629,12 +629,19 @@ function attachEdit(turn,data) {
   turn.user.classList.add("latest-user");
   turn.user.append(el("button",{type:"button",class:"message-edit text-button",onclick:()=>editTurn(turn)},"Изменить"));
 }
+// Best-effort draft protection complements server-side detection; it is not a
+// complete detector of every personal or health detail.
+function sensitiveDraft(text) {
+  return /инвалид|коляск|костыл|ходунк|маломобиль|ограниченн\w*\s+(?:возможност|подвижност)|незряч|слабовид|слабослыш|аллерги|диагноз|болезн|лекарств|паспорт|снилс|телефон|парол|\bбез\s+(?:орех|арахис|глютен|лактоз)|\bcvv\b|\b[\w.+-]+@[\w.-]+\.[a-z]{2,}|(?:\+7|8)[\s().-]*(?:\d[\s().-]*){10}/i.test(text);
+}
+const privateRecoveryText = "[Сообщение со сведениями, которые не сохранены в браузере]";
 function saveTrip() {
   if(!sessionId || !lastData)return;
   const messages=[...$("log").querySelectorAll(".msg")].filter(node=>!node.querySelector(".typing"))
-    .map(node=>({role:node.dataset.role,text:node.dataset.text||"",kind:node.dataset.kind||""}));
+    .map(node=>({role:node.dataset.role,text:node.dataset.sensitive === "true" ? privateRecoveryText : (node.dataset.text||""),
+      kind:node.dataset.kind||"",sensitive:node.dataset.sensitive === "true"}));
   const saved=tripStorage.write({session_id:sessionId,revision:lastData.revision,messages,
-    draft:$("text").value,editing,panel:journeyUI.panel()});
+    draft:sensitiveDraft($("text").value) ? "" : $("text").value,editing,panel:journeyUI.panel()});
   $("save-status").hidden=saved;
   $("save-status").textContent=saved ? "" : "Не удалось сохранить поездку в браузере";
 }
@@ -653,16 +660,21 @@ async function restoreTrip() {
     let content=record.text.slice(0,20000);
     if(record.role==="bot"){content=el("div");renderTravelReply(content,record.text.slice(0,20000),record.kind||"");}
     const node=addMessage(record.role,content);node.dataset.text=record.text.slice(0,20000);node.dataset.kind=record.kind||"";
+    node.dataset.sensitive=record.sensitive ? "true" : "false";
     if(record.role==="user"){user=node;bot=null;}else if(user)bot=node;
   }
   conversationStarted=Boolean(user)||Boolean(data.understood?.length);
   render(data);
   if(saved.revision===data.revision && user && bot){
-    latestTurn={text:user.dataset.text,user,bot};attachEdit(latestTurn,data);
+    if(bot.dataset.sensitive === "true"){
+      const reply=el("div");renderTravelReply(reply,data.reply,data.payload?.kind);bot.replaceChildren(reply);bot.dataset.text=data.reply;
+    }
+    if(user.dataset.sensitive !== "true"){latestTurn={text:user.dataset.text,user,bot};attachEdit(latestTurn,data);}else latestTurn=null;
     journeyUI.addResultLink(bot);
   }else{
     const reply=el("div");renderTravelReply(reply,data.reply,data.payload?.kind);
     const latest=addMessage("bot",reply);latest.dataset.text=data.reply;latest.dataset.kind=data.payload?.kind||"";
+    latest.dataset.sensitive=data.input_sensitive || data.payload?.accessibility_status === "unverified" ? "true" : "false";
     journeyUI.addResultLink(latest);latestTurn=null;
   }
   $("text").value=typeof saved.draft==="string"?saved.draft.slice(0,4000):"";
@@ -679,6 +691,7 @@ async function changeTransfer(kind) {
     const data=await post("/api/trip/transfer",{session_id:sessionId,revision:lastData.revision,kind});
     const user=addMessage("user",label),reply=el("div");renderTravelReply(reply,data.reply,data.payload?.kind);
     const bot=addMessage("bot",reply);bot.dataset.text=data.reply;bot.dataset.kind=data.payload?.kind||"";
+    bot.dataset.sensitive=data.payload?.accessibility_status === "unverified" ? "true" : "false";
     latestTurn={text:label,user,bot};editing=false;$("edit-banner").hidden=true;
     render(data);journeyUI.addResultLink(bot);journeyUI.show("results",false);saveTrip();
     $("say").textContent="Трансферы, время и общая сумма обновлены.";
@@ -704,9 +717,11 @@ async function send(text, selection = {}) {
     const data=await post(replacing ? "/api/chat/edit" : "/api/chat",{text,session_id:sessionId,revision:lastData?.revision,...selection,detected_city:detected});
     typing.remove();
     if(replacing){replacing.bot.remove();user.replaceChildren(text);user.dataset.text=text;}
+    user.dataset.sensitive=data.input_sensitive ? "true" : "false";
     const reply=el("div"); renderTravelReply(reply,data.reply,(data.payload||{}).kind);
     const bot=addMessage("bot",reply);
     bot.dataset.text=data.reply;bot.dataset.kind=data.payload?.kind || "";
+    bot.dataset.sensitive=data.input_sensitive || data.payload?.accessibility_status === "unverified" ? "true" : "false";
     latestTurn={text,user,bot}; editing=false; $("edit-banner").hidden=true;
     render(data); attachEdit(latestTurn,data); $("say").textContent="";
     journeyUI.addResultLink(bot);

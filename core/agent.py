@@ -68,6 +68,7 @@ class Session:
     location_checked: bool = False  # один приблизительный результат на сессию, без хранения IP
     vault: Vault = field(default_factory=Vault, repr=False, compare=False)  # метки ↔ личные данные, только в памяти
     last_answer_by: str = ""  # кто написал последний ответ: llm (прошёл проверку) | template
+    last_input_sensitive: bool = False  # omit recognized sensitive turns from browser recovery
     lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
 
 
@@ -107,9 +108,11 @@ class Agent:
         return Session(state=self.domain.state_model())
 
     def handle(self, session: Session, text: str, *, after_merge: Callable[[BaseModel], None] | None = None) -> Step:
+        session.last_input_sensitive = False
         # Reject instead of truncating: a document/card number cut at the limit
         # could otherwise evade inspection and be sent partially to the model.
         if len(text) > MAX_INPUT_CHARS:
+            session.last_input_sensitive = True
             session.last_nlu, session.last_notes = "none", []
             return Step(f"Сообщение слишком длинное. Сократите его до {MAX_INPUT_CHARS} символов и отправьте снова.")
         privacy_unavailable = False
@@ -126,6 +129,7 @@ class Agent:
                 session.last_nlu, session.last_notes = "none", []
                 return Step("Не удалось обработать сообщение. Попробуйте ещё раз.")
         text = sanitize(text)
+        session.last_input_sensitive = bool(masked or privacy_unavailable)
         if not text:
             session.last_nlu, session.last_notes = "none", []
             return Step((PRIVACY_NOTICE if masked else "") + "Расскажите, какую поездку вы хотите.")
@@ -135,10 +139,20 @@ class Agent:
             if previous and isinstance(previous.payload, dict) and previous.payload.get("kind") == "question":
                 return replace(previous, reply=PRIVACY_NOTICE + previous.reply)
             return Step(PRIVACY_NOTICE + "Расскажите, какую поездку вы хотите.")
+        unresolved = contains_unresolved_sensitive_data(text)
+        local_input = getattr(self.domain, "requires_local_processing", None)
+        if local_input is not None:
+            try:
+                unresolved = unresolved or local_input(text)
+            except Exception as err:
+                log.warning("Не удалось проверить условия для локального разбора (%s)", type(err).__name__)
+                privacy_unavailable = True
+        # Mark the turn before any early return, so rejected prompt injections
+        # cannot leak otherwise recognized private text into browser recovery.
+        session.last_input_sensitive = session.last_input_sensitive or unresolved or privacy_unavailable
         if looks_like_injection(text):
             session.last_nlu, session.last_notes = "none", []
             return Step(self.domain.off_topic_reply)
-        unresolved = contains_unresolved_sensitive_data(text)
         context_risk = getattr(self.domain, "contains_unresolved_context", None)
         if context_risk is not None:
             try:
@@ -146,6 +160,7 @@ class Agent:
             except Exception as err:
                 log.warning("Не удалось проверить контекст для защиты данных (%s)", type(err).__name__)
                 privacy_unavailable = True
+        session.last_input_sensitive = session.last_input_sensitive or unresolved or privacy_unavailable
         update, session.last_nlu = self._understand(session, text, use_llm=not (privacy_unavailable or unresolved))
         if not update.model_dump(exclude_none=True) and session.last is not None and after_merge is None:
             # A message with no understood action must not advance the

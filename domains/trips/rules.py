@@ -188,7 +188,7 @@ def _unknown_place(text: str) -> str | None:
     """Город или страна вне каталога: «в Париж», «в Лиссабоне» — чтобы честно сказать, а не подменить молча."""
     not_place_stems = re.compile(r"^(?:недел|выходн|дн|отпуск|путешеств|поездк|начал|середин|конц|следующ|"
                                  r"этот|этом|друг|тепл|холод|город|страна|росси|самолет|поезд|машин|палат|кемпинг|отел|"
-                                 r"ресторан|кафе|музе|магазин|аэропорт|вокзал|клуб|бар|метро)")
+                                 r"ресторан|кафе|музе|магазин|аэропорт|вокзал|клуб|бар|метро|коляск|кресл|инвалидн)")
     for m in re.finditer(r"\b(?:в|во)\s+([а-яё]{3,}(?:-[а-яё]+)?)", text, re.IGNORECASE):
         word = m.group(1)
         if re.search(r"игра(?:ю|ем|ешь|ете|ет|ют|ть|л|ла|ли)\s+$", norm(text[:m.start()])):
@@ -389,6 +389,38 @@ def _shift(t: str) -> int | None:
 
 
 def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
+    # Accessibility is extracted locally even when another structured-answer
+    # parser returns early. It never turns a disability label into a diagnosis
+    # or an assumed type of aid.
+    from .accessibility import classify
+    parsed = _rule_extract_core(state, text, today)
+    added, removed = classify(text)
+    if "stroller_unspecified" in (state.accessibility_needs or []):
+        if re.fullmatch(r"\s*детск\w*(?:\s+коляск\w*)?\s*[.!]?\s*", norm(text)):
+            added.add("baby_stroller")
+        elif re.fullmatch(r"\s*инвалидн\w*(?:\s+коляск\w*)?\s*[.!]?\s*", norm(text)):
+            added.add("wheelchair")
+    if ("wheelchair" in (state.accessibility_needs or []) and
+            re.search(r"\bколяск\w*\s+(?:больше\s+)?не\s+(?:нуж\w*|требу\w*)\b", norm(text)) and
+            not re.search(r"детск\w*\s+коляск", norm(text))):
+        removed.add("wheelchair")
+    changes = {}
+    if added:
+        changes["accessibility_needs"] = sorted(added)
+    if removed:
+        changes["remove_accessibility_needs"] = sorted(removed)
+    if re.search(r"(?:убер\w*|сним\w*|отмен\w*|не\s+нуж\w*)\s+(?:все\s+)?(?:услови\w*|требовани\w*)\s+доступност\w*", norm(text)):
+        changes["clear"] = list(dict.fromkeys([*(parsed.clear or []), "accessibility_needs"]))
+    if "guide_dog" in added and parsed.pets:
+        # Assistance animals are a separate request, not automatically an
+        # ordinary pet subject to the demo pet filter.
+        remaining = re.sub(r"собак\w*[- ](?:проводник|помощник)\w*", " ", norm(text))
+        if not re.search(r"с\s+(?:кошк|питомц|животн|котом|щенк)|(?:друг\w*|втор\w*)\s+собак", remaining):
+            changes["pets"] = None
+    return parsed.model_copy(update=changes) if changes else parsed
+
+
+def _rule_extract_core(state: TripState, text: str, today: date) -> TripUpdate:
     t = norm(text)
     data: dict = {}
     # The user may delegate a suggestion instead of literally saying "не
@@ -439,6 +471,10 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
           (re.search(r"(?:поезд(?!к)|\bж/?д\b).*?без\s+(?:отеля|гостиницы|проживания|жилья)", t))):
         data["search_scope"] = "train_only"
     elif re.search(r"(?:только|лишь)\s+(?:авиа)?(?:билет\w*|перел[её]т\w*|рейс\w*)|без\s+(?:отеля|гостиницы|проживания|жилья)", t):
+        data["search_scope"] = "flight_only"
+    elif (not state.search_scope and state.stage == "start" and
+          re.match(r"^\s*(?:(?:хочу|нужен|ищу|найди|подбери)\s+)?(?:перелет|авиабилет|билет на самолет)\b", t) and
+          not re.search(r"\b(?:отел\w*|жиль\w*|гостиниц\w*|трансфер\w*|тур\w*)\b", t)):
         data["search_scope"] = "flight_only"
     elif re.search(r"(?:пакетн\w*|готов\w*|горящ\w*)\s+тур\w*|тур\w*\s+(?:от\s+)?туроператор\w*|туроператор\w*|(?:ищу|найди|подбери|хочу)\s+тур(?:ы|а|ов)?\b", t):
         data["search_scope"] = "operator_tour"
@@ -693,12 +729,12 @@ def rule_extract(state: TripState, text: str, today: date) -> TripUpdate:
         data["children"] = 1
     elif re.search(r"с детьми|и дети\b", t):
         data["children_unknown"] = True
-    if re.search(r"без (реб[её]нк|детей)|детей не будет|реб[её]нок не едет|дети не едут", t):
+    if re.search(r"без (реб[её]нк|детей)|детей не будет|(?:нет детей|детей нет)|реб[её]нок не едет|дети не едут", t):
         data["children"] = 0
         data["children_unknown"] = False
     # Accept only explicit ages in years. Months, future birthdays and dates
     # cannot establish the age at check-in or a carrier's tariff category.
-    single_age = re.search(r"(?:ребенку|ребенка|сыну|дочке|дочери|малышу)\s+(\d{1,2})\s+(?:год|года|лет)\b", t)
+    single_age = re.search(r"(?:ребенку|ребенка|ребенком|ребенок|сыну|дочке|дочери|малышу)\s+(\d{1,2})\s+(?:год|года|лет)\b", t)
     pair_ages = re.search(r"дет(?:ям|ей|и|ьми)\s+(\d{1,2})\s*(?:и|,)\s*(\d{1,2})\s+(?:года|лет)\b", t)
     ages = ([int(pair_ages.group(1)), int(pair_ages.group(2))] if pair_ages else
             [int(single_age.group(1))] if single_age else None)

@@ -202,9 +202,11 @@ def arbitrate(state: TripState, text: str, llm: TripUpdate, rules: TripUpdate) -
     backed = {field for field, value in data.items() if _backed(field, value, quotes.get(field), t)}
     data.pop("evidence", None)
 
-    service_fields = ("split_stays", "split_choice", "room_allocations", "search_scope", "flight_direction", "transfer_from", "transfer_to", "transfer_time", "transfer_date", "transfer_direction", "seat_class", "unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "without_dates", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
+    service_fields = ("split_stays", "split_choice", "room_allocations", "search_scope", "flight_direction", "transfer_from", "transfer_to", "transfer_time", "transfer_date", "transfer_direction", "seat_class", "unknown_place", "unknown_origin", "country_conflict", "place_country", "country", "excluded_countries", "visa_free_requested", "budget_per_person", "flight_concern", "corrected_place", "unsure", "without_dates", "duration_not_given", "clear_duration", "payment_method", "season", "children_unknown", "children_ages", "rooms", "tentative_fields", "trip_days_min", "trip_days_max", "needs_trip_choice", "resolve_trip_choice", "prefer_short_travel", "party_size", "remove_hotel_wishes", "accessibility_needs", "remove_accessibility_needs", "show_real_hotels", "search_real_hotels", "air_min_temp", "air_max_temp", "sea_min_temp", "sea_max_temp")
     for field in service_fields:  # служебные поля — только из правил
         data[field] = rule_data.get(field)
+    if data.get("clear") and not (rules.clear and "accessibility_needs" in rules.clear):
+        data["clear"] = [field for field in data["clear"] if field != "accessibility_needs"] or None
     # A model can recognise an unfamiliar way to defer a clarification, but
     # only with a verbatim quote from this turn and no concrete answer or
     # competing action. Deferral never chooses an option or authorises a

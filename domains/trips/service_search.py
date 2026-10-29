@@ -151,7 +151,8 @@ def hotel_only(state: TripState, today: date) -> Step:
         lines.append("Лимит на ночь применяется к сумме всех номеров на каждую ночь.")
     for total, hotel in candidates[:3]:
         lines.append(f"• {hotel.name}, {hotel.stars}★, {MEALS[hotel.meal]} — {fmt_money(total)} за все номера (демо)")
-    lines.append("Это расчёт без дороги и трансфера. Возрастные льготы и наличие нескольких номеров не проверены; "
+    child_note = "Возрастные льготы не проверены. " if state.children else ""
+    lines.append("Это расчёт без дороги и трансфера. " + child_note + "Наличие нескольких номеров не проверено; "
                  "для настоящего тарифа нужны данные поставщика. Купить или забронировать здесь нельзя.")
     return Step("\n".join(lines), payload={"kind": "service_results"})
 
@@ -186,8 +187,9 @@ def transfer_only(state: TripState, today: date) -> Step:
     return Step(f"Запрос трансфера: {BY_ID[state.dest_id].name}, {labels[state.transfer_from]} → {labels[state.transfer_to]}, "
                 f"{direction}, {state.transfer_date:%d.%m.%Y} в {state.transfer_time}, пассажиров: {people}. "
                 f"Для поездки туда возможны {options}. Это пример, не заказ. "
-                "Реальные машины, цены, детские кресла и доступность не подключены; "
-                "для точного предложения понадобятся конкретные пункты и поставщик. "
+                "Реальные машины, цены и доступность не подключены. "
+                + ("Детские кресла также нужно подтвердить у поставщика. " if state.children or state.children_unknown else "")
+                + "Для точного предложения понадобятся конкретные пункты и поставщик. "
                 + ("Дату и время обратного трансфера потребуется уточнить отдельно." if direction == "туда и обратно" else ""),
                 payload={"kind": "service_results"})
 
@@ -243,5 +245,6 @@ def split_hotels(state: TripState, today: date) -> Step:
                          "Это демонстрация: бронирование и доступность двух отелей не подтверждены.")
             return Step("\n".join(lines), payload={"kind": "service_results"})
     state.pending_question, state.split_displayed = "split_choice", snapshot
-    lines.append("Выберите номер пары. Реального бронирования нет; тарифы детей и переезд нужно проверить отдельно.")
+    lines.append("Выберите номер пары. Реального бронирования нет; " +
+                 ("тарифы детей и " if state.children else "") + "переезд нужно проверить отдельно.")
     return Step("\n".join(lines), payload={"kind": "service_results"})

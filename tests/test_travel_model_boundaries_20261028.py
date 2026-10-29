@@ -46,7 +46,7 @@ def test_flight_search_requests_missing_origin_and_round_trip_date():
 def test_flight_does_not_promise_prices_for_children_or_purchase():
     a = make_agent()
     session = a.new_session()
-    result = a.handle(session, "Только перелёт из Москвы в Казань с 10 по 15 декабря 2026 туда и обратно")
+    result = a.handle(session, "Только перелёт из Москвы в Казань с 10 по 15 декабря 2026 туда и обратно, 2 взрослых и ребёнок")
     assert result.payload["kind"] == "flight_results"
     assert "Обратно:" in result.reply
     assert "детские тарифы не рассчитаны" in result.reply

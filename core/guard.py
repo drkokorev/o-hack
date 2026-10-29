@@ -182,7 +182,8 @@ _UNRESOLVED_HINTS = tuple(re.compile(pattern, re.IGNORECASE) for pattern in (
     r"\b(?:загран)?паспорт\w*\s*[:#№-]?\s*[a-zа-яё]{1,3}[- ]*\d{4,}\b",
     r"\b(?:t\.me|telegram\.me|vk\.com|wa\.me|instagram\.com)/[\w.-]+",
     r"\b[\w.+-]+\s+(?:это|собака|через|at|\{at\})\s+[\w-]+\s+(?:точка|dot)\s+[\w-]+",
-    r"\b(?:инсулин\w*|лекарств\w*|диагноз\w*|артрит\w*)\b",
+    r"\b(?:инсулин\w*|лекарств\w*|диагноз\w*|артрит\w*|диабет\w*|астм\w*|"
+    r"эпилепси\w*|онкологи\w*|беременн\w*)\b",
     r"\bродил(?:ся|ась)\s+в\s+(?:тысяча|девятнадцать|двадцать)\b",
     r"\b(?:моя\s+квартира|(?:я\s+)?живу\s+(?:у|в|на))\b[^;.!?\n]{0,100}\b(?:дом\w*|дом)\b",
 ))
@@ -225,7 +226,9 @@ def mask_basic_data(text: str, vault: Vault | None = None) -> tuple[str, bool]:
         lambda match: "[условие питания: исключить " + _INTOLERANCE_FOODS[match.group("food").casefold()] + "]", inspected)
     masked = food_count > 0 or intolerance_count > 0
     for pattern, replacement in _SENSITIVE_PATTERNS:
-        if vault is None:
+        # Health details never need restoration: don't keep their original
+        # values even in the session's in-memory reversible vault.
+        if vault is None or replacement == "[сведения о здоровье]":
             inspected, count = pattern.subn(replacement, inspected)
         else:  # обратимо: «[телефон_1]», значение остаётся только в хранилище сессии
             label = replacement.strip("[]")

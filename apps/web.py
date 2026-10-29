@@ -30,6 +30,7 @@ from apps import chat_navigation
 from domains.trips import guides
 from apps.event_selection import choose_event
 from domains.trips.domain import TripsDomain
+from domains.trips.accessibility import LABELS as ACCESS_LABELS
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
 from domains.trips import map_catalog
@@ -177,6 +178,9 @@ def understood(state: TripState) -> list[str]:
         chips.append("красивые виды: не проверены")
     if state.relaxed_walks:
         chips.append("спокойные прогулки: не проверены")
+    for key in state.accessibility_needs or []:
+        if key in ACCESS_LABELS:
+            chips.append(ACCESS_LABELS[key] + ": не проверено")
     if state.search_scope == "transfer_only":
         pass  # do not display a stay's dates as a transfer booking
     elif state.date_from and state.date_to:
@@ -547,6 +551,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         return {"session_id": session_id, "reply": reply, "payload": images.decorate(step.payload),
             "stage": state.stage, "understood": understood(state), "assumptions": state.assumptions,
             "nlu": session.last_nlu, "suggestions": contextual_suggestions(state, step),
+            "input_sensitive": session.last_input_sensitive,
             "trip_summary": summary, "revision": session.ui_revision,
             "can_undo": bool(session.ui_previous) and chat_navigation.can_snapshot(session),
             "checked": ["Неподтверждённый параметр отклонён или исправлен."] * len(session.last_notes),
@@ -578,6 +583,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             # Preserve the chosen hotel; change only the ground-transport preference.
             state.hotel_id = session.last.payload["package"]["hotel"]["id"]
             state.transfer_kind = None if body.kind == "auto" else body.kind
+            session.last_input_sensitive = False
             state.params_changed = True
             state.act = {}
             session.last = agent.domain.step(state)
@@ -593,6 +599,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         with session.lock:
             check_navigation(session, body.revision)
             step = chat_navigation.undo(session)
+            session.last_input_sensitive = False
             return present(body.session_id, session, step, started)
 
     @app.post("/api/chat/edit")
@@ -609,6 +616,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             previous = session.ui_previous
             session.state, session.last = proposed.state, proposed.last
             session.last_nlu, session.last_notes = proposed.last_nlu, proposed.last_notes
+            session.last_input_sensitive = proposed.last_input_sensitive
             session.history = []
             chat_navigation.complete_turn(session, previous)
             return present(body.session_id, session, step, started)
@@ -619,6 +627,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         session_id, session = sessions.get(body.session_id)
         response.headers["Cache-Control"] = "no-store"
         with session.lock:
+            session.last_input_sensitive = False
             guessed_origin = None
             if not session.location_checked:
                 session.location_checked = True

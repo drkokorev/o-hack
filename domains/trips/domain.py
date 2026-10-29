@@ -21,6 +21,7 @@ from core.ru import MONTHS_GEN, WEEKDAYS, WEEKDAYS_SHORT, fmt_money, plural
 from .climate import SOURCE as CLIMATE_SOURCE
 from .climate import climate
 from . import guides, landmarks
+from .accessibility import LABELS as ACCESS_LABELS, needs_local_handling, notice as accessibility_notice
 from .geo import BY_ID, DESTINATIONS, ORIGIN_BY_NAME, TAG_NAMES, Destination, destination_has_tag
 from .dialogue import QUESTION_INPUT_FIELDS, idea_places, ideas, missing_for_trip
 from .inspire import Suggestion, suggest
@@ -179,7 +180,11 @@ class TripsDomain:
                 return any(walk(item) for item in value.values())
             return False
 
-        return walk(state.params().model_dump(mode="json", exclude_none=True))
+        return walk(state.params().model_dump(mode="json", exclude_none=True, exclude={"accessibility_needs"}))
+
+    @staticmethod
+    def requires_local_processing(text: str) -> bool:
+        return needs_local_handling(text)
 
     # ---------- понимание ----------
 
@@ -196,7 +201,7 @@ class TripsDomain:
                 f"{i}. {h['name']}" for i, h in enumerate(state.real_hotels_shown, 1))
         system = EXTRACTION_PROMPT.format(
             today=today.isoformat(), weekday=WEEKDAYS[today.weekday()], stage=state.stage,
-            state=state.params().model_dump_json(exclude_none=True), pending=state.pending_question or "нет",
+            state=state.params().model_dump_json(exclude_none=True, exclude={"accessibility_needs"}), pending=state.pending_question or "нет",
             shown=shown, schema=schema_hint(TripUpdate))
         # The structured state and current turn carry the necessary context.
         # Do not resend earlier free-form messages (which may contain personal
@@ -256,6 +261,14 @@ class TripsDomain:
             keep = {"past_orders": state.past_orders + ([state.order] if state.order else [])}
             state = TripState(**{k: v for k, v in keep.items() if v})
         data = update.model_dump(include=set(PARAM_FIELDS), exclude_none=True)
+        if "accessibility_needs" in data or update.remove_accessibility_needs:
+            incoming = {key for key in (data.get("accessibility_needs") or []) if key in ACCESS_LABELS}
+            existing = set(state.accessibility_needs or [])
+            if incoming & {"wheelchair", "baby_stroller"}:
+                existing.discard("stroller_unspecified")
+            if incoming - {"unspecified"}:
+                existing.discard("unspecified")
+            data["accessibility_needs"] = sorted((existing | incoming) - set(update.remove_accessibility_needs or [])) or None
         if "split_stays" in data:
             data["split_stays"] = [StaySegment.model_validate(item) for item in data["split_stays"]]
         if "split_choice" not in data and state.split_choice and any(
@@ -476,6 +489,8 @@ class TripsDomain:
                 new.budget_total = int(ref * 0.95) // 1000 * 1000
                 new.budget_per_person = None
         act = {k: getattr(update, k) for k in ACTIONS if getattr(update, k) is not None}
+        if new.accessibility_needs != state.accessibility_needs:
+            act["accessibility_changed"] = True
         if deferred_question:
             act["deferred_question"] = deferred_question
         if defer_when_for_ideas:
@@ -498,6 +513,7 @@ class TripsDomain:
     # ---------- решение ----------
 
     def step(self, state: TripState) -> Step:
+        accessibility_changed = bool(state.act.get("accessibility_changed"))
         result = self._step(state)
         if state.answered_question and state.dest_id:
             # ответ на вопрос мог быть встроен в другой шаг — источники по теме вопроса прикладываем здесь
@@ -505,6 +521,30 @@ class TripsDomain:
             result.sources = (topical + [x for x in result.sources if x not in topical])[:4]
         if not result.sources:
             result.sources = self._context_sources(state, result)
+        if state.accessibility_needs:
+            kind = result.payload.get("kind") if isinstance(result.payload, dict) else None
+            if accessibility_changed or kind in {"ideas", "destinations", "packages", "hotels", "cart", "payment",
+                                                 "order", "flight_results", "service_results", "real_hotels",
+                                                 "real_hotel_selected", "tent_transport", "tent_cart", "tent_order"}:
+                result.reply = accessibility_notice(state.accessibility_needs, state.search_scope, state.transport) + "\n\n" + result.reply
+            if isinstance(result.payload, dict):
+                result.payload["accessibility_status"] = "unverified"
+                warning = "Условия доступности не проверены; варианты не отбирались по ним."
+                previous = result.payload.get("notice")
+                if not previous or not previous.startswith(warning):
+                    result.payload["notice"] = f"{warning} {previous}" if previous else warning
+        else:
+            if isinstance(result.payload, dict) and result.payload.pop("accessibility_status", None) == "unverified":
+                warning = "Условия доступности не проверены; варианты не отбирались по ним."
+                prior = result.payload.get("notice", "")
+                if prior.startswith(warning):
+                    remainder = prior[len(warning):].strip()
+                    if remainder:
+                        result.payload["notice"] = remainder
+                    else:
+                        result.payload.pop("notice", None)
+            if accessibility_changed:
+                result.reply = "Убрал указанные условия доступности из поездки.\n\n" + result.reply
         return result
 
     # ---------- путеводители (RAG) ----------
@@ -520,7 +560,8 @@ class TripsDomain:
 
     @staticmethod
     def note_text(state: TripState, text: str) -> None:
-        state.asked_text = text[:300]
+        from core.guard import contains_unresolved_sensitive_data
+        state.asked_text = None if needs_local_handling(text) or contains_unresolved_sensitive_data(text) else text[:300]
 
     @staticmethod
     def _topic_found(dest_id: str | None, topic: str, asked: str | None = None) -> list[tuple[str, list]]:
@@ -579,6 +620,8 @@ class TripsDomain:
     @staticmethod
     def allow_answer_generation(state: TripState, step: Step) -> bool:
         """Keep computed offers, transactions and time-sensitive answers exact."""
+        if state.accessibility_needs:
+            return False  # never let generated prose remove an unverified-access warning
         topics = set((state.answered_question or "").split("|")) - {""}
         kind = (step.payload or {}).get("kind") if isinstance(step.payload, dict) else None
         if topics and not topics <= PLACE_TOPICS:
@@ -658,7 +701,8 @@ class TripsDomain:
             lines.append(f"Обратно: {dest.name} → {origin.name}")
             for leg in back:
                 lines.append(f"• {leg_text(leg)} — {fmt_money(leg.price_per_person)} на человека (демо)")
-        lines.append("Цена за всех и детские тарифы не рассчитаны; бюджет и стыковки с другими услугами не проверены. "
+        lines.append(("Цена за всех и детские тарифы не рассчитаны; " if state.children or state.children_unknown else
+                      "Общая цена на всех не рассчитана; ") + "бюджет и стыковки с другими услугами не проверены. "
                      "Отдельный билет здесь нельзя купить. Можете изменить дату, багаж или пересадки.")
         return Step("\n".join(lines), payload={"kind": "flight_results"})
 
@@ -1228,8 +1272,6 @@ class TripsDomain:
             raise ValueError("Для расчёта требуются город отправления и число взрослых")
         assumptions = ([f"город отправления {state.origin} приблизительно определён по IP; его можно изменить"]
                        if state.origin_inferred else [])
-        if state.children is None:
-            assumptions.append("дети не указаны, расчёт пока без детей")
         return state.origin, state.adults, state.children or 0, assumptions
 
     def _period(self, state: TripState, today: date, dest: Destination | None) -> tuple[date | None, int, list[str]]:
