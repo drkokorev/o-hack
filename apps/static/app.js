@@ -2,10 +2,10 @@ const $ = (id) => document.getElementById(id);
 let sessionId = null, busy = false, info = null, conversationStarted = false, imageCredits = {};
 let inspiration = {starters:[], places:[], quick:{}};
 let lastDestination = null;
-// Optional local database on our server; never query an external IP service.
+// Bundled local database on our server; never query an external IP service.
 const approximateCity = fetch("/api/visitor-city", {cache:"no-store", credentials:"same-origin", referrerPolicy:"no-referrer"})
   .then((response) => response.ok ? response.json() : null)
-  .then((data) => typeof data?.city_name === "string" && data.city_name.length <= 100 ? data.city_name : null)
+  .then((data) => typeof data?.origin === "string" && data.origin.length <= 100 ? data.origin : null)
   .catch(() => null);
 let preferenceData = { saved: {}, hidden: [] };
 try {

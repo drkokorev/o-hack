@@ -108,13 +108,9 @@
       node("div", {class:"map-credits"}, node("span", {}, "Открытые данные · наличие не проверено"),
         node("details", {}, node("summary", {}, "Источники изображения и моделей"),
           node("p", {}, "Поверхность Земли: ", safeLink("https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-map/", "NASA Earth Observatory, октябрь 2004"), "."),
-          node("p", {}, "Эйфелева башня: ", safeLink("https://sketchfab.com/3d-models/free-la-tour-eiffel-8553f94d06e24cb4b0fde1080f281674", "SDC PERFORMANCE"),
-            "; Бурдж-Халифа: ", safeLink("https://sketchfab.com/3d-models/burj-khalifa-59e6dd74e5f647158de568b5a7f9cab7", "ManySince910"),
-            "; обе модели — ", safeLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0"), ". Модели адаптированы для карты; у башни сокращено число полигонов."),
-          node("p", {}, "Биг-Бен: ", safeLink("https://sketchfab.com/3d-models/clock-tower-big-ben-9a1c691fac774bcca4e2ba565c4c9d9b", "ManySince910"),
-            "; Колизей: ", safeLink("https://sketchfab.com/3d-models/colosseum-a416564e36fb450594c45b1bce119188", "Vladyslav Holhanov"),
-            "; Статуя Свободы: ", safeLink("https://sketchfab.com/3d-models/statue-of-liberty-bronze-model-5b9aa58d51624f01b9009b52379bf18a", "jerryfisher"),
-            "; ", safeLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0"), ". Модели упрощены и адаптированы для карты."))));
+          node("p", {}, "32 архитектурные и природные миниатюры созданы для проекта. Модели стилизованы, масштаб увеличен. ",
+            safeLink(asset("models/landmarks/manifest.json"), "Состав коллекции")),
+          node("p", {}, "Фотографии событий или их городов: автор и лицензия указаны в карточке."))));
     const hintTitle=node("span", {}, "Вращайте глобус"),hintDetail=node("small", {}, "Нажмите на место или событие");
     const surface = node("div", { class: "map-surface" }, holder, controls,
       node("div", {class:"globe-hint", "aria-hidden":"true"},
@@ -355,7 +351,7 @@
         node("button", { type: "button", class: "map-choose", onclick: () => {
           closePopup(); onChoose({ kind:place.heritage ? "heritage" : "landmark", name:place.city || place.country,
             landmark:place.name, country:place.country, lat:place.lat, lon:place.lon });
-        } }, place.city ? "Выбрать город" : "Обсудить место"),
+        } }, place.city ? "Хочу сюда" : "Обсудить место"),
         node("button", {type:"button",class:"map-inspect",onclick:()=>focusOn(place.lon,place.lat)}, "Посмотреть ближе"));
       const others=grouped.filter((item)=>item!==place);
       if (others.length) content.append(node("details", {class:"map-nearby"},
@@ -398,7 +394,8 @@
       const models=[],rect=holder.getBoundingClientRect(), occupied=[], selected=[];
       const landmarkCap=map.getZoom()<3 ? 4 : map.getZoom()<6 ? 7 : 12;
       const eventAnchors=kind==='all' ? events.filter(e=>e.end>=new Date().toISOString().slice(0,10)&&onVisibleHemisphere(e.lon,e.lat)).slice(0,24).map(e=>map.project([e.lon,e.lat])) : [];
-      for (const place of landmarks) {
+      const importance=place=>{const p=map.project([place.lon,place.lat]);return (place.priority||0)+(map.getZoom()>=3?Math.max(0,180-Math.hypot(p.x-rect.width/2,p.y-rect.height/2)*8):0);};
+      for (const place of [...landmarks].sort((a,b)=>importance(b)-importance(a))) {
         if (!onVisibleHemisphere(place.lon, place.lat)) continue;
         const position=map.project([place.lon,place.lat]);
         if (position.x<0 || position.x>rect.width || position.y<0 || position.y>rect.height) continue;
@@ -772,9 +769,7 @@
               { id: "trip-route", type: "line", source: "trip-route",
                 paint: { "line-color": "#19645d", "line-width": 2, "line-dasharray": [2, 2] } },
               { id: "catalog-points", type: "circle", source: "catalog-points",
-                paint: { "circle-radius": 7, "circle-color": [
-                  "match", ["get", "kind"], "hotel", "#19645d", "city", "#477b68",
-                  "airport", "#0e41d2", "camping", "#96794c", "beach", "#dba92b", "#19645d"],
+                paint: { "circle-radius": 7, "circle-color": "#0e41d2",
                   "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } },
             ],
           },

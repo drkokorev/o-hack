@@ -5,6 +5,7 @@ import gzip
 import ipaddress
 import json
 import os
+from bisect import bisect_right
 from functools import lru_cache
 from pathlib import Path
 
@@ -12,6 +13,29 @@ import maxminddb
 
 DATA = Path(__file__).resolve().parents[1] / "domains" / "trips" / "data"
 DATABASE = DATA / "dbip-country-lite-2026-10.mmdb.gz"
+
+
+class OriginIndex:
+    """Compact, bundled DB-IP ranges for the supported departure cities."""
+    def __init__(self, payload):
+        self.cities=payload['cities']
+        self.ranges={4:payload['ipv4'],6:payload['ipv6']}
+        self.starts={v:[row[0] for row in rows] for v,rows in self.ranges.items()}
+
+    def get(self, host):
+        address=ipaddress.ip_address(host);value=int(address)
+        rows=self.ranges[address.version];index=bisect_right(self.starts[address.version],value)-1
+        if index<0 or value>rows[index][1]:return None
+        return {'country':{'iso_code':'RU'},'city':{'names':{'ru':self.cities[rows[index][2]]}}}
+
+
+@lru_cache(maxsize=1)
+def _bundled_city_reader():
+    try:
+        with gzip.open(DATA/'origin-ip-index.json.gz','rt',encoding='utf-8') as stream:
+            return OriginIndex(json.load(stream))
+    except (OSError,ValueError,KeyError):
+        return None
 
 
 @lru_cache(maxsize=1)
@@ -27,17 +51,17 @@ def _reader():
 
 @lru_cache(maxsize=1)
 def _city_reader():
-    """An optional operator-supplied MMDB; a missing file never enables a network fallback."""
+    """Use an operator-supplied MMDB or the bundled index; never a network lookup."""
     configured = os.getenv("ODIN_CITY_DATABASE", "").strip()
     if not configured:
-        return None
+        return _bundled_city_reader()
     path = Path(configured).expanduser()
     try:
         opener = gzip.open if path.suffix.lower() == ".gz" else open
         with opener(path, "rb") as stream:
             return maxminddb.open_database(stream, maxminddb.MODE_FD)
     except (OSError, ValueError, maxminddb.InvalidDatabaseError):
-        return None
+        return _bundled_city_reader()
 
 
 def city_hint(city: str | None, *, source: dict | None = None) -> dict:
