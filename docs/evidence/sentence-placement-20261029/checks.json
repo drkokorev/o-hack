@@ -1,0 +1,56 @@
+{
+  "code_commit": "9a7dc6a920e81939f44938ca1ac63b1124255871",
+  "base": "4d215d97a5a6513618bd7274d62779beed559156",
+  "integrated": "dca597cc87e4e7d78c6091fcacfa0cd03156b91b",
+  "environment": "Windows, Chromium, local API rules mode, synthetic travel requests",
+  "checks": [
+    {
+      "name": "browser",
+      "status": "PASS",
+      "assertions": 30,
+      "evidence": "browser.json",
+      "command": "playwright-cli run-code --filename tools/verify_trip_sentence.js",
+      "local_log_sha256": "58d234325aaf3e4efa8090170931e3169364ac26d49b593c5fc1ead18d745739"
+    },
+    {
+      "name": "edges",
+      "status": "PASS",
+      "assertions": 7,
+      "evidence": "edges.json",
+      "command": "playwright-cli run-code --filename tools/verify_trip_sentence_edges.js",
+      "local_log_sha256": "9c1c14751dcb7db55d3b1480ad2e74bea504df5f61dd71d793cb400c55505dab"
+    },
+    {
+      "name": "layout",
+      "status": "PASS",
+      "assertions": 24,
+      "evidence": "layout.json",
+      "command": "playwright-cli run-code --filename tools/verify_trip_context_placement.js",
+      "local_log_sha256": "dae1092b6f698106cf2a17b2eedd4523a6003968e273ad949d1067ed31dd9fba"
+    },
+    {
+      "name": "service",
+      "status": "PASS",
+      "assertions": 3,
+      "evidence": "service.json",
+      "command": "playwright-cli run-code --filename tools/verify_trip_sentence_service.js",
+      "local_log_sha256": "693d4a543a00d0520a1f3ffa51fb722ce830445beb126038ca600640c32b076d"
+    },
+    {
+      "name": "python",
+      "status": "PASS",
+      "tests": 70,
+      "warnings": 4,
+      "seconds": 50.4,
+      "command": "python -m pytest tests/test_chat_navigation.py tests/test_refinement_20261029.py tests/test_unified_experience.py tests/test_party_dialogues_20261029.py tests/test_temperature_20261028.py tests/test_bundled_origin_ip.py -q --tb=short",
+      "local_log_sha256": "6d5b53e43dd86cb777859d70ec7fdba6e785535bf4fbd04afedecaf9bee8cbd2"
+    }
+  ],
+  "resolved_test_failure": "First placement run used a selector that matched body and button; qualified button selector, then 24 checks passed.",
+  "limits": [
+    "no actual booking or payment",
+    "no physical phone",
+    "no repeated live model evaluation"
+  ],
+  "raw_session_logs_exported": false
+}

@@ -1,0 +1,73 @@
+{
+  "status": "PASS",
+  "checks": [
+    "one summary without horizontal overflow: 1440",
+    "wide summary is outside chat: 1440",
+    "route is not duplicated: 1440",
+    "one summary without horizontal overflow: 1024",
+    "wide summary is outside chat: 1024",
+    "route is not duplicated: 1024",
+    "one summary without horizontal overflow: 768",
+    "compact summary leaves readable chat: 768",
+    "keyboard expands summary: 768",
+    "conditions accompany results: 768",
+    "one summary without horizontal overflow: 390",
+    "compact summary leaves readable chat: 390",
+    "keyboard expands summary: 390",
+    "conditions accompany results: 390",
+    "one summary without horizontal overflow: 320",
+    "compact summary leaves readable chat: 320",
+    "keyboard expands summary: 320",
+    "conditions accompany results: 320",
+    "dark sentence contrast is at least 4.5:1",
+    "embedded chat starts with compact conditions",
+    "embedded chat shares field editing",
+    "embedded results retain access to parameters",
+    "new trip restores clean globe introduction",
+    "no browser exceptions"
+  ],
+  "samples": [
+    {
+      "width": 1440,
+      "height": 115.734375,
+      "chatHeight": 613.3125,
+      "parent": "board",
+      "overflow": false,
+      "one": true
+    },
+    {
+      "width": 1024,
+      "height": 159.734375,
+      "chatHeight": 613.3125,
+      "parent": "board",
+      "overflow": false,
+      "one": true
+    },
+    {
+      "width": 768,
+      "height": 66,
+      "chatHeight": 227.65625,
+      "parent": "ASIDE",
+      "overflow": false,
+      "one": true
+    },
+    {
+      "width": 390,
+      "height": 66,
+      "chatHeight": 231.65625,
+      "parent": "ASIDE",
+      "overflow": false,
+      "one": true
+    },
+    {
+      "width": 320,
+      "height": 66,
+      "chatHeight": 203.3125,
+      "parent": "ASIDE",
+      "overflow": false,
+      "one": true
+    }
+  ],
+  "darkContrast": 8.865034256978216,
+  "errors": []
+}
