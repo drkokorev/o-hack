@@ -3,7 +3,7 @@
    the screen like billboards. Sizes are deliberately enlarged for discovery. */
 import * as THREE from './vendor/three/three.module.js';
 import {GLTFLoader} from './vendor/three/GLTFLoader.js';
-import {createLandmarkModels} from './landmarks-3d.mjs?v=globe-20261028-32';
+import {DRACOLoader} from './vendor/three/DRACOLoader.js';
 
 function geometryData(group, kind, imported=false) {
   if (imported && kind==='race') group.rotation.set(.30,.65,0);
@@ -18,7 +18,7 @@ function geometryData(group, kind, imported=false) {
   const floor=imported ? bounds.min.y : 0;
   const pieces=new Map(), normalMatrix=new THREE.Matrix3(), pos=new THREE.Vector3(), normal=new THREE.Vector3();
   const materialColor=(material) => {
-    const colours={tower:'#decaa6',spire:'#b7d0c5',clocktower:'#ead6b5',colosseum:'#e1d0b0',liberty:'#a5c4ad',music:'#e6c999'};
+    const colours={}; // Preserve the mineral palette supplied with the 32 original miniatures.
     if (imported && kind==='art') {
       const palette={Base:'#e5d3af',Color1:'#c78267',Color2:'#8aada0',Color3:'#d5ad68',Color4:'#6f9495',Color5:'#c5a58e',Color6:'#e4d2ac',Color7:'#9b8276'};
       return new THREE.Color(palette[material?.name] || palette.Base).convertLinearToSRGB();
@@ -65,23 +65,23 @@ function geometryData(group, kind, imported=false) {
   return result;
 }
 
-export function createGlobeModelLayer(map, lib, onModelState=()=>{}) {
-  const assetFiles={tower:'eiffel-tower.glb',spire:'burj-khalifa.glb',clocktower:'big-ben.glb',
-    colosseum:'colosseum.glb',liberty:'statue-liberty.glb'};
-  const geometries={...createLandmarkModels({illustrationsOnly:true})};
+export function createGlobeModelLayer(map, lib, onModelState=()=>{}, modelIds=[]) {
+  const assetFiles=Object.fromEntries(modelIds.filter(id=>/^[a-z_]+$/.test(id)).map(id=>[id,`${id}.glb`]));
+  const geometries={};
   // For supplied models show an accessible small marker while loading, rather
   // than constructing a crude temporary 3D model and then swapping it abruptly.
   for (const name of [...Object.keys(assetFiles),'heritage_culture','heritage_nature']) delete geometries[name];
   const parts=new Map(Object.entries(geometries).map(([name,mesh])=>[name,geometryData(mesh,name)]));
   const buffers=new Map(), programs=new Map(), textures=new Map(), loaded=new Set(), loading=new Set(), failed=new Set();
-  const loader=new GLTFLoader();
+  const draco=new DRACOLoader();draco.setDecoderPath(new URL('./vendor/three/draco/',import.meta.url).href);draco.setWorkerLimit(2);
+  const loader=new GLTFLoader();loader.setDRACOLoader(draco);
   let landmarks=[], events=[], glContext=null, removed=false;
   function state(name) {return !assetFiles[name] ? 'stylised' : loaded.has(name) ? 'ready' : failed.has(name) ? 'failed' : 'loading';}
   function requestAsset(name) {
     const file=assetFiles[name];
     if (!file || loaded.has(name) || loading.has(name) || failed.has(name) || !glContext) return;
     loading.add(name);
-    loader.load(new URL(`./assets/${file}?v=globe-20261028-32`,import.meta.url).href,(asset)=>{
+    loader.load(new URL(`./models/landmarks/${file}?v=landmarks-32`,import.meta.url).href,(asset)=>{
       if (removed || !glContext) return;
       try {
         const imported=geometryData(asset.scene,name,true);

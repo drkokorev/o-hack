@@ -4,8 +4,20 @@ async(page)=>{
   const idle=()=>page.waitForFunction(()=>!document.querySelector('#send').disabled,null,{timeout:90000});
   page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://ipinfo.io/**',r=>r.fulfill({json:{city:'Moscow'}}));
-  await page.route('**/api/voice',r=>r.fulfill({json:{backend:'browser',status:'ready',max_seconds:20}}));
-  await page.addInitScript(()=>{window.__voiceMode='success';window.SpeechRecognition=class{start(){setTimeout(()=>this.onstart?.(),10);}stop(){setTimeout(()=>{if(window.__voiceMode==='success')this.onresult?.({resultIndex:0,results:[{isFinal:true,0:{transcript:'Хочу в Казань'},length:1}]});this.onend?.();},180);}abort(){this.onend?.();}};Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:async()=>({getTracks:()=>[{stop(){}}]})}});});
+  await page.route('**/api/voice',r=>r.fulfill({json:{backend:'gigaam',status:'ready',max_seconds:20}}));
+  let transcript='Хочу в Казань';
+  await page.route('**/api/voice/transcribe',async r=>{await new Promise(resolve=>setTimeout(resolve,180));await r.fulfill({json:{text:transcript}});});
+  await page.addInitScript(()=>{
+    window.__audioFrames=0;
+    window.SpeechRecognition=window.webkitSpeechRecognition=class{constructor(){throw Error('External recognition must not be used');}};
+    Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:async()=>({getTracks:()=>[{stop(){}}]})}});
+    window.AudioContext=class{
+      constructor(){this.sampleRate=16000;}async resume(){}
+      createMediaStreamSource(){return {connect(){},disconnect(){}};}
+      createScriptProcessor(){const processor={connect(){},disconnect(){}};this.timer=setInterval(()=>{if(processor.onaudioprocess){window.__audioFrames++;processor.onaudioprocess({inputBuffer:{getChannelData:()=>new Float32Array(4096).fill(.01)},outputBuffer:{getChannelData:()=>new Float32Array(4096)}});}},20);return processor;}
+      async close(){clearInterval(this.timer);}
+    };
+  });
   await page.setViewportSize({width:1440,height:960});await page.goto('http://127.0.0.1:18191/static/favicon.svg');
   await page.evaluate(()=>{sessionStorage.clear();localStorage.removeItem('odin.places');localStorage.removeItem('odin.tour.v2');});await page.goto('http://127.0.0.1:18191/');await idle();
   ok(await page.locator('#tour-title').innerText()==='С кем, куда и когда?','new introduction copy');await page.locator('#tour-skip').click();
@@ -63,12 +75,13 @@ async(page)=>{
   }
   await page.locator('#reset').click();await page.locator('#reset-confirm').click();await idle();
   await page.locator('#mic-button').click();await page.locator('#voice-allow').click();await page.waitForSelector('.voice-meter:not([hidden])');
+  await page.waitForFunction(()=>window.__audioFrames>0);
   ok(await page.locator('#send').isHidden()&&await page.locator('#voice-cancel').isHidden(),'recording has exactly one visible stop control');
   ok(await page.locator('.voice-bars i').count()===5,'recording has activity indicator');
   await page.screenshot({path:'output/playwright/refine-voice-mobile.png'});
   await page.locator('#mic-button').click();await page.waitForFunction(()=>!voice.isActive());
   ok((await page.locator('#text').inputValue()).includes('Казань'),'dictation fills draft without sending');
-  await page.evaluate(()=>window.__voiceMode='empty');await page.locator('#mic-button').click();await page.waitForTimeout(50);await page.locator('#mic-button').click();await page.waitForFunction(()=>!voice.isActive());
+  transcript='';await page.locator('#mic-button').click();await page.waitForTimeout(80);await page.locator('#mic-button').click();await page.waitForFunction(()=>!voice.isActive());
   ok(await page.locator('#voice-status').getAttribute('data-tone')==='error','speech error is styled as feedback');
   await page.locator('#text').fill('Исправленный текст');ok(await page.locator('#voice-status').isHidden(),'typing clears obsolete speech error');
   await page.goto('http://127.0.0.1:18191/static/widget.html');
@@ -87,7 +100,10 @@ async(page)=>{
   await frame.locator('.package-card').first().getByRole('button',{name:'В корзину',exact:true}).click();
   await frame.locator('.basket-total').waitFor({state:'attached',timeout:90000});await page.waitForTimeout(350);
   ok(await frame.locator('.trip-component').count()===4,'widget shares full basket, not hotels alone');
+  await frame.locator('[data-panel="results"]').click();await page.waitForTimeout(350);
   await page.screenshot({path:'output/playwright/refine-widget-basket.png',animations:'disabled'});
+  ok(await frame.locator('a[href="/privacy"]').count()>0,'shared widget exposes privacy document');
+  for(const path of ['/privacy','/terms'])ok((await page.request.get('http://127.0.0.1:18191'+path)).status()===200,'document available: '+path);
   ok(errors.length===0,'no JavaScript exceptions');
   return {checks,errors,real_audio_recorded:false};
 }

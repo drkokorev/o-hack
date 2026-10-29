@@ -12,7 +12,7 @@
   frame.src = `${service}/static/widget.html`;
   frame.referrerPolicy = "no-referrer";
   frame.allow = "microphone";
-  frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+  frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox");
   frame.hidden = true;
   Object.assign(frame.style, { width: "min(390px, calc(100vw - 32px))", height: "min(620px, calc(100dvh - 100px))",
     border: "1px solid #d9e2e0", borderRadius: "22px", background: "white", boxShadow: "0 18px 60px #081c2633" });

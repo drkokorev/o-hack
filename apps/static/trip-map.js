@@ -348,7 +348,7 @@
         node("div", { class: "map-pop-kind" }, place.heritage ? place.category : "Идея для поездки"), node("strong", {}, place.name),
         node("p", {}, place.city || place.country), node("p", { class: "map-note" }, place.heritage ?
           "Условный значок. Координата объекта из списка ЮНЕСКО; вход может находиться в другом месте." :
-          "Стилизованная модель у достопримечательности; масштаб увеличен."),
+          "Стилизованная миниатюра; масштаб увеличен, координаты приблизительные."),
         node("div", { class: "map-pop-links" }, safeLink(place.url, place.heritage ? "ЮНЕСКО ↗" : "Официальный сайт ↗"),
           place.heritage ? safeLink("https://creativecommons.org/licenses/by-sa/4.0/", "CC BY-SA 4.0 ↗") : null),
         node("p", {class:"map-question"}, "Хотите посетить это место?"),
@@ -391,7 +391,7 @@
         threeLoading = true;
         import(asset("globe-model-layer.mjs")).then((module) => {
           if (!map) return;
-          three = module.createGlobeModelLayer(map, lib, refreshModelStates);
+          three = module.createGlobeModelLayer(map, lib, refreshModelStates, landmarks.filter(p=>!p.heritage).map(p=>p.icon));
           renderLandmarks(); renderEvents(); schedule();
         }).catch(() => { /* Accessible markers remain if 3D is unavailable. */ });
       }

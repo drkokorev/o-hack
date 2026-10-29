@@ -1,6 +1,8 @@
 /* Refinements share the established blue/lime palette and type scale. */
 .board {display:flex;flex-direction:column;min-height:calc(100dvh - 76px);}
 .quiet-footer {margin-top:auto;padding-top:24px;padding-bottom:8px;}
+.chat-legal {display:flex;justify-content:center;gap:14px;padding:0 12px 8px;font-size:10px;color:var(--muted);}
+.chat-legal a {color:inherit;}
 #view:empty {display:none;}
 .chat-heading {position:relative;padding-right:108px;}
 #saved-open,#help-open {position:absolute;top:26px;width:36px;height:36px;min-width:36px;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--ink);font:500 18px var(--body);}

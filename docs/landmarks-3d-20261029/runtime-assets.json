@@ -1,0 +1,282 @@
+{
+  "scope": "Landmark and renderer assets; copy the complete apps/static tree for the application",
+  "implementationCommit": "a3e6867a26b9d0179fbe5fbd143f472b060bf731",
+  "modelCount": 32,
+  "files": [
+    {
+      "path": "apps/static/landmark-layout.mjs",
+      "bytes": 1488,
+      "sha256": "c09aa469df9ef03d254c1ae364809092ae21c8a61d9dbe9bd1ce5436c0932de1"
+    },
+    {
+      "path": "apps/static/landmarks-3d.mjs",
+      "bytes": 8195,
+      "sha256": "8ce9599b7e9e1b7aa3e8ab29de5493718a54d05d2100c7152f06b7fca09a8e57"
+    },
+    {
+      "path": "apps/static/landmarks.json",
+      "bytes": 8152,
+      "sha256": "d697a708f182768c88cf43cc08a38103f85c838f4f5dc67ef68961f58a68dfbe"
+    },
+    {
+      "path": "apps/static/map-settings.json",
+      "bytes": 270,
+      "sha256": "0202804bd8bdddbf2f08ed1633239f0948542c70ff9a8eef8aebf11c5efda933"
+    },
+    {
+      "path": "apps/static/models/landmarks/bali_temple.glb",
+      "bytes": 25284,
+      "sha256": "8ddbbd1cda8de734b1c15bd4f017486c9a264f23886a95a52ab50d21ce7d6ae7"
+    },
+    {
+      "path": "apps/static/models/landmarks/belem.glb",
+      "bytes": 65816,
+      "sha256": "8e5faf5c6dee86191743893c469ee2edc388569eca2892c6237182225defa2a4"
+    },
+    {
+      "path": "apps/static/models/landmarks/cappadocia.glb",
+      "bytes": 32060,
+      "sha256": "65a3ffe223ca7f6120c9f471b8f80bd8a57fafc31c0c177141c1b8903db2f320"
+    },
+    {
+      "path": "apps/static/models/landmarks/chichen_itza.glb",
+      "bytes": 73208,
+      "sha256": "0b59afaed63ec99fc050e0a647e46a9440c3aa3bc10db9510a24f009484a5725"
+    },
+    {
+      "path": "apps/static/models/landmarks/christ.glb",
+      "bytes": 33588,
+      "sha256": "712e81bd0a9656a72129296372b320c398474b2c90f5a283e10e435a2a34b0d6"
+    },
+    {
+      "path": "apps/static/models/landmarks/clocktower.glb",
+      "bytes": 115476,
+      "sha256": "0e7e23499f92374e164055a3f45a8d36e8e26d958dfc1412a1c545d5db8c8ef4"
+    },
+    {
+      "path": "apps/static/models/landmarks/colosseum.glb",
+      "bytes": 176576,
+      "sha256": "2581ab50b258e778e6140e3313575b9b795b25dc59c6ebaa534f071e2cee6c01"
+    },
+    {
+      "path": "apps/static/models/landmarks/fuji.glb",
+      "bytes": 33868,
+      "sha256": "622f211329aa03be44f950a3f1e2d4076d135bc62b5a68e8478279fa42dcbd6c"
+    },
+    {
+      "path": "apps/static/models/landmarks/galata.glb",
+      "bytes": 133484,
+      "sha256": "1cd68f02254b58c811626a0ac23c803a3f652505f1db96527b555f0443203114"
+    },
+    {
+      "path": "apps/static/models/landmarks/gate.glb",
+      "bytes": 112780,
+      "sha256": "4c98676958cf340a9e1d1508328d2c61109c07b4fefd8a708841a28946a04144"
+    },
+    {
+      "path": "apps/static/models/landmarks/golden_gate.glb",
+      "bytes": 94304,
+      "sha256": "30bcb9c3c6d6e64ca6bf33b382ac61ecd9f44c6a3ce713df7ec3e4688a909d2c"
+    },
+    {
+      "path": "apps/static/models/landmarks/great_wall.glb",
+      "bytes": 99400,
+      "sha256": "b22ed66f5748446e74e278a1e2967f0722e292e33b7bb5032895e397db30d11e"
+    },
+    {
+      "path": "apps/static/models/landmarks/isaac.glb",
+      "bytes": 133920,
+      "sha256": "71f2476f00e1ecb443b72029b7624e39946d0dca812820b66eb6d507ec67fd6b"
+    },
+    {
+      "path": "apps/static/models/landmarks/kamchatka.glb",
+      "bytes": 84572,
+      "sha256": "ceefcb62efe915afd64b7990203a2cd1456a9e59786b10a66add2e6cc7c25fd2"
+    },
+    {
+      "path": "apps/static/models/landmarks/kremlin.glb",
+      "bytes": 76760,
+      "sha256": "3007fef24e43118ae31c556cceb00fb8c297ade74ef176800f5a5d0aa1c4418d"
+    },
+    {
+      "path": "apps/static/models/landmarks/kulsharif.glb",
+      "bytes": 47032,
+      "sha256": "4840d3d998596ebb1958687d31deaaa323846b8add2ec0218139654d78f2cf33"
+    },
+    {
+      "path": "apps/static/models/landmarks/liberty.glb",
+      "bytes": 44184,
+      "sha256": "47dab90a2534508988fb331f690a3aac9c586ebfb3694fa31099c43655193cd4"
+    },
+    {
+      "path": "apps/static/models/landmarks/maldives.glb",
+      "bytes": 32372,
+      "sha256": "e63e6f6ae024bb38fe4780bb5ec567e2879dd7cc0bb31227b1b4d1d33a49548b"
+    },
+    {
+      "path": "apps/static/models/landmarks/manifest.json",
+      "bytes": 5265,
+      "sha256": "6fadeba91bba01653d66c2b087d5610d62cc70941b61961b78f3c2e8737c7a34"
+    },
+    {
+      "path": "apps/static/models/landmarks/marina_bay.glb",
+      "bytes": 59932,
+      "sha256": "8449766d056fc54e4c3995e1b7ccc675948c06e0c704f21429758dd6cf108758"
+    },
+    {
+      "path": "apps/static/models/landmarks/opera.glb",
+      "bytes": 85996,
+      "sha256": "13d92e4934db22e866e7be7f1465943faf998bdbb8c1c0294cc8bd3180ed841f"
+    },
+    {
+      "path": "apps/static/models/landmarks/parthenon.glb",
+      "bytes": 23512,
+      "sha256": "12d3fc8e1f9cdafebe2d8dd47ecf0478ae0d0a82acc7cd017a5c578d52a3477f"
+    },
+    {
+      "path": "apps/static/models/landmarks/petronas.glb",
+      "bytes": 31648,
+      "sha256": "e43473f37a0c0ae6807cedc408816196366890cb8cb1607d0f3cbe7ccf12caaa"
+    },
+    {
+      "path": "apps/static/models/landmarks/pyramids.glb",
+      "bytes": 53452,
+      "sha256": "1a4356912404237fe44f01428aba38592faf851ea26793ef08d326a17b867eee"
+    },
+    {
+      "path": "apps/static/models/landmarks/registan.glb",
+      "bytes": 76944,
+      "sha256": "0eefc7b61bec6b6474f4824900c34e71c6352852e5115fbb3125a47312746c66"
+    },
+    {
+      "path": "apps/static/models/landmarks/russky_bridge.glb",
+      "bytes": 31124,
+      "sha256": "f24eb74b2c054be723280cd8b17f11645978b48abd036f99aeb984bfb464596f"
+    },
+    {
+      "path": "apps/static/models/landmarks/sagrada.glb",
+      "bytes": 53788,
+      "sha256": "42e5b190a9ae1fcd84d3ae6abfa814f7a84d5aa2311ffb8db8a90dc8782b837a"
+    },
+    {
+      "path": "apps/static/models/landmarks/shamanka.glb",
+      "bytes": 29260,
+      "sha256": "bbe0a941780f4b945846f88cceffba3ff9c30476140f62370ee918869ec6ab00"
+    },
+    {
+      "path": "apps/static/models/landmarks/sochi_port.glb",
+      "bytes": 71768,
+      "sha256": "47588147e904fddf0a96b2d5ee2d02c761e4885c272519f3b821081663aab854"
+    },
+    {
+      "path": "apps/static/models/landmarks/spire.glb",
+      "bytes": 85816,
+      "sha256": "96bdea27f5b04021ca89a6849cd90476fc1941cb2e371a0972a05d245ac92961"
+    },
+    {
+      "path": "apps/static/models/landmarks/table_mountain.glb",
+      "bytes": 19420,
+      "sha256": "2d4385eab0ae5728452fe2482407920e1461ff5d001c8a2c646c05fed899f815"
+    },
+    {
+      "path": "apps/static/models/landmarks/taj_mahal.glb",
+      "bytes": 87508,
+      "sha256": "3ece2a26b7e6c6969c4b6398f41ff384f9eb83d32b5203182448612aabaef9f2"
+    },
+    {
+      "path": "apps/static/models/landmarks/tower.glb",
+      "bytes": 38836,
+      "sha256": "a8f419c53a5f73f076758187ed706dd4dca8fc90acfda6ec5af0ab3cbd140856"
+    },
+    {
+      "path": "apps/static/trip-map.css",
+      "bytes": 11974,
+      "sha256": "7ad5bfaa55bd9e52ec5ec91ca99352e2233db0635c9a5d7445de0ac56880ac1a"
+    },
+    {
+      "path": "apps/static/trip-map.js",
+      "bytes": 36689,
+      "sha256": "fd8c52aa4fcbc436c44efafdb93ad101885b922c52ace61df772c05bd779a6b9"
+    },
+    {
+      "path": "apps/static/vendor/maplibre/LICENSE.txt",
+      "bytes": 6100,
+      "sha256": "e319065a0691dcc07633701b436e178f1759dda7d5199ceee469282ff653e761"
+    },
+    {
+      "path": "apps/static/vendor/maplibre/maplibre-gl-worker.mjs",
+      "bytes": 519372,
+      "sha256": "0bf06492bdb7ba3d4132b78e435621bfba60d5250967991c02b1a73affea8cd5"
+    },
+    {
+      "path": "apps/static/vendor/maplibre/maplibre-gl.css",
+      "bytes": 71596,
+      "sha256": "a90798a1953017790e590f7e1bd35ff103a8a4263972cb47290b78adf86f8c20"
+    },
+    {
+      "path": "apps/static/vendor/maplibre/maplibre-gl.mjs",
+      "bytes": 1108049,
+      "sha256": "fbbdf8ddd9a48e49059a4be6795a4f214a711314bb5809f72d3730b48e7897e3"
+    },
+    {
+      "path": "apps/static/vendor/three/BufferGeometryUtils.js",
+      "bytes": 37724,
+      "sha256": "6d4f4f989a5f7e810522aaa36292205e3674878eed9810563417bd13ab9ba4f2"
+    },
+    {
+      "path": "apps/static/vendor/three/draco/draco_decoder.js",
+      "bytes": 512465,
+      "sha256": "8625489da79a805f4f2a7d511c3e52d8b4085608a9d2a4d5f4f9de5db0aea04f"
+    },
+    {
+      "path": "apps/static/vendor/three/draco/draco_decoder.wasm",
+      "bytes": 192420,
+      "sha256": "a680d927bed9cb864ddbd63521868891af2bfbe755092761b4837487618df8ac"
+    },
+    {
+      "path": "apps/static/vendor/three/draco/draco_wasm_wrapper.js",
+      "bytes": 58456,
+      "sha256": "8bb2952d2ba7d67e1414f8df819410cb0434a666be53f671fff75f68843d76f6"
+    },
+    {
+      "path": "apps/static/vendor/three/draco/LICENSE",
+      "bytes": 13898,
+      "sha256": "d3709b0fb4b8a94bbb1d02b8a2e484f258b0d9c5c5a01f940391f3fe662cd1a4"
+    },
+    {
+      "path": "apps/static/vendor/three/DRACOLoader.js",
+      "bytes": 19042,
+      "sha256": "7adac2f41e0cdea86e321050a1ae3e41d10b76809f12873b030545c7cbcc889d"
+    },
+    {
+      "path": "apps/static/vendor/three/GLTFLoader.js",
+      "bytes": 117568,
+      "sha256": "ea6945bc119f46237fab6a9228c3566fe66fff200512b3b96b1a6a32e89cb706"
+    },
+    {
+      "path": "apps/static/vendor/three/LICENSE",
+      "bytes": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+    },
+    {
+      "path": "apps/static/vendor/three/LICENSE.txt",
+      "bytes": 1102,
+      "sha256": "5d5dad8147523d59bc15cca838ae0bdaae7075230ec49132c551a1d18e7b3412"
+    },
+    {
+      "path": "apps/static/vendor/three/SkeletonUtils.js",
+      "bytes": 11547,
+      "sha256": "eedd768765d6553f8082953ab3882e2c86dacc2eb7d180a312d1d52e86bb35c5"
+    },
+    {
+      "path": "apps/static/vendor/three/three.core.js",
+      "bytes": 389591,
+      "sha256": "c001a388abbe69583ddd66e9dc18098df55fa81d06bcc5a5722efb6c7f522dc8"
+    },
+    {
+      "path": "apps/static/vendor/three/three.module.js",
+      "bytes": 376181,
+      "sha256": "1a31b9dfcadf81f5c832d20c7c2dfc36f290cdaf179da7338b8b1a121f20470b"
+    }
+  ]
+}

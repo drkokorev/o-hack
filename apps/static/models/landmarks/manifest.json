@@ -1,0 +1,231 @@
+{
+  "style": "Architectural miniatures · matte mineral palette",
+  "created": "2026-10-29",
+  "source": "Original procedural geometry; no marketplace model meshes or textures",
+  "models": [
+    {
+      "id": "tower",
+      "name": "Эйфелева башня",
+      "triangles": 7220,
+      "bytes": 38836,
+      "objects": 4
+    },
+    {
+      "id": "kremlin",
+      "name": "Московский Кремль · Спасская башня",
+      "triangles": 14800,
+      "bytes": 76760,
+      "objects": 7
+    },
+    {
+      "id": "spire",
+      "name": "Бурдж-Халифа",
+      "triangles": 24916,
+      "bytes": 85816,
+      "objects": 4
+    },
+    {
+      "id": "clocktower",
+      "name": "Биг-Бен",
+      "triangles": 22396,
+      "bytes": 115476,
+      "objects": 5
+    },
+    {
+      "id": "colosseum",
+      "name": "Колизей",
+      "triangles": 31152,
+      "bytes": 176576,
+      "objects": 4
+    },
+    {
+      "id": "gate",
+      "name": "Каминаримон",
+      "triangles": 21848,
+      "bytes": 112780,
+      "objects": 10
+    },
+    {
+      "id": "pyramids",
+      "name": "Пирамиды Гизы",
+      "triangles": 8412,
+      "bytes": 53452,
+      "objects": 4
+    },
+    {
+      "id": "liberty",
+      "name": "Статуя Свободы",
+      "triangles": 9960,
+      "bytes": 44184,
+      "objects": 7
+    },
+    {
+      "id": "isaac",
+      "name": "Исаакиевский собор",
+      "triangles": 34148,
+      "bytes": 133920,
+      "objects": 5
+    },
+    {
+      "id": "kulsharif",
+      "name": "Мечеть Кул-Шариф",
+      "triangles": 10048,
+      "bytes": 47032,
+      "objects": 5
+    },
+    {
+      "id": "sochi_port",
+      "name": "Морской вокзал Сочи",
+      "triangles": 13312,
+      "bytes": 71768,
+      "objects": 5
+    },
+    {
+      "id": "shamanka",
+      "name": "Скала Шаманка",
+      "triangles": 3160,
+      "bytes": 29260,
+      "objects": 4
+    },
+    {
+      "id": "kamchatka",
+      "name": "Вулканы Камчатки",
+      "triangles": 7528,
+      "bytes": 84572,
+      "objects": 6
+    },
+    {
+      "id": "russky_bridge",
+      "name": "Русский мост",
+      "triangles": 5716,
+      "bytes": 31124,
+      "objects": 5
+    },
+    {
+      "id": "galata",
+      "name": "Галатская башня",
+      "triangles": 32296,
+      "bytes": 133484,
+      "objects": 6
+    },
+    {
+      "id": "cappadocia",
+      "name": "Скалы и воздушный шар Каппадокии",
+      "triangles": 2852,
+      "bytes": 32060,
+      "objects": 7
+    },
+    {
+      "id": "registan",
+      "name": "Регистан",
+      "triangles": 15996,
+      "bytes": 76944,
+      "objects": 6
+    },
+    {
+      "id": "sagrada",
+      "name": "Саграда-Фамилия",
+      "triangles": 12252,
+      "bytes": 53788,
+      "objects": 5
+    },
+    {
+      "id": "parthenon",
+      "name": "Парфенон",
+      "triangles": 6728,
+      "bytes": 23512,
+      "objects": 2
+    },
+    {
+      "id": "belem",
+      "name": "Башня Белен",
+      "triangles": 14524,
+      "bytes": 65816,
+      "objects": 5
+    },
+    {
+      "id": "great_wall",
+      "name": "Великая Китайская стена",
+      "triangles": 14094,
+      "bytes": 99400,
+      "objects": 5
+    },
+    {
+      "id": "taj_mahal",
+      "name": "Тадж-Махал",
+      "triangles": 21328,
+      "bytes": 87508,
+      "objects": 6
+    },
+    {
+      "id": "marina_bay",
+      "name": "Marina Bay Sands",
+      "triangles": 12904,
+      "bytes": 59932,
+      "objects": 6
+    },
+    {
+      "id": "petronas",
+      "name": "Башни Петронас",
+      "triangles": 7512,
+      "bytes": 31648,
+      "objects": 4
+    },
+    {
+      "id": "fuji",
+      "name": "Гора Фудзи",
+      "triangles": 2172,
+      "bytes": 33868,
+      "objects": 8
+    },
+    {
+      "id": "bali_temple",
+      "name": "Храм Улун-Дану",
+      "triangles": 3292,
+      "bytes": 25284,
+      "objects": 8
+    },
+    {
+      "id": "maldives",
+      "name": "Виллы над водой",
+      "triangles": 5256,
+      "bytes": 32372,
+      "objects": 6
+    },
+    {
+      "id": "christ",
+      "name": "Статуя Христа-Искупителя",
+      "triangles": 8350,
+      "bytes": 33588,
+      "objects": 3
+    },
+    {
+      "id": "chichen_itza",
+      "name": "Пирамида Кукулькана",
+      "triangles": 14976,
+      "bytes": 73208,
+      "objects": 3
+    },
+    {
+      "id": "golden_gate",
+      "name": "Мост Золотые Ворота",
+      "triangles": 20220,
+      "bytes": 94304,
+      "objects": 5
+    },
+    {
+      "id": "opera",
+      "name": "Сиднейский оперный театр",
+      "triangles": 17844,
+      "bytes": 85996,
+      "objects": 5
+    },
+    {
+      "id": "table_mountain",
+      "name": "Столовая гора",
+      "triangles": 1570,
+      "bytes": 19420,
+      "objects": 7
+    }
+  ]
+}
