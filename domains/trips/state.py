@@ -47,11 +47,19 @@ class TripParams(BaseModel):
     children_unknown: bool | None = Field(None, description="Едут дети, но их число не указано")
     children_ages: list[Annotated[int, Field(ge=0, le=17)]] | None = Field(
         None, description="Только явно названный возраст детей в годах; список может быть неполным")
+    child_age_months: int | None = Field(None, ge=0, le=215, description="Возраст единственного ребёнка в месяцах, если явно указан")
+    children_age_months_by_child: list[Annotated[int, Field(ge=0, le=215)] | None] | None = Field(None, description="Возраст в месяцах по каждому ребёнку, если назван; None означает возраст в годах")
+    child_age_basis: Literal["checkin", "current", "unspecified"] | None = Field(None, description="К какой дате относится возраст ребёнка; определяется локально")
     rooms: int | None = Field(None, ge=1, le=20, description="Явно названное число отдельных номеров в отеле")
     room_allocations: list[RoomAllocation] | None = Field(None, description="Явное распределение взрослых и возрастов детей по номерам")
     split_stays: list[StaySegment] | None = Field(None, description="Два явно заданных периода проживания")
     split_choice: int | None = Field(None, ge=1, le=3, description="Номер выбранной показанной пары отелей")
     pets: bool | None = Field(None, description="Едут с животным")
+    pet_types: list[Literal["dog", "cat", "bird", "rabbit"]] | None = Field(None, description="Явно названные виды питомцев")
+    pet_count: int | None = Field(None, ge=1, le=10, description="Явно названное количество животных")
+    pet_weight_kg: float | None = Field(None, gt=0, le=200, description="Вес одного животного в кг, только если прямо указан")
+    pet_cabin: bool | None = Field(None, description="Пожелание везти животное в салоне, а не подтверждённое условие")
+    travel_needs: list[str] | None = Field(None, description="Явные дополнительные потребности семьи или путешественника; условия поставщика не подтверждены")
     lodging: str | None = Field(None, description="tent — палатка или своё размещение; hotel — нужен отель")
     search_scope: str | None = Field(None, description="flight_only, train_only, hotel_only, transfer_only, multi_hotel, split_hotel, operator_tour или trip")
     flight_direction: str | None = Field(None, description="one_way — в одну сторону; round_trip — туда и обратно")
@@ -120,6 +128,7 @@ class TripState(TripParams):
     place_country: str | None = None                         # уточнённая страна для неоднозначного названия
     unavailable_origin: str | None = None                    # указанный город отправления отсутствует в демо
     pending_question: str | None = None                      # какой недостающий параметр уточняем
+    pending_child_age_number: int | None = None               # возраст без названной единицы; не тариф
     answered_question: str | None = None                     # на какой вопрос ответил последний шаг — для RAG
     asked_text: str | None = None                            # замаскированная последняя реплика — запрос к RAG
     pending_trip_candidate: dict | None = None                # новое намерение до выбора: новая поездка или изменение
@@ -155,6 +164,8 @@ class TripUpdate(TripParams):
     clear: list[str] | None = Field(None, description="Параметры, которые больше не нужно учитывать")
     remove_hotel_wishes: list[str] | None = Field(None, description="Удобства, от которых пользователь явно отказался; определяется правилами")
     remove_accessibility_needs: list[str] | None = Field(None, description="Условия доступности, от которых пользователь явно отказался; определяется локально")
+    remove_travel_needs: list[str] | None = Field(None, description="Дополнительные потребности, от которых пользователь явно отказался; определяется локально")
+    child_age_number: int | None = Field(None, ge=0, le=215, description="Неоднозначный возраст без единицы; требуется уточнение")
     cheaper: bool | None = Field(None, description="true, если просит дешевле")
     pick: int | None = Field(None, description="Номер выбранного варианта из показанного списка (1, 2, 3)")
     pick_name: str | None = Field(None, description="Название выбранного варианта, если назван не номером")

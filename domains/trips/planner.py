@@ -297,7 +297,7 @@ def explain(pkg: Package, trip: Trip, all_: list[Package]) -> None:
     if trip.children and {"kids_club", "pool"} & set(h.amenities):
         why.append("для детей: " + ", ".join(AMENITIES[a] for a in ("kids_club", "pool") if a in h.amenities))
     if trip.pets:
-        why.append("можно с животными")
+        why.append("животные указаны в демо-каталоге; условия размещения не проверены")
     if h.free_cancel_days is not None:
         why.append(f"бесплатная отмена за {h.free_cancel_days} дн.")
     if not pkg.out.stops and pkg.out.mode == "plane":
@@ -397,7 +397,7 @@ def check(pkg: Package, trip: Trip) -> list[tuple[str, str]]:
         if trip.pets:
             out.append(("warn", "с животным: уточните правила ввоза и необходимые документы"))
     if trip.pets and pkg.out.mode == "plane":
-        out.append(("warn", "животное в салоне — до 8 кг с переноской, иначе в багажном отсеке"))
+        out.append(("warn", "животное: перевозку, место, ограничения переноски и доплату нужно подтвердить у перевозчика"))
     weather = climate(trip.dest.id, trip.date_in.month)
     if weather and {"sea", "beach"} & set(trip.trip_types) and weather.sea is not None and weather.sea < 22:
         out.append(("warn", f"море в это время {weather.sea:+.0f}° — прохладно для купания"))

@@ -140,12 +140,21 @@ class Agent:
                 return replace(previous, reply=PRIVACY_NOTICE + previous.reply)
             return Step(PRIVACY_NOTICE + "Расскажите, какую поездку вы хотите.")
         unresolved = contains_unresolved_sensitive_data(text)
+        local_context = False
         local_input = getattr(self.domain, "requires_local_processing", None)
         if local_input is not None:
             try:
                 unresolved = unresolved or local_input(text)
             except Exception as err:
                 log.warning("Не удалось проверить условия для локального разбора (%s)", type(err).__name__)
+                privacy_unavailable = True
+        contextual_input = getattr(self.domain, "requires_local_context", None)
+        if contextual_input is not None:
+            try:
+                local_context = bool(contextual_input(session.state, text))
+                unresolved = unresolved or local_context
+            except Exception as err:
+                log.warning("Не удалось проверить контекст локального разбора (%s)", type(err).__name__)
                 privacy_unavailable = True
         # Mark the turn before any early return, so rejected prompt injections
         # cannot leak otherwise recognized private text into browser recovery.
@@ -178,7 +187,7 @@ class Agent:
             session.state = self.domain.merge(session.state, update)
             note_text = getattr(self.domain, "note_text", None)
             if note_text is not None:  # домену — замаскированный текст реплики, например для поиска по базе знаний
-                note_text(session.state, text)
+                note_text(session.state, "" if local_context else text)
             if after_merge is not None:
                 after_merge(session.state)
             step = self.domain.step(session.state)
