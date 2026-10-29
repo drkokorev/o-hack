@@ -27,3 +27,10 @@
 .full-reply { margin-top: 10px; }
 .full-reply summary { cursor: pointer; color: #183cb8; }
 .full-reply > div { margin-top: 8px; }
+  .legal-links { display:flex; flex-wrap:wrap; justify-content:center; gap:0 14px; font-size:11px; }
+  .legal-links a { display:inline-flex; align-items:center; min-height:32px; color:var(--muted); text-underline-offset:3px; }
+  .voice-disclosure { width:calc(100% - 32px); max-width:420px; max-height:calc(100dvh - 32px); overflow:auto; border:1px solid var(--line); border-radius:18px; padding:20px; background:var(--surface,#fff); color:var(--ink); font:14px/1.6 "Golos Text",system-ui,sans-serif; }
+  .voice-disclosure::backdrop { background:#10283270; }
+  .voice-disclosure h2 { font-size:19px; margin:0 0 12px; }
+  .voice-disclosure a { color:var(--accent); }
+  .voice-disclosure button { min-height:44px; padding:8px 12px; border:1px solid var(--line); border-radius:12px; background:var(--accent-soft); color:var(--ink); font:inherit; cursor:pointer; }

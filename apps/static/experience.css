@@ -27,6 +27,8 @@ main.board { min-width:0; padding:34px 30px 18px; display:flex; flex-direction:c
 .quiet-footer a { color:inherit; text-underline-offset:3px; }
 .quiet-footer .text-button { font-size:11px; min-height:32px; color:var(--muted); }
 .quiet-footer .exchange-note { margin:0; }
+.site-legal-footer { grid-column:1 / -1; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:0 24px; padding:6px 18px; border-top:1px solid var(--line); background:var(--surface); color:var(--muted); font:12px/1.5 var(--body); }
+.site-legal-footer a { display:inline-flex; align-items:center; min-height:44px; color:inherit; text-underline-offset:4px; }
 .text-button { padding:4px 0; border:0; background:transparent; color:var(--accent); font:500 13px/1.4 var(--body); cursor:pointer; text-align:left; }
 .text-button:hover { text-decoration:underline; text-underline-offset:3px; }
 aside.chat { height:calc(100dvh - 72px); top:72px; border-left:1px solid var(--line); border-right:1px solid var(--line); overflow:visible; min-width:0; background:var(--surface); }

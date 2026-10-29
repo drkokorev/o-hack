@@ -1,0 +1,258 @@
+{
+  "base_commit": "28a7006de302dae00e88e55774fddd59727ee39e",
+  "branch": "codex/privacy-voice-quality-20261029",
+  "suites": {
+    "pytest-before": {
+      "tests": "609",
+      "failures": "2",
+      "errors": "0",
+      "skipped": "0",
+      "time": "233.194",
+      "failed_cases": [
+        "test_e5_embeddings_are_local_and_cross_lingual",
+        "test_hybrid_search_finds_meaning_without_shared_words"
+      ]
+    },
+    "pytest-focused": {
+      "tests": "44",
+      "failures": "2",
+      "errors": "0",
+      "skipped": "0",
+      "time": "37.077",
+      "failed_cases": [
+        "test_e5_embeddings_are_local_and_cross_lingual",
+        "test_hybrid_search_finds_meaning_without_shared_words"
+      ]
+    },
+    "pytest-focused-ready": {
+      "tests": "44",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "37.973",
+      "failed_cases": []
+    },
+    "pytest-after": {
+      "tests": "615",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "182.269",
+      "failed_cases": []
+    }
+  },
+  "browser_demo": {
+    "checks": [
+      {
+        "name": "two_footer_links",
+        "pass": true
+      },
+      {
+        "name": "footer_links_preserve_chat_tab",
+        "pass": true
+      },
+      {
+        "name": "policy_is_readable",
+        "pass": true
+      },
+      {
+        "name": "policy_marks_demo_and_missing_operator",
+        "pass": true
+      },
+      {
+        "name": "policy_has_no_script",
+        "pass": true
+      },
+      {
+        "name": "terms_are_readable",
+        "pass": true
+      },
+      {
+        "name": "draft_survives_document_reading",
+        "pass": true
+      },
+      {
+        "name": "chat_responds_after_documents",
+        "pass": true
+      },
+      {
+        "name": "explicit_origin_is_preserved",
+        "pass": true
+      },
+      {
+        "name": "destination_is_preserved",
+        "pass": true
+      },
+      {
+        "name": "session_survives_document_reading",
+        "pass": true
+      },
+      {
+        "name": "origin_survives_correction",
+        "pass": true
+      },
+      {
+        "name": "destination_survives_correction",
+        "pass": true
+      },
+      {
+        "name": "mobile_footer_is_visible",
+        "pass": true
+      },
+      {
+        "name": "mobile_has_no_horizontal_overflow",
+        "pass": true
+      },
+      {
+        "name": "failed_voice_keeps_external_speech_off",
+        "pass": true
+      },
+      {
+        "name": "failed_voice_offers_text",
+        "pass": true
+      },
+      {
+        "name": "failed_voice_keeps_input_enabled",
+        "pass": true
+      },
+      {
+        "name": "widget_has_both_documents",
+        "pass": true
+      },
+      {
+        "name": "no_automatic_external_browser_requests",
+        "pass": true
+      },
+      {
+        "name": "no_javascript_errors",
+        "pass": true
+      }
+    ],
+    "live_dialogue": {
+      "first_nlu": "llm+rules",
+      "second_nlu": "llm+rules",
+      "first_kind": "packages",
+      "second_kind": "question"
+    },
+    "external_origins": [],
+    "javascript_errors": []
+  },
+  "browser_voice": {
+    "checks": [
+      {
+        "name": "main_explains_audio_before_capture",
+        "pass": true
+      },
+      {
+        "name": "declining_does_not_capture",
+        "pass": true
+      },
+      {
+        "name": "main_stop_previews_without_sending",
+        "pass": true
+      },
+      {
+        "name": "main_stop_releases_microphone",
+        "pass": true
+      },
+      {
+        "name": "edited_transcript_is_sent",
+        "pass": true
+      },
+      {
+        "name": "escape_discards_recording",
+        "pass": true
+      },
+      {
+        "name": "pagehide_discards_recording",
+        "pass": true
+      },
+      {
+        "name": "main_never_uses_external_recognition",
+        "pass": true
+      },
+      {
+        "name": "widget_explains_audio_before_capture",
+        "pass": true
+      },
+      {
+        "name": "widget_second_click_previews_and_stops",
+        "pass": true
+      },
+      {
+        "name": "widget_text_still_sends",
+        "pass": true
+      },
+      {
+        "name": "widget_never_uses_external_recognition",
+        "pass": true
+      }
+    ],
+    "transcriptions": 2,
+    "chats": 2,
+    "synthetic_audio": true,
+    "real_microphone_tested": false
+  },
+  "browser_layout": {
+    "results": [
+      {
+        "width": 390,
+        "links": [
+          {
+            "text": "Условия использования",
+            "clickable": true
+          },
+          {
+            "text": "Политика конфиденциальности",
+            "clickable": true
+          }
+        ],
+        "no_horizontal_overflow": true
+      },
+      {
+        "width": 1024,
+        "links": [
+          {
+            "text": "Условия использования",
+            "clickable": true
+          },
+          {
+            "text": "Политика конфиденциальности",
+            "clickable": true
+          }
+        ],
+        "no_horizontal_overflow": true
+      },
+      {
+        "width": 1440,
+        "links": [
+          {
+            "text": "Условия использования",
+            "clickable": true
+          },
+          {
+            "text": "Политика конфиденциальности",
+            "clickable": true
+          }
+        ],
+        "no_horizontal_overflow": true
+      }
+    ]
+  },
+  "embedding": {
+    "model_bytes_unchanged": true,
+    "upstream_tokenizer_sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+    "working_tokenizer_sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+    "tokenizer_bytes": 17082730,
+    "before_checkout_extra_CRLF_bytes": 1000172,
+    "tokenizers_version": "0.23.3"
+  },
+  "engine_source_changed": false,
+  "limits": {
+    "physical_microphone": "NOT_TESTED",
+    "Docker_build": "SKIP: daemon unavailable",
+    "operator_and_provider_contracts": "NOT_VERIFIED; demo details intentionally remain unfilled",
+    "optional_city_dataset": "HEAD returned 403; no dataset downloaded or bundled"
+  },
+  "scope": "Synthetic test inputs. Browser traffic check excludes intentional server-side LLM calls. No credentials, headers, cookies, profiles or raw audio included."
+}

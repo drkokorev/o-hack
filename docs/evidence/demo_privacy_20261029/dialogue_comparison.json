@@ -1,0 +1,13 @@
+{
+  "identical": true,
+  "before_passed": 7,
+  "after_passed": 7,
+  "cases": 8,
+  "turns": 16,
+  "before_sha256": "f0dda1480d982b2c0d3408a2c4ac97ba48e31eb8c691740aab02fad150e9bf09",
+  "after_sha256": "f0dda1480d982b2c0d3408a2c4ac97ba48e31eb8c691740aab02fad150e9bf09",
+  "existing_failed_cases": [
+    "F05_new_search"
+  ],
+  "scope": "Fixed-date local rules; equality preserves existing failures and does not evaluate live model quality."
+}
