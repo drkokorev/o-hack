@@ -1,0 +1,10 @@
+{
+  "model": "intfloat/multilingual-e5-small (ONNX int8, конвертация Xenova/multilingual-e5-small)",
+  "source": "https://huggingface.co/Xenova/multilingual-e5-small",
+  "revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "license": "MIT",
+  "model_file": "model_int8.onnx",
+  "model_sha256": "4d24e2bc01a447951524466ef533e52944bf48509e6552810bcee1a2711cb02c",
+  "tokenizer_sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+  "note": "Файл модели разрезан на части по 60 МБ (лимит GitHub — 100 МБ на файл); склеивается в памяти при загрузке."
+}

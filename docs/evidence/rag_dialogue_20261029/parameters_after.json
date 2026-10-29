@@ -1,0 +1,87 @@
+{
+  "today": "2026-10-27",
+  "passed": 16,
+  "total": 16,
+  "results": [
+    {
+      "id": "adult_genitive_hotel",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "three_adults",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "four_adults",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "two_children",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "three_children",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "adults_corrected",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "no_children",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "food_question_no_mark",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "food_question_english",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "sights_question_no_mark",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "question_not_requirement",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "tomorrow_not_next_month",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "baggage_and_class",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "two_room_count",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "no_assumed_adult",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "tour_not_hotel",
+      "pass": true,
+      "failures": []
+    }
+  ]
+}

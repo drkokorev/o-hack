@@ -1,0 +1,56 @@
+{
+  "status": "complete",
+  "checks": {
+    "model_processed_both_turns": true,
+    "new_formulation_gives_ideas": true,
+    "dates_not_invented": true
+  },
+  "records": [
+    {
+      "input": "Хочу в горы, предложи направления",
+      "nlu": "llm+rules",
+      "reply": "Чтобы подобрать идеальное направление, уточните, пожалуйста, когда примерно планируете поездку — назовите хотя бы месяц или время года. Если дата пока неизвестна, ничего страшного — поделюсь вдохновляющими идеями без привязки ко времени и ценам.",
+      "kind": "question",
+      "trip_summary": {
+        "origin": null,
+        "trip_types": [
+          "mountains"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "nights": null,
+        "adults": null,
+        "children": null,
+        "children_ages": null,
+        "budget_total": null,
+        "transport": null,
+        "origin_inferred": false,
+        "selected_event": null,
+        "destination": null
+      }
+    },
+    {
+      "input": "ориентируйся на свой опыт",
+      "nlu": "llm",
+      "reply": "Рада поделиться идеями для путешествия!\n\nПока не хватает деталей, чтобы посчитать цену и время в дороге: мне понадобятся месяц или конкретные даты, продолжительность поездки, откуда вы планируете выезжать и кто поедет вместе с вами. Также можете указать примерный бюджет всей поездки — хотя это и необязательно.\n\nА вот направления, которые стоит рассмотреть:\n\n1. Алматы, Казахстан — Медеу и Шымбулак, Большое Алматинское озеро  \n2. Байкал (Иркутск), Россия — Листвянка, остров Ольхон  \n3. Горный Алтай, Россия — Чуйский тракт, Телецкое озеро\n\nЧто вам ближе всего? Или хотите увидеть больше вариантов?",
+      "kind": "ideas",
+      "trip_summary": {
+        "origin": null,
+        "trip_types": [
+          "mountains"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "nights": null,
+        "adults": null,
+        "children": null,
+        "children_ages": null,
+        "budget_total": null,
+        "transport": null,
+        "origin_inferred": false,
+        "selected_event": null,
+        "destination": null
+      }
+    }
+  ]
+}

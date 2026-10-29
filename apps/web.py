@@ -28,8 +28,10 @@ from core.llm import build_llm
 from core.ru import MONTHS_GEN, fmt_money, plural
 from apps.location import city_hint, visitor_city, visitor_country
 from apps import chat_navigation
+from domains.trips import guides
 from apps.event_selection import choose_event
 from domains.trips.domain import TripsDomain
+from domains.trips.accessibility import LABELS as ACCESS_LABELS
 from domains.trips.geo import BY_ID, DESTINATIONS, ORIGINS, TAG_NAMES
 from domains.trips.offers import AMENITIES, MEALS, hotel_count, _real
 from domains.trips import map_catalog
@@ -152,9 +154,23 @@ class Sessions:
 def understood(state: TripState) -> list[str]:
     """Что агент понял из разговора — короткими плашками."""
     chips = []
-    if state.origin:
+    scope = {"flight_only": "только перелёт", "train_only": "только поезд", "hotel_only": "только жильё", "transfer_only": "только трансфер",
+             "split_hotel": "два последовательных отеля"}.get(state.search_scope)
+    if scope:
+        chips.append(scope)
+    if state.search_scope == "transfer_only":
+        kinds = {"airport": "аэропорт", "station": "вокзал", "hotel": "отель"}
+        if state.transfer_from and state.transfer_to:
+            chips.append(f"{kinds.get(state.transfer_from, '?')} → {kinds.get(state.transfer_to, '?')}")
+        if state.transfer_time:
+            chips.append(f"подача в {state.transfer_time}")
+        if state.transfer_date:
+            chips.append(f"дата трансфера: {state.transfer_date:%d.%m.%Y}")
+    if state.origin and state.search_scope not in {"hotel_only", "transfer_only", "split_hotel"}:
         chips.append(f"из: {state.origin}")
-    if state.dest_id:
+    if state.search_scope == "split_hotel" and state.split_stays:
+        chips.extend(f"отель {i}: {BY_ID[s.dest_id].name}" for i, s in enumerate(state.split_stays, 1) if s.dest_id in BY_ID)
+    elif state.dest_id:
         chips.append(BY_ID[state.dest_id].name)
     elif state.destination:
         chips.append(state.destination)
@@ -168,7 +184,16 @@ def understood(state: TripState) -> list[str]:
         chips.append("безвизовый въезд: не проверен")
     for t in state.trip_types or []:
         chips.append(TAG_NAMES.get(t, t))
-    if state.date_from and state.date_to:
+    if state.scenic_views:
+        chips.append("красивые виды: не проверены")
+    if state.relaxed_walks:
+        chips.append("спокойные прогулки: не проверены")
+    for key in state.accessibility_needs or []:
+        if key in ACCESS_LABELS:
+            chips.append(ACCESS_LABELS[key] + ": не проверено")
+    if state.search_scope == "transfer_only":
+        pass  # do not display a stay's dates as a transfer booking
+    elif state.date_from and state.date_to:
         start_year = f" {state.date_from.year}" if state.date_from.year != state.date_to.year else ""
         chips.append(f"{state.date_from.day} {MONTHS_GEN[state.date_from.month - 1]}{start_year} — "
                      f"{state.date_to.day} {MONTHS_GEN[state.date_to.month - 1]} {state.date_to.year}")
@@ -193,6 +218,8 @@ def understood(state: TripState) -> list[str]:
         chips.append("возраст детей: " + ", ".join(map(str, state.children_ages)) + " лет")
     if state.rooms:
         chips.append(f"номеров: {state.rooms}")
+    if state.room_allocations:
+        chips.append("распределение по номерам указано")
     if state.lodging:
         prefix = "возможно: " if "lodging" in (state.tentative_fields or []) else ""
         chips.append(prefix + {"tent": "палатка", "hotel": "отель"}.get(state.lodging, state.lodging))
@@ -217,6 +244,8 @@ def understood(state: TripState) -> list[str]:
     if state.transport:
         prefix = "возможно: " if "transport" in (state.tentative_fields or []) else ""
         chips.append(prefix + {"train": "поезд", "plane": "самолёт", "none": "нет подходящего транспорта"}.get(state.transport, state.transport))
+    if state.seat_class:
+        chips.append(f"класс: {state.seat_class}")
     if state.direct_only:
         chips.append("без пересадок")
     if state.meal:
@@ -242,7 +271,15 @@ def contextual_suggestions(state: TripState, step) -> list[str]:
     if kind == "greeting":
         return EXAMPLES
     if kind == "question":
+        if payload.get("field") in ("transfer_direction", "flight_direction"):
+            return ["в одну сторону", "туда и обратно"]
+        if payload.get("field") == "multi_hotel":
+            return ["сравнить", "по очереди"]
+        if payload.get("field") == "when" and not state.dest_id and not state.search_scope:
+            return ["предложи сам", "пока не знаю"]
         return ["пока не знаю"] if payload.get("field") in ("when", "duration", "origin", "people", "children") else []
+    if kind == "service_results" and state.pending_question == "split_choice":
+        return [str(i) for i in range(1, len(state.split_displayed) + 1)]
     if kind == "real_hotels":
         return [str(i) for i in range(1, len(payload.get("items") or []) + 1)]
     if kind == "real_hotel_selected":
@@ -343,6 +380,15 @@ class Images:
         return payload
 
 
+class RevalidatedStatic(StaticFiles):
+    """Браузер сверяет файл с сервером (ETag, ответ 304), а не берёт устаревший скрипт из кэша после обновления."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def build_app(agent: Agent | None = None) -> FastAPI:
     settings = get_settings()
     mode = (os.getenv("ODIN_MODE") or "models").lower()
@@ -375,6 +421,8 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         worker.start()
         if voice.model_dir:
             threading.Thread(target=voice.load, name="local-voice-load", daemon=True).start()
+        # База путеводителей и модель эмбеддингов (~1 с) — в фоне, чтобы первый вопрос о месте не ждал
+        threading.Thread(target=guides.warm, name="guides-warm", daemon=True).start()
         try:
             yield
         finally:
@@ -382,7 +430,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             worker.join(timeout=1)
 
     app = FastAPI(title="О!дин запрос — агент поездки", docs_url="/api/docs", lifespan=lifespan)
-    app.mount("/static", StaticFiles(directory=STATIC), name="static")
+    app.mount("/static", RevalidatedStatic(directory=STATIC), name="static")
 
     @app.get("/")
     def index() -> FileResponse:
@@ -521,6 +569,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         return {"session_id": session_id, "reply": reply, "payload": images.decorate(step.payload),
             "stage": state.stage, "understood": understood(state), "assumptions": state.assumptions,
             "nlu": session.last_nlu, "suggestions": contextual_suggestions(state, step),
+            "input_sensitive": session.last_input_sensitive,
             "trip_summary": summary, "revision": session.ui_revision,
             "can_undo": bool(session.ui_previous) and chat_navigation.can_snapshot(session),
             "checked": ["Неподтверждённый параметр отклонён или исправлен."] * len(session.last_notes),
@@ -552,6 +601,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             # Preserve the chosen hotel; change only the ground-transport preference.
             state.hotel_id = session.last.payload["package"]["hotel"]["id"]
             state.transfer_kind = None if body.kind == "auto" else body.kind
+            session.last_input_sensitive = False
             state.params_changed = True
             state.act = {}
             session.last = agent.domain.step(state)
@@ -567,6 +617,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         with session.lock:
             check_navigation(session, body.revision)
             step = chat_navigation.undo(session)
+            session.last_input_sensitive = False
             return present(body.session_id, session, step, started)
 
     @app.post("/api/chat/edit")
@@ -583,6 +634,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
             previous = session.ui_previous
             session.state, session.last = proposed.state, proposed.last
             session.last_nlu, session.last_notes = proposed.last_nlu, proposed.last_notes
+            session.last_input_sensitive = proposed.last_input_sensitive
             session.history = []
             chat_navigation.complete_turn(session, previous)
             return present(body.session_id, session, step, started)
@@ -593,6 +645,7 @@ def build_app(agent: Agent | None = None) -> FastAPI:
         session_id, session = sessions.get(body.session_id)
         response.headers["Cache-Control"] = "no-store"
         with session.lock:
+            session.last_input_sensitive = False
             guessed_origin = None
             if not session.location_checked:
                 session.location_checked = True
@@ -739,6 +792,13 @@ def build_app(agent: Agent | None = None) -> FastAPI:
                         step.reply = "Не удалось выбрать страну. Попробуйте ещё раз.\n\n" + step.reply
             else:
                 step = agent.handle(session, body.text)
+            if (guessed_origin and session.state.search_scope in {"hotel_only", "transfer_only", "multi_hotel", "split_hotel"}
+                    and session.state.origin_inferred and session.state.origin == guessed_origin):
+                # A hotel or local transfer does not need a departure city.
+                session.state.origin, session.state.origin_inferred = None, False
+                if previous and previous[0].origin_inferred and previous[0].origin == guessed_origin:
+                    previous[0].origin, previous[0].origin_inferred = None, False
+                guessed_origin = None
             # The approximate origin is already exposed as an editable chip.
             # Avoid repeating the geolocation notice in the conversation.
             chat_navigation.complete_turn(session, previous)

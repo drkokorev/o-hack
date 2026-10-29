@@ -4,9 +4,10 @@ async(page)=>{
   const idle=()=>page.waitForFunction(()=>!document.querySelector('#send').disabled,null,{timeout:90000});
   page.on('pageerror',e=>errors.push(e.message));
   await page.setViewportSize({width:1440,height:960});
-  await page.goto('http://127.0.0.1:18191/static/favicon.svg');
+  const base = new URL(page.url()).origin;
+  await page.goto(base + '/static/favicon.svg');
   await page.evaluate(()=>{sessionStorage.clear();localStorage.removeItem('odin.places');localStorage.setItem('odin.currency','RUB');localStorage.setItem('odin.tour.v2','seen');});
-  await page.goto('http://127.0.0.1:18191/');await idle();
+  await page.goto(base + '/');await idle();
   await page.locator('#text').fill('Хочу на море из Москвы на 7 ночей с 15 июня 2027, двое взрослых, бюджет 180 тысяч рублей, без визы.');
   await page.locator('#ask').evaluate(f=>f.requestSubmit());await idle();
   await page.locator('#view').getByRole('button',{name:'Выбрать Анталья',exact:true}).click();await idle();

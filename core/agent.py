@@ -13,8 +13,9 @@ from pydantic import BaseModel
 
 from .guard import (MAX_INPUT_CHARS, contains_unresolved_sensitive_data, looks_like_injection,
                     mask_basic_data, mask_sensitive_data, sanitize)
-from .llm import LLM, Message, extract, strip_think
-from .privacy import PrivacyFilteredLLM
+from .answer import compose
+from .llm import LLM, Message, extract
+from .privacy import PrivacyFilteredLLM, Vault
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class Step:
     facts: str = ""       # факты для NLG-перефразирования; пусто — не перефразировать
     payload: Any = None   # данные для UI (карточки отелей)
     done: bool = False    # сценарий завершён (например, запись создана)
+    sources: list[dict] = field(default_factory=list)  # фрагменты базы знаний (RAG) для ответа: text, cite, url
 
 
 class Domain(Protocol):
@@ -64,20 +66,17 @@ class Session:
     ui_previous: Any = field(default=None, repr=False, compare=False)
     ui_revision: int = 0
     location_checked: bool = False  # один приблизительный результат на сессию, без хранения IP
+    vault: Vault = field(default_factory=Vault, repr=False, compare=False)  # метки ↔ личные данные, только в памяти
+    last_answer_by: str = ""  # кто написал последний ответ: llm (прошёл проверку) | template
+    last_input_sensitive: bool = False  # omit recognized sensitive turns from browser recovery
     lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
 
 
-NLG_SYSTEM = (
-    "Перефразируй черновик ответа ассистента дружелюбно и кратко, на русском языке. "
-    "Используй только факты из черновика и блока фактов: ничего не добавляй, "
-    "не меняй цифры, даты, время и названия, сохрани нумерацию вариантов."
-)
-
 PRIVACY_NOTICE = "Обнаруженные личные данные не использую для подбора. "
-_PRIVACY_PLACEHOLDER = re.compile(r"\[(?:имя|почта|телефон|контакт|номер карты|счёт|паспорт|документ|дата рождения|секрет|адрес|адрес сети|номер клиента|номер брони|сведения о здоровье)\]")
+_PRIVACY_PLACEHOLDER = re.compile(r"\[(?:имя|почта|телефон|контакт|номер карты|счёт|паспорт|документ|дата рождения|секрет|адрес|адрес сети|номер клиента|номер брони|сведения о здоровье)(?:_\d+)?\]")
 _PRIVACY_FILLER = re.compile(
     r"\b(?:мой|моя|моё|мое|наш|наша|телефон|номер|контакт|почта|паспорт|карта|"
-    r"адрес|сведения|отправьте|отправить|пожалуйста|мне|на|для|это|вот)\b", re.IGNORECASE
+    r"адрес|сведения|отправьте|отправить|пожалуйста|мне|на|для|это|вот|меня|зовут|я|фио|фамилия|имя)\b", re.IGNORECASE
 )
 
 
@@ -99,6 +98,8 @@ class Agent:
     ):
         self.domain = domain
         self.llm = PrivacyFilteredLLM(llm, getattr(domain, "preserve_place", None)) if llm else None
+        if hasattr(domain, "attach_llm"):
+            domain.attach_llm(self.llm)  # домен может спросить модель сам (например, где достопримечательность)
         self.nlg = nlg
         self.today = today
         self.history_messages = history_messages
@@ -107,25 +108,28 @@ class Agent:
         return Session(state=self.domain.state_model())
 
     def handle(self, session: Session, text: str, *, after_merge: Callable[[BaseModel], None] | None = None) -> Step:
+        session.last_input_sensitive = False
         # Reject instead of truncating: a document/card number cut at the limit
         # could otherwise evade inspection and be sent partially to the model.
         if len(text) > MAX_INPUT_CHARS:
+            session.last_input_sensitive = True
             session.last_nlu, session.last_notes = "none", []
             return Step(f"Сообщение слишком длинное. Сократите его до {MAX_INPUT_CHARS} символов и отправьте снова.")
         privacy_unavailable = False
         try:
-            text, masked = mask_sensitive_data(text, getattr(self.domain, "preserve_place", None))
+            text, masked = mask_sensitive_data(text, getattr(self.domain, "preserve_place", None), session.vault)
         except Exception as err:
             log.warning("Не удалось обработать сообщение для защиты данных (%s)", type(err).__name__)
             # If the full local detector fails, use rules only. Never forward
             # the uninspected text to the model as a fallback.
             privacy_unavailable = True
             try:
-                text, masked = mask_basic_data(text)
+                text, masked = mask_basic_data(text, session.vault)
             except Exception:
                 session.last_nlu, session.last_notes = "none", []
                 return Step("Не удалось обработать сообщение. Попробуйте ещё раз.")
         text = sanitize(text)
+        session.last_input_sensitive = bool(masked or privacy_unavailable)
         if not text:
             session.last_nlu, session.last_notes = "none", []
             return Step((PRIVACY_NOTICE if masked else "") + "Расскажите, какую поездку вы хотите.")
@@ -135,10 +139,20 @@ class Agent:
             if previous and isinstance(previous.payload, dict) and previous.payload.get("kind") == "question":
                 return replace(previous, reply=PRIVACY_NOTICE + previous.reply)
             return Step(PRIVACY_NOTICE + "Расскажите, какую поездку вы хотите.")
+        unresolved = contains_unresolved_sensitive_data(text)
+        local_input = getattr(self.domain, "requires_local_processing", None)
+        if local_input is not None:
+            try:
+                unresolved = unresolved or local_input(text)
+            except Exception as err:
+                log.warning("Не удалось проверить условия для локального разбора (%s)", type(err).__name__)
+                privacy_unavailable = True
+        # Mark the turn before any early return, so rejected prompt injections
+        # cannot leak otherwise recognized private text into browser recovery.
+        session.last_input_sensitive = session.last_input_sensitive or unresolved or privacy_unavailable
         if looks_like_injection(text):
             session.last_nlu, session.last_notes = "none", []
             return Step(self.domain.off_topic_reply)
-        unresolved = contains_unresolved_sensitive_data(text)
         context_risk = getattr(self.domain, "contains_unresolved_context", None)
         if context_risk is not None:
             try:
@@ -146,6 +160,7 @@ class Agent:
             except Exception as err:
                 log.warning("Не удалось проверить контекст для защиты данных (%s)", type(err).__name__)
                 privacy_unavailable = True
+        session.last_input_sensitive = session.last_input_sensitive or unresolved or privacy_unavailable
         update, session.last_nlu = self._understand(session, text, use_llm=not (privacy_unavailable or unresolved))
         if not update.model_dump(exclude_none=True) and session.last is not None and after_merge is None:
             # A message with no understood action must not advance the
@@ -161,11 +176,17 @@ class Agent:
             # An exact, server-validated map selection is an action even when
             # the already selected city adds no new natural-language fields.
             session.state = self.domain.merge(session.state, update)
+            note_text = getattr(self.domain, "note_text", None)
+            if note_text is not None:  # домену — замаскированный текст реплики, например для поиска по базе знаний
+                note_text(session.state, text)
             if after_merge is not None:
                 after_merge(session.state)
             step = self.domain.step(session.state)
-            if not (privacy_unavailable or unresolved) and self.nlg and step.facts and getattr(self.domain, "allow_nlg", True):
-                step.reply = self._rephrase(step)
+            session.last_answer_by = "template"
+            can_compose = getattr(self.domain, "allow_answer_generation", lambda _state, _step: True)
+            if (not (privacy_unavailable or unresolved) and self.nlg and getattr(self.domain, "allow_nlg", True)
+                    and can_compose(session.state, step)):
+                step = self._compose(session, text, step)
         if self.history_messages > 0 and getattr(self.domain, "retain_history", True):
             session.history += [
                 {"role": "user", "content": text},
@@ -182,7 +203,9 @@ class Agent:
             notice += "Сейчас использую локальный разбор; могу уточнить детали поездки. "
         elif unresolved:
             notice += "Для защиты данных обработаю это сообщение локально; могу уточнить детали поездки. "
-        return replace(step, reply=notice + step.reply) if notice else step
+        # Имена возвращаются только в показ пользователю; в истории и у модели остаются метки
+        reply = session.vault.restore(notice + step.reply)
+        return step if reply == step.reply else replace(step, reply=reply)
 
     def _understand(self, session: Session, text: str, *, use_llm: bool = True) -> tuple[BaseModel, str]:
         """LLM — основной путь; домен сверяет её ответ с текстом и правилами, правила заменяют её при сбое."""
@@ -190,6 +213,21 @@ class Agent:
         session.last_notes = []
         rules = getattr(self.domain, "rule_extract", None)
         by_rules = rules(session.state, text, today) if rules is not None else None
+        # Structured answers to an explicit pending question are already
+        # validated locally; avoid sending room allocations or retrying an LLM
+        # that cannot authoritatively change these service fields.
+        pending_fields = {
+            "room_allocation": {"room_allocations", "rooms"}, "children_ages": {"children_ages"},
+            "split_stays": {"split_stays"}, "split_choice": {"split_choice"},
+            "multi_hotel": {"search_scope"}, "flight_direction": {"flight_direction"},
+            "transfer_direction": {"transfer_direction"}, "transfer_time": {"transfer_time"},
+        }
+        pending = getattr(session.state, "pending_question", None)
+        if by_rules is not None and pending in pending_fields:
+            values = by_rules.model_dump(exclude_none=True)
+            if set(values) & pending_fields[pending]:
+                return by_rules, "rules"
+        needs_clarification = False
         if self.llm is not None and use_llm:
             messages = self.domain.extraction_messages(
                 session.state, session.history[-self.history_messages :], text, today
@@ -201,24 +239,40 @@ class Agent:
                     update, session.last_notes = arbitrate(session.state, text, update, by_rules)
                     if session.last_notes:
                         log.info("Сверка LLM: отклонено или исправлено полей: %d", len(session.last_notes))
-                    return update, "llm+rules" if by_rules.model_dump(exclude_none=True) else "llm"
-                if by_rules is None:
-                    return update, "llm"
-                gaps = {k: v for k, v in by_rules.model_dump(exclude_none=True).items()
-                        if getattr(update, k) is None}
-                return (update.model_copy(update=gaps), "llm+rules") if gaps else (update, "llm")
+                    if update.model_dump(exclude_none=True):
+                        return update, "llm+rules" if by_rules.model_dump(exclude_none=True) else "llm"
+                    needs_clarification = True  # a model interpretation was rejected, rather than an API failure
+                else:
+                    if by_rules is None:
+                        return update, "llm"
+                    gaps = {k: v for k, v in by_rules.model_dump(exclude_none=True).items()
+                            if getattr(update, k) is None}
+                    return (update.model_copy(update=gaps), "llm+rules") if gaps else (update, "llm")
         if by_rules is not None and by_rules.model_dump(exclude_none=True):
             return by_rules, "rules"
+        # On an otherwise unrecognized answer to a pending question, a domain
+        # may ask the model for a narrowly scoped classification. This is
+        # reached only after the same privacy gate as the first model call.
+        classify = getattr(self.domain, "interpret_clarification", None)
+        breaker = getattr(self.llm, "breaker", None) if self.llm is not None else None
+        if (needs_clarification and self.llm is not None and use_llm and classify is not None and
+                (breaker is None or breaker.state == "ok")):
+            inferred = classify(session.state, text, self.llm)
+            if inferred is not None and inferred.model_dump(exclude_none=True):
+                return inferred, "llm"
         return self.domain.update_model(), "none"
 
-    def _rephrase(self, step: Step) -> str:
-        if self.llm is None:
-            return step.reply
-        messages = [
-            {"role": "system", "content": NLG_SYSTEM},
-            {"role": "user", "content": f"Факты:\n{step.facts}\n\nЧерновик ответа:\n{step.reply}"},
-        ]
-        try:
-            return strip_think(self.llm.complete(messages)) or step.reply
-        except Exception:
-            return step.reply
+    def _compose(self, session: Session, text: str, step: Step) -> Step:
+        """Ответ пишет LLM по фактам шага и фрагментам RAG; не прошёл проверку — остаётся шаблон."""
+        if self.llm is None or not step.reply:
+            return step
+        known = {token for token in re.findall(r"\[[а-яё ]+_\d+\]", text) if session.vault.known(token)}
+        result = compose(self.llm, text, step.facts or step.reply, step.reply, step.sources, known)
+        session.last_answer_by = result.by
+        if result.problems:
+            session.last_notes = session.last_notes + ["ответ: " + "; ".join(result.problems)]
+        if result.by != "llm":
+            return step
+        cites = list(dict.fromkeys(s["cite"] for s in step.sources if s.get("cite")))
+        reply = result.text + ("\n\nИсточник: " + "; ".join(cites) + " (CC BY-SA)" if cites else "")
+        return replace(step, reply=reply)

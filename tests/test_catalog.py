@@ -13,7 +13,7 @@ from domains.trips import offers
 
 def test_versioned_catalog_keeps_destinations_and_relationships():
     assert len(DESTINATIONS) == 75
-    assert len(ORIGINS) == 7
+    assert len(ORIGINS) >= 280 and ORIGINS[0].name == "Москва"  # 7 исходных + города от 50 тыс. (tools/build_origins.py)
     assert BY_ID["sochi"].name == "Сочи"
     assert BY_ID["sochi"].areas and BY_ID["sochi"].rail
     assert all(not destination.via or destination.via in HUBS for destination in DESTINATIONS)

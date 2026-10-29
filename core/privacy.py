@@ -13,6 +13,54 @@ from typing import Any, Callable
 
 
 PlacePredicate = Callable[[str, int, int], bool]
+_TOKEN = re.compile(r"\[([а-яё ]+)_(\d+)\]")
+
+
+class Vault:
+    """Обратимое маскирование на одну сессию: «[имя_1]» ↔ исходное значение.
+
+    Живёт только в памяти процесса. В модель, логи и историю диалога уходят лишь метки, таблица соответствий —
+    никогда. Одно и то же значение в сессии получает одну и ту же метку, чтобы модель понимала связи в тексте.
+    Вернуть в ответ можно только безопасные виды (по умолчанию имена): номера карт, паспорта и коды
+    пользователю не повторяем.
+    """
+
+    RESTORE = frozenset({"имя"})
+
+    def __init__(self) -> None:
+        self._by_value: dict[tuple[str, str], str] = {}
+        self._by_token: dict[str, str] = {}
+
+    def token(self, label: str, value: str) -> str:
+        key = (label, " ".join(value.casefold().split()))
+        if key not in self._by_value and label == "имя":
+            # «Иван» после «Иван Петров» — тот же человек, а не [имя_2]
+            words = set(key[1].split())
+            same = next((tok for (kind, known), tok in self._by_value.items()
+                         if kind == label and (words <= set(known.split()) or set(known.split()) <= words)), None)
+            if same:
+                self._by_value[key] = same
+        if key not in self._by_value:
+            number = sum(1 for tok in self._by_token if tok.startswith(f"[{label}_")) + 1
+            token = f"[{label}_{number}]"
+            self._by_value[key] = token
+            self._by_token[token] = value.strip()
+        return self._by_value[key]
+
+    def known(self, token: str) -> bool:
+        return token in self._by_token
+
+    def restore(self, text: str, kinds: frozenset[str] = RESTORE) -> str:
+        """Метки разрешённых видов → исходные значения; остальные → обезличенная «[телефон]»."""
+        def put(match: re.Match) -> str:
+            token, label = match.group(0), match.group(1)
+            if label in kinds and token in self._by_token:
+                return self._by_token[token]
+            return f"[{label}]"
+        return _TOKEN.sub(put, text)
+
+    def __len__(self) -> int:
+        return len(self._by_token)
 _LOCK = threading.RLock()
 _LOWER_NAME_PAIR = re.compile(r"\b(?:для|с|со)\s+([а-яё]{3,})\s+([а-яё-]{4,})\b")
 _LOWER_NAME_SINGLE = re.compile(r"\b(?:для|с|со)\s+([а-яё]{3,})\b")
@@ -20,6 +68,28 @@ _SURNAME = re.compile(r"(?:ов|ев|ин)(?:а|ой|у|ым|ыме|ых)?$|(?:�
                       r"цкий|цкая|енко|чук|юк)$")
 _TRAVEL_COMMANDS = frozenset({"перенеси", "перенесите", "подбери", "подберите", "покажи", "покажите",
                               "выбери", "выберите", "отмени", "отмените", "оформи", "оформите"})
+
+
+@lru_cache(maxsize=1)
+def _morph():
+    import inspect
+
+    import pymorphy2_dicts_ru
+    from pymorphy2 import MorphAnalyzer
+
+    if not hasattr(inspect, "getargspec"):  # pymorphy2 0.9 на Python 3.11+: функцию убрали из стандартной библиотеки
+        inspect.getargspec = lambda func: inspect.getfullargspec(func)[:4]
+    return MorphAnalyzer(pymorphy2_dicts_ru.get_path())  # путь явно: поиск словаря требует pkg_resources
+
+
+def _is_command(span: str) -> bool:
+    """NER принимает глагол в начале короткой фразы за имя: «Оформляй оптимальный», «Запросите ранний заезд»."""
+    word = span.casefold()
+    if word in _TRAVEL_COMMANDS:
+        return True
+    if " " in word or word in _given_names():
+        return False
+    return any(p.tag.POS == "VERB" and "impr" in p.tag for p in _morph().parse(word))
 
 
 @lru_cache(maxsize=1)
@@ -46,7 +116,8 @@ def _name_tagger():
     return Segmenter(), NewsNERTagger(NewsEmbedding())
 
 
-def mask_names(text: str, preserve_place: PlacePredicate | None = None) -> tuple[str, bool]:
+def mask_names(text: str, preserve_place: PlacePredicate | None = None,
+               vault: Vault | None = None) -> tuple[str, bool]:
     from natasha import Doc
 
     # One model is shared by requests, without retaining input texts or spans.
@@ -56,7 +127,7 @@ def mask_names(text: str, preserve_place: PlacePredicate | None = None) -> tuple
         doc.segment(segmenter)
         doc.tag_ner(tagger)
         spans = [(item.start, item.stop) for item in doc.spans if item.type == "PER"
-                 and text[item.start:item.stop].casefold() not in _TRAVEL_COMMANDS]
+                 and not _is_command(text[item.start:item.stop])]
         for match in _LOWER_NAME_PAIR.finditer(text):
             first, last = match.group(1), match.group(2)
             if _looks_like_given_name(first) and _SURNAME.search(last):
@@ -73,7 +144,7 @@ def mask_names(text: str, preserve_place: PlacePredicate | None = None) -> tuple
         else:
             merged.append((start, end))
     for start, end in reversed(merged):
-        text = text[:start] + "[имя]" + text[end:]
+        text = text[:start] + (vault.token("имя", text[start:end]) if vault else "[имя]") + text[end:]
     return text, bool(merged)
 
 

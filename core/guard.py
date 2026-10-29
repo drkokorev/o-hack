@@ -3,7 +3,7 @@
 import re
 import unicodedata
 
-from .privacy import PlacePredicate, mask_names
+from .privacy import PlacePredicate, Vault, mask_names
 
 MAX_INPUT_CHARS = 1000
 
@@ -182,13 +182,14 @@ _UNRESOLVED_HINTS = tuple(re.compile(pattern, re.IGNORECASE) for pattern in (
     r"\b(?:загран)?паспорт\w*\s*[:#№-]?\s*[a-zа-яё]{1,3}[- ]*\d{4,}\b",
     r"\b(?:t\.me|telegram\.me|vk\.com|wa\.me|instagram\.com)/[\w.-]+",
     r"\b[\w.+-]+\s+(?:это|собака|через|at|\{at\})\s+[\w-]+\s+(?:точка|dot)\s+[\w-]+",
-    r"\b(?:инсулин\w*|лекарств\w*|диагноз\w*|артрит\w*)\b",
+    r"\b(?:инсулин\w*|лекарств\w*|диагноз\w*|артрит\w*|диабет\w*|астм\w*|"
+    r"эпилепси\w*|онкологи\w*|беременн\w*)\b",
     r"\bродил(?:ся|ась)\s+в\s+(?:тысяча|девятнадцать|двадцать)\b",
     r"\b(?:моя\s+квартира|(?:я\s+)?живу\s+(?:у|в|на))\b[^;.!?\n]{0,100}\b(?:дом\w*|дом)\b",
 ))
 _REDACTED_MARKER = re.compile(
     r"\[(?:имя|почта|телефон|контакт|номер карты|счёт|паспорт|документ|дата рождения|"
-    r"секрет|адрес|адрес сети|номер клиента|номер брони|сведения о здоровье)\]"
+    r"секрет|адрес|адрес сети|номер клиента|номер брони|сведения о здоровье)(?:_\d+)?\]"
 )
 
 
@@ -202,17 +203,18 @@ def looks_like_injection(text: str) -> bool:
     return bool(_INJECTION.search(text))
 
 
-def contains_sensitive_data(text: str) -> bool:
-    """Эвристика для явно лишних данных, не полное распознавание ПДн."""
-    # Remove invisible formatting characters only for inspection; otherwise a
-    # zero-width character can hide a phone or e-mail from the filter.
-    inspected = "".join(ch for ch in unicodedata.normalize("NFKC", text)
-                        if unicodedata.category(ch) != "Cf")
-    return (bool(_FOOD_ALLERGY.search(inspected) or _FOOD_INTOLERANCE.search(inspected))
-            or any(pattern.search(inspected) for pattern, _ in _SENSITIVE_PATTERNS))
+_NAME_INTRO = re.compile(r"(?is)^(.*?\b(?:зовут|фио|фамилия|имя\s+гостя|имя|я|my name is|traveler|traveller|guest)"
+                         r"\s*[:—-]?\s*)(\S.*)$")
 
 
-def mask_basic_data(text: str) -> tuple[str, bool]:
+def _reversible(vault: Vault, label: str, value: str) -> str:
+    """Для имени метка заменяет только само имя: «меня зовут [имя_1]», вступление остаётся в тексте."""
+    if label == "имя" and (intro := _NAME_INTRO.match(value)):
+        return intro.group(1) + vault.token(label, intro.group(2))
+    return vault.token(label, value)
+
+
+def mask_basic_data(text: str, vault: Vault | None = None) -> tuple[str, bool]:
     """Маскирует форматные данные, не отправляя текст во внешнюю службу."""
     inspected = "".join(ch for ch in unicodedata.normalize("NFKC", text)
                         if unicodedata.category(ch) != "Cf")
@@ -224,19 +226,26 @@ def mask_basic_data(text: str) -> tuple[str, bool]:
         lambda match: "[условие питания: исключить " + _INTOLERANCE_FOODS[match.group("food").casefold()] + "]", inspected)
     masked = food_count > 0 or intolerance_count > 0
     for pattern, replacement in _SENSITIVE_PATTERNS:
-        inspected, count = pattern.subn(replacement, inspected)
+        # Health details never need restoration: don't keep their original
+        # values even in the session's in-memory reversible vault.
+        if vault is None or replacement == "[сведения о здоровье]":
+            inspected, count = pattern.subn(replacement, inspected)
+        else:  # обратимо: «[телефон_1]», значение остаётся только в хранилище сессии
+            label = replacement.strip("[]")
+            inspected, count = pattern.subn(lambda m, label=label: _reversible(vault, label, m.group(0)), inspected)
         masked = masked or count > 0
     return _SPACES.sub(" ", _CONTROL.sub("", inspected)).strip(), masked
 
 
-def mask_sensitive_data(text: str, preserve_place: PlacePredicate | None = None) -> tuple[str, bool]:
+def mask_sensitive_data(text: str, preserve_place: PlacePredicate | None = None,
+                        vault: Vault | None = None) -> tuple[str, bool]:
     """Локально скрывает обнаруженные данные, но не гарантирует распознавание всех ПДн.
 
     Проверяем и обрабатываем одну и ту же нормализованную строку, иначе невидимые
     символы могли бы обойти замену. Исходные значения не сохраняем для восстановления.
     """
-    inspected, masked = mask_basic_data(text)
-    inspected, names_masked = mask_names(inspected, preserve_place)
+    inspected, masked = mask_basic_data(text, vault)
+    inspected, names_masked = mask_names(inspected, preserve_place, vault)
     return inspected, masked or names_masked
 
 

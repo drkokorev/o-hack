@@ -6,10 +6,11 @@ async(page)=>{
   page.on('response',r=>{if(r.url().includes('tiles.openfreemap.org'))network.push({status:r.status(),url:r.url().split('?')[0]});});
   await page.emulateMedia({reducedMotion:'no-preference'});
   await page.setViewportSize({width:1440,height:960});
-  await page.goto('http://127.0.0.1:18191/static/favicon.svg');
+  const base = new URL(page.url()).origin;
+  await page.goto(base + '/static/favicon.svg');
   await page.evaluate(()=>{sessionStorage.clear();localStorage.setItem('odin.tour.v2','seen');localStorage.setItem('odin.theme','light');localStorage.setItem('odin.globe','earth');});
   await page.route('https://ipinfo.io/**',route=>route.fulfill({json:{city:'Moscow'}}));
-  await page.goto('http://127.0.0.1:18191/');
+  await page.goto(base + '/');
   await page.waitForFunction(()=>!document.querySelector('#send').disabled&&tripMap.getView()?.models.includes('tower'),null,{timeout:40000});
   await page.waitForTimeout(1500);
   assert(await page.locator('#send').getAttribute('aria-label')==='Отправить сообщение','separate send arrow remains send control');

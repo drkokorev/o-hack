@@ -56,7 +56,7 @@ window.createExperience = ({send, reset, undo, edit, isBusy, voice, ideas}) => {
     eventLine.textContent=summary.selected_event ? `${summary.selected_event.name} · ${summary.selected_event.dates}` : '';
     const stage = data?.stage || "start";
     boardLabel = ["plan","cart","payment","booked"].includes(stage) ? "Поездка" : "Карта";
-    const titles = {start:"Куда хочется?",destination:"Туда, где вам хорошо",plan:"Выбираем то самое",cart:"Всё складывается",payment:"Почти поехали",booked:"Можно предвкушать"};
+    const titles = {start:"Куда хочется?",destination:"Туда, где вам хорошо",plan:"Выбираем то самое",cart:"Всё складывается",payment:"Почти поехали",booked:"Можно предвкушать",hotel_search:"Выбираем жильё",transfer_search:"Подбираем трансфер",flight_search:"Выбираем дорогу"};
     byId("chat-title").textContent = stage === "start" && data?.understood?.length ? "Уточняем вашу поездку" : titles[stage] || titles.start;
     const types = summary.trip_types || [];
     let mood = types.some(t=>["sea","beach"].includes(t)) ? "sea" : types.some(t=>["ski","mountains"].includes(t)) ? "alpine" : types.some(t=>["city","culture"].includes(t)) ? "city" : types.includes("nature") ? "forest" : null;

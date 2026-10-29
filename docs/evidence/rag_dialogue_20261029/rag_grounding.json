@@ -1,0 +1,104 @@
+{
+  "mode": "bm25+e5",
+  "total": 12,
+  "old_passed": 6,
+  "new_passed": 12,
+  "results": [
+    {
+      "id": "sim_it",
+      "expect": "contains",
+      "old_pass": true,
+      "new_pass": true,
+      "old_top": "Еда",
+      "new_top": "Еда"
+    },
+    {
+      "id": "sushi_en",
+      "expect": "contains",
+      "old_pass": true,
+      "new_pass": true,
+      "old_top": "Еда",
+      "new_top": "Еда"
+    },
+    {
+      "id": "night_safety",
+      "expect": "contains",
+      "old_pass": true,
+      "new_pass": true,
+      "old_top": "Меры предосторожности",
+      "new_top": "Меры предосторожности"
+    },
+    {
+      "id": "generic_sochi_food",
+      "expect": "any",
+      "old_pass": true,
+      "new_pass": true,
+      "old_top": "Еда",
+      "new_top": "Еда"
+    },
+    {
+      "id": "generic_budva_food",
+      "expect": "any",
+      "old_pass": true,
+      "new_pass": true,
+      "old_top": "Еда",
+      "new_top": "Еда"
+    },
+    {
+      "id": "generic_istanbul_sights",
+      "expect": "any",
+      "old_pass": true,
+      "new_pass": true,
+      "old_top": "Достопримечательности — Галата и Каракёй",
+      "new_top": "Достопримечательности — Галата и Каракёй"
+    },
+    {
+      "id": "imaginary_language",
+      "expect": "none",
+      "old_pass": false,
+      "new_pass": true,
+      "old_top": "Еда",
+      "new_top": null
+    },
+    {
+      "id": "diet_not_in_corpus",
+      "expect": "none",
+      "old_pass": false,
+      "new_pass": true,
+      "old_top": "Еда",
+      "new_top": null
+    },
+    {
+      "id": "medical_diet",
+      "expect": "none",
+      "old_pass": false,
+      "new_pass": true,
+      "old_top": "Еда",
+      "new_top": null
+    },
+    {
+      "id": "absent_specific_sight",
+      "expect": "none",
+      "old_pass": false,
+      "new_pass": true,
+      "old_top": "Достопримечательности",
+      "new_top": null
+    },
+    {
+      "id": "imaginary_club",
+      "expect": "none",
+      "old_pass": false,
+      "new_pass": true,
+      "old_top": "Ночная жизнь",
+      "new_top": null
+    },
+    {
+      "id": "unverified_allergy",
+      "expect": "none",
+      "old_pass": false,
+      "new_pass": true,
+      "old_top": "Еда",
+      "new_top": null
+    }
+  ]
+}

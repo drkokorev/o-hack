@@ -3,7 +3,6 @@
 import argparse
 import logging
 import os
-import sys
 
 from core.agent import Agent
 from core.config import get_settings

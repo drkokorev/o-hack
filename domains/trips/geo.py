@@ -54,6 +54,8 @@ class Origin:
     hub: bool = False
     rail: bool = True
     gen: str = ""   # «из кого/чего»: из Москвы
+    airport_km: int | None = None  # до ближайшего аэропорта с рейсами (tools/build_origins.py)
+    en: str = ""                   # название по GeoNames — для города по IP
 
     @property
     def from_(self) -> str:

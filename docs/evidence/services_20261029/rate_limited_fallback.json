@@ -1,0 +1,8 @@
+{
+  "scenario": "transfer_date_separation",
+  "input_type": "synthetic",
+  "provider_error": "RateLimitError",
+  "nlu": "rules",
+  "transfer_date_correct": true,
+  "stay_dates_unchanged": true
+}

@@ -1,0 +1,88 @@
+{
+  "model": "GigaChat-2-Max",
+  "synthetic": true,
+  "total": 8,
+  "passed": 8,
+  "calls": 18,
+  "cases": [
+    {
+      "case": "transfer",
+      "pass": true,
+      "model_calls": 1,
+      "nlu_by_turn": [
+        "llm+rules"
+      ],
+      "errors": []
+    },
+    {
+      "case": "multiroom",
+      "pass": true,
+      "model_calls": 1,
+      "nlu_by_turn": [
+        "llm+rules",
+        "rules"
+      ],
+      "errors": []
+    },
+    {
+      "case": "two_hotels",
+      "pass": true,
+      "model_calls": 3,
+      "nlu_by_turn": [
+        "rules",
+        "rules",
+        "rules",
+        "llm+rules",
+        "rules"
+      ],
+      "errors": []
+    },
+    {
+      "case": "flight_class",
+      "pass": true,
+      "model_calls": 1,
+      "nlu_by_turn": [
+        "llm+rules"
+      ],
+      "errors": []
+    },
+    {
+      "case": "train_only",
+      "pass": true,
+      "model_calls": 1,
+      "nlu_by_turn": [
+        "llm+rules"
+      ],
+      "errors": []
+    },
+    {
+      "case": "child_fare",
+      "pass": true,
+      "model_calls": 1,
+      "nlu_by_turn": [
+        "llm+rules"
+      ],
+      "errors": []
+    },
+    {
+      "case": "relative_time",
+      "pass": true,
+      "model_calls": 4,
+      "nlu_by_turn": [
+        "llm+rules",
+        "llm+rules"
+      ],
+      "errors": []
+    },
+    {
+      "case": "guide_synonym",
+      "pass": true,
+      "model_calls": 6,
+      "nlu_by_turn": [
+        "llm+rules",
+        "llm+rules"
+      ],
+      "errors": []
+    }
+  ]
+}

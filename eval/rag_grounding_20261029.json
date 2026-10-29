@@ -1,0 +1,14 @@
+[
+  {"id":"sim_it", "dest":"istanbul", "topic":"food", "query":"где попробовать симит?", "expect":"contains", "term":"симит"},
+  {"id":"sushi_en", "dest":"tokyo", "topic":"food", "query":"where to eat sushi?", "expect":"contains", "term":"суши"},
+  {"id":"night_safety", "dest":"istanbul", "topic":"safety", "query":"опасно ли тут ночью?", "expect":"contains", "term":"суток"},
+  {"id":"generic_sochi_food", "dest":"sochi", "topic":"food", "query":"где поесть?", "expect":"any"},
+  {"id":"generic_budva_food", "dest":"budva", "topic":"food", "query":"что попробовать из местной кухни?", "expect":"any"},
+  {"id":"generic_istanbul_sights", "dest":"istanbul", "topic":"sights", "query":"что посмотреть?", "expect":"any"},
+  {"id":"imaginary_language", "dest":"sochi", "topic":"food", "query":"есть ли в ресторанах меню на клингонском?", "expect":"none"},
+  {"id":"diet_not_in_corpus", "dest":"budva", "topic":"food", "query":"где в Будве веганская кухня?", "expect":"none"},
+  {"id":"medical_diet", "dest":"istanbul", "topic":"food", "query":"где поесть без глютена?", "expect":"none"},
+  {"id":"absent_specific_sight", "dest":"rome", "topic":"sights", "query":"где посмотреть Колизей?", "expect":"none"},
+  {"id":"imaginary_club", "dest":"istanbul", "topic":"nightlife", "query":"где находится клуб марсианский жираф?", "expect":"none"},
+  {"id":"unverified_allergy", "dest":"tokyo", "topic":"food", "query":"можно ли поесть при аллергии на лунную пыль?", "expect":"none"}
+]

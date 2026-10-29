@@ -1,0 +1,52 @@
+{
+  "status": "complete",
+  "checks": {
+    "model_processed_both_turns": true,
+    "new_formulation_gives_ideas": false,
+    "dates_not_invented": true
+  },
+  "records": [
+    {
+      "input": "Хочу в горы, предложи направления",
+      "nlu": "llm+rules",
+      "reply": "Чтобы подобрать идеальное направление, уточните, пожалуйста, когда примерно планируете поездку — назовите хотя бы месяц или время года. Если дата пока неизвестна, ничего страшного — поделюсь вдохновляющими идеями без привязки ко времени и ценам.",
+      "kind": "question",
+      "trip_summary": {
+        "origin": null,
+        "trip_types": [
+          "mountains"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "nights": null,
+        "adults": null,
+        "children": null,
+        "children_ages": null,
+        "budget_total": null,
+        "transport": null,
+        "destination": null
+      }
+    },
+    {
+      "input": "ориентируйся на свой опыт",
+      "nlu": "llm",
+      "reply": "Не понял сообщение. Чтобы подобрать идеальное направление, уточните, пожалуйста, когда примерно планируете поездку — назовите хотя бы месяц или время года. Если дата пока неизвестна, ничего страшного — поделюсь вдохновляющими идеями без привязки ко времени и ценам.",
+      "kind": "question",
+      "trip_summary": {
+        "origin": null,
+        "trip_types": [
+          "mountains"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "nights": null,
+        "adults": null,
+        "children": null,
+        "children_ages": null,
+        "budget_total": null,
+        "transport": null,
+        "destination": null
+      }
+    }
+  ]
+}

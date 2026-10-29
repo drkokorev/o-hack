@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .playwright-cli/
+/output/playwright/
 .env
 .env.*
 !.env.example
@@ -16,5 +17,6 @@ eval/guided_report.json
 # Воспроизводимый пространственный индекс; исходные открытые снимки остаются в Git.
 domains/trips/data/map_catalog.sqlite3
 domains/trips/data/map_catalog.building.sqlite3
+eval/live_*/
 
 .superdesign/

@@ -8,6 +8,8 @@ from __future__ import annotations
 import re
 from calendar import monthrange
 from datetime import date, timedelta
+from difflib import get_close_matches
+from functools import lru_cache
 
 MONTHS = {
     "январ": 1, "феврал": 2, "март": 3, "апрел": 4, "ма": 5, "июн": 6,
@@ -44,10 +46,53 @@ _MONEY_WORDS = {
 _NEGATION = r"(без|не нужн\w*|не надо|не обязательно|необязательно|не хочу|не хотим|не будем|не стоит|не требуется|не интересует)\s+(\w+\s+){0,2}$"
 
 
+_MONTH_FORMS = tuple(stem + end for stem in ("январ", "феврал", "апрел", "сентябр", "октябр", "ноябр", "декабр")
+                     for end in "ьяе") + ("август", "августа", "августе")
+
+
+@lru_cache(maxsize=4096)
+def _month_typo(word: str) -> str:
+    """«нояюрь» → «ноябрь»: одна-две ошибки в длинном названии месяца. Короткие (май, июнь) не трогаем —
+    слишком много похожих слов; места тоже не угадываем."""
+    if (not 5 <= len(word) <= 9 or re.fullmatch(MONTH_RE, word) or word.startswith("янтар") or
+            any(word.startswith(stem) for stem in MONTHS if len(stem) > 2)):  # «октябрьский», «январская»
+        return word
+    close = get_close_matches(word, _MONTH_FORMS, n=1, cutoff=0.8 if len(word) > 5 else 0.85)
+    return close[0] if close and close[0][:2] == word[:2] else word
+
+
+_MONTH_SHORT = {"янв": "январ", "фев": "феврал", "февр": "феврал", "мар": "март", "апр": "апрел", "июн": "июн",
+                "июл": "июл", "авг": "август", "сен": "сентябр", "сент": "сентябр", "окт": "октябр", "ноя": "ноябр",
+                "нояб": "ноябр", "дек": "декабр"}
+
+
+def _month_short(m: re.Match) -> str:
+    """«в янв» → «в январе», «7-13 дек» → «7-13 декабря», «сентябр» → «сентябрь»."""
+    prep, word = m.group(1), m.group(2)
+    stem = _MONTH_SHORT.get(word, word)
+    if stem == "март":
+        return f"{prep}марте" if prep else "марта"
+    return f"{prep}{stem}е" if prep else f"{stem}я"
+
+
 def norm(text: str) -> str:
     text = text.lower().replace("ё", "е")
-    # Narrow, common month misspellings; do not guess arbitrary place names.
-    return re.sub(r"\b(?:дикабр|декобр)(?=[ьяе]\b)", "декабр", text)
+    # Limited English support, retaining negation before replacing date words.
+    text = re.sub(r"\bnot\s+tomorrow\b", "не завтра", text)
+    text = re.sub(r"\bnot\s+(?:in\s+)?next\s+month\b", "не в следующем месяце", text)
+    text = re.sub(r"\b(?:in\s+)?next\s+month\b", "в следующем месяце", text)
+    text = re.sub(r"\btomorrow\b", "завтра", text)
+    text = re.sub(r"\b(\d{1,2})\s+adults?\b", r"\1 взрослых", text)
+    # Narrow, unambiguous typo corrections for time expressions only.
+    text = re.sub(r"\bпосле\s+завтра\b", "послезавтра", text)
+    text = re.sub(r"\bзавтро\b", "завтра", text)
+    text = re.sub(r"\bследущ(ий|ем|его|им)\b", r"следующ\1", text)
+    text = re.sub(r"\b(следующ(?:ем|ий|его|им))\s+мес\b\.?", r"\1 месяце", text)
+    text = re.sub(r"\b(?:дикабр|декобр)(?=[ьяе]\b)", "декабр", text)
+    text = re.sub(r"\b(во? )?(янв|февр?|мар|апр|июн|июл|авг|сент?|окт|нояб?|дек|январ|феврал|апрел|сентябр|октябр|"
+                  r"ноябр|декабр)\b\.?", _month_short, text)
+    text = re.sub(r"\bслед\b\.?", "следующем", text)
+    return re.sub(r"\b[а-я]{5,9}\b", lambda m: _month_typo(m.group(0)), text)
 
 
 def num_word(word: str) -> int | None:
@@ -104,7 +149,8 @@ def _date_with_year(day: int, month: int, year: str | int | None, today: date) -
         return None
 
 
-def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[date | None, date | None]:
+def parse_dates(text: str, today: date, known_in: date | None = None,
+                month_hint: int | None = None) -> tuple[date | None, date | None]:
     t = norm(text)
     check_in = check_out = None
 
@@ -162,6 +208,19 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
         m = re.search(rf"(?:с|со|на|заезд\w*)?\s*(\d{{1,2}})(?:-?го)?\s+{MONTH_RE}(?:\s+(20\d{{2}}))?", t)
         if m:
             check_in = _date_with_year(int(m.group(1)), month_of(m.group(2)), m.group(3), today)
+    if check_in is None and not dots:
+        # «с 7 по 13» без месяца: ближайший месяц, в котором первый день ещё впереди (или названный ранее)
+        m = re.search(r"\bс\s+(\d{1,2})(?:-?го)?\s+(?:по|до)\s+(\d{1,2})(?:-?е|-?го)?\b"
+                      r"(?!\s*(?:ноч|сут|дн|руб|тыс|человек|гост|звезд|час|лет|\d|[.,]\d))", t)
+        if m and 1 <= int(m.group(1)) < int(m.group(2)) <= 31:
+            day_in, day_out = int(m.group(1)), int(m.group(2))
+            month = month_hint or (today.month if day_in >= today.day else today.month % 12 + 1)
+            check_in = future_date(day_in, month, today)
+            if check_in:
+                try:
+                    return check_in, check_in.replace(day=day_out)
+                except ValueError:
+                    return check_in, None
     if check_in is None:
         m = re.search(r"\bс (\d{1,2})(?:-?го)?\b(?!\s*(?:до|ноч|звезд|человек|гост|\d))", t)
         if m:
@@ -170,12 +229,17 @@ def parse_dates(text: str, today: date, known_in: date | None = None) -> tuple[d
                 month = today.month if day >= today.day else today.month % 12 + 1
                 check_in = future_date(day, month, today)
     if check_in is None:
-        if re.search(r"\bпослезавтра\b", t):
-            check_in = today + timedelta(days=2)
-        elif re.search(r"\bзавтра\b", t):
-            check_in = today + timedelta(days=1)
-        elif re.search(r"\bсегодня\b", t):
-            check_in = today
+        for word, offset in (("послезавтра", 2), ("завтра", 1), ("сегодня", 0)):
+            for match in re.finditer(rf"\b{word}\b", t):
+                before = t[max(0, match.start() - 35):match.start()]
+                after = t[match.end():match.end() + 35]
+                if (re.search(r"\bне\s+(?:(?:хочу|можем|могу|поедем|едем|летим)\s+)?$", before) or
+                        re.match(r"\s+не\s+(?:могу|можем|хочу|хотим|едем|летим|поедем|подходит)\b", after)):
+                    continue
+                check_in = today + timedelta(days=offset)
+                break
+            if check_in is not None:
+                break
     if check_in is None:
         relative = re.search(
             r"\bчерез\s+(\d{1,4}|один|одну|два|две|три|четыре|пять|шесть|семь|пару)\s+"

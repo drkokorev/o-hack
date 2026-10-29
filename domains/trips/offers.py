@@ -285,6 +285,10 @@ def _origin_has_direct(origin: Origin, dest: Destination, rng: Random) -> bool:
         return False
     if origin.hub:
         return dest.id != "kamchatka" or origin.name == "Москва"
+    if origin.airport_km is not None:
+        # Города из расширенного справочника (Киров, Пенза…): прямые — в столицы и Сочи, изредка в Анталью;
+        # дальнее зарубежье только с пересадкой
+        return dest.id in {"moscow", "spb", "sochi"} or (dest.id == "antalya" and rng.random() < 0.3)
     popular = {"sochi", "antalya", "dubai", "hurghada", "moscow", "spb", "kaliningrad"}
     return dest.id in popular or rng.random() < 0.35
 

@@ -1,0 +1,106 @@
+{
+  "today": "2026-10-27",
+  "passed": 7,
+  "total": 16,
+  "results": [
+    {
+      "id": "adult_genitive_hotel",
+      "pass": false,
+      "failures": [
+        "adults: expected 2, got None"
+      ]
+    },
+    {
+      "id": "three_adults",
+      "pass": false,
+      "failures": [
+        "search_scope: expected 'hotel_only', got None",
+        "adults: expected 3, got None"
+      ]
+    },
+    {
+      "id": "four_adults",
+      "pass": false,
+      "failures": [
+        "adults: expected 4, got None"
+      ]
+    },
+    {
+      "id": "two_children",
+      "pass": false,
+      "failures": [
+        "children: expected 2, got None"
+      ]
+    },
+    {
+      "id": "three_children",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "adults_corrected",
+      "pass": false,
+      "failures": [
+        "adults: expected 3, got None"
+      ]
+    },
+    {
+      "id": "no_children",
+      "pass": false,
+      "failures": [
+        "adults: expected 2, got None"
+      ]
+    },
+    {
+      "id": "food_question_no_mark",
+      "pass": false,
+      "failures": [
+        "question: expected ['food'], got None"
+      ]
+    },
+    {
+      "id": "food_question_english",
+      "pass": false,
+      "failures": [
+        "question: expected ['food'], got None"
+      ]
+    },
+    {
+      "id": "sights_question_no_mark",
+      "pass": false,
+      "failures": [
+        "question: expected ['sights'], got None"
+      ]
+    },
+    {
+      "id": "question_not_requirement",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "tomorrow_not_next_month",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "baggage_and_class",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "two_room_count",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "no_assumed_adult",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "id": "tour_not_hotel",
+      "pass": true,
+      "failures": []
+    }
+  ]
+}

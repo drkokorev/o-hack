@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from statistics import median
 
 from .climate import MonthClimate, climate
 from .geo import DESTINATIONS, TAG_NAMES, Destination, Origin, destination_has_tag
-from .offers import hotel_price, hotels_for, transport_options
+from .offers import hotels_for, transport_options
 from .temperature import matches_history
 
 
@@ -30,7 +29,7 @@ def estimate(origin: Origin, dest: Destination, start: date, nights: int, adults
              mode: str | None = None, pets: bool = False, meal: str | None = None,
              stars_min: int | None = None, baggage_required: bool = False, *, direct_only: bool = False,
              max_hours: float | None = None, free_cancellation: bool = False, budget_night: int | None = None,
-             wishes: list[str] | None = None) -> tuple[int, int, str, int] | None:
+             wishes: list[str] | None = None, seat_class: str | None = None) -> tuple[int, int, str, int] | None:
     """Оценка поездки тем же планировщиком, что соберёт варианты: (цена «от», минут в пути, транспорт, пересадок)."""
     from datetime import timedelta
 
@@ -39,7 +38,7 @@ def estimate(origin: Origin, dest: Destination, start: date, nights: int, adults
     trip = Trip(origin, dest, start, start + timedelta(days=nights), adults, children, pets=pets, mode=mode,
                 meal=meal, stars_min=stars_min, baggage_required=baggage_required, direct_only=direct_only,
                 max_hours=max_hours, free_cancellation=free_cancellation, budget_night=budget_night,
-                wishes=wishes or [])
+                wishes=wishes or [], seat_class=seat_class)
     packages, relaxed = make_packages(trip)
     if not packages or relaxed:
         return None
@@ -60,7 +59,8 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             baggage_required: bool = False, direct_only: bool = False, free_cancellation: bool = False,
             budget_night: int | None = None, wishes: list[str] | None = None,
             air_min_temp: float | None = None, air_max_temp: float | None = None,
-            sea_min_temp: float | None = None, sea_max_temp: float | None = None) -> list[Suggestion]:
+            sea_min_temp: float | None = None, sea_max_temp: float | None = None,
+            seat_class: str | None = None) -> list[Suggestion]:
     from .planner import MEAL_RANK, cheapest_start
 
     wants = set(trip_types)
@@ -83,7 +83,7 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             continue
         day = (cheapest_start(origin, dest, window[0], window[1], nights, mode,
                               baggage_required=baggage_required, direct_only=direct_only, pets=pets,
-                              max_hours=max_hours) if window else start) or start
+                              max_hours=max_hours, seat_class=seat_class) if window else start) or start
         weather = climate(dest.id, day.month)
         thresholds = {"air_min_temp": air_min_temp, "air_max_temp": air_max_temp,
                       "sea_min_temp": sea_min_temp, "sea_max_temp": sea_max_temp}
@@ -106,7 +106,7 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
             continue
         est = estimate(origin, dest, day, nights, adults, children, mode, pets, meal, stars_min, baggage_required,
                        direct_only=direct_only, max_hours=max_hours, free_cancellation=free_cancellation,
-                       budget_night=budget_night, wishes=wishes)
+                       budget_night=budget_night, wishes=wishes, seat_class=seat_class)
         if est is None:
             continue
         total, minutes, leg_mode, stops = est
@@ -117,7 +117,7 @@ def suggest(origin: Origin, start: date, nights: int, adults: int, children: int
         if beach:
             if weather and weather.beach_ok:
                 score += 3
-                reasons.append(f"можно купаться: море {weather.sea:+.0f}°, днём {weather.t_day:+.0f}°")
+                reasons.append(f"исторические средние: море {weather.sea:+.0f}°, днём {weather.t_day:+.0f}°; не прогноз")
             elif weather and weather.sea is not None and weather.sea >= 21:
                 score += 1
                 risks.append(f"море прохладное, {weather.sea:+.0f}°")

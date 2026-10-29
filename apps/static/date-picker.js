@@ -1,5 +1,5 @@
 /* Shared range picker. One complete range is one server update. */
-window.openTripDates = ({start, end, today, onSelect}) => {
+window.openTripDates = ({start, end, today, onSelect, single=false}) => {
   document.getElementById('date-picker-dialog')?.remove();
   const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const parse=s=>new Date(`${s}T12:00:00`), min=today||iso(new Date()), max=iso(new Date(parse(min).getFullYear()+2,parse(min).getMonth(),parse(min).getDate()));
@@ -8,8 +8,9 @@ window.openTripDates = ({start, end, today, onSelect}) => {
   const dialog=document.createElement('dialog');dialog.id='date-picker-dialog';dialog.className='sheet date-picker';dialog.setAttribute('aria-label','Даты поездки');
   dialog.innerHTML='<button type="button" class="dialog-close icon-button" aria-label="Закрыть календарь">×</button><h2>Когда поедем?</h2><p class="range-hint" aria-live="polite"></p><div class="month-nav"><button type="button" class="icon-button previous" aria-label="Предыдущий месяц">‹</button><span></span><button type="button" class="icon-button next" aria-label="Следующий месяц">›</button></div><div class="months"></div><p class="date-picker-note">Выберите день начала и день возвращения.</p>';
   const fmt=new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long'});
+  if(single)dialog.querySelector('.date-picker-note').textContent='Выберите день поездки.';
   function paint(){
-    dialog.querySelector('.range-hint').textContent=selectingEnd?`${fmt.format(parse(from))} → выберите возвращение`:from&&to?`${fmt.format(parse(from))} — ${fmt.format(parse(to))}`:'Сначала — день начала поездки';
+    dialog.querySelector('.range-hint').textContent=single?'Дата поездки':selectingEnd?`${fmt.format(parse(from))} → выберите возвращение`:from&&to?`${fmt.format(parse(from))} — ${fmt.format(parse(to))}`:'Сначала — день начала поездки';
     dialog.querySelector('.previous').disabled=month.getFullYear()===parse(min).getFullYear()&&month.getMonth()<=parse(min).getMonth();
     dialog.querySelector('.next').disabled=iso(new Date(month.getFullYear(),month.getMonth()+1,1))>max;
     const area=dialog.querySelector('.months');area.replaceChildren();
@@ -24,7 +25,7 @@ window.openTripDates = ({start, end, today, onSelect}) => {
         b.setAttribute('aria-label',new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',year:'numeric'}).format(date));
         b.disabled=value<min||value>max||(selectingEnd&&date-parse(from)>365*86400000);
         b.classList.toggle('range-edge',value===from||value===to);b.classList.toggle('in-range',!!from&&!!to&&value>from&&value<to);
-        b.onclick=()=>{if(!selectingEnd||value<=from){from=value;to=null;selectingEnd=true;paint();dialog.querySelector(`[data-date="${value}"]`)?.focus();}else{to=value;dialog.close();onSelect({start:from,end:to});}};
+        b.onclick=()=>{if(single){dialog.close();onSelect({start:value});}else if(!selectingEnd||value<=from){from=value;to=null;selectingEnd=true;paint();dialog.querySelector(`[data-date="${value}"]`)?.focus();}else{to=value;dialog.close();onSelect({start:from,end:to});}};
         grid.append(b);
       }section.append(grid);area.append(section);
     }
